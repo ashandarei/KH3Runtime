@@ -1,0 +1,16 @@
+# Apply explicitly to maintained KH3 files being refactored. KH0.2 has its own style.
+BasedOnStyle: LLVM
+IndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: All
+BreakBeforeBraces: Allman
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+InsertBraces: true
+SortIncludes: Never
+PointerAlignment: Left
+ReferenceAlignment: Left

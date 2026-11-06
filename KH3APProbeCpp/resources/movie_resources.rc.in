@@ -1,0 +1,8 @@
+// Compiled movie and original AP extension patches, embedded without compression.
+LANGUAGE 0, 0
+KH3AP_NOW_PLAYING_MOVIE RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/now_playing_movie.swf"
+KH3AP_MAP_CHEST_MOVIE RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/map_chest_movie.swf"
+KH3AP_KH02_MOVIE_SURFACE RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/kh02/kh02_movie_surface.swf"
+KH3AP_SHOP_PATCH_EGS RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/shop_movie_patch_egs.bin"
+KH3AP_SHOP_PATCH_STEAM RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/shop_movie_patch_steam.bin"
+KH3AP_INGREDIENT_JOURNAL_PATCH RCDATA "@KH3AP_MOVIE_RESOURCE_ROOT@/resources/ingredient_journal_patch.bin"

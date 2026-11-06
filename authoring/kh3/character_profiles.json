@@ -1,0 +1,1820 @@
+{
+  "schema": "kh3ap.character_native_audit.v1",
+  "audit_date": "2026-11-02",
+  "runtime_policy": "Generated EGS/Steam runtime profiles. Exact image identity and per-site code signatures gate native calls and hooks; unsupported builds fail closed. Recorded coverage and remaining validation requirements are summarized in docs/CHARACTER_RUNTIME.md.",
+  "builds": {
+    "egs": {
+      "timestamp": "0x60547d11",
+      "image_size": "0xaebf000",
+      "sha256": "e4edb6ffdf8bd70aecf838ecf6a72663b13453e99e19559fdf2aa7c689c4b407"
+    },
+    "steam": {
+      "timestamp": "0x66743f34",
+      "image_size": "0xa969000",
+      "sha256": "f53c398936560d543f2aa8e6283733572fdf8ad7c14e03459c12e039cb1bd0bc"
+    }
+  },
+  "sites": [
+    {
+      "id": "stat_strength",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x7046c0",
+        "bytes": "40534883ec20488974243848897c2440"
+      },
+      "steam": {
+        "rva": "0x580e70",
+        "bytes": "40534883ec308b595c48896c24404889"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Matching strength field +0x5c, equipment bonuses +0x24, accessory iteration and boost B3; Steam inlines the base getter.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "stat_magic",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x704a90",
+        "bytes": "48895c24104889742418574883ec2048"
+      },
+      "steam": {
+        "rva": "0x5836e0",
+        "bytes": "48895c241048896c2418488974242057"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Matching magic field +0x60, equipment bonuses +0x28, accessory iteration and boost B3; Steam inlines the base getter.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "stat_defense",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x704d10",
+        "bytes": "48895c2410574883ec20488bf9e8bef6"
+      },
+      "steam": {
+        "rva": "0x581830",
+        "bytes": "48895c24184889742420574883ec200f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Matching defense field +0x64, equipment bonuses +0x2c, AB and 32 boost paths.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "skeleton_rebuild",
+      "source": "KH3APProbeCpp/kh3ap/features/player/player_animation_support.cpp",
+      "egs": {
+        "rva": "0x44cf6f0",
+        "bytes": "48894c24085355565741544155415641"
+      },
+      "steam": {
+        "rva": "0x3f79540",
+        "bytes": "48894c24085355565741544155415641"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Same compatible-list array at +0x3c0, cache at +0x3d0 and 40-byte compatible-skeleton records; different outer-validity inlining.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "skeleton_compatible",
+      "source": "KH3APProbeCpp/kh3ap/features/player/player_animation_support.cpp",
+      "egs": {
+        "rva": "0x44cf670",
+        "bytes": "4883ec284885d27468483bca745c8b81"
+      },
+      "steam": {
+        "rva": "0x3f6eeb0",
+        "bytes": "4883ec284885d27468483bca745c8b81"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Matching complete cache lookup: +0x3d0 map, count +0x3d8, free count +0x404; same signature and return paths.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "state_lookup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_exploration.cpp",
+      "egs": {
+        "rva": "0x1871370",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "steam": {
+        "rva": "0x15178c0",
+        "bytes": "48895c2410574883ec20488bd98bfa48"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Matched queue-push callers both call this lookup before constructing their state; same component +0x200 table ownership.",
+      "live_steam_evidence": "Recorded Steam coverage: surface, diving, movement, descent, dash and resurfacing for all four alternates."
+    },
+    {
+      "id": "hud_flags",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_exploration.cpp",
+      "egs": {
+        "rva": "0x19d9740",
+        "bytes": "448b89fc0300004c8bd14183e1fb80b9"
+      },
+      "steam": {
+        "rva": "0x1662360",
+        "bytes": "448b89fc0300004c8bd14183e1fb80b9"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Standalone Steam helper found through HudStatus update vtable slot and call at 0x1660ada; complete 77-byte function equals EGS. Earlier inline-only finding superseded.",
+      "live_steam_evidence": "Recorded Steam coverage: Focus retention without a redraw flag for all four alternates."
+    },
+    {
+      "id": "hud_dirty",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_exploration.cpp",
+      "egs": {
+        "rva": "0x19d67a0",
+        "bytes": "88910c040000c3"
+      },
+      "steam": {
+        "rva": "0x1657fd0",
+        "bytes": "88910c040000c3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Identical leaf setter writes DL to +0x40c. This alone does not establish full Steam HUD integration.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "idle_resolve",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x6f31a0",
+        "bytes": "48895c2408488974241048897c24184c"
+      },
+      "steam": {
+        "rva": "0x56de80",
+        "bytes": "48895c24084889742410574883ec208b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Reverse MyAnimSets iteration at +0x3f8/+0x400 and FName animation-entry lookup; Steam splits/inlines array search differently."
+    },
+    {
+      "id": "idle_play",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x6f4f70",
+        "bytes": "40535556574154415541564883ec7033"
+      },
+      "steam": {
+        "rva": "0x56ece0",
+        "bytes": "48895c241848896c2420565741544155"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching animation play control flow and calls to compatibility lookup. Nested component virtual slots differ (EGS +0x438, Steam +0x430)."
+    },
+    {
+      "id": "set_battle",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x1752dd0",
+        "bytes": "48895c2408574883ec200fb6fa488bd9"
+      },
+      "steam": {
+        "rva": "0x1446ce0",
+        "bytes": "48895c2408574883ec200fb6fa488bd9"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching SetBattleMode behavior and pawn flag ownership."
+    },
+    {
+      "id": "dismiss_weapon",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x1750560",
+        "bytes": "48895c2408574883ec30488bd90f2974"
+      },
+      "steam": {
+        "rva": "0x14480b0",
+        "bytes": "48895c2408574883ec30488bd90f2974"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching +0x598 equipment owner, its visibility/type queries, visibility arguments and blend parameter."
+    },
+    {
+      "id": "set_weapon",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x176b680",
+        "bytes": "48895c2408574883ec300f297424200f"
+      },
+      "steam": {
+        "rva": "0x1448060",
+        "bytes": "48895c2408574883ec300f297424200f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching weapon-visibility implementation adjacent to matched dismissal path."
+    },
+    {
+      "id": "idle_update",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/kairi_idle.cpp",
+      "egs": {
+        "rva": "0x16a4c60",
+        "bytes": "4055574154488d6c24e04881ec200100"
+      },
+      "steam": {
+        "rva": "0x13944d0",
+        "bytes": "4055574154488d6c24c04881ec400100"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Idle-state virtual update counterpart; per-state/private offsets still require runtime validation."
+    },
+    {
+      "id": "kairi_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "egs": {
+        "rva": "0x164a630",
+        "bytes": "488bc448895818488970205557415441"
+      },
+      "steam": {
+        "rva": "0x133bba0",
+        "bytes": "488bc45557415441564157488d68a148"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Paired Kairi attack-state virtual entry, two slots before its matched selector; owned pawn remains +0x68."
+    },
+    {
+      "id": "sora_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "egs": {
+        "rva": "0x1640c60",
+        "bytes": "488bc4554154415541564157488d6c24"
+      },
+      "steam": {
+        "rva": "0x13378b0",
+        "bytes": "4055564156488d6c24d04881ec300100"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Sora attack-state setup slot paired through shared attack vtable neighborhoods; matching +0x68 pawn context and large attack-kind dispatch."
+    },
+    {
+      "id": "gimmick_damage",
+      "source": "KH3APProbeCpp/kh3ap/features/story/world_fixes/big_hero_rescue_damage.cpp",
+      "egs": {
+        "rva": "0x1215ce0",
+        "bytes": "488bc45556574154415541564157488d"
+      },
+      "steam": {
+        "rva": "0xf79bc0",
+        "bytes": "488bc45556574154415541564157488d"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Reviewed complete damage-control flow, matching +0x310 active flag, +0x204 guard, +0x311 profile and damage/context arguments."
+    },
+    {
+      "id": "voice_notify",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "egs": {
+        "rva": "0x6e70f0",
+        "bytes": "488bc4535641544881ecd00000004d8b"
+      },
+      "steam": {
+        "rva": "0x560960",
+        "bytes": "488bc4535741544881ecd00000004d8b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching voice notify arguments, mesh owner +0x1b8, animation context and character type test."
+    },
+    {
+      "id": "attack_begin",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "egs": {
+        "rva": "0x6ea610",
+        "bytes": "488bc448895810488978184c89702055"
+      },
+      "steam": {
+        "rva": "0x561f40",
+        "bytes": "488bc448895810488978184c89702055"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching attack-notify begin body with relocated direct calls."
+    },
+    {
+      "id": "attack_end",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "egs": {
+        "rva": "0x6ea7c0",
+        "bytes": "48895c241048896c2418564883ec20498be8488bda488bf14885d2743f"
+      },
+      "steam": {
+        "rva": "0x564b10",
+        "bytes": "48895c241048896c2418564883ec20498be8488bda488bf14885d2743f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching attack-notify end body with relocated direct calls."
+    },
+    {
+      "id": "camp_roster",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x18a4800",
+        "bytes": "40534883ec20488bd9e8a2010000488b"
+      },
+      "steam": null,
+      "status": "platform_specific_hook",
+      "live_steam_validated": false,
+      "evidence": "EGS hooks the completed roster. Steam uses camp_tick plus camp_roster_reset after native reset and before the inline roster continuation; the interior block is never a detour target.",
+      "steam_equivalent_blocks": [
+        {
+          "rva": "0x154c842",
+          "bytes": "488bcd4c89a424f8000000e8ae97ffff488b45484885c00f841b0100004c8bb8800100004d85ff0f840b0100004c8ba0a00300004d85e40f84fb000000837d5c",
+          "callable_entry": false,
+          "owner_rva": "0x154c710"
+        }
+      ]
+    },
+    {
+      "id": "camp_tick",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x18a39e0",
+        "bytes": "488bc457415641574881ec8000000048"
+      },
+      "steam": {
+        "rva": "0x154c710",
+        "bytes": "4c8bdc49894b08554881ec100100008b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Reviewed camp state machine; Steam owns the inlined roster block at +0x132, including primary roster +0xc8 and 0xa0 row stride.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camp_status",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x113b9a0",
+        "bytes": "405556574154415541564157488d6c24"
+      },
+      "steam": {
+        "rva": "0xea1bf0",
+        "bytes": "405556574154415541564157488d6c24"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Paired from the actual Steam inlined roster call at 0x154c94e; matching character ID, output buffer and pawn +0x4d0 parameters.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camp_character",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x18b0900",
+        "bytes": "488bc45541564157488d68a14881eca0"
+      },
+      "steam": {
+        "rva": "0x155ea50",
+        "bytes": "488bc45541564157488d68a14881eca0"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Paired from actual Steam roster call at 0x154c961 and matching catalog lookup body (0.975 normalized sequence agreement).",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "sora_selection",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1645a00",
+        "bytes": "40565741574883ec70488b01488bf1ff"
+      },
+      "steam": {
+        "rva": "0x134aca0",
+        "bytes": "405641564883ec78488b01488bf1ff90"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Attack selector counterpart from aligned native attack vtables; virtual +0x3c8 setup, pawn +0x68 and active kind +0x1b0.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "aqua_selection",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1649050",
+        "bytes": "48895c240848896c2410488974241857"
+      },
+      "steam": {
+        "rva": "0x134b6f0",
+        "bytes": "48895c240848896c2410488974241857"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked code match and paired attack-selector vtable entry.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "attack_enter",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x163ec60",
+        "bytes": "48895c2410574883ec20488b7968488b"
+      },
+      "steam": {
+        "rva": "0x1333210",
+        "bytes": "48895c24084889742410574883ec2048"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Reviewed attack-enter control flow and matching +0x68 owner pawn with native type/validity guard."
+    },
+    {
+      "id": "attack_prepare",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1645380",
+        "bytes": "48895c240848897c241055488bec4883"
+      },
+      "steam": {
+        "rva": "0x134c420",
+        "bytes": "48895c240855488bec4883ec60488b41"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Paired common virtual slot through Kairi attack table; matching prepare control flow."
+    },
+    {
+      "id": "queue_clear",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1870de0",
+        "bytes": "40534883ec2083b98002000000488bd97e64"
+      },
+      "steam": {
+        "rva": "0x150a660",
+        "bytes": "40534883ec2083b98002000000488bd97e64"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching complete clear implementation and following queue code."
+    },
+    {
+      "id": "queue_push",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1871180",
+        "bytes": "48895c2410488974241848897c242041"
+      },
+      "steam": {
+        "rva": "0x1513260",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching state construction sequence, paired lookup call and native +0x2f0/+0x2f8 state calls."
+    },
+    {
+      "id": "queue_update",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x1870910",
+        "bytes": "40564883ec504883b90002000000488b"
+      },
+      "steam": {
+        "rva": "0x150a7e0",
+        "bytes": "40564883ec304883b90002000000488b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching queue update control flow, adjacent to complete matched queue clear."
+    },
+    {
+      "id": "run_enter",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x16c5610",
+        "bytes": "4055564156488bec4881ec800000004c"
+      },
+      "steam": {
+        "rva": "0x13a58a0",
+        "bytes": "40555641564157488bec4883ec784c8b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Reviewed run-enter control flow, +0x68 owner, controller acquisition and run-state setup; private write offsets still require runtime validation.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camera_update",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x7a5f60",
+        "bytes": "40555356488d6c24804881ec80010000"
+      },
+      "steam": {
+        "rva": "0x6033c0",
+        "bytes": "405553488dac2468ffffff4881ec9801"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Reviewed normal-camera update: virtual +0x7a8, +0x3f8 ownership, delta argument and interpolation work.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "riku_selection",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x164c1a0",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "steam": {
+        "rva": "0x134beb0",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked code match and paired attack-selector vtable entry.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "kairi_selection",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x164a3d0",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "steam": {
+        "rva": "0x134bc20",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked code match and paired attack-selector vtable entry.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "roxas_selection",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x170b9b0",
+        "bytes": "40535741564883ec20488b01488bd9ff"
+      },
+      "steam": {
+        "rva": "0x14118e0",
+        "bytes": "40535741564883ec20488b01488bd9ff"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked code match of selector body.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camera_target_init",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x7a4010",
+        "bytes": "48895c2410564883ec50f681f0080000"
+      },
+      "steam": {
+        "rva": "0x609c40",
+        "bytes": "48895c2418554883ec50f681f0080000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Reviewed camera reinitialization: +0x8f0 flag bit 0x40, virtual +0x958, +0x898 rotation history and +0x188 root component.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "input_axis",
+      "source": "KH3APProbeCpp/kh3ap/core/input/runtime_controller_input.cpp",
+      "egs": {
+        "rva": "0x49e1e60",
+        "bytes": "4889542410574883ec5048c7442430fe"
+      },
+      "steam": {
+        "rva": "0x4435f50",
+        "bytes": "4889542410574883ec5048c7442430fe"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked match of InputAxis implementation. Alternate-controller vtables remain a separate dependency.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "input_key_value",
+      "source": "KH3APProbeCpp/kh3ap/core/input/runtime_controller_input.cpp",
+      "egs": {
+        "rva": "0x4b76790",
+        "bytes": "40534883ec4048c7442420feffffff0f"
+      },
+      "steam": {
+        "rva": "0x45a95b0",
+        "bytes": "40534883ec4048c7442420feffffff0f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Unique long masked match of UPlayerInput key-state lookup. Key-map ABI and alternate controllers need validation.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "default_walk_speed",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_traversal.cpp",
+      "egs": {
+        "rva": "0x742860",
+        "bytes": "40534883ec20488b01488b9058150000"
+      },
+      "steam": {
+        "rva": "0x5aa5e0",
+        "bytes": "4883ec28488b01ff90581500004885c0"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "GetDefaultMaxWalkSpeed native registration and virtual slot 0x1588; both obtain the class-default pawn via slot 0x1558 and its current speed via 0x1580. Steam keeps the virtual calls; EGS partly inlines them.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "reset_walk_speed",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_traversal.cpp",
+      "egs": {
+        "rva": "0x742760",
+        "bytes": "40534883ec204883b97805000000488b"
+      },
+      "steam": {
+        "rva": "0x5b6350",
+        "bytes": "40534883ec204883b97805000000488b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "ResetMaxWalkSpeed registration at Steam 0x1d84320 uses slot 0x1578, immediately before the uniquely matched current-speed getter EGS 0x742840 / Steam 0x5ab2b0. Both reset MyMovement +0x578 MaxWalkSpeed +0x388 from default getter 0x1588.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "request_swim",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_traversal.cpp",
+      "egs": {
+        "rva": "0x1776700",
+        "bytes": "48895c240848896c2410488974241857415641574883ec50488b01488bd90f297424"
+      },
+      "steam": {
+        "rva": "0x1441c90",
+        "bytes": "488bc44889580848896810488970184889782041564883ec500f2970e8488bd90f29"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Paired state-queue interface virtual slot +0x6f8, anchored by exact RequestSwimDiving entry at Steam1441bb0. Matching eligibility +0x6f0, restriction +0x2770, current states15/102, heading/pitch/magnitude and normalized steering-axis fields, flag8 dash, flag4 dive and vertical direction +0xb0. Steam factors state lookup through accessors.",
+      "live_steam_evidence": "Recorded Steam coverage: surface, diving, movement, descent, dash and resurfacing for all four alternates."
+    },
+    {
+      "id": "action_dispatch",
+      "source": "KH3APProbeCpp/kh3ap/features/world/garden_return/alternate_interaction_service.cpp",
+      "egs": {
+        "rva": "0x1774570",
+        "bytes": "488bc45556574154415541564157488d68b84881ec100100"
+      },
+      "steam": {
+        "rva": "0x143f570",
+        "bytes": "488bc4554154415541564157488d68a14881ecd000000048"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "State-queue interface virtual slot0x628 anchored by RequestSwimDiving. Matching command dispatch range beginning76, reactor/actor arguments and native queue routing.",
+      "live_steam_evidence": "Recorded Steam coverage: save-point interaction while moving and barrel spins for all four alternates."
+    },
+    {
+      "id": "open_treasure_queue",
+      "source": "KH3APProbeCpp/kh3ap/features/world/garden_return/alternate_interaction_service.cpp",
+      "egs": {
+        "rva": "0x1775830",
+        "bytes": "48895c2410574883ec20488b8950010000488bda4885c90f"
+      },
+      "steam": {
+        "rva": "0x1445150",
+        "bytes": "48895c2408574883ec20488bfaba4a000000e819fe16ff48"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "State-queue interface virtual slot0x640 anchored by RequestSwimDiving. Matching state74 lookup, OpenTreasureBox class check, opener target +0x88 and target flags +0x90."
+    },
+    {
+      "id": "swim_update",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_traversal.cpp",
+      "egs": {
+        "rva": "0x16f5f10",
+        "bytes": "40534883ec304c8b4168488bd90f297424200f28f14d85c00f844302"
+      },
+      "steam": {
+        "rva": "0x13d8630",
+        "bytes": "40534883ec30488bd90f29742420488b49680f28f14885c90f848701"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "TresPlayerState_Swim constructors resolved from verified StaticClass routines: EGS2d43300/2d5aef0 and Steam28cd700/28c8940/13c9bd0. Native state vtables7b98b30/694c9b0 pair update slot0x308. Matching owner +0x68, phase +0x78 dispatch, control/water checks, request flags +0xb4 and native request cleanup.",
+      "live_steam_evidence": "Recorded Steam coverage: surface, diving, movement, descent, dash and resurfacing for all four alternates."
+    },
+    {
+      "id": "barrel_reactor",
+      "source": "docs/CHARACTER_RUNTIME.md",
+      "egs": {
+        "rva": "0x11e0f70",
+        "bytes": "48895c2410574883ec40488b01488bf9ff9040010000488b"
+      },
+      "steam": {
+        "rva": "0xf57120",
+        "bytes": "4889742418574883ec40488b01488bf9ff9040010000488b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching current-player/Sora class gate, RequestOneAction virtual slot0x2a58, motion+0x700, start delegate+0x6c0, flying mode5, attachment and tick prerequisite. Native reference audit: the barrel implementation uses these original handlers unchanged; no new barrel detours.",
+      "runtime": false
+    },
+    {
+      "id": "barrel_start",
+      "source": "docs/CHARACTER_RUNTIME.md",
+      "egs": {
+        "rva": "0x11e11d0",
+        "bytes": "40534883ec60488bd94889742478488b89b80600004889bc"
+      },
+      "steam": {
+        "rva": "0xf569f0",
+        "bytes": "40574883ec60488bf948895c2478488b89b80600004889b4"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching static/skeletal mesh hide, gimmick motion+0x708, player relative-transform reset, NPC performance callback and state+0x738=1. Native reference audit: the barrel implementation uses these original handlers unchanged; no new barrel detours.",
+      "runtime": false
+    },
+    {
+      "id": "barrel_end",
+      "source": "docs/CHARACTER_RUNTIME.md",
+      "egs": {
+        "rva": "0x11e1420",
+        "bytes": "40534883ec30488bd9488b89b80600004885c9740e488b01"
+      },
+      "steam": {
+        "rva": "0xf56860",
+        "bytes": "40534883ec30488bd9488b89b80600004885c9740e488b01"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching mesh hide, player cleanup slots0x23b0/0x17a0/0x1728/0xff0, tick-prerequisite removal and end delegate+0x6d0. Native reference audit: the barrel implementation uses these original handlers unchanged; no new barrel detours.",
+      "runtime": false
+    },
+    {
+      "id": "request_one_action",
+      "source": "docs/CHARACTER_RUNTIME.md",
+      "egs": {
+        "rva": "0x1778260",
+        "bytes": "48895c24184889742420574883ec30488b01498bf0488bda"
+      },
+      "steam": {
+        "rva": "0x14415e0",
+        "bytes": "48895c241848896c2420574883ec30488b01498be8488bda"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching eligibility virtual slot0x2a50, OneAction state150, motion+0x98 and reflected OnPlayerPerformStart/End delegates+0xa0/+0xb0. Steam uses native queue-interface helpers. Native reference audit: the barrel implementation uses these original handlers unchanged; no new barrel detours.",
+      "runtime": false
+    },
+    {
+      "id": "perform_broadcast",
+      "source": "docs/CHARACTER_RUNTIME.md",
+      "egs": {
+        "rva": "0x5f2540",
+        "bytes": "4c8bdc55565741544155415641574881ec9000000048c744"
+      },
+      "steam": {
+        "rva": "0x45bda0",
+        "bytes": "4c8bdc55565741544155415641574881ec9000000048c744"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Direct call from paired actor reaction handler with delegate+0x6c0 and sixteen-byte actor-name/actor event. Matching weak delegate iteration and dispatch. Native reference audit: the barrel implementation uses these original handlers unchanged; no new barrel detours.",
+      "runtime": false
+    },
+    {
+      "id": "request_camera",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_camera.cpp",
+      "egs": {
+        "rva": "0x1777c80",
+        "bytes": "48895c24104889742418574883ec30488b01488bd9ff90c0"
+      },
+      "steam": {
+        "rva": "0x143d630",
+        "bytes": "48895c241048896c24184889742420574883ec20488b0148"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Main pawn virtual slot0x2a28, anchored thirty bytes before the paired OneAction request slot0x2a58. Matching showversion/spcamera gates, current-state exclusions, CanHoldCamera virtual0x2a20, HoldCamera state144 request and disabled-camera notice. Steam uses owning bank and queue-interface helpers.",
+      "live_steam_evidence": "Recorded Steam coverage: zoom, first-person photo, selfie, pose and selfie photo for all four alternates."
+    },
+    {
+      "id": "shotlock_select",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x17358f0",
+        "bytes": "40535556574883ec28488bb9"
+      },
+      "steam": {
+        "rva": "0x1411b80",
+        "bytes": "48895c241048897424185748"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching player-ID 6/2/3 branches, override +0xa34, locks +0xa18 and Oblivion 41 / maximum 42 selection."
+    },
+    {
+      "id": "roxas_input_update",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x1708660",
+        "bytes": "405556574156488d6c24a848"
+      },
+      "steam": {
+        "rva": "0x13f29a0",
+        "bytes": "4055535657488d6c24c84881"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Authoritative ATresPlayerControllerRoxas class registrar -> InternalConstructor 0x287d810 -> constructor 0x13c9170 -> final vtable 0x69435a0, slot 0x1518; matching controller input dispatch."
+    },
+    {
+      "id": "shared_shotlock_update",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x172eb90",
+        "bytes": "488bc4555657415441554156"
+      },
+      "steam": {
+        "rva": "0x14165e0",
+        "bytes": "488bc4555657415441554156"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Matching common aim phase +0xa10, capability virtual slot 0x2938 and release/selection lifecycle; Steam retains additional virtual calls."
+    },
+    {
+      "id": "input_key_down",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x49e9ee0",
+        "bytes": "4889542410574883ec4048c7"
+      },
+      "steam": {
+        "rva": "0x44369d0",
+        "bytes": "4889542410574883ec4048c7"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Authoritative reflected IsInputKeyDown registrar -> exec 0x4cb71b0 -> native call 0x44369d0; 24-byte by-value FKey lifecycle. Distinct from WasJustPressed/Released."
+    },
+    {
+      "id": "shotlock_capability",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x13c2f70",
+        "bytes": "8b81800d0000c1e8032401c3"
+      },
+      "steam": {
+        "rva": "0x110e7b0",
+        "bytes": "8b81800d0000c1e8032401c3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Identical 12-byte capability getter: pawn +0xd80 bit 3, confirmed virtual slot 0x2938."
+    },
+    {
+      "id": "underwater_collision_create",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_underwater_combat.cpp",
+      "egs": {
+        "rva": "0x7cef40",
+        "bytes": "488bc4488958085556574883ec50"
+      },
+      "steam": {
+        "rva": "0x617bb0",
+        "bytes": "488bc44889580848896810565741"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Native individual TresAtkCollPrimitive constructor called by collision component BeginPlay setup. Both create the primitive, resolve default attack row through component +0x8b8, validate owner weak reference +0x898/+0x89c, initialize at virtual +0xab8 with the fixed 0x100-byte shape descriptor, append to +0x8f8/count +0x900, and update the group lookup using primitive FName +0x868. Steam factors the world setup and uses a different TArray allocator call.",
+      "live_steam_evidence": "Recorded Steam coverage: ComboSwim attacks 118-121 with enemy HP readback and required weapon collision groups for all four alternates."
+    },
+    {
+      "id": "input_axis_accumulation",
+      "source": "KH3APProbeCpp/kh3ap/core/input/runtime_controller_input.cpp",
+      "egs": {
+        "rva": "0x4b70197",
+        "bytes": "0083ec000000f30f58b3e0000000f30f11b3e0000000"
+      },
+      "steam": {
+        "rva": "0x45ab58c",
+        "bytes": "0083ec000000f30f58b3e0000000f30f11b3e0000000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "InputAxis adds NumSamples at key-entry +0xec and Delta at +0xe0; the paired wrappers call these owners. Layout guard for carrying pending device samples without queueing a stale held axis.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "input_axis_owner",
+      "source": "KH3APProbeCpp/kh3ap/core/input/runtime_controller_input.cpp",
+      "egs": {
+        "rva": "0x4b6ffb0",
+        "bytes": "f30f115c242048895424105355565741"
+      },
+      "steam": {
+        "rva": "0x45ab3d0",
+        "bytes": "48895424105355565741564883ec4048"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Paired UPlayerInput::InputAxis owners called by the verified controller wrappers. One-shot seeded-axis replacement observes newer device events through this owner.",
+      "live_steam_evidence": "Recorded Steam coverage: held-stick full/partial input across all four alternates. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "character_record_lookup",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x110d520",
+        "bytes": "4883ec284c8bc1440fb6ca0fb6cae82d"
+      },
+      "steam": {
+        "rva": "0xe8ae20",
+        "bytes": "4883ec284c8bc1440fb6ca0fb6cae85d"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Identical character-only record lookup and bank/record layout; adapter preserves native volatile outputs.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "character_form_record_lookup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap.cpp",
+      "egs": {
+        "rva": "0x110d580",
+        "bytes": "40534883ec20440fb6da488bd9458bd3"
+      },
+      "steam": {
+        "rva": "0xe8bf90",
+        "bytes": "40534883ec20440fb6da488bd9458bd3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Form-aware lookup retains character/form byte args, 0x9c0 record stride and both bank offsets.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camp_roster_reset",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": {
+        "rva": "0x18a49b0",
+        "bytes": "488bc4574881ece000000048c740d8fe"
+      },
+      "steam": {
+        "rva": "0x1546000",
+        "bytes": "488bc455488d68a14881ecd000000048"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Steam complete function clears five 0xa0 roster rows; scoped hook returns into camp tick at 0x154c852 before its inline roster continuation.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "camp_save_bank",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_inventory_menu.cpp",
+      "egs": null,
+      "steam": {
+        "rva": "0xea8620",
+        "bytes": "488d8170080000c3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Steam accessor returns game instance +0x870. Story field at bank +0x7df4 equals EGS owner +0x8664.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_spawn",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x472a3d0",
+        "bytes": "488bc455535657415441554156415748"
+      },
+      "steam": {
+        "rva": "0x41b9170",
+        "bytes": "405356574883ec70488b05b9ae5f0448"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Factory uses EGS four-argument transform overload, Steam five-argument location/rotation overload; separate callbacks preserve these ABIs. Steam wrapper calls transform overload 0x41b87a0.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_destroy",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x472c950",
+        "bytes": "4055565741544155415641574881ec30"
+      },
+      "steam": {
+        "rva": "0x41acc20",
+        "bytes": "4055565741544155415641574881ec20"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "UWorld actor destruction; four arguments including two booleans.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_seamless_from",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x49e55f0",
+        "bytes": "48895c2408574883ec20488bf9488bda"
+      },
+      "steam": {
+        "rva": "0x443ce60",
+        "bytes": "48895c2408574883ec20488bf9488bda"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "PlayerController seamless transfer retains PlayerState field +0x400.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_add_controller",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x4b90730",
+        "bytes": "48895c241048896c2418488974242057"
+      },
+      "steam": {
+        "rva": "0x45bf480",
+        "bytes": "48895c241048896c2418488974242057"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "World controller weak array at +0x190, player-controller subset and add semantics matched.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_remove_controller",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x4b908f0",
+        "bytes": "48895424105641554883ec484c8be948"
+      },
+      "steam": {
+        "rva": "0x45cc530",
+        "bytes": "4057415541564883ec304c8bf14c8bea"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "World controller unregister and subset removal matched.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_add_pawn",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x4b90b40",
+        "bytes": "48895c241048896c2418488974242057"
+      },
+      "steam": {
+        "rva": "0x45bf9b0",
+        "bytes": "48895c2410488974241848897c242041"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "World pawn weak array +0x1b0; distinct +0x1c0 routine excluded.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_remove_pawn",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x4b90bf0",
+        "bytes": "40535741554883ec304c8be9488bda48"
+      },
+      "steam": {
+        "rva": "0x45cd290",
+        "bytes": "40535741554883ec304c8be9488bda48"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "World pawn weak array +0x1b0 removal matched.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_controller_spawn_call",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x1131246",
+        "bytes": "e885915f03"
+      },
+      "steam": {
+        "rva": "0xea67e1",
+        "bytes": "e88a293103"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Factory controller creation; return identity is this call plus five bytes.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "pool_pawn_spawn_call",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_pawn_pool.cpp",
+      "egs": {
+        "rva": "0x1131428",
+        "bytes": "e8a38f5f03"
+      },
+      "steam": {
+        "rva": "0xea6982",
+        "bytes": "e8e9273103"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Factory pawn creation; return identity is this call plus five bytes.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "add_ui_part",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_shining_hud.cpp",
+      "egs": {
+        "rva": "0x18f6870",
+        "bytes": "48895c2418574883ec20488bda488bf9"
+      },
+      "steam": {
+        "rva": "0x1591b10",
+        "bytes": "48895c2418574883ec20488bda488bf9"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "UI manager part registration; native caller and complete body matched.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "remove_ui_part",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_shining_hud.cpp",
+      "egs": {
+        "rva": "0x18f69b0",
+        "bytes": "4885d20f84b900000048895c24105748"
+      },
+      "steam": {
+        "rva": "0x15a6390",
+        "bytes": "4885d20f84bb00000048895c24105748"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "UI manager part removal; cockpit mode-change caller matched.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "cockpit_remove_shining_call",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_shining_hud.cpp",
+      "egs": {
+        "rva": "0x18dc50a",
+        "bytes": "e8a1a40100"
+      },
+      "steam": {
+        "rva": "0x158eabc",
+        "bytes": "e8cf780100"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Cockpit mode-change removes part then clears same cockpit +0x150 field.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "initialize_shining",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_shining_hud.cpp",
+      "egs": {
+        "rva": "0x19c8390",
+        "bytes": "40534883ec20488bd9e8b2a41200488b"
+      },
+      "steam": {
+        "rva": "0x1654c90",
+        "bytes": "40534883ec20488bd9e8925b1100488b"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Initialization reads movie +0x58, sets gauge +0x1f0 and target weak pointer +0x1d0.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "gfx_goto_and_stop",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_shining_hud.cpp",
+      "egs": {
+        "rva": "0x3e2c8a0",
+        "bytes": "40534881ece000000048c7442420feff"
+      },
+      "steam": {
+        "rva": "0x38f9470",
+        "bytes": "40534881ece000000048c7442420feff"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "Shining initializer call at Steam 0x1654cba distinguishes string-label overload from frame-index overload.",
+      "live_steam_evidence": "Recorded Steam coverage: fresh and cached character/camp/item swaps. See docs/CHARACTER_RUNTIME.md for validation scope."
+    },
+    {
+      "id": "union_action_sora",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_union_cross.cpp",
+      "egs": {
+        "rva": "0x1702530",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native controller action-command vtable +0x1530. Sora commands 180..185 branch to shared pawn interface +0x6e8; alternate dispatchers omit these cases. Live state97 mode6 owns weak ride +0xa4. Steam not audited. 2026-11-02 Steam audit: Steam controller slot +0x1530 at 0x696b0c8. Command +0x87c; switch 0x141be64/0x141bdf8 maps 180..185 to 0x141bcd0, shared pawn +0x450 slot +0x6e8, retaining native eligibility and cleanup. Live native class-default controller slots independently matched in live-class-profile-proof.json; full Steam ride commands remain untested.",
+      "steam": {
+        "rva": "0x141b470",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "union_action_kairi",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_union_cross.cpp",
+      "egs": {
+        "rva": "0x16186c0",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native controller action-command vtable +0x1530. Sora commands 180..185 branch to shared pawn interface +0x6e8; alternate dispatchers omit these cases. Live state97 mode6 owns weak ride +0xa4. Steam not audited. 2026-11-02 Steam audit: Steam Kairi controller slot +0x1530 at 0x68f3e70. Reads command +0x87c and pawn +0x3e8; native alternate dispatcher omits commands 180..185. Live native class-default controller slots independently matched in live-class-profile-proof.json; full Steam ride commands remain untested.",
+      "steam": {
+        "rva": "0x132eba0",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "union_action_aqua",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_union_cross.cpp",
+      "egs": {
+        "rva": "0x1559e20",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native controller action-command vtable +0x1530. Sora commands 180..185 branch to shared pawn interface +0x6e8; alternate dispatchers omit these cases. Live state97 mode6 owns weak ride +0xa4. Steam not audited. 2026-11-02 Steam audit: Steam Aqua controller slot +0x1530 at 0x685af70. Reads command +0x87c and pawn +0x3e8; native alternate dispatcher omits commands 180..185. Live native class-default controller slots independently matched in live-class-profile-proof.json; full Steam ride commands remain untested.",
+      "steam": {
+        "rva": "0x129bda0",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "union_action_roxas",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_union_cross.cpp",
+      "egs": {
+        "rva": "0x1709420",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native controller action-command vtable +0x1530. Sora commands 180..185 branch to shared pawn interface +0x6e8; alternate dispatchers omit these cases. Live state97 mode6 owns weak ride +0xa4. Steam not audited. 2026-11-02 Steam audit: Steam Roxas controller slot +0x1530 at 0x6942d10, anchored by paired input-update slot -0x18. Reads command +0x87c, retains virtual +0x1548 eligibility. Live native class-default controller slots independently matched in live-class-profile-proof.json; full Steam ride commands remain untested.",
+      "steam": {
+        "rva": "0x141bf50",
+        "bytes": "48895c2410488974241848897c242041"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "airstep_eligibility",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_airstep.cpp",
+      "egs": {
+        "rva": "0x176cea0",
+        "bytes": "48895c2408574883ec20488b01488bf9"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native Airstep eligibility checks shared character kind through vtable +0xd70 at 0x176cf24 against Sora kind 1; Kairi default kind 3. Preserves native restrictions, current-state checks, target requirements and state42 factory. EGS only. 2026-11-02 Steam audit: Steam request wrapper at shared interface slot +0x308 calls eligibility +0x300 (0x1426280), then creates state42. Eligibility checks native kind getter +0xd70 ==1, state and target count +0xb20. Scope kind through the complete wrapper; interface remains pawn +0x450.",
+      "steam": {
+        "rva": "0x14372f0",
+        "bytes": "40534883ec20488b01488bd9ff900003"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "airstep_character_kind",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_airstep.cpp",
+      "egs": {
+        "rva": "0x6b2a40",
+        "bytes": "0fb681f0050000c3cccccccccccccccc"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-01: native Airstep eligibility checks shared character kind through vtable +0xd70 at 0x176cf24 against Sora kind 1; Kairi default kind 3. Preserves native restrictions, current-state checks, target requirements and state42 factory. EGS only. 2026-11-02 Steam audit: Steam kind getter reads byte pawn +0x5f0; shared eligibility at 0x14262ca calls pawn virtual +0xd70 and compares kind 1.",
+      "steam": {
+        "rva": "0x541a80",
+        "bytes": "0fb681f0050000c3cccccccccccccccc"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "airstep_aim_kind_gate",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_airstep.cpp",
+      "egs": {
+        "rva": "0x17333e6",
+        "bytes": "0fb683f00500003c010f85950d0000"
+      },
+      "status": "matched_offline",
+      "evidence": "Airstep target-list helper (EGS 0x17332f0, Steam 0x141fdc0), immediately before its Sora-kind filter. Both keep the pawn in RBX. This helper writes target array +0xb18/count +0xb20 and updates the native Airstep marker; it is separate from the shared aiming entry and Shotlock selection.",
+      "steam": {
+        "rva": "0x141fe92",
+        "bytes": "488b03488bcbff90700d00003c010f85"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "airstep_aim_kind_compare",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_airstep.cpp",
+      "egs": {
+        "rva": "0x17333ed",
+        "bytes": "3c010f85950d0000498b9c24"
+      },
+      "steam": {
+        "rva": "0x141fe9e",
+        "bytes": "3c010f85530e0000498b9f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Sora-kind cmp/jne inside Airstep target discovery, with pawn in RBX on both stores. Native failure returns before building +0xb18/+0xb20 and the Airstep marker. Only the comparison input is remapped for the prepared owned alternate; all Shotlock selectors retain the authored identity."
+    },
+    {
+      "id": "glide_request",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x175bc00",
+        "bytes": "40534883ec40488b01488bd90f297424"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-02: native state-interface Glide request, bool(void*, float heading, float input duration). Preserves native capability, Jump-state eligibility and state4 queue creation. Aqua/Kairi input calls interface slot 0x218; Roxas native input omits it. 2026-11-02 Steam audit: Steam shared interface slot +0x218 calls native capability +0x210, handles Jump state3 / Glide4 and initializes Glide +0x88/+0x8c/+0x90. Same bool(void*,float,float) ABI; heading +0xda0 and held-input time +0x854 retained.",
+      "steam": {
+        "rva": "0x143c5b0",
+        "bytes": "40534883ec40488b01488bd90f297424"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "floating_notify",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp",
+      "egs": {
+        "rva": "0x171ab60",
+        "bytes": "48895c24084889742410574883ec2048"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-02: BP_NotifySetFloatingMode exec 0x2cb5370 dispatches controller +0x1608 to shared 0x171ab60; writes low pawn mode bits only. Preserve event on current possession; never force state5 or skip Sora freefall/ground slam. 2026-11-02 Steam audit: Steam controller virtual +0x1608 for Sora/Aqua/Kairi/Roxas points to 0x13ea6c0. Reads pawn +0x3e8 and changes only low two pawn +0xd80 bits; same void(controller,bool,bool) ABI. Live Steam proof 2026-11-02: build 8BD59527F494D9FDA85FA535A49F3E42484CD3A594278EEC4F433C0F2AC1D737; native-continue-ready.log / final-sora-kairi-handoff.json under build/steam-traversal-20261102.",
+      "steam": {
+        "rva": "0x13ea6c0",
+        "bytes": "48895c24084889742410574883ec2048"
+      },
+      "live_steam_validated": true
+    },
+    {
+      "id": "dive_attack_window",
+      "source": "KH3APProbeCpp/kh3ap/features/enemies/enemy_clear/input.cpp",
+      "egs": {
+        "rva": "0x16abbe0",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-02: native jump-state dive command requires substep8, then latches +0x114 mask0x4000 and opens DIVEATTACK=11. Controller native command timer +0x8b8 and kind +0x8bc must remain live. Diagnostic one-shot input waits on this native window and retains identity/expiry guards. 2026-11-02 Steam audit: Steam Jump virtual +0x3a8 checks substep +0x78==8 and flag +0x114 &0x4000, then opens command11 through 0x1414350. Controller kind +0x8bc and timer +0x8b8 confirmed in that native setter. Live Steam proof 2026-11-02: build 8BD59527F494D9FDA85FA535A49F3E42484CD3A594278EEC4F433C0F2AC1D737; native-continue-ready.log / final-sora-kairi-handoff.json under build/steam-traversal-20261102.",
+      "steam": {
+        "rva": "0x13a0040",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "live_steam_validated": true
+    },
+    {
+      "id": "tornado_freefall_begin",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp",
+      "egs": {
+        "rva": "0x1030dc0",
+        "bytes": "48895c24184889742420574883ec4048"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-02: TresAttack7_e_he903_BigTornado native action begin (virtual +0x3c8). Calls boss 0x103d530 / 0x103d480 to initialize blow and cache player. Update at 0x1030fe9 reads boss +0xc70 m_Player, then reads Sora dive position +0x15a0. Return to Sora before original initialization. BP_NotifyForcedStartDiveFall did not fire in the observed boss route and is not used as the phase producer. 2026-11-02 Steam audit: Steam BigTornado custom begin at virtual +0x3c8, table 0x64add30, paired to EGS 0x7825ed8. Calls 0xddaae0 / 0xddb290 for blow/player initialization before native sky sequence; same action +0x68 pawn and void(action*) ABI.",
+      "steam": {
+        "rva": "0xda92f0",
+        "bytes": "48895c24184889742420574883ec4048"
+      },
+      "live_steam_validated": false
+    },
+    {
+      "id": "load_title_delegate_copy",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x18cf2f0",
+        "bytes": "48895c24084889742410574883ec2033"
+      },
+      "steam": {
+        "rva": "0x1559bb0",
+        "bytes": "40534883ec20488bd9b920000000e8dd"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_title_delegate_execute",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x18cf390",
+        "bytes": "4883ec284883c108e81397ffffb00148"
+      },
+      "steam": {
+        "rva": "0x155b4e0",
+        "bytes": "4883ec284883c108e86389ffffb00148"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_game_over_delegate_copy",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x18ab9b0",
+        "bytes": "48895c24084889742410574883ec2033"
+      },
+      "steam": {
+        "rva": "0x15345b0",
+        "bytes": "40534883ec20488bd9b928000000e8dd"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_game_over_delegate_execute",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x18aba60",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "steam": {
+        "rva": "0x15360d0",
+        "bytes": "48895c240848896c2410488974241848"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_game_over_completion",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x1a7f9f0",
+        "bytes": "405556574881eca000000048c7442440"
+      },
+      "steam": {
+        "rva": "0x1706d30",
+        "bytes": "4055565741564157488d6c24c94881ec"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_delegate_free",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_load_completion.cpp",
+      "egs": {
+        "rva": "0x31aafa0",
+        "bytes": "4885c9742e534883ec20488bd9488b0d"
+      },
+      "steam": {
+        "rva": "0x2d19720",
+        "bytes": "4885c9742e534883ec20488bd9488b0d"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-02: paired native load delegate ABI. Both storage layouts use allocation +0x20/count +0x30; clone slot +0x50 populates destination storage, destructor +0x48 receives zero, execute-safe +0x68 forwards result/slot/metadata. Steam clone uses native placement helper 0x422ea0(size,destination), not a returned heap-only clone. Title captures owner +8; GameOver stores weak owner +8 and member callback +0x10. Steam title manager +0x548, GameOver manager +0xd8 and UI manager pause +0x2c8 verified through title completion/retry code."
+    },
+    {
+      "id": "load_continue_selector",
+      "source": "KH3APProbeCpp/kh3ap/features/world/startup/autoload_service.cpp",
+      "egs": {
+        "rva": "0x18c8850",
+        "bytes": "4c8bdc57415641574881eca000000049c74388feffffff49"
+      },
+      "steam": {
+        "rva": "0x1563ac0",
+        "bytes": "488bc45541564157488d68a14881ece000000048c745affe"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": true,
+      "evidence": "2026-11-02: normal newest-save selector. Steam selects the highest in-memory catalog timestamp, carries native metadata mode/flags to title +0x578/+0x579, constructs title delegate 0x6a57a08, reads manager +0x548 and calls slot loader 0x159d9e0 at 0x1563d51. Same void(title*) ABI; no explicit slot override and no save-file reads. Live Steam proof 2026-11-02: build 8BD59527F494D9FDA85FA535A49F3E42484CD3A594278EEC4F433C0F2AC1D737; native-continue-ready.log / final-sora-kairi-handoff.json under build/steam-traversal-20261102."
+    },
+    {
+      "id": "air_jump_available",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x13c25d0",
+        "bytes": "0fb681480e00002401c3"
+      },
+      "steam": {
+        "rva": "0x110e860",
+        "bytes": "0fb681480e00002401c3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "notes": "Native Doubleflight availability bit getter/setter; preserve only this flag across the existing swap transaction."
+    },
+    {
+      "id": "set_air_jump_available",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "egs": {
+        "rva": "0x13c25b0",
+        "bytes": "83a1480e0000fe0fb6c20981480e0000c3"
+      },
+      "steam": {
+        "rva": "0x1112590",
+        "bytes": "83a1480e0000fe0fb6c20981480e0000c3"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "notes": "Native Doubleflight availability bit getter/setter; preserve only this flag across the existing swap transaction."
+    },
+    {
+      "id": "blizzard_projectile_begin",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_rails.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native TresProj_MagicBlizzard BeginPlay: AActor BeginPlay, rail-life +0x88c and spline-class +0x890 gates, spawn spline actor into +0x8a0, assign caster and lifetime. EGS virtual +0x300; paired Steam implementation uses the same reflected fields and spline lifetime setter.",
+      "egs": {
+        "rva": "0x17b2010",
+        "bytes": "40534881eca0000000488b05205154074833c44889"
+      },
+      "steam": {
+        "rva": "0x1471fc0",
+        "bytes": "40574881ec80000000488bf9e82fe3a1020f57c00f"
+      }
+    },
+    {
+      "id": "mp_charge_set",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_magic.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native MP recharge transition, charging flag at pawn+0x7c0 bit 1, remaining seconds at +0x7c4. Paired bodies preserve unrelated flags and invoke normal charge transitions.",
+      "egs": {
+        "rva": "0x745650",
+        "bytes": "48895c2408574883ec40488b010fb6fa"
+      },
+      "steam": {
+        "rva": "0x5b9c60",
+        "bytes": "48895c2408574883ec40488b010fb6da"
+      }
+    },
+    {
+      "id": "mp_charge_flag",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_magic.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native MP recharge transition, charging flag at pawn+0x7c0 bit 1, remaining seconds at +0x7c4. Paired bodies preserve unrelated flags and invoke normal charge transitions.",
+      "egs": {
+        "rva": "0x745870",
+        "bytes": "0fb681c0070000d0e82401c3"
+      },
+      "steam": {
+        "rva": "0x5ad8f0",
+        "bytes": "0fb681c0070000d0e82401c3"
+      }
+    },
+    {
+      "id": "mp_charge_remaining",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_magic.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native MP recharge transition, charging flag at pawn+0x7c0 bit 1, remaining seconds at +0x7c4. Paired bodies preserve unrelated flags and invoke normal charge transitions.",
+      "egs": {
+        "rva": "0x7458ee",
+        "bytes": "f30f1083c4070000"
+      },
+      "steam": {
+        "rva": "0x5ab4b6",
+        "bytes": "f30f1083c4070000"
+      }
+    },
+    {
+      "id": "magic_menu_refresh",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_magic.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native HUD spell/Link reconciliation. Alternate magic comes from the private HudCommandDataAsset MagicCommands pointer cache; normal Sora comes from configured battle commands. Reflective layout checks validate the struct and local byte-pointer caches.",
+      "egs": {
+        "rva": "0x1993020",
+        "bytes": "488bc4554154415541564157488bec48"
+      },
+      "steam": {
+        "rva": "0x1616e70",
+        "bytes": "40555356574154415541564157488bec"
+      }
+    },
+    {
+      "id": "aim_scope_mode",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Paired cockpit SetFlowScope wrapper: EGS 0x18de3e0 -> target owner 0x19dc890, Steam 0x1577520 -> 0x167a8f0. ABI bool(cockpit,int mode). Both target owners store the GFx scope pointer at +0x3a8. EGS runtime labels identify flowScope/flowScopeC and in/loop/out/off; native phase zero precedes the scope's out completion. Production only verifies this site and reads currentLabel for swap eligibility, allowing vanilla teardown to reach off; it never forces a scope mode. Diagnostic-only fixtures use mode 0 to open and mode 1 to close naturally. Mode 6 immediately hides the outline but can retain the filled circular filter. No target-marker entries are removed.",
+      "egs": {
+        "rva": "0x18de3e0",
+        "bytes": "48895c2408574883ec20488bd98bfa"
+      },
+      "steam": {
+        "rva": "0x1577520",
+        "bytes": "48895c2408574883ec20488bd98bfa"
+      }
+    },
+    {
+      "id": "magic_shortcut_refresh",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_magic.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native HUD shortcut refresh reads the three private ShortcutCommands pages through their inline pointer cache, updates per-command availability and publishes the normal HUD. EGS/Steam share command data layouts; GameInstance ownership remains reflected.",
+      "egs": {
+        "rva": "0x1998e20",
+        "bytes": "48894c240841544883ec704c8be1488b"
+      },
+      "steam": {
+        "rva": "0x161efd0",
+        "bytes": "48894c2408574883ec70488bf9488b49"
+      }
+    },
+    {
+      "id": "skeletal_tick_animation",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "USkeletalMeshComponent::TickAnimation(mesh, float delta, bool valid_root_motion). Both entries check SkeletalMesh +0x980, mark queued animation events +0x1100, update SubInstances +0xb50 and AnimScriptInstance +0xb48 using GlobalAnimRateScale +0xbf8. Reviewed zero-delta initialization/OverrideAnimationData callers; delta is XMM1 and root-motion validity is R8B. UAnimInstance::UpdateAnimation obtains its game-thread proxy, synchronizing existing parallel work.",
+      "egs": {
+        "rva": "0x45c1a20",
+        "bytes": "4c8bdc45884318554883ec704883b98009000000410fb6d0"
+      },
+      "steam": {
+        "rva": "0x406fd10",
+        "bytes": "48895c2420554883ec304883b98009000000410fb6e8"
+      }
+    },
+    {
+      "id": "skeletal_refresh_bones",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "USkeletalMeshComponent::RefreshBoneTransforms(mesh, tick_function). Paired SkeletalMesh +0x980 and component-transform-buffer +0x9b4/+0x998 guards, required-bone/curve checks, parallel-task synchronization and synchronous evaluation with a null tick function. Initialization/OverrideAnimationData callers use virtual slot +0xac0 after zero-delta TickAnimation on both images. EGS live TresSkeletalMeshComponent slot +0xac0 resolves to this entry; runtime verifies that slot before calling.",
+      "egs": {
+        "rva": "0x45c4060",
+        "bytes": "488bc4554154415541564157488d6c24a04881ec60010000"
+      },
+      "steam": {
+        "rva": "0x40668d0",
+        "bytes": "405556574154415541564157488d6c24f04881ec10010000"
+      }
+    },
+    {
+      "id": "style_apply_form",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_style.cpp",
+      "egs": {
+        "rva": "0x7590d0",
+        "bytes": "48895c240848896c2410488974241857"
+      },
+      "steam": {
+        "rva": "0x5bd6e0",
+        "bytes": "48895c240848896c2410488974241857"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Shipping pawn form/wear setter, called at StyleChange tick 0x16e4153. Delegates to the possessed pawn ChangeWeapon virtual, preserving equipment slot state. Paired pawn virtual +0x13e0; Steam delegates through +0x12c8 and +0x13c8 with the same form, wear, effect and blend ABI."
+    },
+    {
+      "id": "style_refresh_animation",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_style.cpp",
+      "egs": {
+        "rva": "0x748fc0",
+        "bytes": "40534883ec20488bd984d2740c3a915d"
+      },
+      "steam": {
+        "rva": "0x5a5c40",
+        "bytes": "40534883ec20488bd984d2740c3a915d"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Shipping character animation refresh called by StyleChange entry at 0x16e39ef and controller style change at 0x173cb9c. Paired animation-mode reset reads pawn +0x85d and refreshes the same animation owner; bool is DL on both builds."
+    },
+    {
+      "id": "style_refresh_hud",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_style.cpp",
+      "egs": {
+        "rva": "0x17224f0",
+        "bytes": "48895c240848896c2410488974241857"
+      },
+      "steam": {
+        "rva": "0x140c040",
+        "bytes": "48895c241048896c2418574156415748"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Shipping active-style HUD publisher. Style commands use controller remaining +0xb54 and total +0xb58; called by StyleChange entry and weapon restoration. Steam publisher reads remaining +0xb54 and total +0xb58, stores active command +0xb3c, and publishes via 0x158d7d0; command EDX and optional time XMM2 match EGS."
+    },
+    {
+      "id": "style_offer_finish",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_style.cpp",
+      "egs": {
+        "rva": "0x173b2e0",
+        "bytes": "405355565741544883ec20488bb1e803"
+      },
+      "steam": {
+        "rva": "0x13ee030",
+        "bytes": "48895c241848896c2420565741544883"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Shipping style-finish selector, called with false/true by weapon restoration at 0x173f1f5; handles Aqua Spellweaver 0x99 and finish 0xa7. Paired controller virtual +0x1a28; both read finish-ready +0xb5d, active command +0xb38, and use virtual +0x1578 to offer the finisher."
+    },
+    {
+      "id": "style_offer_command",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_style.cpp",
+      "egs": {
+        "rva": "0x1721cd0",
+        "bytes": "48895c2418555741574883ec50488b99"
+      },
+      "steam": {
+        "rva": "0x140da40",
+        "bytes": "48895c24184889742420574156415748"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Shipping situation-command insertion, controller virtual +0x1578. Diagnostic fixture only; normal input performs the transformation. Paired controller virtual +0x1578, command EDX, duration XMM2, optional actor R9; both resolve command rows through +0x8d8 and publish native situation commands."
+    },
+    {
+      "id": "crowd_player_binding",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_crowd.cpp",
+      "egs": {
+        "rva": "0x1449cb5",
+        "bytes": "488d8e38030000488b93e80300"
+      },
+      "steam": {
+        "rva": "0x1184f63",
+        "bytes": "488d8e38030000488b93e80300"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "InitializeComponent assigns Controller->Pawn (+0x3e8) to its weak player reference at +0x338.",
+      "live_egs_validated": true,
+      "live_egs_evidence": "2026-11-07: Corona RA_END re-entry and in-town swaps as Aqua, Kairi, Roxas and Riku retained current-pawn crowd ownership and visible villagers. Aqua/Kairi/Roxas returns to Sora passed. Riku resource restoration and return remain separately blocked by character_magic_meter_restore."
+    },
+    {
+      "id": "crowd_player_tick",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_crowd.cpp",
+      "egs": {
+        "rva": "0x144a78a",
+        "bytes": "49638d38030000"
+      },
+      "steam": {
+        "rva": "0x1194e6b",
+        "bytes": "49638d38030000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "TickComponent resolves the weak player index at +0x338 and serial at +0x33c before crowd updates.",
+      "live_egs_validated": true,
+      "live_egs_evidence": "2026-11-07: Corona RA_END re-entry and in-town swaps as Aqua, Kairi, Roxas and Riku retained current-pawn crowd ownership and visible villagers. Aqua/Kairi/Roxas returns to Sora passed. Riku resource restoration and return remain separately blocked by character_magic_meter_restore."
+    }
+  ],
+  "remaining_requirements": [
+    "Recorded coverage is limited to the actions summarized in docs/CHARACTER_RUNTIME.md; it does not certify a newly built DLL.",
+    "Wall-run equipment gates, ground-slam hits, chests/ingredients/mast/ship interactions, shotlock damage scaling and cinematic handoffs still need dedicated Steam fixtures.",
+    "Steam presented-frame performance is not established by the recorded coverage. Validate each changed DLL on EGS; the low-level swap timing tracer is EGS-only."
+  ],
+  "layout_differences": [
+    {
+      "field": "UI manager game/save instance",
+      "egs": "0x140",
+      "steam": "0x180",
+      "evidence": "EGS roster owner loads; Steam 0x154c85f loads R15 from [RAX+0x180]."
+    },
+    {
+      "field": "UI manager character catalog",
+      "egs": "0x360",
+      "steam": "0x3a0",
+      "evidence": "EGS roster catalog load; Steam 0x154c86f loads R12 from [RAX+0x3a0]."
+    },
+    {
+      "field": "Catalog story value storage/access path",
+      "egs": "0x8664",
+      "steam": "0x7df4",
+      "evidence": "Steam calls 0xea8620 on the game instance at 0x154c8ae, then 0x154c8b6 reads R13D from the returned bank +0x7df4; EGS reads its owner +0x8664 directly.",
+      "steam_bank_accessor_rva": "0xea8620"
+    },
+    {
+      "field": "Nested mesh-owner virtual call in animation play",
+      "egs": "0x438",
+      "steam": "0x430",
+      "evidence": "EGS 0x6f50ee and Steam 0x56ee3b; virtual-slot offsets cannot use a global address delta."
+    }
+  ]
+}

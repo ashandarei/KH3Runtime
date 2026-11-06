@@ -1,0 +1,33 @@
+name: Trusted native build
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    # Only manually dispatched builds may use the licensed-header runner.
+    runs-on: [self-hosted, Windows, X64, kh3-native]
+    environment: native-build
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: '3.11'
+      - name: Catalog and regression checks
+        shell: pwsh
+        run: |
+          python scripts/generate_catalogs.py --check
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime catalog validation failed.' }
+          ./scripts/test.ps1 -VcVarsVer 14.38
+      - name: Prepare reviewed dependency sources
+        shell: pwsh
+        run: ./scripts/setup.ps1
+      - name: Diagnostic and player configurations
+        shell: pwsh
+        run: |
+          ./scripts/build.ps1 -EnableDiagnostics
+          ./scripts/build.ps1
+          ./scripts/package.ps1

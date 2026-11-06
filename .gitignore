@@ -1,0 +1,14 @@
+/.env
+/.env.*
+!/.env.example
+/CMakeUserPresets.json
+/build*/
+/vendor/
+/dist/
+/artifacts/
+/tmp/
+/temp/
+__pycache__/
+*.pyc
+*.pdb
+*.obj

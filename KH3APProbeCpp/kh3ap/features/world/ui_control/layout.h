@@ -1,0 +1,121 @@
+#pragma once
+#include <Unreal/NameTypes.hpp>
+#include <array>
+#include <chrono>
+#include <cstdint>
+
+namespace kh3ap::ui_control_detail
+{
+    inline constexpr auto data_table_row_pointer_offset = sizeof(RC::Unreal::FName);
+
+    inline constexpr auto max_cutscene_pause_parameter_bytes = 128;
+    inline constexpr auto hud_main_command_list_offset = 0x4d8;
+    inline constexpr auto hud_subcommand_names_offset = 0x588;
+    inline constexpr auto hud_subcommand_rows_offset = 0x4f8;
+    inline constexpr auto hud_root_offset = 0x310;
+    inline constexpr auto hud_main_command_count = 4;
+    inline constexpr auto hud_subcommand_count = 9;
+    inline constexpr auto sora_magic_point_offset = 0x604;
+    inline constexpr auto game_flag_result_offset = 8;
+    inline constexpr auto game_flag_parameter_bytes = sizeof(RC::Unreal::FName) + sizeof(int32_t);
+    inline constexpr auto maximum_window_mode = 2;
+    inline constexpr auto garden_selection_row_bytes = 0xd8;
+    inline constexpr auto garden_selection_player_start_offset = 0x10;
+    inline constexpr auto kg05_sora_riku_story_state = 13000;
+    inline constexpr auto kg05_sora_riku_selection_state = 1000;
+    inline constexpr auto kg05_aqua_sora_story_state = 13500;
+    inline constexpr auto kg05_aqua_sora_selection_state = 1060;
+    inline constexpr auto kg06_initial_selection_story_state = 22100;
+    inline constexpr auto kg06_retry_selection_story_state = 22200;
+    inline constexpr auto kg06_final_selection_story_state = 22250;
+    inline constexpr auto data_table_row_struct_offset = 0x40;
+    inline constexpr auto data_table_row_map_entry_bytes = 24;
+    inline constexpr auto synthesis_requirement_flag_offset = 0x78;
+    inline constexpr auto synthesis_requirement_count_offset = 0x68;
+    inline constexpr auto game_instance_item_manager_offset = 0x488;
+    inline constexpr auto egs_synthesis_craft_rva = 0x13eeb50;
+    inline constexpr auto egs_item_convert_category_check_rva = 0x13ed0b6;
+    inline constexpr auto egs_synthesis_deposit_rva = 0x13ee260;
+    inline constexpr auto egs_item_token_conversion_rva = 0x13ed0b0;
+    inline constexpr auto synthesis_material_slot_count = 6;
+    inline constexpr auto synthesis_material_slot_bytes = 0x10;
+    inline constexpr auto synthesis_material_cost_offset = 0x10;
+    inline constexpr auto synthesis_material_token_offset = 8;
+    inline constexpr auto synthesis_material_item_category = 7;
+    inline constexpr auto synthesis_stock_offset = 0x941c;
+    inline constexpr auto pause_root_offset = 0x748;
+    inline constexpr auto pause_resume_button_offset = 0x778;
+    inline constexpr auto pause_other_button_offset = 0x780;
+    inline constexpr auto game_instance_pause_type_offset = 0x8d0;
+    inline constexpr auto pause_menu_type_offset = 0x6d0;
+    inline constexpr auto pause_selected_index_offset = 0x6d4;
+    inline constexpr auto message_dialog_vtable_rva = 0x7c5b4f0;
+    inline constexpr auto graveyard_gate_command_index = 2;
+    inline constexpr auto arendelle_gate_command_index = 8;
+    inline constexpr auto max_garden_dialog_choices = 3;
+    inline constexpr auto max_garden_dialog_choice_capacity = 8;
+    inline constexpr auto choice_dialog_text_offset = 0x268;
+    inline constexpr auto choice_dialog_choices_offset = 0x278;
+    inline constexpr auto choice_dialog_count_offset = 0x280;
+    inline constexpr auto choice_dialog_capacity_offset = 0x284;
+    inline constexpr auto choice_dialog_selected_index_offset = 0x264;
+    inline constexpr auto garden_computer_choices_offset = 0x690;
+    inline constexpr auto garden_computer_choice_count_offset = 0x698;
+    inline constexpr auto garden_computer_choice_count = 3;
+    inline constexpr auto garden_computer_choice_bytes = 64;
+    inline constexpr auto garden_computer_choice_text_offset = 0x30;
+    inline constexpr auto egs_computer_choice_decide_rva = 0x1a49950;
+    inline constexpr auto help_latent_info_offset = 8;
+    inline constexpr auto help_id_offset = 32;
+    inline constexpr auto help_with_pause_offset = 33;
+    inline constexpr auto help_parameter_storage_bytes = 40;
+    inline constexpr auto space_overview_help_id = 102;
+    inline constexpr auto graveyard_tutorial_help_id = 30;
+    inline constexpr auto links_ability_id = 134;
+    inline constexpr auto player_selector_left_info_offset = 0x250;
+    inline constexpr auto player_selector_manager_offset = 0x70;
+    inline constexpr auto player_selector_tick_vtable_offset = 0x2d0;
+    inline constexpr auto player_selector_selected_index_offset = 0x278;
+    inline constexpr auto player_selector_enabled_flags_offset = 0x274;
+    inline constexpr auto egs_message_confirm_rva = 0x1a4b540;
+    inline constexpr auto egs_message_page_check_rva = 0x1a4b697;
+    inline constexpr auto message_completion_state_offset = 0x290;
+    inline constexpr auto game_over_retry_action = 2;
+    inline constexpr auto pause_game_over_offset = 0x7b0;
+    inline constexpr auto game_over_retry_vtable_index = 78;
+    inline constexpr auto game_over_buttons_offset = 0x390;
+    inline constexpr auto game_over_owner_offset = 0xd0;
+    inline constexpr auto gummi_free_flight_game_over_type = 9;
+    inline constexpr auto gummi_battle_game_over_type = 10;
+    inline constexpr auto gummi_free_flight_retry_action = 7;
+    inline constexpr auto gummi_battle_retry_action = 6;
+    inline constexpr auto game_over_buttons_per_type = 5;
+    inline constexpr auto game_over_action_row_bytes = 20;
+    inline constexpr auto maximum_remote_capture_lifetime_ms = 120000;
+    using ViewportSize = std::array<int, 2>;
+
+    inline constexpr auto max_gfx_diagnostic_depth = 3;
+    inline constexpr auto max_gfx_diagnostic_children = 12;
+    inline constexpr auto death_ui_kind_count = 16;
+    inline constexpr auto command_key_hold_timeout = std::chrono::milliseconds(1500);
+    inline constexpr auto notice_advance_interval = std::chrono::milliseconds(500);
+    inline constexpr auto ui_request_update_interval = std::chrono::milliseconds(100);
+    inline constexpr auto max_remote_screenshot_parameter_bytes = 256;
+    inline constexpr auto max_flight_damage_parameter_bytes = 128;
+    inline constexpr auto max_command_tree_nodes = 192;
+    inline constexpr auto max_ui_command_parameter_bytes = 4096;
+    inline constexpr auto minimum_viewport_width = 640;
+    inline constexpr auto maximum_viewport_width = 7680;
+    inline constexpr auto minimum_viewport_height = 360;
+    inline constexpr auto maximum_viewport_height = 4320;
+    inline constexpr auto max_ui_value_entries = 128;
+    inline constexpr auto max_garden_selection_rows = 512;
+    inline constexpr auto max_synthesis_selection_rows = 256;
+    inline constexpr auto max_movie_roster_entries = 256;
+    inline constexpr auto max_message_text_characters = 4096;
+    inline constexpr auto max_message_text_capacity = 8192;
+    inline constexpr auto minimum_command_key_parameter_bytes = 34;
+    inline constexpr auto maximum_command_key_parameter_bytes = 40;
+    inline constexpr auto max_notice_pages = 32;
+    inline constexpr auto ui_command_history_limit = 64;
+} // namespace kh3ap::ui_control_detail

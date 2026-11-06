@@ -1,0 +1,62 @@
+#pragma once
+#include <array>
+namespace kh3ap {
+// Text substitution values from the original TresChallenge SubTextNum rows.
+inline constexpr std::array<int,51> kh02_challenge_description_numbers{{
+    30,45,40,30,20,20,60,70,80,5,30,30,50,0,5,1,5,6,50,0,0,0,20,0,0,0,0,0,7,0,0,3,50,3,5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+}};
+struct Kh02ChallengeDefinition {const wchar_t* title;};
+inline constexpr std::array<Kh02ChallengeDefinition,51> kh02_challenges{{
+    {L"1. Defeat Shadows"},
+    {L"2. Defeat Flutterings"},
+    {L"3. Defeat Flame Cores"},
+    {L"4. Defeat Neoshadows"},
+    {L"5. Defeat Water Cores"},
+    {L"6. Defeat Earth Cores"},
+    {L"7. Reach Level 60"},
+    {L"8. Reach Level 70"},
+    {L"9. Reach Level 80"},
+    {L"10. Counter Blast Finish"},
+    {L"11. Firaga Finish"},
+    {L"12. Blizzaga Finish"},
+    {L"13. Thundaga Finish"},
+    {L"14. Ice Rail Slide"},
+    {L"15. Ice Breaker"},
+    {L"16. Magic Weakness"},
+    {L"17. Aerial Combat"},
+    {L"18. Excellent Shotlocks"},
+    {L"19. Style Change Kills"},
+    {L"20. Spellweaver Finish"},
+    {L"21. Spellweaver with Full Wardrobe"},
+    {L"22. Equip a Wardrobe Piece"},
+    {L"23. Strike Streetlamps"},
+    {L"24. Castle Town Highest Point"},
+    {L"25. Watch the Shooting Stars"},
+    {L"26. Clear the Mirror Rooms"},
+    {L"27. Dark Room Battle"},
+    {L"28. Find the True Treasure"},
+    {L"29. Collect the White Gems"},
+    {L"30. Connect the Mirror Pattern"},
+    {L"31. Phantom Aqua Spin"},
+    {L"32. Defeat the Darksides"},
+    {L"33. Destroy Thorns"},
+    {L"34. Find All Flowers"},
+    {L"35. Fight Alongside Mickey"},
+    {L"36. Demon Tower Spellweaver Finish"},
+    {L"37. Castle Town All Treasures"},
+    {L"38. Castle Town Secret"},
+    {L"39. World Within All Treasures"},
+    {L"40. World Within Secret"},
+    {L"41. Phantom Aqua No Damage"},
+    {L"42. Boss Rush"},
+    {L"43. Collect All Zodiac Relics"},
+    {L"44. Forest of Thorns All Treasures"},
+    {L"45. Forest of Thorns Secret"},
+    {L"46. Forest Rail No Damage"},
+    {L"47. Darkside No Damage"},
+    {L"48. Depths of Darkness All Treasures"},
+    {L"49. Depths of Darkness Secret"},
+    {L"50. Demon Tower Team Finish"},
+    {L"51. Demon Tide on Critical"},
+}};
+}

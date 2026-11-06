@@ -1,0 +1,408 @@
+{
+  "schema": "kh02.runtime_metadata.v1",
+  "aliases": [
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresCameraTarget",
+      "name": "SetTargetLocalOffset",
+      "prototype": "/Script/TresGame.TresCameraTarget:BP_SetTargetLocalOffset",
+      "handler": "nullptr"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresCameraTarget",
+      "name": "SetTargetOffset",
+      "prototype": "/Script/TresGame.TresCameraTarget:BP_SetTargetOffset",
+      "handler": "nullptr"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresCameraTarget",
+      "name": "AttachTarget",
+      "prototype": "/Script/TresGame.TresCameraTarget:BP_AttachTresCameraTarget",
+      "handler": "nullptr"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "TresWaitTextureStreaming",
+      "prototype": "/Script/TresGame.TresLevelStatics:TresWaitTextureStreaming",
+      "handler": "nullptr"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "TresUI_OpenCountUI",
+      "prototype": "/Script/Engine.KismetMathLibrary:Add_IntInt",
+      "handler": "compat_thunk<0>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "TresUI_SetCount",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_SetMissionCounter",
+      "handler": "compat_thunk<1>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "TresUI_CloseCountUI",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_CloseMissionCounter",
+      "handler": "compat_thunk<2>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresSoundStatics",
+      "name": "PlayBGM",
+      "prototype": "/Script/TresGame.TresSoundStatics:TresPlaySound2D_BP",
+      "handler": "compat_thunk<3>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresSoundStatics",
+      "name": "FadeOutBGM",
+      "prototype": "/Script/TresGame.TresSoundStatics:TresPlaySound2D_BP",
+      "handler": "compat_thunk<4>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_CloseWindow",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_SetMissionCounter",
+      "handler": "compat_thunk<5>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresCameraBase",
+      "name": "SettingTresCamera",
+      "prototype": "/Script/TresGame.TresCameraBase:BP_SettingTresCamera",
+      "handler": "compat_thunk<6>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_PrepareVideo",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_PrepareVideo",
+      "handler": "compat_thunk<7>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_ResumeVideo",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_ResumeVideo",
+      "handler": "compat_thunk<8>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_WaitVideoReady",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_WaitForVideoFinish",
+      "handler": "compat_thunk<9>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_ApplyMapSet",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresApplyMapSet",
+      "handler": "compat_thunk<10>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/Engine.LevelStreamingKismet",
+      "name": "KH02_EntryLevelsVisible",
+      "prototype": "/Script/Engine.ActorComponent:Deactivate",
+      "handler": "levels_shown"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresPlayerControllerBase",
+      "name": "KH02_NoMagic",
+      "prototype": "/Script/TresGame.TresPlayerControllerBase:BP_SetAbilityMagic",
+      "handler": "compat_thunk<11>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_SkipHelp",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_OpenGameHelp",
+      "handler": "compat_thunk<12>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_LampHit",
+      "prototype": "/Script/Engine.KismetMathLibrary:MakeVector",
+      "handler": "compat_thunk<13>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_SkipNotice",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_OpenMessage",
+      "handler": "compat_thunk<14>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02BC",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<15>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_NoBonus",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:BP_TresGetVictoryBonus",
+      "handler": "compat_thunk<19>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_StoryTravel",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresMapJump",
+      "handler": "compat_thunk<16>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02CS",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<20>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02CC",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<21>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02CStart",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<22>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_CItem",
+      "prototype": "/Script/Engine.KismetMathLibrary:MakeVector",
+      "handler": "compat_thunk<23>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_ThornHit",
+      "prototype": "/Script/Engine.KismetMathLibrary:MakeVector",
+      "handler": "compat_thunk<28>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresPlayerPawnBase",
+      "name": "KH02_LookStart",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<29>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresPlayerPawnBase",
+      "name": "KH02_LookEnd",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<30>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02S",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<22>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02COn",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<25>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02COff",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<26>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_PlayVideo",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<37>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_WaitVideoEnd",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_WaitForVideoFinish",
+      "handler": "compat_thunk<33>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_IsVideoPlaying",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<34>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_StopVideo",
+      "prototype": "/Script/Engine.ActorComponent:Deactivate",
+      "handler": "compat_thunk<35>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_MatineeForMovie",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<36>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02Try",
+      "prototype": "/Script/Engine.KismetMathLibrary:Not_PreBool",
+      "handler": "compat_thunk<32>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresAchievementStatics",
+      "name": "KH02_NoAchievement",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<31>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_LoadReady",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresUI_CloseLoadingScreen",
+      "handler": "compat_thunk<38>"
+    },
+    {
+      "phase": "initial",
+      "owner": "/Script/TresGame.TresCharPawnBase",
+      "name": "KH02_RoofState",
+      "prototype": "/Script/TresGame.TresCharPawnBase:GetStateID",
+      "handler": "compat_thunk<39>"
+    },
+    {
+      "phase": "after_signs",
+      "owner": "/Script/TresGame.TresGameBlueprintLibrary",
+      "name": "KH02_MJump",
+      "prototype": "/Script/TresGame.TresGameBlueprintLibrary:TresMapJump",
+      "handler": "compat_thunk<24>"
+    },
+    {
+      "phase": "after_enums",
+      "owner": "/Script/Engine.Actor",
+      "name": "KH02_NavBegin",
+      "prototype": "/Script/Engine.Actor:K2_DestroyActor",
+      "handler": "compat_thunk<17>"
+    },
+    {
+      "phase": "after_enums",
+      "owner": "/Script/Engine.Actor",
+      "name": "KH02_NavTick",
+      "prototype": "/Script/Engine.Actor:SetLifeSpan",
+      "handler": "compat_thunk<17>"
+    },
+    {
+      "phase": "after_enums",
+      "owner": "/Script/TresGame.TresSoundStatics",
+      "name": "IsSuspendedBGM",
+      "prototype": "/Script/SQEXSEAD.SQEXSEADStatics:IsPlayingBGM",
+      "handler": "compat_thunk<27>"
+    },
+    {
+      "phase": "after_enums",
+      "owner": "/Script/TresGame.TresSoundStatics",
+      "name": "SetVolumeBGM",
+      "prototype": "/Script/SQEXSEAD.SQEXSEADBGMSlotController:SetVolume",
+      "handler": "compat_thunk<18>"
+    }
+  ],
+  "areas": [
+    {
+      "area": 2,
+      "title": "Castle Town",
+      "package": "/Game/Maps/APKH02CastleTown/APKH02CastleTown",
+      "tag": "APKH02CastleStart",
+      "initial_nav": "AP02_dw02_02",
+      "selectable": true
+    },
+    {
+      "area": 3,
+      "title": "The World Within",
+      "package": "/Game/Maps/APKH02WorldWithin/APKH02WorldWithin",
+      "tag": "dw_03_Lv_Start_01",
+      "initial_nav": "AP02_dw03_01",
+      "selectable": true
+    },
+    {
+      "area": 4,
+      "title": "The World Within: Stairs",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Stairs",
+      "tag": "dw_04_Lv_Start_01",
+      "initial_nav": "AP02_dw04_01",
+      "selectable": false
+    },
+    {
+      "area": 5,
+      "title": "The World Within: Corridor",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Corridor",
+      "tag": "dw_05_Lv_Start_01",
+      "initial_nav": "AP02_dw05_01",
+      "selectable": false
+    },
+    {
+      "area": 6,
+      "title": "The World Within: Tunnel",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Tunnel",
+      "tag": "dw_06_Lv_Start_01",
+      "initial_nav": "AP02_dw06_01",
+      "selectable": false
+    },
+    {
+      "area": 8,
+      "title": "Forest of Thorns",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Forest",
+      "tag": "dw_08_Lv_Start_01",
+      "initial_nav": "AP02_dw08_01",
+      "selectable": true
+    },
+    {
+      "area": 9,
+      "title": "Depths of Darkness",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Depths",
+      "tag": "dw_09_Lv_Start_01",
+      "initial_nav": "AP02_dw09_01",
+      "selectable": true
+    },
+    {
+      "area": 7,
+      "title": "Phantom Aqua",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02Phantom",
+      "tag": "dw_07_Lv_Start_01",
+      "initial_nav": "None",
+      "selectable": false
+    },
+    {
+      "area": 11,
+      "title": "Mirror Challenge",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02MirrorChallenge",
+      "tag": "dw_11_Lv_Start_01",
+      "initial_nav": "None",
+      "selectable": false
+    }
+  ]
+}

@@ -1,0 +1,1604 @@
+{
+  "schema": "kh02.compatibility_rules.v1",
+  "mirror": {
+    "Levels/dw/dw_07/dw_07": {
+      "header": "d847a4863c147c2e514e0a1e62a8f036277280059dda95cf7ae396e4e94db3fb",
+      "exports": [
+        "5d169fdd304526ab7afff61e330b02a35a98738736877c644a2e77ab58ec1a37",
+        "b465182a9094c0313b9ecb12260a6d42ea457676b3ca699d42b6e8410f9ba717"
+      ],
+      "challenge": false,
+      "prepare_volume": true,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_04/umap/dw_04_challenge": {
+      "header": "431037b7b05443de296ba11fe4bfb0795d407547a4ac441e67ea653ad171ae49",
+      "exports": [
+        "31e64865097bac845a69d28207d6e6781559870d9683fd99aa390ee0ffcdda31",
+        "87f5af9e23fcfc33003032540c2b253a17b8d22fc152aae49684485af2fcbeef"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_05/umap/dw_05_challenge": {
+      "header": "21debc8bfcfea2b3011ed75ee67b4395c4896d035b63f907f77d6cdc04d71976",
+      "exports": [
+        "1019169ac9449a0c244561037db32a1c77a223e350a22f0402e3f81bff751dbf",
+        "e7e0def28598c4524f37a3ac4fb568a82d10f80d7eece62cdce2f0350156adab"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_06/umap/dw_06_challenge": {
+      "header": "2842a1f5ba323dda6f56669bf06be37000b290033472c23de433105c264e830d",
+      "exports": "e8994228afa2b7053990582c2b95dc9c391dc655cd10760640ef946919cb6e93",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_06/umap/dw_06_camera_ms220": {
+      "header": "2bc7c0b396b91853189cff3a704d83543d666b8dd7e80b442ea91cf8dc4d9dec",
+      "exports": [
+        "3b19801bda7b345d6e405be935044ce9b8cfb831170c5944fdf55e889662704f",
+        "8c45db10d073d214a7d8c6de641b23fcb3e8b19ef088af7d43bbf80391f30919"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_07/umap/dw_07_enemy": {
+      "header": "38594baa8a4edd45b65f23406e63c89b92a3550d9682c8ed9893086b44acd8ab",
+      "exports": [
+        "44a3d09e345653e752cd816e53814208354189c1cd3af109ba6764d3c22e0c85",
+        "821aa89f0e8b1d706290d3c037b6855d4f7f8cd7298169b73e06e3fa93c92583"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "UI/Data/rebellis02/Map/Map_dw04": {
+      "header": "a7048f4e8b5485f1ad5f939a99b4cd7eea01ac84f3b2c3c330b42545bf3745b5",
+      "exports": "f41e6fffed955b50f97bdb4e8a2611e17888c10b9553850b4ed46dbd50d09611",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": true,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "UI/Data/rebellis02/Map/Map_dw05": {
+      "header": "b68e9abc5e09c57a89b3354e22789c0ebed5e22c7986a71b4b58b3b97d265f2a",
+      "exports": "f41e6fffed955b50f97bdb4e8a2611e17888c10b9553850b4ed46dbd50d09611",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": true,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "UI/Data/rebellis02/Map/Map_dw06": {
+      "header": "5969ce5457ccf8fe1250b24abe31505ffe7ac4a15c9aacf6df7547429699091f",
+      "exports": "9c6762c8ffb7d0c7ff84f11fd8076dc5f2926af26735c5d83629204ef6b5d328",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": true,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/dw_08": {
+      "header": "1e3cbbb47956bea33462dc6ba0b565b6604a8d40a926f41ea24524db9a5f7c81",
+      "exports": "c92d3d5731560bac2defd6d405e850db5c958f81e7b4ab04540826f8107caf74",
+      "challenge": false,
+      "prepare_volume": true,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_gameflow": {
+      "header": "2b5cf521eaa29d8a4771ec7544746f4809d5d61b2a0e051966b627a5ccaac7cc",
+      "exports": "9273fb64e695f3be17332903f73434e92619f94e1adbe1e23272f32b2e995b01",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_enemy": {
+      "header": "9f720a89c0b5dc53445c343bf71881781ed5325e247f518e51d812951c57373c",
+      "exports": [
+        "5a28f19648f2bae0e89fb6b7ff4fd7bbec6015a376f609da80163189c2da9824",
+        "0af03f3137768bf242dff7047246928d5a786175100ee1dcf729af5a9b36a8cb"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_challenge": {
+      "header": "656b52c598b2556d81a9f65fa66969f21b0b681ae9c9a6f0fe79b4d4fccc0869",
+      "exports": [
+        "bf9c4d33afdf986a086ba3dbbbadd026c2b4cac3f077013abdb5fba43a709807",
+        "b35a6c104c0a65951e3512904217c07615b0e04f7cb73660cc0fe59982032fee"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0131": {
+      "header": "b2b4f65d07378181d35f6c3f69db2affe769ce1aaa93abf7722c705f5b4b31d0",
+      "exports": [
+        "79f9cff19d679fc294dcb9ac3e72b75f507a3f023a6cb1a93c79bb4175e76aee",
+        "cd390d8b70a03fe19facd26ca80cd1eff817a2d8f5630ecc1913abe46bad7c2f"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Blueprints/Gimmick/dw/g_dw_Thorn/g_dw_ThornBase": {
+      "header": "c2e7a691021b9b6766e5e065bb3927ca372a899cc1d66298e46ae759da92a265",
+      "exports": "1d50a2af0ecd4edd1b8e50aacb4d62a59d54722bca4585f2b7535993252f763a",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "UI/Data/rebellis02/Map/Map_dw08": {
+      "header": "561540e9187d6e48bb795a2309ebda12fcbdd45067a562ce07334fa41b53e60e",
+      "exports": "f41e6fffed955b50f97bdb4e8a2611e17888c10b9553850b4ed46dbd50d09611",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": true,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0110e": {
+      "header": "94fada0382ed5892c665838e86ef48b61ff109fd463482e0408c344801132ed6",
+      "exports": [
+        "76bdf404998e2075a75f38458c9898005caf78048e05292659f94c3c2473e17a",
+        "84662125cdba37b900e1c2f4e91d91ae34f8e31311dd5edfd521d8a62ab9a434"
+      ],
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0111": {
+      "header": "557d4df3cd5ad2062ca2bb4abd90213374bf466d247140a4041d1d7f4d1400e4",
+      "exports": [
+        "74fe331ab76887893c7b4ac6515f91d6ab956c60b64130bfc54ec8a9cfe014c4",
+        "b66c7ee5b997a0ffa7b3e2af302911b53b6270f251e920d56c60233e8e6f4eb2"
+      ],
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_09/umap/dw_09_enemy": {
+      "header": "42c5bac4c8b4f33f19e167e3ccca0f0ce83f637a070d5978fe7a568f93e4d0c5",
+      "exports": [
+        "f1f9202d65c9ce59948d008e635495613c66573ea1f45829b4e92c4faddc4002",
+        "231897abd415b247ff65d36c4e9ab2a49a38a959fd9c08d2a05f08b9cc767be5"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_09/umap/dw_09_challenge": {
+      "header": "96637fc6015fc601f2aa9feafd7e9648ebe1b410d63a865f62564a24f18fac39",
+      "exports": [
+        "bac09225cfbf6c502bd882635673989b3c286268348a6d192f1bac2af184ecbf",
+        "73708dd3fac6b96835c6cf0b7e4d8359de61e561c52d564b883801b51728bf23"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_09/dw_09": {
+      "header": "44e99f61a1cf6a8ef870a5455bfab5a75464cb2d2944a3fc237fa576800cfc3c",
+      "exports": [
+        "5740e754338cfb24516ace2964e8b4653cbfabe640643ae39b13d3201c604edc",
+        "535486c584eb366f027932b2a8ea70896827ab52f737341857e8acb49b854e92"
+      ],
+      "challenge": false,
+      "prepare_volume": true,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_10/umap/dw_10_enemy": {
+      "header": "3a125ecdd9c1685d03527f49966309ce9e5e48a12b926a9198c5883973cb0b8e",
+      "exports": [
+        "d36519fea0162a1318cfd8313f49d81b6421862e894b85d9a753906baee89736",
+        "0beb11d7e685e2295237a9f695165ddb351cac7a98bcafa82bafd5a5655d9ddb"
+      ],
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_59/dw_59": {
+      "header": "50b228988ee538f12f1841bcbe026c77ceba391414bf7cd2fe2b6f379d677b5f",
+      "exports": [
+        "f4d93caec4fdf298191d21191f15dd3b9c89794a4e77fa19689ec7f36e57d415",
+        "fa1d8397d980582f499161fcde197414134a280e62ee4aff6c08553cd1d276ca"
+      ],
+      "challenge": false,
+      "prepare_volume": true,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "UI/Data/rebellis02/Map/Map_dw09": {
+      "header": "43e29830b3768d5538d9c7cf50c3d92119a2bac1d9308d7222d020c8e780b389",
+      "exports": "152da34f3e018d6755250ff8d6b83cd5f381e889df2f78456293a796a0968719",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": true,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_02/umap/dw_02_challenge": {
+      "header": "e49bd66a44af8348cfa305b46c9bb8fe486cd44fc100df8bc5980e0ac7372237",
+      "exports": "0358b2b8300a0aeba0c5537151840f465828af75e28a337e55ff018f6b6ccf3b",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "fieldvoice_component": true,
+      "player_look_at": false
+    },
+    "Levels/dw/dw_02/umap/dw_02_camera_ms201": {
+      "header": "22f01d507bd7bfb02a654c37089ceea5ecfefc0c6c3e46f2efe12c53a3e68211",
+      "exports": "3fea8b96eacee8052f2add5c399cb3dfdd79aa5756a6a6510fc08e14cb5dcf75",
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    },
+    "Blueprints/Gimmick/dw/g_dw_ShootingStar/g_dw_ShootingStar": {
+      "header": "4af1d779eb8e63b4f5d75c6d4b99d96a2ab4ac8b0e40939634dc0b814bef820e",
+      "exports": "7f768db38c2499ba15bf9bbdfaed7d47e7e2b08afd3b29001efa4be0b91bfadc",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": false,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_09/umap/dw_09_camera_ms150e": {
+      "header": "3baf75e7ebfd07824ad85e12b1e8b0c441e7b6dbe8613223bb67f2c6332c62ca",
+      "exports": [
+        "a06701bb6db55f2140bcdc02de02158706662b57f5414aa06633c9375af27ef3",
+        "14b1091c474e880d86b668ee6a815f7b2df21d9a6ffdbe06872b36ddb53fa2ed"
+      ],
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_11/umap/dw_11_camera_ms240": {
+      "header": "892bc48f56396a9740838dbcf2886b3205dd0e0ddc4fa131417c5d3c3f9e7116",
+      "exports": [
+        "a202081c8fa95daaf23e723e52beab5a0a5e71d827d1f0d9747c03401145b876",
+        "bb0dfdb2877abfb0a8217d184ab6bb01a9f9628dc9877dfe0c91a871e39515fa"
+      ],
+      "challenge": false,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    },
+    "Levels/dw/dw_02/umap/dw_02_camera_ms200": {
+      "header": "221e1c56ca0ade8ecc48d64da9903609d32412b5e2ee64b9d0d60420c8d24a2b",
+      "exports": "37393a06ec34cfad05b3fb0cc095d3934d78cc6b9cf61b3d3dde1006ff640b7c",
+      "challenge": true,
+      "prepare_volume": false,
+      "nav_data": false,
+      "player_look_at": true,
+      "fieldvoice_component": false
+    }
+  },
+  "cutscene_lighting": {
+    "Cutscene/Localization/en/dw/cutscene_dw02_dw012": {
+      "exports_sha256": "cfe8148d58b7db6bec203b6487ed88152153f1386c068b5ae68cd492d17251b7",
+      "export_offset": 62928,
+      "export_size": 1220,
+      "export_sha256": "afc5900bc52c8fd60321928e284df21e7866c693e4ce0d21a528f35bfcc019a3",
+      "key_count": 6
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw07_dw019": {
+      "exports_sha256": "36d56a85c2211fd532ccd77be5d71b35e2a9178f0e9f3ba88f082bd912e6e8bc",
+      "export_offset": 13257,
+      "export_size": 560,
+      "export_sha256": "7486aa3b317bdf3f1d6ec5e9db65f217d3e146234eeea56adda2c688f36723a3",
+      "key_count": 2
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw07_dw018": {
+      "exports_sha256": [
+        "9c420df4bf07ae64dede9bc9e4d57928125b83d9eebf1aebbc6b8a63ad120b68",
+        "916d556d9460461c6ad3636cdc5bd47df9701c1b93d03acd5556fe092b8fff79"
+      ],
+      "export_offset": 13492,
+      "export_size": 890,
+      "export_sha256": "24b5ccc40a1ebe026911181c60202fd8374e0f52a7afc201c488fc5234b2de41",
+      "key_count": 4
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw07_dw017": {
+      "exports_sha256": [
+        "810cf88ec12fa01ff0aa920fc0c7ff4bce6a2461380597cb66993c7d8e6e7f4c",
+        "c073f29961b56d2c9c71b229b90c025a059889efa90bfb6e24bec3430a74c378"
+      ],
+      "export_offset": 23210,
+      "export_size": 1550,
+      "export_sha256": "a397e8a732bf4f5f07c1f9eb80fd54a3004cd5d833053555352a2b7520638075",
+      "key_count": 8
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw02_dw009": {
+      "exports_sha256": [
+        "b1c80cf8e89385386f8ccb6c7b3572da23a7eef374f5156eff50ea253869de65",
+        "947811b1c0db5dbf272f4705f12b5a8d82e36adc823fcbce418b10a92e466391"
+      ],
+      "export_offset": 13356,
+      "export_size": 725,
+      "export_sha256": "520b2e557d417a3021f814e5a45b67a1a5fca727af71f1ee444333dc1ce7c4e4",
+      "key_count": 3
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw03_dw020": {
+      "exports_sha256": [
+        "48ed9d637d4987812d7b7711e9879acb1f3c2175c0a38c8b70eb09312b6a4b15",
+        "61cdc44f889711a3e733f05534cd1a9be538255edcceb2016e3dc493a119fece"
+      ],
+      "export_offset": 56933,
+      "export_size": 1385,
+      "export_sha256": "a0b398130f8f2934f48c7babb249c4730fb7a51f5fbd396701fa680fd787e57f",
+      "key_count": 7
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw03_dw016": {
+      "exports_sha256": [
+        "f508680ffa533a9ce9bffcf5adcf862882a4704efa386f0da1be3f99aca5b8d4",
+        "4a6cf6c5fa8646bffe285ccfe8f103277ac626a405a4f86fc7b7442cbf0e8e18"
+      ],
+      "export_offset": 34146,
+      "export_size": 1550,
+      "export_sha256": "12173ab05453e1338e30fa786337b6f01f547209d3687c77fec2ca425c6435a2",
+      "key_count": 8
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw08_dw021": {
+      "exports_sha256": [
+        "e030adcdeffbe70de4e352715594b9b91592c9d284306e81b286dda6dcd4292a",
+        "abc00fd8b191263e425aa4f73f84c605631885cfd17da6758ac26a432208d0a0"
+      ],
+      "export_offset": 42139,
+      "export_size": 1550,
+      "export_sha256": "adfb5788958d42f95097c853dfd70d39ecee49517f10da6dfbc268794464da42",
+      "key_count": 8
+    }
+  },
+  "effects_lighting": {
+    "Effects/level/dw/dw_02/gimmick/par/vg_dw02_gea_emi01": {
+      "exports_sha256": "a9287c4b9d5b1a71745c0b98da280e5b1d81203fc975c86563234340b99094c4",
+      "reason": "Scale only the gear particle light ColorScaleOverLife and its cooked distribution from HDR 30 to 1; preserve brightness timing, radius, light exponent, and all visible particle emitters.",
+      "ranges": [
+        {
+          "name": "DistributionColorScaleOverLife",
+          "kind": "DistributionVectorConstant",
+          "offset": 2083,
+          "size": 125,
+          "sha256": "3fd986077b79e5b9c656740236535b7f5167053848300e99d0b5521781042838",
+          "floats": [
+            [
+              49,
+              1.0
+            ],
+            [
+              53,
+              1.0
+            ],
+            [
+              57,
+              1.0
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleLight_1",
+          "kind": "ParticleModuleLight",
+          "offset": 4406,
+          "size": 1492,
+          "sha256": "b11ae03b5c49962b0c6982666c017970d5ea2741e99ca7dd91e7dc58eebc9b81",
+          "floats": [
+            [
+              74,
+              1.0
+            ],
+            [
+              103,
+              1.0
+            ],
+            [
+              324,
+              1.0
+            ],
+            [
+              328,
+              1.0
+            ],
+            [
+              332,
+              1.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Effects/level/dw/dw_02/gimmick/par/vg_dw02_gea_emi00": {
+      "exports_sha256": "4a2a4d24d331450e220cf28631ed1fd44bb5dde730c41ab3662d38bef077eb19",
+      "reason": "Match the corrected cinematic light peak: original outdoor RGB 15 times brightness 500 becomes RGB 0.006 times the unchanged brightness curve (peak 3). Preserve pulse timing, radius, visible particles, and gear material.",
+      "ranges": [
+        {
+          "name": "DistributionColorScaleOverLife",
+          "kind": "DistributionVectorConstant",
+          "offset": 1238,
+          "size": 125,
+          "sha256": "0533a9af8b047e00c6b082f3738e1c1f44f5f4b2c211a7bcabad2cc22064239d",
+          "floats": [
+            [
+              49,
+              0.006
+            ],
+            [
+              53,
+              0.006
+            ],
+            [
+              57,
+              0.006
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleLight_1",
+          "kind": "ParticleModuleLight",
+          "offset": 3602,
+          "size": 1807,
+          "sha256": "8e8b6c1fd9ecd14a59091bb4bb597351a12674fb6fd53572981d6da055d5e6cf",
+          "floats": [
+            [
+              74,
+              0.006
+            ],
+            [
+              103,
+              0.006
+            ],
+            [
+              324,
+              0.006
+            ],
+            [
+              328,
+              0.006
+            ],
+            [
+              332,
+              0.006
+            ]
+          ]
+        }
+      ]
+    },
+    "Maps/dw/umap/dw_08/dw_08_Env": {
+      "exports_sha256": "5ca1de4920536ac99e28db9a591d692d5fd3694cfde4011c407cc986457aa755",
+      "reason": "Disable incompatible forest sky-change blendables and the extra character reflection-light mode; retain world exposure, lights, fog, materials and other grading.",
+      "ranges": [
+        {
+          "name": "PostProcessVolume_areaA",
+          "kind": "PostProcessVolume",
+          "offset": 72612,
+          "size": 1406,
+          "sha256": "c2bc4a2daf79dbf9bee566518cdb781a13d979e8b6ad3b0074e9f8f0b7da0d5e",
+          "floats": [
+            [
+              932,
+              0.0
+            ]
+          ]
+        },
+        {
+          "name": "PostProcessVolume_areaI",
+          "kind": "PostProcessVolume",
+          "offset": 83196,
+          "size": 1345,
+          "sha256": "3a331920865369729f48ffd152e73824abc330134d129855720ef9c229b0d0cc",
+          "floats": [
+            [
+              1052,
+              0.0
+            ]
+          ]
+        },
+        {
+          "name": "KHS_Blueprint49",
+          "kind": "KHS_Blueprint_C",
+          "offset": 33248,
+          "size": 289,
+          "sha256": "5f4a71e11a4d26312f25e1ea754a5aced3e2bd87eaea9f85a6166b1b0481d051",
+          "floats": [
+            [
+              112,
+              0.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Maps/dw/gimmick/g_dw_ThornA/mdl/MI_dw_Thorn4": {
+      "exports_sha256": "c81370b3d0bb0982cb1c7791c56d7d88ce8d777e52870492d0a763ef04da5e61",
+      "reason": "Suppress the incompatible translucent vine shell; retain the opaque bark mesh, skeletal animation, collision and fire destruction behavior.",
+      "ranges": [
+        {
+          "name": "MI_dw_Thorn4",
+          "kind": "MaterialInstanceConstant",
+          "offset": 0,
+          "size": 2162,
+          "sha256": "58d936bd74c7b373aff37c015953afe9aeb5e15e0a232865c0b72fe49182aa27",
+          "floats": [
+            [
+              1731,
+              0.0
+            ],
+            [
+              1902,
+              0.0
+            ],
+            [
+              848,
+              0.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Effects/level/dw/dw_02/gimmick/par/vg_dw02_gea_vis_glw00": {
+      "exports_sha256": "22ee4d0f788eb4980d3a9d1bd94960adf2063309f22a7cf4df5dcc112e9c55ed",
+      "reason": "Reduce the gameplay gear glow rays and ring to 5% of their original HDR particle color, preserving blue hue, alpha, material, timing, size, and the separate corrected physical light. Update both source distributions and cooked color tables/min/max.",
+      "ranges": [
+        {
+          "name": "DistributionStartColor",
+          "kind": "DistributionVectorConstant",
+          "offset": 1347,
+          "size": 125,
+          "sha256": "65806dfc1c2e69731780ff16efa006b05dc05fb727f260aef96c85085fa1d8fe",
+          "floats": [
+            [
+              49,
+              0.7
+            ],
+            [
+              53,
+              1.0
+            ],
+            [
+              57,
+              2.0
+            ]
+          ]
+        },
+        {
+          "name": "DistributionStartColor",
+          "kind": "DistributionVectorConstant",
+          "offset": 1472,
+          "size": 125,
+          "sha256": "b7be6e70de995b46c8f73b81988326e2390703cb39a3ce8e1bec2457d35abf77",
+          "floats": [
+            [
+              49,
+              0.4
+            ],
+            [
+              53,
+              0.5
+            ],
+            [
+              57,
+              0.75
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleColor_0",
+          "kind": "ParticleModuleColor",
+          "offset": 3762,
+          "size": 742,
+          "sha256": "a8fd9d3e30b5d4cd65c01ff3aa61d1cb0079291287d242ce9ebdd4ca17f0ba4b",
+          "floats": [
+            [
+              74,
+              0.7
+            ],
+            [
+              103,
+              2.0
+            ],
+            [
+              324,
+              0.7
+            ],
+            [
+              328,
+              1.0
+            ],
+            [
+              332,
+              2.0
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleColor_3",
+          "kind": "ParticleModuleColor",
+          "offset": 4504,
+          "size": 742,
+          "sha256": "e02da8b744253d4843672bd85da9987871a5ed71d3496c3c22488141ea8d2359",
+          "floats": [
+            [
+              74,
+              0.4
+            ],
+            [
+              103,
+              0.75
+            ],
+            [
+              324,
+              0.4
+            ],
+            [
+              328,
+              0.5
+            ],
+            [
+              332,
+              0.75
+            ]
+          ]
+        }
+      ]
+    },
+    "Cutscene/Localization/en/dw/cutscene_dw54_dw034": {
+      "exports_sha256": [
+        "5439a486bbc174eb9f70b1cbe16e85e15b6d755d31920a6353f3f85712258456",
+        "c62a16cd3ad5360b7fd0365c5a364a264635601df0288784ace8add30630adf6"
+      ],
+      "reason": "Scale the four exact non-inverse-square Aqua spot-light Intensity tracks by 0.001 for their HDR keys. Preserve the low keys, curve times, falloff, colors, radius and the original fade-away animation.",
+      "ranges": [
+        {
+          "name": "InterpTrackFloatProp_0",
+          "kind": "InterpTrackFloatProp",
+          "offset": 20614,
+          "size": 887,
+          "sha256": "3a510e9368517f583a4136205ed61c609eee43144e3f09ea72de6074c9709af8",
+          "floats": [
+            [
+              717,
+              5.6000000000000005
+            ]
+          ]
+        },
+        {
+          "name": "InterpTrackFloatProp_2",
+          "kind": "InterpTrackFloatProp",
+          "offset": 22141,
+          "size": 1052,
+          "sha256": "3f569b5c093fecb021ab3d8e2ad850e97cb7bdb309ca5ce88aa99a5b09fdfa56",
+          "floats": [
+            [
+              552,
+              5.0
+            ],
+            [
+              717,
+              13.649898437500001
+            ],
+            [
+              882,
+              5.0
+            ]
+          ]
+        },
+        {
+          "name": "InterpTrackFloatProp_4",
+          "kind": "InterpTrackFloatProp",
+          "offset": 23274,
+          "size": 887,
+          "sha256": "75078c65fa5577b8adbc6fde7efeddf2a8f3f3d9a3273435f5a6cfea757d271d",
+          "floats": [
+            [
+              552,
+              3.0
+            ],
+            [
+              717,
+              5.0
+            ]
+          ]
+        },
+        {
+          "name": "InterpTrackFloatProp_2",
+          "kind": "InterpTrackFloatProp",
+          "offset": 25042,
+          "size": 887,
+          "sha256": "9b8c8a101b1a679816ac250cd85b439441b4c368446a9f711826fda9a50ee8bb",
+          "floats": [
+            [
+              717,
+              7.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Maps/dw/umap/dw_03/dw_03_Env_BattleArea02": {
+      "exports_sha256": "e638e6c4ef35c860e9b5ec260ae373a9f49145af4f9183bc6ce4628bfa45a3ba",
+      "reason": "Disable only the incompatible sky-change blendable activated by the candlestick battle. Preserve native brightness Matinees, exposure, indirect lighting, physical lights, enemies and battle completion.",
+      "ranges": [
+        {
+          "name": "PostProcessVolume_BattleArea02",
+          "kind": "PostProcessVolume",
+          "offset": 32862,
+          "size": 936,
+          "sha256": "71b0072b26c00004e731ba5c7f5ba17add0b7ab906d008bb6dcadd6c361af8c8",
+          "floats": [
+            [
+              643,
+              0.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Effects/level/dw/dw_02/gimmick/par/vg_dw02_gea_cor_glw00": {
+      "exports_sha256": "8ae7aadae7bc17a114e9f2a880033b8b637c0b81ff479a2ca8ba3601196a0d04",
+      "reason": "Match the corrected gameplay gear light peak of 3 for the collection burst: reduce its separate non-inverse-square light from 500 to 3. Preserve visible particles, gear materials, light color, radius, exponent, timing and the main cutscene effect.",
+      "ranges": [
+        {
+          "name": "DistributionBrightnessOverLife",
+          "kind": "DistributionFloatConstant",
+          "offset": 268,
+          "size": 67,
+          "sha256": "f34003d171216b227b4de1c1738cc4731d7516e13b7bce6ae012429834c5be8a",
+          "floats": [
+            [
+              25,
+              3.0
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleLight_0",
+          "kind": "ParticleModuleLight",
+          "offset": 14236,
+          "size": 1430,
+          "sha256": "a9f86269e77c377be543946e6e856d76ce31b583b8b4a17bbf08caa6776f4a02",
+          "floats": [
+            [
+              426,
+              3.0
+            ],
+            [
+              455,
+              3.0
+            ],
+            [
+              676,
+              3.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Effects/level/dw/dw_02/gimmick/par/vg_dw02_gea_cor_glw01": {
+      "exports_sha256": "144b3bea3055e5888dfc78a28460cdc9ae9521c62fbb6fc72a49bf02d47bd326",
+      "reason": "Match the corrected gameplay gear light peak of 3 for the collection burst: reduce its separate non-inverse-square light from 2000 to 3. Preserve visible particles, gear materials, light color, radius, exponent, timing and the main cutscene effect.",
+      "ranges": [
+        {
+          "name": "DistributionBrightnessOverLife",
+          "kind": "DistributionFloatConstant",
+          "offset": 335,
+          "size": 67,
+          "sha256": "c7317383cd64c2717a95335b84e8b127fce063da457ff37273c79e72480871f3",
+          "floats": [
+            [
+              25,
+              3.0
+            ]
+          ]
+        },
+        {
+          "name": "ParticleModuleLight_1",
+          "kind": "ParticleModuleLight",
+          "offset": 9148,
+          "size": 1430,
+          "sha256": "6fab5e4c7832f670487f9ce1468cddc1cb59a71a8ad7ff3475d67ca3176ce8bb",
+          "floats": [
+            [
+              426,
+              3.0
+            ],
+            [
+              455,
+              3.0
+            ],
+            [
+              676,
+              3.0
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "navigation": {
+    "Levels/dw/dw_07/dw_07": {
+      "exports_sha256": [
+        "5d169fdd304526ab7afff61e330b02a35a98738736877c644a2e77ab58ec1a37",
+        "b465182a9094c0313b9ecb12260a6d42ea457676b3ca699d42b6e8410f9ba717"
+      ],
+      "reason": "Register the original conservative Small navigation mesh as KH3 Group1 (71 radius, 180 height); retain baked polygons and all attack/targeting settings.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 47222,
+          "size": 25702,
+          "sha256": "a04031cfc6761f5ef57c516a9587bdb16fb19cd8f64fcb92a49537d306b39926",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_08/dw_08": {
+      "exports_sha256": "c92d3d5731560bac2defd6d405e850db5c958f81e7b4ab04540826f8107caf74",
+      "reason": "Register the original conservative Small mesh as KH3 Group1, preserving baked polygons, like the verified Phantom fix.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 487857,
+          "size": 598702,
+          "sha256": "5fdea4f5faba5495bef4ba8b3553837b288b1df076ec8205dcafa8d9c0947ea9",
+          "floats": [
+            [
+              83,
+              71.0
+            ],
+            [
+              313,
+              71.0
+            ],
+            [
+              112,
+              180.0
+            ],
+            [
+              342,
+              180.0
+            ],
+            [
+              141,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_10/dw_10": {
+      "exports_sha256": [
+        "ea521cb13d44fdb5cb8a48e51ce748b097043245a3a523d43e0caaa1274f1b6c",
+        "2c4f22822fdb30ebd4b9f625e0097f50b752d41f1ac53f1d418e41f764132c63"
+      ],
+      "reason": "Register the original Destiny Islands Small mesh as KH3 Group1 for companion pathfinding; preserve all baked navigation polygons.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 141739,
+          "size": 88690,
+          "sha256": "e29c04d84899d48f16a97f3aae494eda79667b377c7272ffab83cac29798acaa",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_09/dw_09": {
+      "exports_sha256": [
+        "5740e754338cfb24516ace2964e8b4653cbfabe640643ae39b13d3201c604edc",
+        "535486c584eb366f027932b2a8ea70896827ab52f737341857e8acb49b854e92"
+      ],
+      "reason": "Register the original Depths of Darkness Small mesh as KH3 Group1 for companion pathfinding; preserve all baked navigation polygons.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 4780062,
+          "size": 5129422,
+          "sha256": "c6817e90e95659a5a02a381ca112b34aaed835754d9ead47a5d112317b8dfd62",
+          "floats": [
+            [
+              83,
+              71.0
+            ],
+            [
+              313,
+              71.0
+            ],
+            [
+              112,
+              180.0
+            ],
+            [
+              342,
+              180.0
+            ],
+            [
+              141,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_02/dw_02": {
+      "exports_sha256": "5806c5b271ce8d59f625a8b98a726756600ff6aeb04be3b8f0d349074695e692",
+      "reason": "Register the original conservative Small navigation mesh as KH3 Group1 (71 radius, 180 height); retain all baked polygons and original enemy AI.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 1253841,
+          "size": 1592401,
+          "sha256": "b46705efeb29976bbd196fe04953be58fdafb967c8c14b41597b7ff3066ab47d",
+          "floats": [
+            [
+              83,
+              71.0
+            ],
+            [
+              313,
+              71.0
+            ],
+            [
+              112,
+              180.0
+            ],
+            [
+              342,
+              180.0
+            ],
+            [
+              141,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_04/dw_04": {
+      "exports_sha256": [
+        "1fa1c17de69c6cf989991d66d72bd19119f8fa0666dad8c27ce88a6853b4f370",
+        "33060b9fd69789b5b868922c96bcee4cfb71f9957f2a2a40781bbe53957e2728"
+      ],
+      "reason": "Register the original conservative Small navigation mesh as KH3 Group1 (71 radius, 180 height); retain all baked polygons and original enemy AI.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 135714,
+          "size": 123874,
+          "sha256": "982b475406a438578f0ea575c2bc12df388daff8a85163bd9e8d131f06f1c9e4",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_05/dw_05": {
+      "exports_sha256": [
+        "4a2abda9608c5b6ad7e1c810d03ef6a1b1deacc55adc7d9c8af15156241dd77e",
+        "53d715878b57b40044f817ca2dffca94769b40d0b5a5213fcaf02c20565eb2dd"
+      ],
+      "reason": "Register the original conservative Small navigation mesh as KH3 Group1 (71 radius, 180 height); retain all baked polygons and original enemy AI.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 1664410,
+          "size": 791830,
+          "sha256": "f09ea2d75c2460c59f308a2b33b95ccf763df2d04b93cfcceba26566d9b23bf4",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_06/dw_06": {
+      "exports_sha256": [
+        "1ddd5126ea961d33077c5b886de3cc2939f722df93a208ac34b090b6c71d4832",
+        "b519cc1fcb3c0ccaabfd38ec49bd0f4e720aa27714b81cec59f052c73c9ded0b"
+      ],
+      "reason": "Register the original conservative Small navigation mesh as KH3 Group1 (71 radius, 180 height); retain all baked polygons and original enemy AI.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 70992,
+          "size": 111414,
+          "sha256": "a44487affb1915644f552a06ee4a97723f9b9a9a2035f20787569d44ee380eb3",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    },
+    "Levels/dw/dw_03/dw_03": {
+      "exports_sha256": [
+        "d7e05a2b34cb8b6b980a9ad0d375f5df9930a91d77db283aca90f2e328b836af",
+        "605a50507b1499c3dfc75adc76e6f3f160aa61eebb52ebc7d93c97e3ed1f10a2"
+      ],
+      "reason": "Register the World Within hub and mirror battle-room Small mesh as KH3 Group1; retain the original baked polygons and enemy AI.",
+      "ranges": [
+        {
+          "name": "RecastNavMesh-Small",
+          "kind": "RecastNavMesh",
+          "offset": 214449,
+          "size": 244726,
+          "sha256": "89a269263adeebe20a955dcdcdb742b53c33cc7fa718c751d59627076fb83a78",
+          "floats": [
+            [
+              25,
+              71.0
+            ],
+            [
+              255,
+              71.0
+            ],
+            [
+              54,
+              180.0
+            ],
+            [
+              284,
+              180.0
+            ],
+            [
+              83,
+              180.0
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  "environments": {
+    "Maps/dw/umap/dw_02/dw_02_Area_Alley": "14a6b0952715df701813bcc09ce9bb2107f38fb89dbbe277bbfa6a46c623cc0c",
+    "Maps/dw/umap/dw_04/dw_04_Env": "c270e7894a0ec4336416cd5b5fe14500c7037fd9e707037378498b99b1e31b9a",
+    "Maps/dw/umap/dw_05/dw_05_Env": "bc15d1d5d4cdc0304c529ec778c09fc745badf7d700482c69e7c09151319990e",
+    "Maps/dw/umap/dw_05/dw_05_Env_Reverse": "8c35f1ed1c47ae6c2dedc769bccc45539bc70832d3b585a32b45cc4c46678982",
+    "Maps/dw/umap/dw_06/dw_06_Env": "f2230eda0e4c244e9a6e50c550789fca757bf0a23b15a10269205059978fc409",
+    "Maps/dw/umap/dw_07/dw_07_Env": "70b50b1b6b0bf8861fa16598bbbd2d2c21ffafd88c129bc68b0dadfa2f91a239",
+    "Levels/dw/dw_08/dw_08": "c92d3d5731560bac2defd6d405e850db5c958f81e7b4ab04540826f8107caf74",
+    "Levels/dw/dw_08/umap/dw_08_gameflow": "9273fb64e695f3be17332903f73434e92619f94e1adbe1e23272f32b2e995b01",
+    "Levels/dw/dw_08/umap/dw_08_enemy_40": [
+      "19bad1812756abf86443acbf9de16b0f10dfbe37131cd08bd8b103e0dc3a7284",
+      "16dc10db3761190b859451b577fa260b7307230b6124b9e087bd3040b6741893"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_A": "db4294faec0c5c0abd177d1eb0b92fcbae53b9e024869f5a0410c6393b43e0bd",
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_B": [
+      "98e4ff82cc077ce4f005062f56e6d00b5d54ddaced45517385d9f59c0d43455c",
+      "2172c79063f82d2a85e678a35e20bd395bc7c25ba1690cae1f553e7943c388b6"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_C": [
+      "8d3298ced8da2137d1c4deda449068d5e54653415f1316bdb243aa35bd35b6c6",
+      "5589de0a088a25180dcbb20085020a0314e50130a7a8988164ded8e1fc1bcf15"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_D": [
+      "7cb17827dd5b7575f23329610b22c39fd4b302cf1cba45ad00b5a3f2422bcc32",
+      "233beb54085f3e47a3f87ed93ba6cd8a3b798f97f627fd51740c5c3171398d72"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_E": [
+      "7af9db7376450b3c691320cf89b7416f41507a22663e59d169bfb72b323da739",
+      "7cdeeca464027b31a1c3a43915d2c3032b806d1508d793ca4afd5d14ae54b1f7"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_F": [
+      "0b82e7f05f6260c811bac22c8f23a043f47267f9ccf4683c36dec1f06b7777c3",
+      "cf1c7b062ce3f06300543063ea4725400720ea543408245bd7bbd604ba8b8ba1"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_G": [
+      "f7c2772df9365b6a94353d15448a2a5ebc50ee129f51d2f6ab7105e1e04e7afa",
+      "10c7677094adb46962b90959ab642d9facd6276f638af7db8d97af0b6e060211"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_thorn_H": [
+      "099c5173653f2e6e104532b08d39a32096d012a07b5df0e2f23a50d321aa4bc9",
+      "ae3d5d21a95e4badbaffa8fbe7b8025e328d83a9eacc42614e60387d59aaefe0"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_gimmick_ds": "cbd3311dcded0db0c19b9aabb7ed6cbf3419771045485e963ab8a16a99f01fdd",
+    "Maps/dw/umap/dw_08/dw_08_gimmick_ds_02": "0ed75194ff1b4bb03d06773dea25a53f17ac3de8219c44ca0264828deecd84da",
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0110e": [
+      "76bdf404998e2075a75f38458c9898005caf78048e05292659f94c3c2473e17a",
+      "84662125cdba37b900e1c2f4e91d91ae34f8e31311dd5edfd521d8a62ab9a434"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_Collision": "6635d0ebcf53b6102bed51b117159ffedae59b4ec5d45c661b7c141310b24cc9",
+    "Maps/dw/umap/dw_08/dw_08_gimmick_ds_03": "810acbed823c6e6d0adc5ae9a7efe915a7d0e5546eefed2897d3a6c923210c4a",
+    "Levels/dw/dw_08/umap/dw_08_enemy_02": [
+      "1beb1561d66ddcc10f3cb3d7066f4159439518d41e2c5bdc4f5803c30bf7613b",
+      "6ab5d955ba85dea086b3b68ca2680c4a1ff7d89c3566ed55dff4ade98f78c1c1"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_03": [
+      "2b238886be8362d94d2228a73ca7f70f67ffa65c564365f08d2b20fb18720bd7",
+      "39b57c43372a2f2a6358871069eef0fefd061f9cdcfdcc525146f7beb9f7c846"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_04": [
+      "b89fc2c685a03e3eb117b2b9b2c0b860f0ba68e025a37e2ecc942333b3a60b7e",
+      "f5af76dc19fcd3927a040dbc23d09ccc27fde9c87120ee663b632024d2293c44"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_20": [
+      "a5bb5a4911eaed1219e6b7d98955adf021865dd0d6503f4dfe4a23b4312af167",
+      "57290564d44877154e0747e33afbb6766b3e4211630e6a1f1cd59a4e0ceb406d"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaI_2": "125c78b81bd62580d90222f883f3bf06270aac129c2787c981c5809aa097c9ae",
+    "Maps/dw/umap/dw_08/dw_08_gimmick_ds_04": "28f058a24c02ab39f4cf3dc240337e46a2cc9104eb9b6d2b4e7cbdb6cb0593dc",
+    "Levels/dw/dw_08/umap/dw_08_enemy_41": [
+      "dd91117e522669f44bae400862309421672da04289c4f5cdfc61daf02a6c1128",
+      "6aa5b787f330b3706ca7bbd0130ef21b568a441089ac263f2161323cc362ce2a"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_42": [
+      "66c8efa3c3d18a6c5b15c7480ce835da62e5186bfcfe407b667a6482db92dba4",
+      "41045d094ade04d9dcd0f950db15f0fb75691930f104a3ccfd5abc7ebbac1106"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0120": [
+      "68d88a2a6616909d5f16c2e47b19e1d45380a6dfc0b57e84689b146c81b5f03c",
+      "a567f21b60a73015193ca975420788e011774d8eea7f661182b99278a296c3a0"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_43": [
+      "3cc04a6b640e96a2942c82d313927c64d401376ce19f9ab1a729d2dee749ac26",
+      "3d1f6377539fadcc04ccaa7448ef89ed68ebacfccec336f28ba181b5cd86c955"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_44": [
+      "f4363ed19955fd8c98376eb318ad0e29069796285808bb7b2e0a0cbb0fe5dab5",
+      "89e1b32b4e6bdcd2a7b4eba53474b07bc83026df33ac2e307a564cde4629dd29"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_45": [
+      "30559daeb162ed60404419aaa0a98d42573c925544733eb54eba64f9e065f091",
+      "9b87feef6b13f3bec11ad7cfff48ce8151e2e0191069664da47dc914244e97c5"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_46": [
+      "268a7c72cfd40fa0c8715e1d3ed69ac5e6533f1fae7216fa0298eef110788a09",
+      "2af36d85adec864d81b26105778e35d60f98bb7650b8b8c04f88a53b91962f8d"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_47": [
+      "54d57b1c5a2e98c3083fa3e0b0acb225a4cbdd59d6d6fd2628686abb2b9d3e94",
+      "341e7f73a2d0767082e73f33f67c0bd89ce2132961b0741fc6fd536007e4012c"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_48": [
+      "b3fb2dd9cf5b380586c5ab092c33f3f7721ac60906e20475a2c9460fef4236d0",
+      "3cc02a5336f25d0ac0df32071d8f0cfb43a3932df8d16f885e4a733395e57c26"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy": [
+      "5a28f19648f2bae0e89fb6b7ff4fd7bbec6015a376f609da80163189c2da9824",
+      "0af03f3137768bf242dff7047246928d5a786175100ee1dcf729af5a9b36a8cb"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_treasure": "10c888bd0c2345460070a64b00666cf2031f4ab20c021e13bd5f9ac324e3d50a",
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0111": [
+      "74fe331ab76887893c7b4ac6515f91d6ab956c60b64130bfc54ec8a9cfe014c4",
+      "b66c7ee5b997a0ffa7b3e2af302911b53b6270f251e920d56c60233e8e6f4eb2"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0121": [
+      "3f81389c048dab89429993e998aeedfa859ab3ebb1a6c1b75d8f8ce010420c78",
+      "363d0605524c581b3d451bde12e7a53286136c0e2f2afe906ee212963e15a754"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0130": [
+      "f3cab0117130e344158198e01e5a59e5e766a477601e5f1e2dc389e667c1ea33",
+      "fe9739514ee69ac834938dd2de49849907f197c8b8b718d41d761ba2cfe0e3ab"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_challenge": [
+      "bf9c4d33afdf986a086ba3dbbbadd026c2b4cac3f077013abdb5fba43a709807",
+      "b35a6c104c0a65951e3512904217c07615b0e04f7cb73660cc0fe59982032fee"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_CheckMap": "28868b020f9921567d832458b9dcde51df897db6cb987c95e4ee64ed71713350",
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0131": [
+      "79f9cff19d679fc294dcb9ac3e72b75f507a3f023a6cb1a93c79bb4175e76aee",
+      "cd390d8b70a03fe19facd26ca80cd1eff817a2d8f5630ecc1913abe46bad7c2f"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_static_EQS": [
+      "a8edd7b870ef18ab03a58eb8266b233e257c25d6ede98b25abe2c061c1baa43f",
+      "44e9bcafb2a1d32a61e3b02e2251a2af4252c3eb8246b9e17190a67a3f48a029"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0112": [
+      "a31b59280cf3da84c04a47a0d1cb296017253236c6b6f3a447e40b22da95d50f",
+      "b39596db8d3976b365cbcdd4fdb2bfe96117a32212a443fcd0494a3f96ee485f"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_navlink": [
+      "fd471cdb1868a499d3482436aa1bf58d577460963ca0576cca953246be2ee03a",
+      "37870a60587c2c5130be4c9aae9b6ada7d22196bc25446b46a1642d1a4191ee3"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_camera_ms0140e": [
+      "d2807e4f5e3f2bd792c4d7f2bff992f86033df405e672149a250ad30a8cbd9bb",
+      "6d1ea61d61a57215d3a6721130a40ecdc30a807a20b6ee46d57517bbc8a16f24"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_railslide_1": "dd3db63ebec3be231f6dcb739dc223fa31f3046b24967dc1dd77ae0140753ee9",
+    "Maps/dw/umap/dw_08/dw_08_Env": "5ca1de4920536ac99e28db9a591d692d5fd3694cfde4011c407cc986457aa755",
+    "Levels/dw/dw_08/umap/dw_08_gimmick_1": "e74befdb84f6a13b383de2f558116a1e5142352707241511c48bd3fda60de61e",
+    "Maps/dw/umap/dw_08/dw_08_vfx": "a3bebb0c00df73b68b6f1e1190e573a761ca856252bbcb5b8b70aa7f922ef90c",
+    "Maps/dw/umap/dw_08/dw_08_Sky": "ad3a209cf9cf2bd0299bc4fd7b8d03b2f7c49e915aee78fa8bb21db0d0f93715",
+    "Maps/dw/umap/dw_08/dw_08_Sound": [
+      "6bc76931b14e0c46756a7edfecb40704aafe1d24b85dea60febb6c3ef9eb8a05",
+      "adb3c9cc161ef21c0cb97ccbfa17d256221af53522ec1152cef8bf131bec8573"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaA": [
+      "e5b715dca9869abd26d0e6c14dc27b2878aba49a4b6c3e3eca208365668b7a1c",
+      "b3fb51a4072ede632a626815565e8de68e5e1b05987b3e85b5b6037bd353c0b6"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaB": [
+      "0aab9a4f54d8f98bba6cadfa871442beb3ec25bc3649c0e4811b19ef4aab7579",
+      "0a9228dbc3bef0c08bff5accfb5976ba57cf955fd6b0bdc9fc5ac62afc982182"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_gimmick_2": "5b06c4f76eaf68536d7b0c221b8546f2f1b21d8318a77c3785d14a7cca72c13f",
+    "Maps/dw/umap/dw_08/dw_08_areaC": [
+      "a67bac93c738af69f059f2ec701cae0bbf74ebe77d67a9932f825bc974761bd3",
+      "0ca493211c5a94df0e5a62e4b33eca35412b1d60a8027d49046c8b8635a5bbff"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaD": [
+      "47563f5c9f904c274baffb39a41917904fddce20906ddfaea1f8ed1347c442b0",
+      "0e1831174548cb7fc4c73db65124e840cab060bf3ab51e6cd2da44b04023b2a3"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaE": [
+      "9688a4c9e65cbf88bbd3b153887b52ccdf04ccc920c3635d920e27c329ba475c",
+      "9c0f71635b498cdb35f6b38ae48ecfc14d8dcd4036631e86d3d5cf12ac56fb8f"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaF": [
+      "d4b75eeff6008e3a09c3998d27e988a4a00249a1d7de6bb682babbbd5447f396",
+      "32ddb3692d2a63637cc546dbd1fb402a30f1e15aef3cfe0ceeb4c577b283a3a4"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaG": [
+      "2fe9244bdc0817f094dbf0c8379d2ae9d2dc989b160afa05af6475c16938a345",
+      "fe9e5e1c54729e9b028c8c7314f1bbc01bed45f4abff1b7a45a4a6e79dae1193"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaH": [
+      "8d992a315add9923bf3826f991ecb3189bd92de6c49e0a8996108018ecda444f",
+      "be9d7ab30d111508bc4c9ed93e7e0002b31b4c1616fa2500645cef656606ee4d"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_areaI": [
+      "7727e790c3b8d4004f6867b935cd0ffe1834a9d48ee53468f2de6af834a65d37",
+      "3c8630598b9a5d09edc3f3e94be13b731411dce659d6996871e89b8c863c7123"
+    ],
+    "Levels/dw/dw_08/umap/dw_08_enemy_30": [
+      "47889e4d44309a8cbf598a6b8f9221a0ed083e966783fa77b0ed7b556be17a88",
+      "3e2ee90290ef28cc9c5f62e6b2b20dae2d1d810fbe86b16a0551ec2cde344d06"
+    ],
+    "Maps/dw/umap/dw_08/dw_08_gimmick_ds_01": "3084d902684104e1e975f9e14b2598284b289cc9b98badeee2df9f5d62823a70",
+    "Levels/dw/dw_08/umap/dw_08_treasure_After_clearing": "53b04bf960399e32365be1c8379e2071e2f82b2cb5e9f172ee8435db2606d149",
+    "Cutscene/Localization/en/dw/cutscene_dw08_dw021": [
+      "e030adcdeffbe70de4e352715594b9b91592c9d284306e81b286dda6dcd4292a",
+      "abc00fd8b191263e425aa4f73f84c605631885cfd17da6758ac26a432208d0a0"
+    ],
+    "Cutscene/Localization/en/dw/cutscene_dw08_dw022": [
+      "c0f923e9907a468311c416438348a324e4c61c6c6dca36dbb01f77805a3e151e",
+      "871adf600089d6001466879ff833cdd1695377a3054119b810e4fb4d8db686de"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_gameflow": "02bc29f2fcd7bf59be92b96fc4a27515f407d28de633c1cd87594d70163b9553",
+    "Levels/dw/dw_09/umap/dw_09_enemy": [
+      "f1f9202d65c9ce59948d008e635495613c66573ea1f45829b4e92c4faddc4002",
+      "231897abd415b247ff65d36c4e9ab2a49a38a959fd9c08d2a05f08b9cc767be5"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_enemy_03": [
+      "3d575a21d0500ac6d08a6f9227c1dcde36e615d750f0c758c9839d6eb00ccfee",
+      "dbd926dfb47c05d4d1bc50eaeb00bfbf25f23057848175d1ccb4e1b066fb27b3"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_enemy_04": [
+      "f502e24bf287ab5d03573dffb6e94fac364b8064638f98e664879ba8a817e26f",
+      "cefd6a3694dd2ede854a534d5574cdcf0077cb7b3709f3470a4d97ee89f98586"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_enemy_05": [
+      "1b12af402e9e04560181c94320486a0c8af568705ffcfafa8905ed473fea3fee",
+      "0637f952090bbf8af7def1b3e0b2e743c83820309667b41b8107050060b6d3b9"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_enemy_06": [
+      "4121796e491c86d21d59981dd515f808fbf2ce2e9069a6c243b95c36c3ab26a0",
+      "54830a716c465fc7525ec9f23b7ee9e2541aa2f76e9fe5baf96c13977b2a6d3a"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_navlink": [
+      "dfb59a2d3d3c7444655d3f60687efe1f7434314a8806e6b54219f80956522626",
+      "87c67a52aadeb4d2495222737f7d41a34cae984f688083555b67e57a8021429a"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_camera_ms151s": [
+      "b3ea1394bcd4454489d73cdf6bf502be165c8647591c159a85eeb389ddb2ffab",
+      "2b7e16e243253fd182188ff5c31fe6380f5c2f4a1f77a930b4c0fe67482d6992"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_camera_ms150e": [
+      "a06701bb6db55f2140bcdc02de02158706662b57f5414aa06633c9375af27ef3",
+      "14b1091c474e880d86b668ee6a815f7b2df21d9a6ffdbe06872b36ddb53fa2ed"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_challenge": [
+      "bac09225cfbf6c502bd882635673989b3c286268348a6d192f1bac2af184ecbf",
+      "73708dd3fac6b96835c6cf0b7e4d8359de61e561c52d564b883801b51728bf23"
+    ],
+    "Maps/dw/umap/dw_09/dw_09_Props": "0d29d30563308099de193867af5b82ccfad8f59743bfa60ea0ccc58571a83e69",
+    "Maps/dw/umap/dw_09/dw_09_Area_A": "2653c8bc9d15f8ce84a7e3be650714514657f05dfac6a767823dd88e528a35e7",
+    "Maps/dw/umap/dw_09/dw_09_GlobalEnv": "42403701ab64c14bfb55aaf439571ad99b7e8b38f2f8045b02f95fd072b64cee",
+    "Maps/dw/umap/dw_09/dw_09_Area_B": [
+      "b7ce7dac89acab9abf7e78c9f462b2490ac47ee987d8acfa5c4d273d3f51b8a0",
+      "02a24bbf53648efacbaca4ef92ec470544aa96c6521f6f06d135399fa15a1c34"
+    ],
+    "Maps/dw/umap/dw_09/dw_09_Area_C": [
+      "bc3ec1396bd46fa5f7efeecea2acb87a1d8534cd6173a27745373786540a7cce",
+      "25eed836646c507c77858ba6d6f0e99e2df4e5cdde62451b25cfd4bc64fb3319"
+    ],
+    "Maps/dw/umap/dw_09/dw_09_Area_D": "efd04342c97bc87870724e7e59980430eccd2803f345766739a1957a512a2768",
+    "Maps/dw/umap/dw_09/dw_09_Area_E": "88d44fe5ee34f6704edeb459d46340e8b3b881f3e14b1bede41640960cd04645",
+    "Maps/dw/umap/dw_09/dw_09_CheckMap": "f6aadee22a0c3d375f4bb30057325ca517e0ee5103d71f132c928e22483843ed",
+    "Levels/dw/dw_09/umap/dw_09_static_EQS": [
+      "ebcb0c99c1aa60e7020b94b38b7238a9769ce46130d2b42c59ecd05fb4c4933d",
+      "f35223b10ad14eb6641e6d25ea50269dcb565b8d379a4327c0c860f86cbed542"
+    ],
+    "Maps/dw/umap/dw_09/dw_09_Collision": "b9cf80542f44b88bd1e183d0258ad4a42601bf4b5e1bde1a40704c0f39d9bb2e",
+    "Maps/dw/umap/dw_09/dw_09_Thorn_Env": "faf9f540393701f7087ca7ead6fca355519119546942007a2f4aa989a897c442",
+    "Maps/dw/umap/dw_09/dw_09_Env": "212c69ac0e66e9787ed95340a6919f122f770b91fba5d3793c4a9b7409d60cbd",
+    "Maps/dw/umap/dw_09/dw_09_Thorn": "e14ab994713426355be6dfc39f8289b8ecaaac6e9353b8445fdc917a7f09a799",
+    "Maps/dw/umap/dw_09/dw_09_Vfx": "93231fe8749e386ea40ea20acaca0563c1cba0c6615b857ac389362cb96bd3d5",
+    "Maps/dw/umap/dw_09/dw_09_Sound": "6b14b2ef5d205fe51591f5b25b1a26ee1d6456ea4474c9b10c07d31708768c7b",
+    "Levels/dw/dw_09/umap/dw_09_enemy_01": [
+      "ae8ec43b6bd09da6a13e1da32304fa27b72462ee722a5a410eb7701ad397785f",
+      "f596c521adbe8f39e72c3082a5c9623f962f7f3997d32274d528d2948bb86f3a"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_enemy_02": [
+      "147f7dc0599e5355378f8b4d476f6b5cf3ab02164a4dd497d6c4bc1dd55bee68",
+      "a95fdce83738d465088f91ef251d2228c995164d1d9ea724543487fb901324c3"
+    ],
+    "Levels/dw/dw_09/umap/dw_09_treasure": "80b4b4ccb6a12f2b0cfc79368ad26ba1d9ee96c56d8fcee66925484546291ff5",
+    "Levels/dw/dw_09/umap/dw_09_treasure_After_clearing": "d9bfa08f2e76c43c719ad0f72e7a97c2baf3ec98789dab1b9d8d993ce509bb75",
+    "Levels/dw/dw_09/dw_09": [
+      "5740e754338cfb24516ace2964e8b4653cbfabe640643ae39b13d3201c604edc",
+      "535486c584eb366f027932b2a8ea70896827ab52f737341857e8acb49b854e92"
+    ],
+    "Levels/dw/dw_10/umap/dw_10_gameflow": [
+      "8a9d91f9cfa63011b9160964c503150fd71246f17a8d7b27cca10400d7b60135",
+      "fe75340d3514585ca49285cd39f759711575f6b319a8f8ca8e843c122dba4fe1"
+    ],
+    "Levels/dw/dw_10/umap/dw_10_enemy": [
+      "d36519fea0162a1318cfd8313f49d81b6421862e894b85d9a753906baee89736",
+      "0beb11d7e685e2295237a9f695165ddb351cac7a98bcafa82bafd5a5655d9ddb"
+    ],
+    "Maps/dw/umap/dw_10/dw_10_Props": "2017c385ae8c36181e04578e9a7a3db63d3984eeb1a6851e34ba3ce70309efa4",
+    "Levels/dw/dw_10/umap/dw_10_camera_ms160e": [
+      "0ff64376278967db08671eb293430126bf00b0a68effab359f344a9902632b16",
+      "600294e2f2d49b72ee038246c45ae9b2835c7006014cdce6041369af79ae0197"
+    ],
+    "Maps/dw/umap/dw_10/dw_10_ENV": "8186d57aded9bb54b6816b91e93361e654358e45de050e368141152ce89ead81",
+    "Levels/dw/dw_10/umap/dw_10_camera_ms160s": [
+      "3ac3143bab005f91b38c2a363044daa21808ec5aebe02024f0e2e9a8216e8f95",
+      "93c675c188a494c536ab6b77fe8c220192f3e9c4f33147cb590faa8afb80ec47"
+    ],
+    "Maps/dw/umap/dw_10/dw_10_Collision": "23c0eac6be9094c2a240e73c1840e650b5867067b5582c79d0d96a57a33e7809",
+    "Maps/dw/umap/dw_10/dw_10_BattleArea": "bbc128188558b3149e5b56ab5f7608dfb20fcd08536d93b87d2662f48b82ad4b",
+    "Maps/dw/umap/dw_10/dw_10_Sound": [
+      "6aabccc0eb325df981af1f4af179fbe177363bbcd3cf9c0662bed8d6c991688c",
+      "d7799cab6d7aa68a3d867ba420f152c79ebb1a50b26a1f1bd99ef878fff801c0"
+    ],
+    "Levels/dw/dw_10/umap/dw_10_static_EQS": [
+      "4547d119de86b24b5aff25b6aecac950e69b52b78e239bc54e68a50532c605ee",
+      "ef492c05834269f14a88d2d4ac4052e549ca2f76a35572f89c224bc0ff6efc1d"
+    ],
+    "Levels/dw/dw_10/dw_10": [
+      "ea521cb13d44fdb5cb8a48e51ce748b097043245a3a523d43e0caaa1274f1b6c",
+      "2c4f22822fdb30ebd4b9f625e0097f50b752d41f1ac53f1d418e41f764132c63"
+    ],
+    "Levels/dw/dw_59/dw_59": [
+      "f4d93caec4fdf298191d21191f15dd3b9c89794a4e77fa19689ec7f36e57d415",
+      "fa1d8397d980582f499161fcde197414134a280e62ee4aff6c08553cd1d276ca"
+    ],
+    "Levels/dw/dw_60/dw_60": [
+      "5cae7c77b3aefa212d8425f0807363e16748f4081a3f772c281dc4b7d126f87c",
+      "bd471b713fc638e2ad854452b9c03a6a219b1bffe6eb2f8b6cbeccbbe77cfe82"
+    ],
+    "Maps/dw/umap/dw_02/dw_02_Env": "6d945f5d3fe85289f44c02708db92a0a24603b666188245b81c38a8a01b72636",
+    "Maps/dw/umap/dw_03/dw_03_Env": "da14785e3e3c5c0f830b3b821a542998d4dbb65ffb8c348ffb44e7c34d4c2e46",
+    "Maps/dw/umap/dw_03/dw_03_Env_BattleArea02": "e638e6c4ef35c860e9b5ec260ae373a9f49145af4f9183bc6ce4628bfa45a3ba"
+  },
+  "shared_assets": [
+    "/Game/Character/enemy/e_ex004/mdl/mat0/e_ex004_mat0_Inst",
+    "/Game/Character/enemy/e_ex004/mdl/mat0/e_ex004_mat2_Inst",
+    "/Game/Effects/trescom/mdl/omd_grd_100x01_0",
+    "/Game/Maps/Common/Materials/PP_CHR_ENV_EV",
+    "/Game/Maps/Common/Materials/PP_CHR_ENV_LUT",
+    "/Game/Shader/KHS_set/postprocess/KHS_Blueprint",
+    "/Game/Shader/KHS_set/postprocess/KHS_CG",
+    "/Game/Shader/KHS_set/postprocess/KHS_Poo",
+    "/Game/Shader/KHS_set/postprocess/KHS_Real",
+    "/Game/Shader/Material_set/SQEX_BaseEyelashes"
+  ],
+  "navigation_levels": {
+    "Levels/dw/dw_02/dw_02": [
+      "b17ce21ddebb366ab6f2e23139e6153b309954655696fde10f7006bcd7447f0e",
+      "5806c5b271ce8d59f625a8b98a726756600ff6aeb04be3b8f0d349074695e692"
+    ],
+    "Levels/dw/dw_03/dw_03": [
+      "ae436df37508f2c977cf8ff3d6a2d03d51f995896ea49537255a5d31c362f8d4",
+      [
+        "d7e05a2b34cb8b6b980a9ad0d375f5df9930a91d77db283aca90f2e328b836af",
+        "605a50507b1499c3dfc75adc76e6f3f160aa61eebb52ebc7d93c97e3ed1f10a2"
+      ]
+    ]
+  },
+  "navigation_data": {
+    "UI/Data/rebellis02/Map/Map_dw02": "13e6112653d2e333497e1ca4630f6be8aa3a7505c92ee413f3cd55c271ad27fb",
+    "UI/Data/rebellis02/Map/Map_dw03": "5197bad2f594aeee7200961c0660c62378256944d84ccbc4d43f0446cfb01793"
+  },
+  "property_types": {
+    "/Script/TresGame.TresDamageInfo.m_DamageAttribute": "EnumProperty"
+  },
+  "guards": {
+    "Levels/dw/dw_02/umap/dw_02_enemy_09": [
+      "ad408b8492f8ed2077c2af05d4762b94b5f1c931b118709ea46f09956467400d",
+      "d5e808c26cccaae2aabd1def658312483273fa140829d9b6e4f8cbffefd879a0"
+    ],
+    "Blueprints/Gimmick/g_SimpleReactorBase": [
+      "181da9fe14fb24e548f9bacc03dda262910d3a58e87d507bd41e5e49c20841af",
+      "0c3d229f986bb29ed67086d3d8859b56903f15d6b760609c7cdc5afd5f754b5c"
+    ],
+    "Levels/dw/dw_02/umap/dw_02_gameflow": [
+      "45834cf7457a41a0809f5de79abdc4ca08b1304c065c9cea5cd67d588d93b195",
+      "c79ba7b189ddfa717f28ff23fc6affbb4c0ba01893ff73149b9f0d3cdf6e782e"
+    ],
+    "Maps/dw/uasset/Blueprints/BP_dw_Pro_GimmickLightBase": [
+      "0f30d22257a739a78f69d7bb9d250f326ff6ae6fa9e744da31c9780f11cc5736",
+      "b916974b4042631d4540b58461ce3b9b1ab274883334e2c29ea9f387eda5a881"
+    ],
+    "Levels/dw/dw_05/dw_05": [
+      "ef4aa254195441875cf4fc1a9395b6fe5beb5967b2a4bcb8d62c8ca49ed7fc26",
+      [
+        "4a2abda9608c5b6ad7e1c810d03ef6a1b1deacc55adc7d9c8af15156241dd77e",
+        "53d715878b57b40044f817ca2dffca94769b40d0b5a5213fcaf02c20565eb2dd"
+      ]
+    ],
+    "Levels/dw/dw_03/umap/dw_03_gameflow": [
+      "32bfceff0d5f3937ce7d4e36d3cb87530cfa0f8fbc7f0c4b3b35680d05c52847",
+      [
+        "a02a72967f350fef68b7ca7b9d8c63c7e37c894683791a876beb12edd06d42bc",
+        "55bc39d836384f7ccbf8a4442d664c66f204acc9aaca6a6e6d5e0105a97c17ac"
+      ]
+    ],
+    "Levels/dw/dw_03/umap/dw_03_challenge": [
+      "6913ab785def8a160a524324039ad78bbda1195539aae83b44f180e0568bcf2f",
+      [
+        "cff536ace531bcc1b1e67885a8e22badf67dae8850b50e3488da3c769918eb7c",
+        "c0056508c1d325528fe984e6b2aab2bd6e78399cbb47de23189eb553db9ec1c6"
+      ]
+    ],
+    "Blueprints/Npc/n_dw003/BT/n_dw003_Action1_Curaga": [
+      "06a0b5ac7c9bfb623fed4b8619b9ad48045d83e4af38cdeef31bf68d9327b1c2",
+      "fdb8a2149319b57ff517b978df2d0b5fab2d2b75d634bd1a0fc4faca274f49fa"
+    ]
+  }
+}

@@ -1,0 +1,559 @@
+{
+  "schema": "kh3ap.kh02_native_audit.v1",
+  "builds": {
+    "egs": {
+      "timestamp": "0x60547d11",
+      "image_size": "0xaebf000",
+      "sha256": "e4edb6ffdf8bd70aecf838ecf6a72663b13453e99e19559fdf2aa7c689c4b407"
+    },
+    "steam": {
+      "timestamp": "0x66743f34",
+      "image_size": "0xa969000",
+      "sha256": "f53c398936560d543f2aa8e6283733572fdf8ad7c14e03459c12e039cb1bd0bc"
+    }
+  },
+  "sites": [
+    {
+      "id": "take_damage",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/challenges/kh02_challenge_hooks.cpp",
+      "egs": {
+        "rva": "0x74a7e0",
+        "bytes": "4c89442418555741564157488dac2448"
+      },
+      "steam": {
+        "rva": "0x5bb850",
+        "bytes": "4c894424185556574157488dac2448ff"
+      }
+    },
+    {
+      "id": "rainbow_update",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/challenges/kh02_challenge_hooks.cpp",
+      "egs": {
+        "rva": "0x16d0f70",
+        "bytes": "48895c2410488974242055574156488b"
+      },
+      "steam": {
+        "rva": "0x13b8fc0",
+        "bytes": "48895c2410488974242055574156488b"
+      }
+    },
+    {
+      "id": "rainbow_result",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/challenges/kh02_challenge_hooks.cpp",
+      "egs": {
+        "rva": "0x16d151c",
+        "bytes": "8b8b6001000085c9"
+      },
+      "steam": {
+        "rva": "0x13b945c",
+        "bytes": "83bb6001000000"
+      }
+    },
+    {
+      "id": "set_team",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_darkside_projectile_repair.cpp",
+      "egs": {
+        "rva": "0x17b9800",
+        "bytes": "488b81a80500008991140500004885c07406899068080000c3"
+      },
+      "steam": {
+        "rva": "0x1482e70",
+        "bytes": "48895c2408574883ec208bfa488bd9e84c5215ff488b8ba80500004885c974078bd7e819501aff488b5c24304883c4205fc3"
+      }
+    },
+    {
+      "id": "actor_team_store",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_darkside_projectile_repair.cpp",
+      "egs": {
+        "rva": "0x17b9807",
+        "bytes": "899114050000"
+      },
+      "steam": {
+        "rva": "0x5d80d0",
+        "bytes": "899114050000c3"
+      }
+    },
+    {
+      "id": "collision_team_store",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_darkside_projectile_repair.cpp",
+      "egs": {
+        "rva": "0x17b9812",
+        "bytes": "899068080000c3"
+      },
+      "steam": {
+        "rva": "0x627eb0",
+        "bytes": "899168080000c3"
+      }
+    },
+    {
+      "id": "link_dispatch",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_mickey_link.cpp",
+      "egs": {
+        "rva": "0x176eaf0",
+        "bytes": "48895c2410488974241848897c242055"
+      },
+      "steam": {
+        "rva": "0x143b450",
+        "bytes": "48895c2408488974241048897c241855"
+      }
+    },
+    {
+      "id": "friend_eligibility",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_mickey_link.cpp",
+      "egs": {
+        "rva": "0x1532b00",
+        "bytes": "48895c241048896c2418488974242057"
+      },
+      "steam": {
+        "rva": "0x1259230",
+        "bytes": "48895c241048896c2418565741544156"
+      }
+    },
+    {
+      "id": "mesh_registration",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_mesh_buffer_lease.cpp",
+      "egs": {
+        "rva": "0x351212",
+        "bytes": "488905a70b9509"
+      },
+      "steam": {
+        "rva": "0x2c5202",
+        "bytes": "48890547af8609"
+      }
+    },
+    {
+      "id": "mesh_cvar_name",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_mesh_buffer_lease.cpp",
+      "egs": {
+        "rva": "0x6be4b98",
+        "bytes": "72002e00460072006500650053006b0065006c006500740061006c004d006500730068004200750066006600650072007300"
+      },
+      "steam": {
+        "rva": "0x71aa8b8",
+        "bytes": "72002e00460072006500650053006b0065006c006500740061006c004d006500730068004200750066006600650072007300"
+      }
+    },
+    {
+      "id": "mesh_cvar_data",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_mesh_buffer_lease.cpp",
+      "egs": {
+        "rva": "0x9ca1dc0",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x9b30150",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "voice_setter",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_voice_language.cpp",
+      "egs": {
+        "rva": "0x31bda70",
+        "bytes": "48894c24085357415541574883ec3883"
+      },
+      "steam": {
+        "rva": "0x2d64b10",
+        "bytes": "405541574883ec28837a0800488d2dd5"
+      }
+    },
+    {
+      "id": "voice_field",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_voice_language.cpp",
+      "egs": {
+        "rva": "0x31bdba0",
+        "bytes": "488d8ff8000000"
+      },
+      "steam": {
+        "rva": "0x2d64bc9",
+        "bytes": "498d8ff8000000"
+      }
+    },
+    {
+      "id": "voice_instance",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_voice_language.cpp",
+      "egs": {
+        "rva": "0x916db38",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x9b33db8",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "texture_task_create",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x3eea730",
+        "bytes": "488bc444894018488950105556574154"
+      },
+      "steam": {
+        "rva": "0x39842b0",
+        "bytes": "40535556574154415641574883ec3048"
+      }
+    },
+    {
+      "id": "texture_task_copy",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x3e93ac0",
+        "bytes": "48894c2408574883ec3048c7442420fe"
+      },
+      "steam": {
+        "rva": "0x3965310",
+        "bytes": "48894c2408574883ec3048c7442420fe"
+      }
+    },
+    {
+      "id": "texture_task_owner",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x3e93190",
+        "bytes": "4488442418555657415641574883ec50"
+      },
+      "steam": {
+        "rva": "0x39d1d30",
+        "bytes": "488bc457415641574883ec6048c740d8"
+      }
+    },
+    {
+      "id": "texture_task_dispatch",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x59a5d0",
+        "bytes": "488974242041564883ec20450fb6d144"
+      },
+      "steam": {
+        "rva": "0xe6b330",
+        "bytes": "4c8bdc45884b20458943184989531053"
+      }
+    },
+    {
+      "id": "texture_update_resource",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x4b14910",
+        "bytes": "40534883ec3048c7442420feffffff48"
+      },
+      "steam": {
+        "rva": "0x4561e00",
+        "bytes": "40534883ec3048c7442420feffffff48"
+      }
+    },
+    {
+      "id": "texture_thread_guards",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x3e9385a",
+        "bytes": "803ddd31410500755c803da6a33005007413ff155ec141023b059ca33005"
+      },
+      "steam": {
+        "rva": "0x3995c5f",
+        "bytes": "803d4a223906007564803d01311d06007413ff15817b27023b05e3301d06"
+      }
+    },
+    {
+      "id": "texture_render_thread_guard",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x3e93920",
+        "bytes": "8b050ea5e604"
+      },
+      "steam": {
+        "rva": "0xe6b356",
+        "bytes": "8b0554158b07"
+      }
+    },
+    {
+      "id": "texture_game_thread",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x919dc14",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x9b68d60",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "texture_threaded_rendering",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x92a6a3e",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x9d27eb0",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "texture_render_thread",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/movies/kh02_movie_texture.cpp",
+      "egs": {
+        "rva": "0x8cfde34",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x871c8b0",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "item_show",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/rewards/kh02_item_notice.cpp",
+      "egs": {
+        "rva": "0x19b7660",
+        "bytes": "488bc45557415441564157488da888feffff4881ec500200"
+      },
+      "steam": {
+        "rva": "0x1648980",
+        "bytes": "405556574154415541564157488dac24b0feffff4881ec50"
+      }
+    },
+    {
+      "id": "item_open",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/rewards/kh02_item_notice.cpp",
+      "egs": {
+        "rva": "0x19b7500",
+        "bytes": "40534883ec20488b01488bd9488d0da5"
+      },
+      "steam": {
+        "rva": "0x1642070",
+        "bytes": "40534883ec20488b01488bd9ff909002"
+      }
+    },
+    {
+      "id": "chest_journal_read",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_progress_service.cpp",
+      "egs": {
+        "rva": "0x123e1a3",
+        "bytes": "418b8c88843601000fa3c10f92c0"
+      },
+      "steam": {
+        "rva": "0xe8f572",
+        "bytes": "418b8c89040400000fa3c10f92c0c3"
+      }
+    },
+    {
+      "id": "chest_save_bank",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/runtime/kh02_progress_service.cpp",
+      "egs": {
+        "rva": "0x766776",
+        "bytes": "488d8370080000"
+      },
+      "steam": {
+        "rva": "0xea8620",
+        "bytes": "488d8170080000"
+      }
+    },
+    {
+      "id": "arrival_fade_start",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/story/kh02_arrival_notifications.cpp",
+      "egs": {
+        "rva": "0x10e5ce0",
+        "bytes": "488bc44c8948205741544155415641574883ec7048c740d0"
+      },
+      "steam": {
+        "rva": "0xe81c50",
+        "bytes": "488bc457415641574883ec6048c740c8feffffff48895808"
+      }
+    },
+    {
+      "id": "arrival_fade_cancel",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/story/kh02_arrival_notifications.cpp",
+      "egs": {
+        "rva": "0x10e6030",
+        "bytes": "488bc45741544155415641574881ec8000000048c740c0fe"
+      },
+      "steam": {
+        "rva": "0xe81a80",
+        "bytes": "488bc441564883ec7048c740c8feffffff48895808488968"
+      }
+    },
+    {
+      "id": "pak_instance",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0xa71c730",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x9e0aa30",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "pak_instance_getter",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0x554bee9",
+        "bytes": "488b0540081d05"
+      },
+      "steam": {
+        "rva": "0x4ee3a70",
+        "bytes": "488b05b96ff204"
+      }
+    },
+    {
+      "id": "pak_vtable",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0x7f18658",
+        "bytes": ""
+      },
+      "steam": {
+        "rva": "0x79eaee8",
+        "bytes": ""
+      }
+    },
+    {
+      "id": "pak_name",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0x553c840",
+        "bytes": "488d05b1ba9d02c3"
+      },
+      "steam": {
+        "rva": "0x4ef0c80",
+        "bytes": "488d05c9a3af02c3"
+      }
+    },
+    {
+      "id": "async_size_result",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0x3274f66",
+        "bytes": "48896b10"
+      },
+      "steam": {
+        "rva": "0x4efc055",
+        "bytes": "4c897310"
+      }
+    },
+    {
+      "id": "async_completion",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/transport/kh02_file_adapter.cpp",
+      "egs": {
+        "rva": "0x3274f72",
+        "bytes": "c64371010faef8"
+      },
+      "steam": {
+        "rva": "0x4efc061",
+        "bytes": "c64371010faef8"
+      }
+    },
+    {
+      "id": "treasure_index_lookup",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/treasure/kh02_treasure_registration.cpp",
+      "egs": {
+        "rva": "0x13eda30",
+        "bytes": "48837958004c8bd10f84980000004533db4c895c2408493b"
+      },
+      "steam": {
+        "rva": "0x1130be0",
+        "bytes": "48837958004c8bd10f84980000004533db4c895c2408493b"
+      }
+    },
+    {
+      "id": "manual_loading_open",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_portal_loading.cpp",
+      "egs": {
+        "rva": "0x1ade290",
+        "bytes": "488bc45557415441564157488bec4881ec8000000048c745"
+      },
+      "steam": {
+        "rva": "0x1757b40",
+        "bytes": "488bc45557415441564157488bec4881ec8000000048c745"
+      }
+    },
+    {
+      "id": "manual_loading_flags",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/ui/kh02_portal_loading.cpp",
+      "egs": {
+        "rva": "0x1ade2ea",
+        "bytes": "c687a100000001c687e001000000"
+      },
+      "steam": {
+        "rva": "0x1757c1f",
+        "bytes": "c687a1000000014488a7e0010000"
+      }
+    },
+    {
+      "id": "voice_instance_getter",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/core/kh02_voice_language.cpp",
+      "egs": {
+        "rva": "0x31bd379",
+        "bytes": "488b1db807fb05"
+      },
+      "steam": {
+        "rva": "0x2d54d19",
+        "bytes": "488b1d98f0dd06"
+      }
+    },
+    {
+      "id": "garden_dialog_decide",
+      "source": "KH3APProbeCpp/kh3ap/features/world/ui_control/world_commands.cpp",
+      "egs": {
+        "rva": "0x1a49950",
+        "bytes": "40574883ec20837a1007488bf9740832c04883c4"
+      },
+      "steam": {
+        "rva": "0x16c7110",
+        "bytes": "40574883ec20837a1007488bf9740832c04883c4"
+      }
+    },
+    {
+      "id": "initialize_equipment",
+      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_phantom_equipment.cpp",
+      "evidence": "Paired pawn virtual +0x12a0: void(pawn,bool force). Binds MyEquipment +0x598 to pawn/MyMesh, then initializes equipment if fixed, m_bEquipmentAutoSpawn +0x658 bit 0, or forced. Fixed setup consumes the reflected m_FixedEquips array; the non-fixed KH3 path consumes EquipData slots rather than KH0.2 MyWeaponSet.",
+      "egs": {
+        "rva": "0x757e50",
+        "bytes": "48895c2408574883ec204c8b89980500"
+      },
+      "steam": {
+        "rva": "0x5ba9c0",
+        "bytes": "48895c2408574883ec204c8b89980500"
+      }
+    }
+  ],
+  "scope": "KH3 host EGS/Steam native sites used by the KH0.2 integration; separate source-game companion identities remain in shared/kh02.",
+  "relationships": [
+    {
+      "origin": "mesh_registration",
+      "target": "mesh_cvar_data",
+      "kind": "rip32",
+      "instruction_size": 7,
+      "displacement_offset": 3
+    },
+    {
+      "origin": "voice_instance_getter",
+      "target": "voice_instance",
+      "kind": "rip32",
+      "instruction_size": 7,
+      "displacement_offset": 3
+    },
+    {
+      "origin": "pak_instance_getter",
+      "target": "pak_instance",
+      "kind": "rip32",
+      "instruction_size": 7,
+      "displacement_offset": 3
+    },
+    {
+      "origin": "pak_vtable",
+      "offset": 96,
+      "target": "pak_name",
+      "kind": "pointer64"
+    },
+    {
+      "origin": "texture_render_thread_guard",
+      "target": "texture_render_thread",
+      "kind": "rip32",
+      "instruction_size": 6,
+      "displacement_offset": 2
+    }
+  ]
+}
