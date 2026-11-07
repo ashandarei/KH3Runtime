@@ -6,6 +6,8 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/input/runtime_player_control.h"
+#include "kh3ap/features/player/characters/character_swap_stats.h"
+#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
@@ -175,6 +177,16 @@ namespace kh3ap::character_style
         target_id = -1;
     }
 
+    bool blocks_swap(UObject* pawn)
+    {
+        // Reuse the executable/layout-checked style sample. Missing ownership
+        // or unsupported layouts cannot authorize retiring the outgoing pawn.
+        const auto live = sample(pawn);
+        return !live || blocks_character_swap(
+                            live->form.command,
+                            character_swap::character_integer_value(pawn, L"GetStateID"));
+    }
+
     void reset()
     {
         cancel();
@@ -293,19 +305,44 @@ namespace kh3ap::character_style
 
     bool offer_for_test(UObject* pawn, int command)
     {
+        // ETresWeaponType values for the two supported Second Form fixtures.
+        constexpr int second_form_l1_weapon_type = 1;  // TRES_WEAPON_TYPE_01
+        constexpr int second_form_l3_weapon_type = 14; // TRES_WEAPON_TYPE_14
+
         const auto live = sample(pawn);
         if (!live || !runtime_sora_control_ready(pawn) ||
-            !character_native::verify_sites({Site::style_offer_command}) ||
-            !((player_id(pawn) == player_id_value(PlayerId::Aqua) && command == 153) ||
-              (player_id(pawn) == player_id_value(PlayerId::Sora) &&
-               ((live->form.weapon == 1 && command == 148) ||
-                (live->form.weapon == 14 && command == 150)))))
+            !character_native::verify_sites({Site::style_offer_command}))
         {
             return false;
+        }
+        const int player = player_id(pawn);
+        const bool rage = is_standard_sora_player_id(player) && command == rage_form_command;
+        const bool spellweaver =
+            player == player_id_value(PlayerId::Aqua) && command == spellweaver_command;
+        const bool second_form =
+            player == player_id_value(PlayerId::Sora) &&
+            ((live->form.weapon == second_form_l1_weapon_type &&
+              command == second_form_l1_command) ||
+             (live->form.weapon == second_form_l3_weapon_type &&
+              command == second_form_l3_command));
+        if (!rage && !spellweaver && !second_form)
+        {
+            return false;
+        }
+        if (rage)
+        {
+            // Offer through the shipping Rage eligibility path, then let the
+            // normal situation-command input activate it. Readback after that
+            // input, rather than this dispatch, establishes active Rage.
+            Kh02ReflectedCall offer(live->controller, L"BP_NotifySetAntiFormCommand",
+                                   "character Rage Form fixture", 256);
+            offer.run();
+            return true;
         }
         native<void (*)(UObject*, int, float, UObject*)>(Site::style_offer_command)(
             live->controller, command, 30.0f, nullptr);
         return true;
     }
+
 #endif
 } // namespace kh3ap::character_style

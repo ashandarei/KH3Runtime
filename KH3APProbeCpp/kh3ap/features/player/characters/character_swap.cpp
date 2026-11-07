@@ -84,7 +84,6 @@ namespace kh3ap::character_swap
     {
         constexpr auto possession_property_cache_capacity = 64;
         constexpr auto max_character_swap_parameter_bytes = 256;
-        constexpr auto last_standard_sora_player_id = 7;
 
         constexpr auto character_swap_prepare_timeout = std::chrono::seconds(30);
         constexpr auto character_swap_handoff_timeout = std::chrono::seconds(10);
@@ -287,7 +286,7 @@ namespace kh3ap::character_swap
         bool sora_variant(UObject* pawn)
         {
             const int kind = id(pawn);
-            if (kind >= 0 && kind <= last_standard_sora_player_id)
+            if (is_standard_sora_player_id(kind))
             {
                 return true;
             }
@@ -456,7 +455,8 @@ namespace kh3ap::character_swap
                                          character_integer_value(pawn, L"GetStateID") !=
                                              player_state_ids::open_treasure_box &&
                                          character_integer_value(pawn, L"GetHitPoint") > 0;
-            if ((!cinematic_owner && (!ready(pawn) || character_shotlock::blocks_swap(pawn))) ||
+            if (character_style::blocks_swap(pawn) ||
+                (!cinematic_owner && (!ready(pawn) || character_shotlock::blocks_swap(pawn))) ||
                 !prepare_shared_support(target))
             {
                 return false;
@@ -739,7 +739,13 @@ namespace kh3ap::character_swap
                     }
                 }
             }
-            if (!ascension_locked() && session.travel_character_id >= 0 &&
+            const bool native_sora = is_uobject_valid_fast(world) &&
+                                     cinematic_requires_native_sora(world->GetPathName());
+            if (native_sora && session.travel_character_id >= 0 && cinematic_uses_sora(matinee))
+            {
+                session.native_cinematic_world = make_uobject_weak(world);
+            }
+            if (!native_sora && !ascension_locked() && session.travel_character_id >= 0 &&
                 cinematic_uses_sora(matinee) &&
                 character_cinematic_binding::can_bind(matinee))
             {
@@ -944,7 +950,10 @@ namespace kh3ap::character_swap
                 return false;
             }
             auto* pawn = player();
-            if (ascension.restore_pending && !ready(pawn))
+            // Player-start and movie-finished notifications can arrive under
+            // the loading cover, before the ship has placed/attached Sora.
+            // Retain the bounded request until normal control is available.
+            if (!ready(pawn))
             {
                 return false;
             }
@@ -1747,7 +1756,7 @@ namespace kh3ap::character_swap
                (sora_variant(pawn) || pawn == current_hero() ||
                 (session.pending && id(pawn) == session.target_id &&
                  kh02_actor_world(pawn) == session.swap_world.Get())) &&
-               !character_shotlock::blocks_swap(pawn);
+               !character_shotlock::blocks_swap(pawn) && !character_style::blocks_swap(pawn);
     }
 
     bool handoff_pending()

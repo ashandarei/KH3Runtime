@@ -9,6 +9,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/player_state_ids.h"
+#include "kh3ap/features/player/player_ids.h"
 
 #include <Unreal/UObject.hpp>
 #include <Unreal/AActor.hpp>
@@ -27,7 +28,6 @@ namespace kh3ap
     namespace
     {
         constexpr auto minimum_attack_combo_count = 2;
-        constexpr auto last_standard_sora_player_id = 7;
         constexpr auto pooh_sign_count = 3;
 
         constexpr auto combo_release_lead_ms = 50;
@@ -318,7 +318,7 @@ namespace kh3ap
                 !character_native::verify_sites({Site::dive_attack_window}) ||
                 world_name != L"/Game/Levels/he/he_06/he_06.HE_06" || !id ||
                 id->GetElementSize() != sizeof(uint8_t) ||
-                *id->ContainerPtrToValuePtr<uint8_t>(pawn) > last_standard_sora_player_id)
+                !is_standard_sora_player_id(*id->ContainerPtrToValuePtr<uint8_t>(pawn)))
             {
                 throw std::runtime_error("tornado_dive_window_requires_supported_sora");
             }

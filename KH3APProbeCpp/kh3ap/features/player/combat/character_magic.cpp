@@ -11,6 +11,7 @@
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/player/player_animation_support.h"
+#include "kh3ap/features/player/player_ids.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FMemory.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
@@ -46,7 +47,6 @@ namespace kh3ap::character_magic
         constexpr auto first_spell_meter = aqua_meter;
         constexpr auto last_spell_meter = roxas_meter;
         constexpr auto spell_meter_count = last_spell_meter - first_spell_meter + 1;
-        constexpr auto last_standard_sora_player_id = 7;
         // Additional shipping Sora variants share the same persistent MP meter.
         constexpr std::array sora_variant_player_ids{13, 15};
         constexpr auto magic_property_cache_capacity = 32;
@@ -87,7 +87,7 @@ namespace kh3ap::character_magic
                 return -1;
             }
             const int id = *field->ContainerPtrToValuePtr<uint8_t>(pawn);
-            if (id <= last_standard_sora_player_id ||
+            if (is_standard_sora_player_id(id) ||
                 std::find(sora_variant_player_ids.begin(), sora_variant_player_ids.end(), id) !=
                     sora_variant_player_ids.end())
             {

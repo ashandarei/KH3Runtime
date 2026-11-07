@@ -71,7 +71,7 @@ namespace kh3ap
 
         int attack_kind(int player)
         {
-            if (player >= 0 && player <= 7)
+            if (is_standard_sora_player_id(player))
             {
                 return 12;
             }

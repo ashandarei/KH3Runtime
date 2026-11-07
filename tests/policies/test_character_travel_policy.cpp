@@ -4,6 +4,12 @@
 int main()
 {
     using kh3ap::character_swap::travel_target_after_swap;
+    using kh3ap::character_swap::cinematic_requires_native_sora;
+    assert(cinematic_requires_native_sora(L"/Game/Levels/ca/ca_01/ca_01.ca_01"));
+    assert(cinematic_requires_native_sora(L"World /Game/Levels/ca/ca_02/ca_02.ca_02"));
+    assert(!cinematic_requires_native_sora(L"/Game/Levels/ra/ra_02/ra_02.ra_02"));
+    assert(!cinematic_requires_native_sora(L"/Game/Levels/kg_DLC/kg_06/kg_06.kg_06"));
+    assert(!cinematic_requires_native_sora(L""));
     int intent = travel_target_after_swap(-1, 16, 0, false);
     assert(intent == 16);
     // A native cinematic Sora handoff must not undo the player's choice.

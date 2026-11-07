@@ -5,8 +5,23 @@
 int main()
 {
     using namespace kh3ap::character_style;
-    const Form spellweaver{153, 1, 1, 829, 1, 0, 17.25f, 30.0f};
+    const Form spellweaver{spellweaver_command, 1, 1, 829, 1, 0, 17.25f, 30.0f};
     assert(resumable(spellweaver));
+    // Rage cannot be parked/restored as an ordinary timed Keyblade form.
+    auto rage = spellweaver;
+    rage.command = rage_form_command;
+    assert(!resumable(rage));
+    using namespace kh3ap::player_state_ids;
+    for (int state : {idle, run, jump, attack, combo_anti})
+    {
+        assert(blocks_character_swap(rage_form_command, state));
+    }
+    assert(blocks_character_swap(0, combo_anti));
+    assert(blocks_character_swap(second_form_l1_command, style_change));
+    assert(blocks_character_swap(second_form_l1_command, weapon_change));
+    assert(!blocks_character_swap(second_form_l1_command, idle));
+    assert(!blocks_character_swap(spellweaver_command, attack));
+    assert(!blocks_character_swap(0, idle));
     for (float expired : {0.0f, -1.0f, std::numeric_limits<float>::quiet_NaN(),
                           std::numeric_limits<float>::infinity(), 30.1f})
     {

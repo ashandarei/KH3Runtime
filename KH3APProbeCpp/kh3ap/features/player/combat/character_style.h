@@ -14,6 +14,7 @@ namespace kh3ap::character_style
     bool pending();
     void cancel();
     void reset();
+    bool blocks_swap(RC::Unreal::UObject* pawn);
 
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
     std::string inspect(RC::Unreal::UObject* pawn);
