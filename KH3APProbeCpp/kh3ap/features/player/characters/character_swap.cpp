@@ -1,4 +1,5 @@
 #include <chrono>
+#include "kh3ap/features/player/character_ids.h"
 #include <utility>
 #include "kh3ap/features/world/portals/portal_policy.h"
 #include "kh3ap/features/player/characters/character_profile.h"
@@ -87,8 +88,8 @@ namespace kh3ap::character_swap
 
         constexpr auto character_swap_prepare_timeout = std::chrono::seconds(30);
         constexpr auto character_swap_handoff_timeout = std::chrono::seconds(10);
-        constexpr int pooh_sora_factory_kind = 13;
-        constexpr int yozora_sora_factory_kind = 15;
+        constexpr int pooh_sora_factory_kind = player_id_value(PlayerId::SoraHundredAcreWood);
+        constexpr int yozora_sora_factory_kind = player_id_value(PlayerId::SoraYozora);
         constexpr int maximum_cinematic_groups = 512;
 
         using Clock = std::chrono::steady_clock;
@@ -103,8 +104,11 @@ namespace kh3ap::character_swap
         };
 
         // ETresPlayerUniqueID: Ventus has no ordinary player pawn implementation.
-        constexpr std::array choices{Choice{L"Off", -1}, Choice{L"Aqua", 10}, Choice{L"Kairi", 16},
-                                     Choice{L"Roxas", 17}, Choice{L"Riku", 8}};
+        constexpr std::array choices{Choice{L"Off", -1},
+                                     Choice{L"Aqua", player_id_value(PlayerId::Aqua)},
+                                     Choice{L"Kairi", player_id_value(PlayerId::Kairi)},
+                                     Choice{L"Roxas", player_id_value(PlayerId::Roxas)},
+                                     Choice{L"Riku", player_id_value(PlayerId::Riku)}};
         size_t selected{};
         RuntimeOptionsInputOwnership input;
 
@@ -418,8 +422,8 @@ namespace kh3ap::character_swap
             static constexpr size_t item_slot_bytes = 8;
             static constexpr size_t item_flags_offset = 4;
             static constexpr uint8_t item_slot_available = 1;
-            static constexpr uint8_t riku_character = 2;
-            static constexpr uint8_t riku_player = 8;
+            static constexpr uint8_t riku_character = character_id_value(CharacterId::Riku);
+            static constexpr uint8_t riku_player = player_id_value(PlayerId::Riku);
             Lookup lookup_{};
             FWeakObjectPtr world_, instance_;
             // Borrowed only within one synchronous factory call, never a frame.

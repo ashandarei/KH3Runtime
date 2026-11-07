@@ -1,4 +1,5 @@
 #include "kh02_world_context.h"
+#include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/kh02/core/kh02_world_identity.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -73,8 +74,8 @@ namespace kh3ap
         {
             return nullptr;
         }
-        constexpr uint8_t sora_player_id = 0;
-        constexpr uint8_t aqua_player_id = 10;
+        constexpr int sora_player_id = player_id_value(PlayerId::Sora);
+        constexpr int aqua_player_id = player_id_value(PlayerId::Aqua);
         const auto value = *id->ContainerPtrToValuePtr<uint8_t>(pawn);
         return value == sora_player_id || value == aqua_player_id ? pawn : nullptr;
     }

@@ -255,7 +255,7 @@ namespace kh3ap
             ReflectedCall change(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"BP_TresGameChangePlayer");
             change.object(L"WorldContextObject", pawn);
-            change.integer(L"InKind", aqua_player_kind);
+            change.integer(L"InKind", aqua_player_id);
             change.run();
         }
         else if (action == Action::WithinTestLeaveIslandsBattle)

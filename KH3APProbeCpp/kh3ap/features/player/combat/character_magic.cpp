@@ -48,7 +48,8 @@ namespace kh3ap::character_magic
         constexpr auto last_spell_meter = roxas_meter;
         constexpr auto spell_meter_count = last_spell_meter - first_spell_meter + 1;
         // Additional shipping Sora variants share the same persistent MP meter.
-        constexpr std::array sora_variant_player_ids{13, 15};
+        constexpr std::array sora_variant_player_ids{player_id_value(PlayerId::SoraHundredAcreWood),
+                                                     player_id_value(PlayerId::SoraYozora)};
         constexpr auto magic_property_cache_capacity = 32;
         constexpr auto native_magic_unit_settings_bytes = 23;
         constexpr auto native_magic_unit_bytes = 40;

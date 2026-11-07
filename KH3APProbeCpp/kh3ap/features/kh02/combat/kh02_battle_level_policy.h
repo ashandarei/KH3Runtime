@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/features/player/player_ids.h"
 #include "kh02_enemy_scaling_policy.h"
 #include "kh3ap/features/grants/battle_level/battle_level_progress.h"
 #include <cstdint>
@@ -70,7 +71,7 @@ namespace kh3ap
         // Preserve the original level-50 enemy balance for Aqua. Her independent
         // level growth must make her stronger, not rescale enemies after each level.
         // The KH3 host map's authored battle level can still be 2 in Castle Town.
-        if (player_id == 10)
+        if (player_id == player_id_value(PlayerId::Aqua))
         {
             return kh02_aqua_battle_level;
         }
@@ -78,7 +79,7 @@ namespace kh3ap
         {
             return native_level;
         }
-        if (player_id != 0 || !sora_level || *sora_level < 1 || *sora_level > 100)
+        if (player_id != player_id_value(PlayerId::Sora) || !sora_level || *sora_level < 1 || *sora_level > 100)
         {
             return std::nullopt;
         }

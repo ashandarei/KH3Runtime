@@ -312,7 +312,7 @@ namespace kh3ap
         }
         if (action == Action::FlowTestCharacterAqua || action == Action::FlowTestCharacterSora)
         {
-            const auto requested_kind = action == Action::FlowTestCharacterAqua ? aqua_player_kind : sora_player_kind;
+            const auto requested_kind = action == Action::FlowTestCharacterAqua ? aqua_player_id : sora_player_id;
             if (!entry.initialized || gameplay.world.Get() != w || movie_bridge.playing() ||
                 w->GetPathName() != L"/Game/Maps/APKH02CastleTown/APKH02CastleTown.APKH02CastleTown" ||
                 !runtime_sora_control_ready(pawn))

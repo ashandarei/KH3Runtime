@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/features/player/player_ids.h"
 #include "kh02_diagnostic_actions.h"
 #include "kh02_runtime_inspection.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
@@ -37,8 +38,8 @@ namespace kh3ap::kh02diagnostic_detail
     constexpr std::size_t native_vector_bytes = 3 * sizeof(float);
     constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
     constexpr int actor_scan_limit = 16'384;
-    constexpr int sora_player_kind = 0;
-    constexpr int aqua_player_kind = 10;
+    constexpr int sora_player_id = player_id_value(PlayerId::Sora);
+    constexpr int aqua_player_id = player_id_value(PlayerId::Aqua);
 
     struct ReflectedCall : Kh02ReflectedCall
     {

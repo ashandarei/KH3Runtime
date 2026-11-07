@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_layout.h"
+#include "kh3ap/features/player/character_ids.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/movement/character_airstep.h"
 #include "kh3ap/features/player/movement/character_airstep_gate_stub.h"
@@ -28,23 +29,24 @@ namespace kh3ap::character_airstep
         FWeakObjectPtr aim_pawn;
         FWeakObjectPtr aim_controller;
 
-        class NativePlayerKindScope
+        class NativeSoraCharacterKindScope
         {
         public:
-            explicit NativePlayerKindScope(UObject* pawn)
+            explicit NativeSoraCharacterKindScope(UObject* pawn)
                 : pawn_(make_uobject_weak(pawn)), original_(kind(pawn))
             {
-                kind(pawn) = 1;
+                kind(pawn) = character_id_value(CharacterId::Sora);
             }
-            ~NativePlayerKindScope()
+            ~NativeSoraCharacterKindScope()
             {
                 if (auto* pawn = pawn_.Get())
                 {
                     kind(pawn) = original_;
                 }
             }
-            NativePlayerKindScope(const NativePlayerKindScope&) = delete;
-            NativePlayerKindScope& operator=(const NativePlayerKindScope&) = delete;
+            NativeSoraCharacterKindScope(const NativeSoraCharacterKindScope&) = delete;
+            NativeSoraCharacterKindScope& operator=(const NativeSoraCharacterKindScope&) = delete;
+
         private:
             FWeakObjectPtr pawn_;
             uint8_t original_;
@@ -61,7 +63,7 @@ namespace kh3ap::character_airstep
                 if (pawn && pawn == aim_pawn.Get() && character_swap::owns_swap_pawn(pawn) &&
                     try_read_reflected_object_property_value(pawn, L"Controller") == aim_controller.Get())
                 {
-                    return 1;
+                    return character_id_value(CharacterId::Sora);
                 }
             }
             catch (...)
@@ -128,7 +130,7 @@ namespace kh3ap::character_airstep
             // This one native eligibility call hardcodes Sora's character kind.
             // Keep every other native check and state-factory request intact.
             // The real kind is restored synchronously before returning to input.
-            NativePlayerKindScope player_kind(pawn);
+            NativeSoraCharacterKindScope character_kind(pawn);
             return original(state_interface);
         }
     }
