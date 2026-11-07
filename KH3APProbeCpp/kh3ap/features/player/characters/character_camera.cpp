@@ -140,8 +140,10 @@ namespace kh3ap::character_camera
         adjusted_camera = make_uobject_weak(camera);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         RC::Output::send<RC::LogLevel::Normal>(
-            STR("[KH3APProbeCpp] CharacterCameraHeight player=17 sora_target={} socket={} offset={}\n"),
-            sora_target_height, original_height, target_offset[2]);
+            STR("[KH3APProbeCpp] CharacterCameraHeight player={} sora_target={} socket={} "
+                "offset={}\n"),
+            player_id_value(PlayerId::Roxas), sora_target_height, original_height,
+            target_offset[2]);
 #endif
     }
 

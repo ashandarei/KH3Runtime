@@ -9,12 +9,25 @@ namespace kh3ap
     enum class PlayerId : uint8_t
     {
         Sora = 0,
+        SoraCaribbean = 1,
+        SoraMonstropolis = 2,
+        SoraToyBox = 3,
+        SoraKH3BX = 4,
+        SoraKH3EW = 5,
+        SoraKH2 = 6,
         SoraKH1 = 7,
         Riku = 8,
+        RikuKH29 = 9,
         Aqua = 10,
+        SoraTutorial = 11,
+        SoraToyBoxGame = 12,
+        SoraHundredAcreWood = 13,
+        Unknown = 14,
+        SoraYozora = 15,
         Kairi = 16,
         Roxas = 17,
         KingMickey = 18,
+        SoraKH3SoKc = 19,
     };
 
     constexpr int player_id_value(PlayerId id)

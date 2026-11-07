@@ -1,4 +1,6 @@
 #include "kh02_inventory_menu.h"
+#include "kh3ap/features/player/player_ids.h"
+#include "kh3ap/features/player/character_ids.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "alternate_weapon_catalog.h"
 #include "character_record_lookup_stub.h"
@@ -77,19 +79,19 @@ namespace kh3ap
             auto* property =
                 is_uobject_valid_fast(hero) ? hero->GetPropertyByNameInChain(L"m_PlayerUniqueID") : nullptr;
             const auto player = property ? *property->ContainerPtrToValuePtr<uint8_t>(hero) : 255;
-            switch (player)
+            switch (static_cast<PlayerId>(player))
             {
-            case 8:
-            case 9:
-                return 2;
-            case 10:
-                return 6;
-            case 16:
-                return 3;
-            case 17:
-                return 7;
+            case PlayerId::Riku:
+            case PlayerId::RikuKH29:
+                return character_id_value(CharacterId::Riku);
+            case PlayerId::Aqua:
+                return character_id_value(CharacterId::Aqua);
+            case PlayerId::Kairi:
+                return character_id_value(CharacterId::Kairi);
+            case PlayerId::Roxas:
+                return character_id_value(CharacterId::Roxas);
             default:
-                return 0;
+                return character_id_value(CharacterId::Unknown);
             }
         }
 
@@ -493,12 +495,12 @@ namespace kh3ap
             // immediately before the controller builds its portrait spawn queue.
             if (spawning_portrait && !status)
             {
-                const auto player = field<uint8_t>(camp_controller, 0xc8);
-                const auto* asset = player == 8    ? L"p_ex004"
-                                    : player == 9  ? L"p_ex003"
-                                    : player == 16 ? L"p_ex006"
-                                    : player == 17 ? L"p_ex007"
-                                                   : L"p_ex002";
+                const auto player = static_cast<PlayerId>(field<uint8_t>(camp_controller, 0xc8));
+                const auto* asset = player == PlayerId::Riku       ? L"p_ex004"
+                                    : player == PlayerId::RikuKH29 ? L"p_ex003"
+                                    : player == PlayerId::Kairi    ? L"p_ex006"
+                                    : player == PlayerId::Roxas    ? L"p_ex007"
+                                                                   : L"p_ex002";
                 const auto path =
                     std::wstring{L"/Game/UI/Data/Character/"} + asset + L"_StatusData." + asset + L"_StatusData";
                 status = find_loaded_runtime_asset(path.c_str());

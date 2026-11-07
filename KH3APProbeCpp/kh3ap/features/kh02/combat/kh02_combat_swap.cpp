@@ -75,19 +75,19 @@ namespace kh3ap
             {
                 return 12;
             }
-            if (player == 10)
+            if (player == player_id_value(PlayerId::Aqua))
             {
                 return 13;
             }
-            if (player == 8 || player == 9)
+            if (player == player_id_value(PlayerId::Riku) || player == player_id_value(PlayerId::RikuKH29))
             {
                 return 14;
             }
-            if (player == 17)
+            if (player == player_id_value(PlayerId::Roxas))
             {
                 return 156;
             }
-            if (player == 16)
+            if (player == player_id_value(PlayerId::Kairi))
             {
                 return 157;
             }
@@ -706,9 +706,10 @@ namespace kh3ap
                        (ordinary_state(state_id(state(pawn))) || state_id(state(pawn)) == 4 ||
                         state_id(state(pawn)) == 5);
             }
-            if ((id != 0 && id != 10) || !Kh02Story::native_save_ready(pawn) ||
-                kh02_actor_world(pawn) != swap_context_world() || !runtime_sora_control_ready(pawn) ||
-                Kh02Story::challenges_open() || !ordinary_state(state_id(state(pawn))))
+            if ((id != player_id_value(PlayerId::Sora) && id != player_id_value(PlayerId::Aqua)) ||
+                !Kh02Story::native_save_ready(pawn) || kh02_actor_world(pawn) != swap_context_world() ||
+                !runtime_sora_control_ready(pawn) || Kh02Story::challenges_open() ||
+                !ordinary_state(state_id(state(pawn))))
             {
                 return false;
             }
@@ -1457,8 +1458,10 @@ namespace kh3ap
             positioned = {};
             next_index = captured_index;
             air = captured_air;
-            target = kh02_current_story_world() ? (player_id(pawn) == 0 ? 10 : 0)
-                                                : character_swap::swap_target(pawn);
+            target = kh02_current_story_world()
+                         ? (player_id(pawn) == player_id_value(PlayerId::Sora) ? player_id_value(PlayerId::Aqua)
+                                                                               : player_id_value(PlayerId::Sora))
+                         : character_swap::swap_target(pawn);
             requested_at = Clock::now();
             waiting_for_preload = false;
             attack_input_until = requested_at + switch_timeout + combo_grace;
@@ -1890,8 +1893,10 @@ namespace kh3ap
             test_movement = false;
             test_rotate = false;
             test_locomotion = false;
-            test_target = kh02_current_story_world() ? (player_id(pawn) == 0 ? 10 : 0)
-                                                     : character_swap::swap_target(pawn);
+            test_target = kh02_current_story_world()
+                              ? (player_id(pawn) == player_id_value(PlayerId::Sora) ? player_id_value(PlayerId::Aqua)
+                                                                                    : player_id_value(PlayerId::Sora))
+                              : character_swap::swap_target(pawn);
             test_expected_index = expire ? 0 : airborne ? 1 : 2;
             test_air = airborne;
             test_input_mode = 0;
@@ -2540,7 +2545,7 @@ namespace kh3ap
         }
         auto* pawn = impl->player();
         const auto ability = try_resolve_runtime_enum_value(L"ETresAbilityKind::COMBO_MASTER");
-        if (!impl->available(pawn) || player_id(pawn) != 0 || !ability || *ability > 255)
+        if (!impl->available(pawn) || player_id(pawn) != player_id_value(PlayerId::Sora) || !ability || *ability > 255)
         {
             return false;
         }

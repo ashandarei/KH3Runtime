@@ -1,4 +1,5 @@
 #include "kh02_battle_level_observer.h"
+#include "kh3ap/features/player/player_ids.h"
 #include "kh02_enemy_stat_assets.h"
 #include "kh02_tide_reference.h"
 #include "kh02_enemy_scaling_policy.h"
@@ -39,7 +40,7 @@ namespace kh3ap
         constexpr size_t enemy_capture_limit = 256;
         constexpr size_t health_change_history_limit = 64;
         constexpr auto hero_profile_check_interval = std::chrono::milliseconds(250);
-        constexpr int sora_player_id = 0;
+        constexpr int sora_player_id = player_id_value(PlayerId::Sora);
         constexpr double maximum_native_stat_rate = 1'000;
         constexpr std::size_t reflected_parameter_limit_bytes = 64;
 
