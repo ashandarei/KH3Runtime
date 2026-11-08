@@ -8,7 +8,7 @@ namespace kh3ap
     class Kh02PostclearTreasure
     {
       public:
-        void tick(RC::Unreal::UObject* pawn, bool chapter_complete);
+        void tick(RC::Unreal::UObject* pawn);
         auto snapshot() const -> nlohmann::json;
 
       private:

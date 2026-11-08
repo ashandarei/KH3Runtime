@@ -15,7 +15,7 @@ namespace kh3ap
 {
     using namespace RC::Unreal;
 
-    void Kh02PostclearTreasure::tick(UObject* pawn, bool chapter_complete)
+    void Kh02PostclearTreasure::tick(UObject* pawn)
     {
         auto* current_world = kh02_actor_world(pawn);
         if (world.Get() != current_world)
@@ -26,12 +26,12 @@ namespace kh3ap
             requested = false;
             ready = false;
         }
-        if (!chapter_complete || !is_uobject_valid_fast(current_world))
+        if (!is_uobject_valid_fast(current_world) || (ready && is_uobject_valid_fast(stream.Get())))
         {
             return;
         }
-        const auto target = kh02_postclear_treasure_package(current_world->GetPathName(), chapter_complete);
-        if (target.empty() || (ready && is_uobject_valid_fast(stream.Get())))
+        const auto target = kh02_postclear_treasure_package(current_world->GetPathName());
+        if (target.empty())
         {
             return;
         }

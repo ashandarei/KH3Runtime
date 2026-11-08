@@ -1277,7 +1277,9 @@ namespace kh3ap
             track_challenges(pawn);
             if (challenges_active())
             {
-                postclear_treasure.tick(pawn, source_flags.value(L"gameflow_REBELLIS_CLEAR") != 0);
+                // Use the initialized, world-bound chapter pawn even when the
+                // ordinary KH3 grant gate excludes this imported host.
+                postclear_treasure.tick(gameplay.pawn.Get());
             }
             // Arrival must finish streaming the authored PlayerStarts before the HUD
             // resolves the initial minimap section.
