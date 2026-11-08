@@ -25,6 +25,7 @@ namespace kh3ap
         void rebind_boss_retry(RC::Unreal::UObject* world);
         void rebind_mirror(RC::Unreal::UObject* world);
         void reset_mirror_hub_entry();
+        void start_boss_rush_attempt();
         void select_mirror_room_entry(int area);
         auto active() const -> bool;
         auto value(std::wstring_view key, int fallback = 0) const -> int;

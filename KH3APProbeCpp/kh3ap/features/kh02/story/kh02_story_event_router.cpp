@@ -117,6 +117,10 @@ namespace kh3ap
             {
                 return;
             }
+            if (begin_play || target_changed)
+            {
+                callbacks.boss_rush_mirror_begin_play(object);
+            }
             if (forest_resume)
             {
                 auto* world = kh02_actor_world(object);

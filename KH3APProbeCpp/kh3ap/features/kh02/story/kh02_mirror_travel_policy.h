@@ -17,6 +17,7 @@ namespace kh3ap::kh02_mirror_travel
         std::wstring package, tag;
         int fade{};
         bool special_battle_clear{};
+        bool boss_rush_entry{};
     };
 
     inline auto resolve(std::wstring_view caller_path, std::wstring_view source_world_path,
@@ -26,7 +27,16 @@ namespace kh3ap::kh02_mirror_travel
         constexpr int maximum_source_fade_kind = 3;
         constexpr int root_script_area_begin = 50;
         int source_area = 0;
-        for (int area_id : {3, 4, 5, 6, 7, 8, 9, 10, 11, 59, 60})
+        // The boss-rush entrance belongs to the hub challenge script rather
+        // than its gameflow. Accept only its original arena/start pair.
+        const bool boss_rush_entry = caller_path == L"/Game/Zevels/dw/dw_03/umap/dw_03_challenge.dw_03_challenge_C:"
+                                                    L"ExecuteUbergraph_dw_03_challenge";
+        if (boss_rush_entry && destination == L"/Game/Zevels/dw/dw_11/dw_11" &&
+            destination_tag == L"dw_11_Lv_Start_01" && fade_kind == 0)
+        {
+            source_area = 3;
+        }
+        for (int area_id : {3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 59, 60})
         {
             auto area = std::wstring(area_id < 10 ? L"0" : L"") + std::to_wstring(area_id);
             if (caller_path.starts_with(L"/Game/Zevels/dw/dw_" + area +
@@ -89,6 +99,6 @@ namespace kh3ap::kh02_mirror_travel
         const bool special_battle_clear = source_area == 7 && destination_tag == L"dw_03_Lv_ChallengeClear" &&
                                           caller_path.starts_with(L"/Game/Zevels/dw/dw_07/umap/dw_07_gameflow.");
         return {std::move(host_package), epilogue_return ? L"NormalSpawn" : destination_tag, fade_kind,
-                special_battle_clear};
+                special_battle_clear, boss_rush_entry};
     }
 } // namespace kh3ap::kh02_mirror_travel

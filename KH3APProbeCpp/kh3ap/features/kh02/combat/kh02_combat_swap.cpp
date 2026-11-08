@@ -3,6 +3,7 @@
 #include "kh02_combat_swap.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/player_ids.h"
+#include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_camera.h"
@@ -73,30 +74,32 @@ namespace kh3ap
         {
             if (is_standard_sora_player_id(player))
             {
-                return 12;
+                return player_state_ids::attack;
             }
             if (player == player_id_value(PlayerId::Aqua))
             {
-                return 13;
+                return player_state_ids::attack_aqua;
             }
             if (player == player_id_value(PlayerId::Riku) || player == player_id_value(PlayerId::RikuKH29))
             {
-                return 14;
+                return player_state_ids::attack_riku;
             }
             if (player == player_id_value(PlayerId::Roxas))
             {
-                return 156;
+                return player_state_ids::attack_roxas;
             }
             if (player == player_id_value(PlayerId::Kairi))
             {
-                return 157;
+                return player_state_ids::attack_kairi;
             }
             return -1;
         }
 
         constexpr auto combo_grace = std::chrono::milliseconds(750);
+        constexpr size_t hud_selected_main_command_offset = 0x6f0;
+        constexpr size_t hud_command_state_offset = 0xac8;
+        constexpr int hud_main_command_state = 1;
         constexpr auto switch_timeout = std::chrono::seconds(2);
-        constexpr int run_state_id = 2;
         constexpr int run_loop_phase = 0;
         constexpr int run_entry_phase = 2;
         constexpr int run_stance_blend_phase = 3;
@@ -180,8 +183,11 @@ namespace kh3ap
         {
             // Idle, Run, Jump (including falling), supported normal attacks,
             // Guard, DodgeRoll and RiskDodge. Scripted/special states retain R2.
-            return id == 1 || id == 2 || id == 3 || id == 12 || id == 13 || id == 14 || id == 156 || id == 157 ||
-                   id == 15 || id == 16 || id == 17;
+            return id == player_state_ids::idle || id == player_state_ids::run || id == player_state_ids::jump ||
+                   id == player_state_ids::attack || id == player_state_ids::attack_aqua ||
+                   id == player_state_ids::attack_riku || id == player_state_ids::attack_roxas ||
+                   id == player_state_ids::attack_kairi || id == player_state_ids::guard ||
+                   id == player_state_ids::dodge_roll || id == player_state_ids::risk_dodge;
         }
 
         bool attack_state(UObject* current, UObject* pawn)
@@ -550,7 +556,7 @@ namespace kh3ap
         int test_input_mode{}, test_origin{};
         float test_swing_phase{0.35f};
         bool test_air{}, test_expire{}, test_held{}, test_jump{};
-        bool test_camera{}, test_movement{}, test_rotate{};
+        bool test_camera{}, test_movement{}, test_rotate{}, test_menu{};
         bool test_locomotion{};
         bool test_camera_relative{};
         bool test_release_at_swap{};
@@ -703,8 +709,8 @@ namespace kh3ap
             if (!kh02_current_story_world())
             {
                 return character_swap::swap_available(pawn) &&
-                       (ordinary_state(state_id(state(pawn))) || state_id(state(pawn)) == 4 ||
-                        state_id(state(pawn)) == 5);
+                       (ordinary_state(state_id(state(pawn))) || state_id(state(pawn)) == player_state_ids::glide ||
+                        state_id(state(pawn)) == player_state_ids::floating);
             }
             if ((id != player_id_value(PlayerId::Sora) && id != player_id_value(PlayerId::Aqua)) ||
                 !Kh02Story::native_save_ready(pawn) || kh02_actor_world(pawn) != swap_context_world() ||
@@ -1011,7 +1017,7 @@ namespace kh3ap
             // Waiting for the initial Idle state costs a movement frame and can
             // apply braking before Run has a chance to restore its progress.
             reinterpret_cast<void (*)(UObject*)>(base + queue_clear_rva)(component);
-            auto* run = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(component, run_state_id);
+            auto* run = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(component, player_state_ids::run);
             if (!is_uobject_valid_fast(run) || object(run, L"MyCharPawn") != pawn ||
                 run->GetClassPrivate()->GetName() != L"TresPlayerState_Run")
             {
@@ -1170,6 +1176,50 @@ namespace kh3ap
             return selected;
         }
 
+        std::optional<bool> attack_command_selected(UObject* pawn)
+        {
+            auto* manager = object(object(kh02_current_viewport(), L"GameInstance"), L"m_UIManager");
+            auto* controller = object(manager, L"m_pPlayerController");
+            if (!is_uobject_valid_fast(controller) ||
+                (controller != object(pawn, L"Controller") &&
+                 (!queued || controller != object(outgoing.Get(), L"Controller"))))
+            {
+                return std::nullopt;
+            }
+            auto* active_hud = object(manager, L"m_ActiveHUD");
+            auto* hud = object(object(active_hud, L"TresCockpit"), L"m_pHudCommand");
+            if (!is_uobject_valid_fast(hud) || hud->GetClassPrivate()->GetName() != L"TresUIP_HudCommand" ||
+                kh02_actor_world(active_hud) != kh02_actor_world(pawn) || object(hud, L"m_pUIManager") != manager)
+            {
+                return std::nullopt;
+            }
+            // The retail HUD owns the selection, even while the pawn is Idle.
+            // Validate its reflected command-array layout before reading the
+            // adjacent native main-selection/state fields used by its reset.
+            auto* commands = movement_properties.resolve(hud, L"m_mainCmdInfoAry");
+            if (!commands || !commands->IsA<FStructProperty>() || commands->GetOffset_Internal() != 0x1d0 ||
+                commands->GetElementSize() != 32 || commands->GetArrayDim() != 4)
+            {
+                return std::nullopt;
+            }
+            const int command_state = field<int>(hud, hud_command_state_offset);
+            if (command_state == 0)
+            {
+                if (field<int>(hud, hud_selected_main_command_offset) != 0)
+                {
+                    return false;
+                }
+                // A resumed native swing already establishes Attack ownership
+                // while its new HUD initializes. Preserve that combo's input.
+                if (attack_state(state(pawn), pawn))
+                {
+                    return true;
+                }
+                return std::nullopt;
+            }
+            return command_state == hud_main_command_state && field<int>(hud, hud_selected_main_command_offset) == 0;
+        }
+
         bool attack_key(int controller, std::wstring_view key, int event)
         {
             if (replaying_attack || (key != L"Gamepad_FaceButton_Bottom" && key != L"LeftMouseButton"))
@@ -1195,6 +1245,11 @@ namespace kh3ap
                     {
                         return false;
                     }
+                    if (!attack_command_selected(pawn).value_or(queued))
+                    {
+                        attack_buffer.clear();
+                        return false;
+                    }
                     Call paused(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused");
                     paused.object(L"WorldContextObject", pawn);
                     paused.run();
@@ -1204,7 +1259,8 @@ namespace kh3ap
                     }
                     auto* current = state(pawn);
                     const int state_kind = state_id(current);
-                    if (state_kind != 1 && state_kind != 2 && state_kind != 3 && !attack_state(current, pawn))
+                    if (state_kind != player_state_ids::idle && state_kind != player_state_ids::run &&
+                        state_kind != player_state_ids::jump && !attack_state(current, pawn))
                     {
                         return false;
                     }
@@ -1275,7 +1331,20 @@ namespace kh3ap
             auto* pawn = local_player_pawn(request_world.Get());
             auto* current = state(pawn);
             const int kind = state_id(current);
-            if (!available(pawn) || (kind != 1 && kind != 2 && kind != 3 && !attack_state(current, pawn)))
+            if (!available(pawn) || (kind != player_state_ids::idle && kind != player_state_ids::run &&
+                                    kind != player_state_ids::jump && !attack_state(current, pawn)))
+            {
+                attack_buffer.clear();
+                return;
+            }
+            const auto attack_selected = attack_command_selected(pawn);
+            if (!attack_selected)
+            {
+                // Keep only this unfinished, expiring intent until the new HUD
+                // publishes its selection. Never replay against unknown UI.
+                return;
+            }
+            if (!*attack_selected)
             {
                 attack_buffer.clear();
                 return;
@@ -1380,7 +1449,7 @@ namespace kh3ap
             analog_modifier = property_value<float>(movement, L"AnalogInputModifier");
             control_modifier = property_value<float>(pawn, L"m_ControlAnalogInputModifier");
             run_step = property_value<int>(current, L"m_nSubStep");
-            const bool running = state_id(current) == run_state_id;
+            const bool running = state_id(current) == player_state_ids::run;
             const auto motion_name = running ? field<FName>(current, 0xa0).ToString() : std::wstring{};
             const bool starting_motion = motion_name.starts_with(L"RunStart") || motion_name.starts_with(L"WalkStart");
             const bool looping_motion = motion_name.starts_with(L"RunLoop") || motion_name.starts_with(L"WalkLoop");
@@ -1490,7 +1559,7 @@ namespace kh3ap
             auto* pawn = first_movement_pawn.Get();
             if (now > first_movement_deadline || request_world.Get() != swap_context_world() ||
                 !is_uobject_valid_fast(pawn) || local_player_pawn(request_world.Get()) != pawn ||
-                state_id(state(pawn)) != run_state_id || !available(pawn))
+                state_id(state(pawn)) != player_state_ids::run || !available(pawn))
             {
                 return;
             }
@@ -1722,7 +1791,8 @@ namespace kh3ap
                         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
                         reinterpret_cast<void (*)(UObject*)>(base + queue_clear_rva)(component);
                         floating_flags = (floating_flags & ~3u) | floating_mode;
-                        auto* floating = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(component, 5);
+                        auto* floating = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(
+                            component, player_state_ids::floating);
                         if (!is_uobject_valid_fast(floating) || object(floating, L"MyCharPawn") != pawn)
                         {
                             throw std::runtime_error("character_floating_state_creation");
@@ -1893,6 +1963,7 @@ namespace kh3ap
             test_movement = false;
             test_rotate = false;
             test_locomotion = false;
+            test_menu = false;
             test_target = kh02_current_story_world()
                               ? (player_id(pawn) == player_id_value(PlayerId::Sora) ? player_id_value(PlayerId::Aqua)
                                                                                     : player_id_value(PlayerId::Sora))
@@ -1909,6 +1980,19 @@ namespace kh3ap
             test_status = "running";
             test_result = nullptr;
             test_phase = 1;
+            return true;
+        }
+
+        bool start_menu_test()
+        {
+            if (!kh02_current_story_world() || player_id(player()) != player_id_value(PlayerId::Sora) ||
+                !start_test(false, false))
+            {
+                return false;
+            }
+            test_menu = true;
+            test_result = {{"spell_state_seen", false}, {"buffered_before", buffered_presses},
+                           {"replayed_before", replayed_presses}};
             return true;
         }
 
@@ -2264,6 +2348,57 @@ namespace kh3ap
             }
         }
 
+        void tick_menu_test(UObject* pawn, Clock::time_point now)
+        {
+            if (queued || now < test_next)
+            {
+                return;
+            }
+            if (test_phase == 1)
+            {
+                if (!available(pawn) || !request(pawn))
+                {
+                    throw std::runtime_error("kh02_menu_test_swap");
+                }
+                test_phase = 2;
+            }
+            else if (test_phase == 2 && player_id(pawn) == test_target && available(pawn))
+            {
+                test_result["mp_before"] = property_value<int>(pawn, L"m_MagicPoint");
+                test_press(pawn, L"command_down", now);
+                test_phase = 3;
+            }
+            else if (test_phase == 3 && !test_held)
+            {
+                // One physical confirm, routed through the real swap buffer.
+                // It must open Magic without confirming a spell on a retry.
+                test_press(pawn, L"attack", now);
+                test_next = now + std::chrono::milliseconds(100);
+                test_phase = 4;
+            }
+            else if (test_phase == 4)
+            {
+                auto* current = state(pawn);
+                if (is_uobject_valid_fast(current) &&
+                    current->GetClassPrivate()->GetName() == L"TresPlayerState_FireMagic")
+                {
+                    test_result["spell_state_seen"] = true;
+                }
+                if (now < test_release + std::chrono::milliseconds(1000))
+                {
+                    return;
+                }
+                const int mp = property_value<int>(pawn, L"m_MagicPoint");
+                test_result["mp_after"] = mp;
+                test_result["buffered_after"] = buffered_presses;
+                test_result["replayed_after"] = replayed_presses;
+                test_status = test_result["spell_state_seen"].get<bool>() || mp < test_result["mp_before"].get<int>()
+                                  ? "failed_unrequested_cast"
+                                  : "completed";
+                test_phase = 0;
+            }
+        }
+
         void tick_test(Clock::time_point now)
         {
             if (!test_phase)
@@ -2283,6 +2418,11 @@ namespace kh3ap
                 return;
             }
             auto* pawn = player();
+            if (test_menu)
+            {
+                tick_menu_test(pawn, now);
+                return;
+            }
             if (!test_camera && test_phase == 4 && !test_held)
             {
                 test_status = "completed";
@@ -2570,6 +2710,11 @@ namespace kh3ap
     bool Kh02CombatSwap::start_input_test(bool swap_back)
     {
         return initialize() && impl->start_input_test(swap_back);
+    }
+
+    bool Kh02CombatSwap::start_menu_test()
+    {
+        return initialize() && impl->start_menu_test();
     }
 
     bool Kh02CombatSwap::start_movement_test(bool rotate)

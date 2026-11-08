@@ -325,7 +325,24 @@ static const Stream streams_60[]={
 static const Start starts_60[]={
  {L"dw_60_Lv_Start_01",3000.000000000f,-6000.000000000f,192.200103760f,0.000000000f,0.000000000f,0.000000000f},
 };
+static const Stream streams_12[]={
+ {L"/Game/Levels/dw/dw_12/umap/dw_12_gameflow",true,true},
+ {L"/Game/Levels/dw/dw_12/umap/dw_12_enemy",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_collision",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_Env",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_Fog",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_CompletistRoomB",true,true},
+ {L"/Game/Levels/dw/dw_12/umap/dw_12_camera_ms250",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_sound",true,true},
+ {L"/Game/Levels/dw/dw_12/umap/dw_12_static_EQS",true,true},
+ {L"/Game/Maps/dw/umap/dw_12/dw_12_vfx",true,true},
+ {L"/Game/Levels/dw/dw_12/dw_12",true,true},
+};
+static const Start starts_12[]={
+ {L"dw_12_Lv_Start_01",100000.000000000f,-88440.000000000f,191.502624512f,0.000000000f,-89.999984741f,0.000000000f},
+};
 static const Room rooms[]={
+ {12,L"APKH02MirrorChallengeSecond",L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond",streams_12,sizeof(streams_12)/sizeof(Stream),starts_12,sizeof(starts_12)/sizeof(Start)},
  {60,L"APKH02Epilogue",L"/Game/Maps/APKH02Mirrors/APKH02Epilogue",streams_60,sizeof(streams_60)/sizeof(Stream),starts_60,sizeof(starts_60)/sizeof(Start)},
  {59,L"APKH02Transition",L"/Game/Maps/APKH02Mirrors/APKH02Transition",streams_59,sizeof(streams_59)/sizeof(Stream),starts_59,sizeof(starts_59)/sizeof(Start)},
  {10,L"APKH02DestinyIslands",L"/Game/Maps/APKH02Mirrors/APKH02DestinyIslands",streams_10,sizeof(streams_10)/sizeof(Stream),starts_10,sizeof(starts_10)/sizeof(Start)},

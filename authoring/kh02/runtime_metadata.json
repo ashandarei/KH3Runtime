@@ -403,6 +403,14 @@
       "tag": "dw_11_Lv_Start_01",
       "initial_nav": "None",
       "selectable": false
+    },
+    {
+      "area": 12,
+      "title": "Mirror Challenge Second Arena",
+      "package": "/Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond",
+      "tag": "dw_12_Lv_Start_01",
+      "initial_nav": "None",
+      "selectable": false
     }
   ]
 }

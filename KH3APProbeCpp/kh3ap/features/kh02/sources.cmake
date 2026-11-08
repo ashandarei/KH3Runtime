@@ -114,6 +114,7 @@ target_sources(${TARGET} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/world/kh02_shooting_star.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/treasure/kh02_chest_observer.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/treasure/kh02_postclear_treasure.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/world/kh02_boss_rush_mirror.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/movies/kh02_movie_probe.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/story/kh02_story_targets.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/world/kh02_forest_visibility.cpp"

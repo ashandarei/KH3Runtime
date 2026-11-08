@@ -22,6 +22,22 @@ int main()
 {
     constexpr auto hub_world = L"/Game/Maps/APKH02WorldWithin/APKH02WorldWithin.APKH02WorldWithin";
     constexpr auto hub_caller = L"/Game/Zevels/dw/dw_03/umap/dw_03_gameflow.Instance:Jump";
+    constexpr auto challenge_caller = L"/Game/Zevels/dw/dw_03/umap/dw_03_challenge.dw_03_challenge_C:"
+                                      L"ExecuteUbergraph_dw_03_challenge";
+    constexpr auto challenge_destination = L"/Game/Zevels/dw/dw_11/dw_11";
+    constexpr auto challenge_tag = L"dw_11_Lv_Start_01";
+    const auto boss_rush = resolve(challenge_caller, hub_world, challenge_destination, challenge_tag, 0, true, false);
+    assert(boss_rush.package == L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallenge");
+    assert(boss_rush.tag == challenge_tag && !boss_rush.special_battle_clear && boss_rush.boss_rush_entry);
+    rejects([&] { resolve(challenge_caller, hub_world, challenge_destination, challenge_tag, 1, true, false); });
+    rejects([&] { resolve(challenge_caller, hub_world, challenge_destination, L"unknown_tag", 0, true, false); });
+    rejects(
+        [&]
+        {
+            resolve(challenge_caller, hub_world, L"/Game/Zevels/dw/dw_04/dw_04", L"dw_04_Lv_Start_01", 0, true, false);
+        });
+    rejects([&] { resolve(challenge_caller, L"", challenge_destination, challenge_tag, 0, true, false); });
+    rejects([&] { resolve(challenge_caller, hub_world, challenge_destination, challenge_tag, 0, true, true); });
     for (const auto& room : kh02mirror_metadata::rooms)
     {
         const auto number = std::wstring(room.area < 10 ? L"0" : L"") + std::to_wstring(room.area);
@@ -40,6 +56,18 @@ int main()
     }
 
     constexpr auto hub_destination = L"/Game/Zevels/dw/dw_03/dw_03";
+    constexpr auto first_arena = L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallenge.APKH02MirrorChallenge";
+    constexpr auto second_arena = L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond.APKH02MirrorChallengeSecond";
+    constexpr auto first_flow = L"/Game/Zevels/dw/dw_11/umap/dw_11_gameflow.Instance:Jump";
+    constexpr auto second_flow = L"/Game/Zevels/dw/dw_12/umap/dw_12_gameflow.Instance:Jump";
+    const auto middle =
+        resolve(first_flow, first_arena, L"/Game/Zevels/dw/dw_12/dw_12", L"dw_12_Lv_Start_01", 2, true, false);
+    assert(middle.package == L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond");
+    assert(!middle.special_battle_clear && !middle.boss_rush_entry);
+    const auto later = resolve(second_flow, second_arena, challenge_destination, challenge_tag, 2, true, false);
+    assert(later.package == L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallenge");
+    assert(!later.special_battle_clear && !later.boss_rush_entry);
+    rejects([&] { resolve(second_flow, first_arena, challenge_destination, challenge_tag, 2, true, false); });
     constexpr auto phantom_world = L"/Game/Maps/APKH02Mirrors/APKH02Phantom.APKH02Phantom";
     constexpr auto phantom_caller = L"/Game/Zevels/dw/dw_07/umap/dw_07_gameflow.Instance:Jump";
     const auto cleared =

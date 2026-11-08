@@ -47,7 +47,7 @@ class RuntimeMetadataTests(unittest.TestCase):
         for area in (4, 5, 6):
             self.assertFalse(by_area[area]['selectable'])
             self.assertEqual(by_area[area]['initial_nav'], f'AP02_dw{area:02}_01')
-        for area in (7, 11):
+        for area in (7, 11, 12):
             self.assertFalse(by_area[area]['selectable'])
             self.assertEqual(by_area[area]['initial_nav'], 'None')
         changed = copy.deepcopy(self.metadata)

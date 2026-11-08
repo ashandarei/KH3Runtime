@@ -4,9 +4,10 @@
 
 namespace kh3ap::player_state_ids
 {
-    // ETresStateID values shared by exploration and the observed-state catalog.
+    // Native ETresStateID values, complete from 0 through 60.
     // An ID here does not imply that the state is safe for item delivery;
     // RuntimeSoraStateCatalogEntry owns that separate policy.
+    inline constexpr uint8_t empty = 0;
     inline constexpr uint8_t idle = 1;
     inline constexpr uint8_t run = 2;
     inline constexpr uint8_t jump = 3;
@@ -16,20 +17,55 @@ namespace kh3ap::player_state_ids
     inline constexpr uint8_t climbing = 7;
     inline constexpr uint8_t wall_run = 8;
     inline constexpr uint8_t hopping = 9;
+    inline constexpr uint8_t slope_slide = 10;
+    inline constexpr uint8_t swaying = 11;
     inline constexpr uint8_t attack = 12;
+    inline constexpr uint8_t attack_aqua = 13;
+    inline constexpr uint8_t attack_riku = 14;
     inline constexpr uint8_t guard = 15;
     inline constexpr uint8_t dodge_roll = 16;
+    inline constexpr uint8_t risk_dodge = 17;
     inline constexpr uint8_t fire_magic = 18;
     inline constexpr uint8_t damage = 19;
     inline constexpr uint8_t air_slide = 20;
+    inline constexpr uint8_t super_slide = 21;
     inline constexpr uint8_t rail_slide = 22;
     inline constexpr uint8_t wall_kick = 23;
     inline constexpr uint8_t pole_turn = 24;
+    inline constexpr uint8_t enemy_flow = 25;
+    inline constexpr uint8_t af_roller_coaster = 26;
+    inline constexpr uint8_t af_viking_ship = 27;
+    inline constexpr uint8_t dm_simba = 28;
+    inline constexpr uint8_t friend_attack = 29;
+    inline constexpr uint8_t fr_shield_guardian = 30;
     inline constexpr uint8_t style_change = 31;
     inline constexpr uint8_t weapon_change = 32;
     inline constexpr uint8_t style_finish = 33;
+    inline constexpr uint8_t style_finish_dr = 34;
+    inline constexpr uint8_t style_finish_sk = 35;
+    inline constexpr uint8_t style_finish_gm = 36;
+    inline constexpr uint8_t style_finish_wa = 37;
+    inline constexpr uint8_t style_finish_sh = 38;
+    inline constexpr uint8_t style_finish_fl = 39;
+    inline constexpr uint8_t shooter_mode = 40;
     inline constexpr uint8_t shoot_flow = 41;
     inline constexpr uint8_t athletic_flow = 42;
+    inline constexpr uint8_t navlink_jump = 43;
+    inline constexpr uint8_t turn = 44;
+    inline constexpr uint8_t attack_1 = 45;
+    inline constexpr uint8_t attack_2 = 46;
+    inline constexpr uint8_t attack_3 = 47;
+    inline constexpr uint8_t attack_4 = 48;
+    inline constexpr uint8_t attack_5 = 49;
+    inline constexpr uint8_t attack_6 = 50;
+    inline constexpr uint8_t attack_7 = 51;
+    inline constexpr uint8_t attack_8 = 52;
+    inline constexpr uint8_t attack_9 = 53;
+    inline constexpr uint8_t stagger = 54;
+    inline constexpr uint8_t run_1 = 55;
+    inline constexpr uint8_t run_2 = 56;
+    inline constexpr uint8_t run_3 = 57;
+    inline constexpr uint8_t appear = 58;
     inline constexpr uint8_t die = 59;
     inline constexpr uint8_t vanish_die = 60;
     inline constexpr uint8_t reflect = 66;
@@ -55,4 +91,6 @@ namespace kh3ap::player_state_ids
     inline constexpr uint8_t hold_camera = 144;
     inline constexpr uint8_t festival_dance = 145;
     inline constexpr uint8_t one_action = 150;
+    inline constexpr uint8_t attack_roxas = 156;
+    inline constexpr uint8_t attack_kairi = 157;
 } // namespace kh3ap::player_state_ids

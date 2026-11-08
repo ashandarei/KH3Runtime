@@ -18,6 +18,14 @@ int main()
     assert(challenges[kh02_challenge_id::get_white_gem_mirror_area] == kh02_challenge_state::in_progress);
     assert(challenges[canary] == 123 && counts[canary] == 456);
 
+    // World completion now unlocks the boss-rush mirror independently. It
+    // must not award either the Zodiac objective or the boss-rush victory.
+    flags["gameflow_REBELLIS_CLEAR"] = 1;
+    kh02_reconcile_challenges(flags, challenges, counts);
+    assert(counts[kh02_challenge_id::get_all_star_sign] == 0);
+    assert(challenges[kh02_challenge_id::get_all_star_sign] == kh02_challenge_state::in_progress);
+    assert(challenges[kh02_challenge_id::special_battle_area] != kh02_challenge_state::complete);
+
     for (const auto* id : {"DW_LBOX01", "DW_BOX003", "DW_BOX004", "DW_BOX006", "DW_BOX007"})
     {
         flags[std::string("gameflow_DW_CHALLENGE_CHEST_") + id] = 1;

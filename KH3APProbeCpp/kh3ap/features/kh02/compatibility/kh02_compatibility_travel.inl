@@ -136,6 +136,10 @@ void execute_travel()
     }
     if (adapter == Adapter::MirrorJump)
     {
+        if (story->mirror_travel.starts_boss_rush())
+        {
+            story->source_flags.start_boss_rush_attempt();
+        }
         story->mirror_travel.commit();
     }
     if (adapter == Adapter::ApplyMapSet)
