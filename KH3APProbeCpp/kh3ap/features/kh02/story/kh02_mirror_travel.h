@@ -13,6 +13,7 @@ namespace kh3ap
         auto stage(RC::Unreal::UObject* source_world, std::wstring_view caller, const std::wstring& destination,
                    const std::wstring& tag, int fade, bool epilogue_complete) -> bool;
         void commit();
+        auto starts_boss_rush() const -> bool;
         void cancel();
         auto dispatch(RC::Unreal::UObject* current_world, const Kh02StoryFlags& source_flags) -> bool;
         std::wstring arrival_tag;

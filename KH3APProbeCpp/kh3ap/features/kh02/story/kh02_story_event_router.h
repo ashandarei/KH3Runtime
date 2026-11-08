@@ -23,6 +23,7 @@ namespace kh3ap
             std::function<void(RC::Unreal::UObject*)> host_begin_play;
             std::function<void(RC::Unreal::UObject*)> projectile_begin_play;
             std::function<void(RC::Unreal::UObject*)> chest_mapset_finished;
+            std::function<void(RC::Unreal::UObject*)> boss_rush_mirror_begin_play;
         };
 
         Kh02StoryEventRouter(Kh02MirrorGameplaySession& mirror, Kh02StoryTargets& targets, Kh02MapSession& maps,

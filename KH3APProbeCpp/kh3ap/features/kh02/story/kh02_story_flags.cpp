@@ -316,6 +316,29 @@ namespace kh3ap
         }
     }
 
+    void Kh02StoryFlags::start_boss_rush_attempt()
+    {
+        auto* world = impl->world.Get();
+        if (!is_uobject_valid_fast(world) ||
+            world->GetPathName() != L"/Game/Maps/APKH02WorldWithin/APKH02WorldWithin.APKH02WorldWithin")
+        {
+            throw std::runtime_error("source_boss_rush_entry_world");
+        }
+        // A new mirror interaction starts a new run. Interrupted attempts may
+        // retain a round checkpoint whose owning arena was already unloaded.
+        // Completed challenge/check records are independent and stay intact.
+        auto& round = impl->flags[L"gameflow_DW_CHALLENGE_42"];
+        if (round != 0)
+        {
+            round = 0;
+            impl->bindings.note_write();
+            if (impl->changed)
+            {
+                impl->changed();
+            }
+        }
+    }
+
     void Kh02StoryFlags::select_mirror_room_entry(int area)
     {
         const wchar_t* name = area == 4   ? L"APKH02Stairs"

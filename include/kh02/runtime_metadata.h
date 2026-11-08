@@ -60,6 +60,10 @@ namespace kh02metadata
         {
             return L"None";
         }
+        if (world == L"/Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond.APKH02MirrorChallengeSecond")
+        {
+            return L"None";
+        }
         return L"AP02_dw02_02";
     }
 } // namespace kh02metadata

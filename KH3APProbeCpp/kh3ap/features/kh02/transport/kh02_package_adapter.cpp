@@ -499,8 +499,9 @@ namespace kh02asset
             {
                 result = "KH02_LoadReady";
             }
-            bool map_jump = id == "Levels/dw/dw_59/dw_59" || id == "Levels/dw/dw_60/dw_60";
-            for (int area = 3; area <= 11; ++area)
+            bool map_jump = id == "Levels/dw/dw_59/dw_59" || id == "Levels/dw/dw_60/dw_60" ||
+                            id == "Levels/dw/dw_03/umap/dw_03_challenge";
+            for (int area = 3; area <= 12; ++area)
             {
                 const auto number = (area < 10 ? "0" : "") + std::to_string(area);
                 map_jump |= id == "Levels/dw/dw_" + number + "/umap/dw_" + number + "_gameflow";

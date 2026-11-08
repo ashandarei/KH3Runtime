@@ -36,6 +36,11 @@ namespace kh3ap
         pending = staged.has_value();
     }
 
+    auto Kh02MirrorTravel::starts_boss_rush() const -> bool
+    {
+        return staged && staged->boss_rush_entry;
+    }
+
     void Kh02MirrorTravel::cancel()
     {
         pending = false;

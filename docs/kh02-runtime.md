@@ -49,6 +49,16 @@ Treasure setup resolves the live viewport world through `kh02_current_world()`;
 a bootstrap context may be a `UWorld` and must not be cast to `AActor`.
 Retained UObjects use weak handles and the runtime's fast validity checks.
 
+The World Within boss-rush mirror unlocks when `gameflow_REBELLIS_CLEAR` is set,
+without requiring Zodiac relics. Its BeginPlay/visibility notifications retain
+the authored actor weakly; after entry settles, the runtime requests its original
+`StartGimmick` activation once with `PlayAnimation=false`, so revisits show it
+immediately without the `vg_dw03_cha_app_par30` appearance burst/flash.
+Objective 43 still requires all twelve Zodiac chests and is not awarded by
+showing the mirror. EGS live validation
+confirmed an absent mirror before clear and a visible, collidable mirror after
+clear with only five Zodiac chests opened.
+
 ## Native save loading
 
 With the chapter provider enabled, `Kh02Bootstrap` installs a native

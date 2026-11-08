@@ -55,6 +55,7 @@
 #include "kh3ap/features/kh02/world/kh02_shooting_star.h"
 #include "kh3ap/features/kh02/treasure/kh02_chest_observer.h"
 #include "kh3ap/features/kh02/treasure/kh02_postclear_treasure.h"
+#include "kh3ap/features/kh02/world/kh02_boss_rush_mirror.h"
 #include "kh3ap/features/kh02/movies/kh02_movie_probe.h"
 #include "kh02_story_targets.h"
 #include "kh3ap/features/kh02/world/kh02_forest_visibility.h"
@@ -409,6 +410,7 @@ namespace kh3ap
         std::map<int, int> within_challenge_counts;
         Kh02ChallengeLog challenge_log;
         Kh02PostclearTreasure postclear_treasure;
+        Kh02BossRushMirror boss_rush_mirror;
         Kh02DressingRoom dressing_room;
         Kh02AbilityCapacity ability_capacity;
         Kh02ChallengeTracker challenge_tracker{within_challenges, within_challenge_counts};
@@ -1097,6 +1099,7 @@ namespace kh3ap
                        challenges_active(), postboss.state.observed, postboss.state.maximum_position,
                        postboss.state.requested, native_movie_fixture});
             result["postclear_treasure"] = postclear_treasure.snapshot();
+            result["boss_rush_mirror"] = boss_rush_mirror.snapshot();
             return result;
         }
 #endif
@@ -1118,7 +1121,8 @@ namespace kh3ap
                                                darkside_pillars.watch(object);
                                            },
                                            [this](UObject* object)
-                                           { chest_observer.mapset_finished(kh02_actor_world(object)); }}};
+                                           { chest_observer.mapset_finished(kh02_actor_world(object)); },
+                                           [this](UObject* object) { boss_rush_mirror.watch(object); }}};
 
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         Json snapshot()
@@ -1137,6 +1141,7 @@ namespace kh3ap
             result["darkside_projectiles"] = darkside_projectiles.snapshot();
             result["darkside_pillars"] = darkside_pillars.snapshot();
             result["postclear_treasure"] = postclear_treasure.snapshot();
+            result["boss_rush_mirror"] = boss_rush_mirror.snapshot();
             result["entrance_view_cleanup"] = encounter_proof.value("entrance_view_cleanup", Json::object());
             result["source_fade"] = intro_presentation.fade(pawn);
             return result;
@@ -1178,6 +1183,7 @@ namespace kh3ap
             within_challenge_counts.clear();
             challenge_events.clear();
             chest_observer.clear_world();
+            boss_rush_mirror.clear_world();
             source_flags.reset();
             progress_session.invalidate();
             within_resume_entry = false;
@@ -1280,6 +1286,10 @@ namespace kh3ap
                 // Use the initialized, world-bound chapter pawn even when the
                 // ordinary KH3 grant gate excludes this imported host.
                 postclear_treasure.tick(gameplay.pawn.Get());
+                if (!map_session.active())
+                {
+                    boss_rush_mirror.tick(gameplay.world.Get(), source_flags.value(L"gameflow_REBELLIS_CLEAR") != 0);
+                }
             }
             // Arrival must finish streaming the authored PlayerStarts before the HUD
             // resolves the initial minimap section.
