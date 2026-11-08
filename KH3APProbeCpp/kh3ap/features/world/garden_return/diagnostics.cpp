@@ -545,6 +545,14 @@ namespace kh3ap
     RuntimeGardenReturnService::Impl::DiagnosticProgress
     RuntimeGardenReturnService::Impl::diagnostic_combat_test_ground(DiagnosticCommand& request)
     {
+        if (request.action == L"combat_test_menu")
+        {
+            if (!combat_swap.start_menu_test())
+            {
+                request.reason = L"playable_kh02_sora_menu_test_required";
+            }
+            return DiagnosticProgress::Finished;
+        }
         const float phase = request.action == L"combat_test_early"  ? 0.2f
                             : request.action == L"combat_test_late" ? 0.7f
                                                                     : 0.35f;
@@ -1010,6 +1018,7 @@ namespace kh3ap
             {L"inventory_confirm", &Impl::diagnostic_gummiphone_confirm, false},
             {L"inventory_back", &Impl::diagnostic_gummiphone_confirm, false},
             {L"combat_attack", &Impl::diagnostic_gummiphone_confirm, false},
+            {L"combat_test_menu", &Impl::diagnostic_combat_test_ground, false},
             {L"combat_jump", &Impl::diagnostic_gummiphone_confirm, false},
             {L"inventory_down", &Impl::diagnostic_gummiphone_confirm, false},
             {L"inventory_up", &Impl::diagnostic_gummiphone_confirm, false},

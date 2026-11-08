@@ -35,6 +35,7 @@ namespace kh3ap
         bool give_combo_master();
         bool start_test(bool air, bool expire, float phase = 0.35f);
         bool start_input_test(bool swap_back);
+        bool start_menu_test();
         bool start_camera_test();
         bool start_movement_test(bool rotate = false);
         bool start_locomotion_test(int swaps, int warmup_ms, int strength_percent, bool release_at_swap = false,
