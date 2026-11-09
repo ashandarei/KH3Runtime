@@ -101,15 +101,28 @@ namespace kh3ap
             bool debug_logging,
             std::wstring* failure_reason) -> bool
     {
-        UFunction* const function_object = UObjectGlobals::StaticFindObject<UFunction*>(nullptr, nullptr, bp_get_item_path);
+        const RuntimeHotPathProfileScope call_profile{L"runtime_item_grant:get_item"};
         UObject* self_object = RuntimeObjectResolver::try_get_tres_game_blueprint_library_default_object(
                 runtime_state.object_cache(),
                 blueprint_library_default_object_path);
-        if (!self_object)
+        UFunction* const function_object = [&] {
+            const RuntimeHotPathProfileScope profile{L"runtime_item_grant:get_item_lookup"};
+            // Resolve through the owning library instead of a first-use global
+            // UObject scan. Weak class/function identities survive map changes
+            // without retaining a pawn or accepting a reused object slot.
+            static ReceiverFunctionCache<1> functions;
+            if (auto* function = functions.resolve(self_object, bp_get_item_path))
+            {
+                return function;
+            }
+            return UObjectGlobals::StaticFindObject<UFunction*>(nullptr, nullptr, bp_get_item_path);
+        }();
+        if (!is_uobject_valid_fast(self_object))
         {
             self_object = try_get_function_default_object(function_object);
         }
-        if (!function_object || !self_object || !world_context_object || runtime_token.empty())
+        if (!is_uobject_valid_fast(function_object) || !is_uobject_valid_fast(self_object) ||
+            !world_context_object || runtime_token.empty())
         {
             if (failure_reason)
             {
@@ -166,6 +179,7 @@ namespace kh3ap
         }
 
         {
+            const RuntimeHotPathProfileScope profile{L"runtime_item_grant:get_item_process_event"};
             const RuntimeGrantInternalCallDepth::Scope internal_call_scope{};
             // ProcessEvent is the first operation allowed to consume the cached pawn.
             self_object->ProcessEvent(function_object, params.data());

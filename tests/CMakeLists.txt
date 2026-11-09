@@ -609,4 +609,9 @@ target_include_directories(music_decode_queue_test PRIVATE "${KH3AP_PROBE_ROOT}"
 add_test(NAME music_decode_queue COMMAND music_decode_queue_test)
 set_tests_properties(music_decode_queue PROPERTIES TIMEOUT 15)
 
+add_executable(manual_grant_file_reader_test manual_grant_file_reader_test.cpp)
+target_include_directories(manual_grant_file_reader_test PRIVATE "${KH3AP_PROBE_ROOT}")
+add_test(NAME manual_grant_file_reader COMMAND manual_grant_file_reader_test)
+set_tests_properties(manual_grant_file_reader PROPERTIES TIMEOUT 15)
+
 include("${CMAKE_CURRENT_LIST_DIR}/../cmake/kh3-test-assertions.cmake")

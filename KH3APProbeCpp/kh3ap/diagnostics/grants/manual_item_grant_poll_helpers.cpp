@@ -1,4 +1,5 @@
 #include "kh3ap/diagnostics/grants/manual_item_grant_poll_helpers.h"
+#include "kh3ap/diagnostics/grants/manual_grant_file_reader.h"
 
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
@@ -26,6 +27,15 @@ namespace kh3ap
 {
     using namespace RC;
     using namespace RC::Unreal;
+
+    namespace
+    {
+        auto manual_grant_file_reader() -> ManualGrantFileReader&
+        {
+            static ManualGrantFileReader reader;
+            return reader;
+        }
+    }
 
     auto make_manual_runtime_item_grant_deps(
             RuntimeState& runtime_state,
@@ -99,7 +109,8 @@ namespace kh3ap
             return;
         }
 
-        if (!runtime_state.grant_state().manual_item_grant_state().can_attempt_fallback(fallback_cooldown, now))
+        if (!runtime_state.grant_state().manual_item_grant_state().can_attempt_fallback(fallback_cooldown, now) &&
+            !manual_grant_file_reader().ready())
         {
             return;
         }
@@ -129,8 +140,20 @@ namespace kh3ap
             return;
         }
 
+        const auto* request_text = [&] {
+            const RuntimeHotPathProfileScope profile{L"manual_item_grant:request_ready"};
+            return manual_grant_file_reader().poll(request_path, read_text_file);
+        }();
+        if (!request_text)
+        {
+            return;
+        }
+
         Output::send<LogLevel::Verbose>(STR("[KH3APProbeCpp] Manual runtime item handler entered\n"));
-        const auto request = read_runtime_item_grant_request_from_path(request_path);
+        const auto request = [&] {
+            const RuntimeHotPathProfileScope parse_profile{L"manual_item_grant:parse_request"};
+            return parse_runtime_item_grant_request_from_text(*request_text);
+        }();
         if (!request.has_value())
         {
             Output::send<LogLevel::Verbose>(
@@ -191,8 +214,10 @@ namespace kh3ap
             }
         }
 
-        const auto world_context_candidates =
-                collect_fast_runtime_item_grant_world_context_candidates(deps.runtime_state, preferred_world_context_object);
+        const auto world_context_candidates = [&] {
+            const RuntimeHotPathProfileScope profile{L"manual_item_grant:context"};
+            return collect_fast_runtime_item_grant_world_context_candidates(deps.runtime_state, preferred_world_context_object);
+        }();
         if (world_context_candidates.empty())
         {
             write_manual_runtime_item_grant_result(
@@ -221,14 +246,19 @@ namespace kh3ap
         std::wstring failure_details{};
         RuntimeItemApplyPayload payload{};
         UObject* applied_world_context_object = nullptr;
-        if (try_apply_runtime_item_grant_request(
+        const bool applied = [&] {
+            const RuntimeHotPathProfileScope profile{L"manual_item_grant:apply"};
+            return try_apply_runtime_item_grant_request(
                     *request,
                     world_context_candidates,
                     deps.apply_deps,
                     &payload,
                     &failure_details,
-                    &applied_world_context_object))
+                    &applied_world_context_object);
+        }();
+        if (applied)
         {
+            const RuntimeHotPathProfileScope profile{L"manual_item_grant:complete"};
             Output::send<LogLevel::Verbose>(STR("[KH3APProbeCpp] Manual runtime item step=write_applied_result\n"));
             write_manual_runtime_item_grant_result(
                     deps.bridge_dir,
