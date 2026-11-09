@@ -4,6 +4,10 @@
 #include "kh3ap/features/journal/ingredient_journal_map_service.h"
 #include "kh3ap/features/journal/ingredient_journal_catalog.h"
 #include "kh3ap/features/journal/adversary_journal_catalog.h"
+#include "kh3ap/features/journal/chest_journal_catalog.h"
+#include "kh3ap/bridge/rewards/reconciliation.h"
+#include "kh3ap/features/kh02/runtime/kh02_entry_service.h"
+#include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/features/ingredients/ingredient_spots.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/features/grants/abilities/ability_snapshot_helpers.h"
@@ -30,6 +34,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <cwctype>
 #include <deque>
 #include <locale>
 #include <map>
@@ -99,7 +104,11 @@ namespace kh3ap
         }
         auto family(std::wstring_view actor) -> std::wstring
         {
-            const auto start = actor.find(level_path_segment);
+            auto start = actor.find(level_path_segment);
+            if (start == actor.npos)
+            {
+                start = actor.find(L"/Zevels/");
+            }
             if (start == actor.npos)
             {
                 return {};
@@ -278,9 +287,10 @@ namespace kh3ap
             std::vector<Sheet> sheets;
             std::wstring payload;
         };
-        auto definitions(const std::set<std::wstring>& families) -> std::vector<Sheet>
+        auto definitions(const std::set<std::wstring>& families, std::wstring_view table_path,
+                         std::wstring_view imported_label) -> std::vector<Sheet>
         {
-            auto* table = find_loaded_runtime_asset(L"/Game/UI/Data/NaviMapData.NaviMapData");
+            auto* table = find_loaded_runtime_asset(table_path);
             auto* row = try_read_reflected_object_property_value(table, L"RowStruct");
             if (!is_uobject_a_fast(row, UScriptStruct::StaticClass()) ||
                 row->GetPathName() != L"/Script/TresGame.TresNaviMapData")
@@ -361,7 +371,12 @@ namespace kh3ap
                     continue;
                 }
                 asset.pop_back();
-                if (!asset.starts_with(L"/Game/UI/Icon/Map/"))
+                auto normalized_asset = asset;
+                std::transform(normalized_asset.begin(), normalized_asset.end(), normalized_asset.begin(),
+                               [](wchar_t value) { return std::towlower(value); });
+                if (!normalized_asset.starts_with(L"/game/ui/icon/map/") &&
+                    !(table_path == L"/Game/ZI/Data/NaviMapData.NaviMapData" &&
+                      normalized_asset.starts_with(L"/game/zi/icon/rebellis02/map/")))
                 {
                     continue;
                 }
@@ -386,7 +401,11 @@ namespace kh3ap
                 }
                 if (sheet.label == key)
                 {
-                    continue;
+                    if (imported_label.empty())
+                    {
+                        continue;
+                    }
+                    sheet.label = std::wstring(imported_label) + L" - Map " + key.substr(5);
                 }
                 result.push_back(std::move(sheet));
             }
@@ -421,6 +440,8 @@ namespace kh3ap
         std::wstring key, state{L"closed"}, pending;
         int serial{-1};
         bool done{}, presentation_ready{};
+        bool dynamic_source{};
+        bool imported_prepared{};
         int references_base{-1};
         FWeakObjectPtr references_asset;
         uint32_t load_uuid{journal_map_load_uuid_base};
@@ -506,6 +527,8 @@ namespace kh3ap
             pending.clear();
             serial = -1;
             done = false;
+            dynamic_source = false;
+            imported_prepared = false;
             presentation_ready = false;
             state = L"closed";
             actors.clear();
@@ -546,6 +569,13 @@ namespace kh3ap
                 for (const auto& source : adversary_journal_sources)
                 {
                     for (const auto& actor : split(source.actors, L'|'))
+                    {
+                        package_actors[package(actor)].insert(actor);
+                    }
+                }
+                for (const auto& entry : chest_journal_entries)
+                {
+                    for (const auto& actor : split(entry.actors, L'|'))
                     {
                         package_actors[package(actor)].insert(actor);
                     }
@@ -597,6 +627,11 @@ namespace kh3ap
             key = selected;
             serial = next;
             state = L"loading";
+            if (key.starts_with(L"chest/DW_") && !RuntimePortalService::kh02_access().unlocked)
+            {
+                fail(page, L"Unlock the 0.2 chapter with Oblivion to view this map.");
+                return false;
+            }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             preview_started = std::chrono::steady_clock::now();
             ready_logged = false;
@@ -622,6 +657,34 @@ namespace kh3ap
                     }
                 }
             }
+            if (actors.empty() && key.starts_with(L"chest/"))
+            {
+                for (const auto& entry : chest_journal_entries)
+                {
+                    if (entry.id == key.substr(6))
+                    {
+                        actors = split(entry.actors, L'|');
+                        break;
+                    }
+                }
+            }
+            if (actors.empty() && key.starts_with(L"chest/AP_LBOX_"))
+            {
+                const auto view = reconciliation::view();
+                if (view->ready && view->chests)
+                {
+                    const auto found = view->chests->assignments.find(key.substr(6));
+                    if (found != view->chests->assignments.end() && found->second.placed)
+                    {
+                        // Seed-owned placements are scalar snapshots. Re-read on each
+                        // open and never reuse a cached preview from a preceding seed.
+                        const auto actor = found->second.map + L":JournalMelodyChest";
+                        actors.push_back(actor);
+                        positions[actor] = found->second.position;
+                        dynamic_source = true;
+                    }
+                }
+            }
             if (actors.empty())
             {
                 fail(page, L"No verified source data is available for this location.");
@@ -630,11 +693,18 @@ namespace kh3ap
             std::set<std::wstring> unique;
             for (const auto& actor : actors)
             {
-                unique.insert(package(actor));
+                if (!dynamic_source)
+                {
+                    unique.insert(package(actor));
+                }
             }
             packages.assign(unique.begin(), unique.end());
             deadline = std::chrono::steady_clock::now() + ingredient_map_package_timeout;
-            if (const auto cached = previews.find(key); cached != previews.end())
+            if (key.starts_with(L"chest/DW_"))
+            {
+                deadline += std::chrono::seconds(60);
+            }
+            if (const auto cached = previews.find(key); !dynamic_source && cached != previews.end())
             {
                 sheets = cached->second.sheets;
                 cached_payload = cached->second.payload;
@@ -686,17 +756,55 @@ namespace kh3ap
                 {
                     families.insert(family(actor));
                 }
-                if (!is_uobject_valid_fast(
-                        find_loaded_runtime_asset(L"/Game/UI/Data/NaviMapData.NaviMapData")))
+                const bool imported = std::any_of(families.begin(), families.end(),
+                                                  [](const auto& name) { return name.starts_with(L"dw"); });
+                const auto table_path = imported ? L"/Game/ZI/Data/NaviMapData.NaviMapData"
+                                                 : L"/Game/UI/Data/NaviMapData.NaviMapData";
+                if (imported && !imported_prepared)
+                {
+                    try
+                    {
+                        imported_prepared = Kh02EntryService::prepare_journal_assets();
+                    }
+                    catch (const std::exception& error)
+                    {
+                        Output::send<LogLevel::Warning>(
+                            L"[KH3APProbeCpp] Chest map source preparation failed: {}\n",
+                            std::wstring(error.what(), error.what() + std::strlen(error.what())));
+                        fail(page, L"The 0.2 map data could not be prepared.");
+                        return AssetPreparation::Failed;
+                    }
+                    if (!imported_prepared)
+                    {
+                        return AssetPreparation::Pending;
+                    }
+                }
+                if (!is_uobject_valid_fast(find_loaded_runtime_asset(table_path)))
                 {
                     if (pending != L"metadata")
                     {
-                        request(L"/Game/UI/Data/NaviMapData.NaviMapData");
+                        if (!request(table_path))
+                        {
+                            fail(page, L"The source map data is not available.");
+                            return AssetPreparation::Failed;
+                        }
                         pending = L"metadata";
                     }
                     return AssetPreparation::Failed;
                 }
-                sheets = definitions(families);
+                std::wstring imported_label;
+                if (imported && key.starts_with(L"chest/"))
+                {
+                    for (const auto& entry : chest_journal_entries)
+                    {
+                        if (entry.id == key.substr(6))
+                        {
+                            imported_label = entry.world;
+                            break;
+                        }
+                    }
+                }
+                sheets = definitions(families, table_path, imported_label);
                 if (sheets.empty())
                 {
                     fail(page, L"No map is available for this location.");
@@ -933,7 +1041,7 @@ namespace kh3ap
                 fail(page, L"The map preview could not be opened.");
                 return;
             }
-            if (!previews.contains(key))
+            if (!dynamic_source && !previews.contains(key))
             {
                 if (preview_order.size() >= journal_map_preview_cache_capacity)
                 {

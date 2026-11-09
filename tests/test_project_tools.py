@@ -14,6 +14,28 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class CatalogGeneration(unittest.TestCase):
+    def test_chest_sources_cover_catalog_and_reject_missing_or_invalid_actors(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        try:
+            from runtime_ui_catalogs import chest_journal_header
+            locations = json.loads((ROOT / "data/runtime-inputs.json").read_text(encoding="utf-8"))["locations"]["locations"]
+            sources = json.loads((ROOT / "data/chest-journal-sources.json").read_text(encoding="utf-8"))
+            header = chest_journal_header(locations, sources)
+            self.assertIn('L"RA_LBOX_006"', header)  # Dive-rock chest lives in the gimmick layer.
+            self.assertIn(sources['RA_LBOX_006'][0], header)
+            self.assertIn('L"DW_BOX031"', header)  # Imported post-story chest.
+            self.assertIn(sources['DW_BOX031'][0], header)
+            self.assertEqual(294, len(sources))
+            incomplete = dict(sources)
+            incomplete.pop("HE_LBOX_001")
+            with self.assertRaises(ValueError):
+                chest_journal_header(locations, incomplete)
+            malformed = dict(sources, HE_LBOX_001=["/Game/Unverified"])
+            with self.assertRaises(ValueError):
+                chest_journal_header(locations, malformed)
+        finally:
+            sys.path.pop(0)
+
     def test_generation_and_stale_check_work_without_another_checkout(self):
         with tempfile.TemporaryDirectory(prefix="kh3-catalog-") as directory:
             root = Path(directory)
@@ -25,6 +47,8 @@ class CatalogGeneration(unittest.TestCase):
             data = {"schema": "kh3ap.runtime_inputs.v1", "limits": {"document_depth": 128},
                     "ui": json.loads((ROOT / "data/runtime-inputs.json").read_text(encoding="utf-8"))["ui"],
                     **{name: payload for name in ("catalog", "chests", "locations", "randomization")}}
+            data["locations"] = {"locations": {}}
+            (root / "data/chest-journal-sources.json").write_text("{}")
             source = root / "data/runtime-inputs.json"
             source.write_text(json.dumps(data), encoding="utf-8")
             for folder in ("bridge", "features/enemies"):

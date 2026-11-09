@@ -6,6 +6,8 @@
 #include <memory>
 #include <optional>
 #include <string_view>
+#include <cstdint>
+#include "kh3ap/features/journal/chest_journal.h"
 
 namespace RC::Unreal { class UObject; }
 
@@ -27,6 +29,8 @@ namespace kh3ap
 
     bool native_chest_was_opened(std::wstring_view id);
     void record_native_chest(std::wstring_view id);
+    auto native_chest_journal_revision() -> uint64_t;
+    auto read_native_chest_journal() -> std::optional<NativeChestJournalSnapshot>;
 
     // The callback runs after the native journal setter. Defer any gameplay or
     // persistence work until that call's owning animation/script has returned.
@@ -44,6 +48,8 @@ namespace kh3ap
     private:
         friend bool native_chest_was_opened(std::wstring_view);
         friend void record_native_chest(std::wstring_view);
+        friend auto native_chest_journal_revision() -> uint64_t;
+        friend auto read_native_chest_journal() -> std::optional<NativeChestJournalSnapshot>;
         struct Impl;
         std::unique_ptr<Impl> impl_;
     };

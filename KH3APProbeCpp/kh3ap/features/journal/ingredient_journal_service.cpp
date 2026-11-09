@@ -5,6 +5,7 @@
 #include "kh3ap/features/journal/ingredient_journal_catalog.h"
 #include "kh3ap/features/journal/adversary_journal_catalog.h"
 #include "kh3ap/features/journal/adversary_service.h"
+#include "kh3ap/features/treasure/chest_persistence_service.h"
 #include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/features/world/portals/gate_opener_policy.h"
 #include "kh3ap/features/journal/ingredient_journal_movie_data.h"
@@ -79,6 +80,8 @@ namespace kh3ap
         constexpr int focus_ingredients_navigation_command = 10;
         constexpr int focus_adversaries_navigation_command = 12;
         constexpr int focus_gates_navigation_command = 13;
+        constexpr int focus_chests_navigation_command = 14;
+        constexpr int chest_catalog_kind = 3;
 
         constexpr auto ingredient_journal_movie_timeout = std::chrono::seconds(30);
         constexpr auto ingredient_journal_readiness_retry = std::chrono::milliseconds(100);
@@ -87,6 +90,7 @@ namespace kh3ap
         constexpr auto ingredients_home_anchor = 13;
         constexpr auto adversaries_home_anchor = 23;
         constexpr auto gates_home_anchor = 12;
+        constexpr auto chests_home_anchor = 33;
 
         constexpr auto focus_in = L"/Script/TresGame.TresUIParts:OnFocusIn";
         constexpr auto focus_out = L"/Script/TresGame.TresUIParts:OnFocusOut";
@@ -104,7 +108,8 @@ namespace kh3ap
             return is_uobject_valid_fast(object) &&
                    is_uobject_valid_fast(object->GetClassPrivate()) &&
                    (object->GetClassPrivate()->GetName() == L"TresUIP_MobileDictionary" ||
-                    object->GetClassPrivate()->GetName() == L"TresUIP_MobileStory");
+                    object->GetClassPrivate()->GetName() == L"TresUIP_MobileStory" ||
+                    object->GetClassPrivate()->GetName() == L"TresUIP_MobileTreasure");
         }
         auto as_object(UObject* proxy) -> UObject*
         {
@@ -162,6 +167,9 @@ namespace kh3ap
         int last_home_anchor{-1};
         bool app_adversaries{};
         bool app_gates{};
+        bool app_chests{};
+        std::wstring chest_catalog;
+        portals::Kh02Access kh02_access;
         std::shared_ptr<const reconciliation::View> gate_view;
         std::wstring gate_payload;
         int catalog_kind{-1};
@@ -175,7 +183,7 @@ namespace kh3ap
         RuntimeIngredientJournalMapService maps;
         std::chrono::steady_clock::time_point started{};
         RuntimeEventWork preload_work, page_work;
-        uint64_t collected_revision{}, adversary_revision{};
+        uint64_t collected_revision{}, adversary_revision{}, chest_revision{};
         int64_t observed_epoch{-1};
         explicit Impl(RuntimeIngredientJournalConfig value)
             : config(std::move(value)), maps(
@@ -241,7 +249,8 @@ namespace kh3ap
                     const bool app = movie_ready && dictionary_context(event.Context) &&
                                      (last_home_anchor == ingredients_home_anchor ||
                                       last_home_anchor == adversaries_home_anchor ||
-                                      last_home_anchor == gates_home_anchor);
+                                      last_home_anchor == gates_home_anchor ||
+                                      last_home_anchor == chests_home_anchor);
                     if (!home && !app)
                     {
                         return;
@@ -270,6 +279,8 @@ namespace kh3ap
                         app_adversaries = last_home_anchor == adversaries_home_anchor;
                         catalog_kind = -1;
                         app_gates = last_home_anchor == gates_home_anchor;
+                        app_chests = last_home_anchor == chests_home_anchor;
+                        chest_catalog.clear();
                         gate_payload.clear();
                         app_context = make_uobject_weak(event.Context);
                         app_root = make_uobject_weak(value);
@@ -632,6 +643,17 @@ namespace kh3ap
                 try_gfx_get_member_value_object(config.gfx_paths, root.Get(), L"mobilePortal");
             auto* buttons =
                 try_gfx_get_member_value_object(config.gfx_paths, portal, L"menuButtonSet");
+            auto* chests = try_gfx_get_member_value_object(config.gfx_paths, buttons, L"menuButton33");
+            if (is_uobject_valid_fast(chests))
+            {
+                try_gfx_set_member_value_string(config.gfx_paths, chests, L"label", L"Chests");
+                try_gfx_set_member_value_bool(config.gfx_paths, chests, L"enabled", true);
+                if (last_home_anchor == chests_home_anchor)
+                {
+                    try_gfx_set_member_value_string(config.gfx_paths, home_help.Get(), L"text",
+                        L"Track opened chests and see where to find them.");
+                }
+            }
             auto* enemies =
                 try_gfx_get_member_value_object(config.gfx_paths, buttons, L"menuButton23");
             auto* gates =
@@ -669,7 +691,7 @@ namespace kh3ap
         auto publish_native_title() -> void
         {
             auto* owner = app_context.Get();
-            if (!dictionary_context(owner))
+            if (!dictionary_context(owner) || app_chests)
             {
                 return;
             }
@@ -982,6 +1004,16 @@ namespace kh3ap
             const auto ingredient_generation =
                 config.collected_revision ? config.collected_revision() : 0;
             const auto enemy_generation = read_adversary_revision();
+            const auto chest_generation = native_chest_journal_revision();
+            const auto current_kh02_access = RuntimePortalService::kh02_access();
+            if (current_kh02_access != kh02_access)
+            {
+                kh02_access = current_kh02_access;
+                if (app_chests)
+                {
+                    page_work.request();
+                }
+            }
             const auto epoch = reconciliation::epoch();
             const auto current_gate_view = reconciliation::view();
             if (gate_view != current_gate_view)
@@ -993,10 +1025,12 @@ namespace kh3ap
                 }
             }
             if (ingredient_generation != collected_revision ||
-                enemy_generation != adversary_revision || epoch != observed_epoch)
+                enemy_generation != adversary_revision || chest_generation != chest_revision ||
+                epoch != observed_epoch)
             {
                 collected_revision = ingredient_generation;
                 adversary_revision = enemy_generation;
+                chest_revision = chest_generation;
                 observed_epoch = epoch;
                 page_work.request();
             }
@@ -1118,7 +1152,21 @@ namespace kh3ap
                     gate_payload = payload;
                 }
             }
-            auto collected = app_gates         ? std::optional<std::wstring>{L""}
+            std::optional<ChestJournalPage> chest_page;
+            if (app_chests)
+            {
+                if (const auto snapshot = read_native_chest_journal())
+                {
+                    chest_page = chest_journal_page(*snapshot, kh02_access);
+                    if (chest_catalog != chest_page->catalog)
+                    {
+                        published = false;
+                        catalog_kind = -1;
+                    }
+                }
+            }
+            auto collected = app_chests ? (chest_page ? std::optional{chest_page->collected} : std::nullopt)
+                             : app_gates         ? std::optional<std::wstring>{L""}
                              : app_adversaries ? adversary_collected()
                                                : config.collected();
             if (!collected)
@@ -1129,24 +1177,30 @@ namespace kh3ap
             }
             if (!published && !app_gates)
             {
-                if (catalog_kind != (app_adversaries ? 1 : 0))
+                const auto kind = app_chests ? chest_catalog_kind : app_adversaries ? 1 : 0;
+                if (catalog_kind != kind)
                 {
                     if (!try_gfx_invoke_int_arg(config.gfx_paths, page, L"setJournal",
-                                                app_adversaries ? 1 : 0))
+                                                kind))
                     {
                         return false;
                     }
-                    catalog_kind = app_adversaries ? 1 : 0;
+                    catalog_kind = kind;
                 }
                 auto* result = try_gfx_invoke_string_arg_object(
                     config.gfx_paths, page, L"loadCatalog",
-                    app_adversaries ? adversary_journal_catalog : ingredient_journal_catalog);
+                    app_chests ? std::wstring_view(chest_page->catalog)
+                               : app_adversaries ? adversary_journal_catalog : ingredient_journal_catalog);
                 if (!is_uobject_valid_fast(result) ||
                     try_gfx_get_member_value_number(config.gfx_paths, page, L"catalogCount") !=
-                        (app_adversaries ? adversary_catalog_count : ingredient_catalog_count))
+                        (app_chests ? chest_page->count : app_adversaries ? adversary_catalog_count : ingredient_catalog_count))
                 {
                     return false;
                 }
+            }
+            if (app_chests && chest_page)
+            {
+                chest_catalog = chest_page->catalog;
             }
             if (!app_gates)
             {
@@ -1323,11 +1377,13 @@ namespace kh3ap
         }
         if ((navigation == focus_ingredients_navigation_command ||
              navigation == focus_adversaries_navigation_command ||
-             navigation == focus_gates_navigation_command) &&
+             navigation == focus_gates_navigation_command ||
+             navigation == focus_chests_navigation_command) &&
             is_uobject_valid_fast(impl_->home_tile()))
         {
             try_gfx_invoke_int_arg(impl_->config.gfx_paths, impl_->root.Get(), L"focusAnchor",
-                                   navigation == focus_gates_navigation_command ? gates_home_anchor
+                                   navigation == focus_chests_navigation_command ? chests_home_anchor
+                                   : navigation == focus_gates_navigation_command ? gates_home_anchor
                                    : navigation == focus_adversaries_navigation_command
                                        ? adversaries_home_anchor
                                        : ingredients_home_anchor);
@@ -1344,6 +1400,7 @@ namespace kh3ap
                << ",\"movie_ready\":" << (impl_->movie_ready ? "true" : "false")
                << ",\"published\":" << (impl_->published ? "true" : "false")
                << ",\"adversaries\":" << (impl_->app_adversaries ? "true" : "false")
+               << ",\"chests\":" << (impl_->app_chests ? "true" : "false")
                << ",\"gates\":" << (impl_->app_gates ? "true" : "false") << ",\"gate_payload\":\""
                << json_escape(impl_->gate_payload) << "\""
                << ",\"helper_present\":" << (is_uobject_valid_fast(page) ? "true" : "false")

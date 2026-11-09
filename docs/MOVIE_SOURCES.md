@@ -10,7 +10,7 @@ the compiled movie bytes. These source files and this guide add no runtime work.
 | UI | Readable source | Generated DLL data |
 | --- | --- | --- |
 | Shop AP names, icons, colors, Forge navigation | [APShopRuntime.as](../authoring/kh3/shop_ui/APShopRuntime.as) | [EGS patch binary](../KH3APProbeCpp/resources/shop_movie_patch_egs.bin), [Steam patch binary](../KH3APProbeCpp/resources/shop_movie_patch_steam.bin) |
-| Gummiphone Ingredients and Adversaries pages | [APIngredientJournal.as](../authoring/kh3/ingredient_journal/APIngredientJournal.as) | [Journal patch binary](../KH3APProbeCpp/resources/ingredient_journal_patch.bin) |
+| Gummiphone Ingredients, Adversaries, Gate Opener and Chests pages | [APIngredientJournal.as](../authoring/kh3/ingredient_journal/APIngredientJournal.as) | [Journal patch binary](../KH3APProbeCpp/resources/ingredient_journal_patch.bin) |
 | Map movie script | [APMapChestIcons.as](../authoring/kh3/map_overlay/APMapChestIcons.as), [APMapChestIcon.as](../authoring/kh3/map_overlay/APMapChestIcon.as) | [Compiled map movie](../KH3APProbeCpp/resources/map_chest_movie.swf) |
 | Now playing title and scrolling | [Music movie source](../authoring/kh3/now_playing/APNowPlaying.as), [generator](../authoring/kh3/now_playing/build_movie.py) | [Compiled music movie](../KH3APProbeCpp/resources/now_playing_movie.swf) |
 | Map marker art, legend, keybind labels | [build_chest_icon.py](../authoring/kh3/map_overlay/build_chest_icon.py) and its PNG inputs | Same compiled movie; [readable C++ dimensions](../KH3APProbeCpp/kh3ap/features/ui/map_overlay/map_chest_movie.h) |
@@ -56,9 +56,9 @@ and must still match its movie.
 | Name | Meaning |
 | --- | --- |
 | `active`, `ready`, `focused` | Whether our journal is open, its catalog is loaded, and the host has focus. |
-| `adversaries` | Selects Adversaries instead of Ingredients; the native service sets this mode. |
+| `adversaries`, `gates`, `chests` | Alternate journal modes selected by native code through `setJournal()`; Ingredients is the default. |
 | `entries`, `visibleEntries` | Full catalog and the entries passing the current world filter. |
-| `collected` | Recorded ingredient/enemy completion values supplied by native code. |
+| `collected` | Recorded ingredient, enemy and chest completion values supplied by native code. |
 | `selected`, `worldIndex`, `selectedSource` | Zero-based indexes for the selected entry, world filter and source row. |
 | `selectedIngredient`, `selectedWorld` | Selection exposed to the native service. |
 | `paneMode` | Navigation pane: `0` grid, `1` source list, `2` map. |
@@ -66,7 +66,7 @@ and must still match its movie.
 | `mapRequestKey`, `mapRequestSerial` | Selected source-map request and its change counter for native code. |
 | `mapState`, `mapTexture`, `mapMarkerCount`, `mapPageCount` | Map loading/display state, texture path, marker count and sheet count. |
 | `mapSheets`, `mapIndex` | Available map sheets and the selected sheet's zero-based index. |
-| `COLUMNS`, `columns` | Ingredients grid width (`8`) and the active grid width (`4` for Adversaries). |
+| `COLUMNS`, `columns` | Ingredients grid width (`8`) and the active grid width (`4` for Adversaries and Chests). |
 | `font` | Game font used by the authored text fields. |
 
 Start with the constructor for layout, `loadCatalog()` for catalog input,
@@ -75,6 +75,23 @@ Start with the constructor for layout, `loadCatalog()` for catalog input,
 `showSources()` builds the source panel; `openMap()` and `loadMap()` handle its
 map page. Native code reads several public fields, so renaming them also requires
 updating [ingredient_journal_service.cpp](../KH3APProbeCpp/kh3ap/features/journal/ingredient_journal_service.cpp).
+
+The chest journal marker shares `map_overlay/chest.png` and its icon preparation
+with the minimap/map. Its build fills `CHEST_ART` with the same colored
+rectangles; `chestMarker()` draws and caches that artwork when a preview opens.
+The PNG and encoder hashes are checked with the journal patch, so changing the
+shared artwork requires regenerating the journal as well.
+
+Chest entries and source paths are generated from the runtime's versioned
+`data/runtime-inputs.json` and `data/chest-journal-sources.json` by
+`scripts/generate_catalogs.py` into one `chest_journal_catalog.h`: each entry
+contains its labels and actor paths. The sources JSON is the asset-export input;
+the catalog is generated and is not maintained separately.
+Only chests registered for the active seed appear.
+Imported 0.2 entries require the seed option, and their maps also require
+Oblivion. Selecting the location text opens the preview; descriptions remain
+plain text when no map is available. Melody chest positions come from the
+current seed's assignments and are refreshed whenever their preview opens.
 
 ## Map variables and named elements
 

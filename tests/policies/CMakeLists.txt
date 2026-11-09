@@ -35,6 +35,7 @@ set(KH3AP_PROBE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../KH3APProbeCpp)
 include("${KH3AP_PROBE_ROOT}/../cmake/kh3-json-dependency.cmake")
 
 set(_kh3_policy_tests
+    chest_journal
     player_identity
     ui_input_event
     ui_control_command_catalog

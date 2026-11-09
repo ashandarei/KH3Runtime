@@ -365,6 +365,7 @@ namespace kh3ap
         std::mutex completed_mutex;
         uint64_t getter_original{};
         uint64_t original{}, generation{}, restores{};
+        uint64_t journal_revision{};
         std::optional<std::filesystem::path> bridge;
         std::wstring seed;
         int64_t slot{};
@@ -618,6 +619,7 @@ namespace kh3ap
             config_text = text;
             initialized = true;
             failed = false;
+            ++journal_revision;
             dirty = true;
             restore_requested = true;
             persist();
@@ -630,6 +632,7 @@ namespace kh3ap
             std::lock_guard lock(completed_mutex);
             if (completed.insert(id).second)
             {
+                ++journal_revision;
                 dirty = true;
                 // Runs in the game-thread drain after the native setter returned.
                 if (on_completion)
@@ -753,6 +756,7 @@ namespace kh3ap
             catch (const std::exception& error)
             {
                 failed = true;
+                ++journal_revision;
                 restore_requested = false;
                 Output::send<LogLevel::Error>(
                     L"[KH3APProbeCpp] NativeChestTracking stopped reason={}\n",
@@ -760,6 +764,27 @@ namespace kh3ap
             }
         }
     };
+    auto native_chest_journal_revision() -> uint64_t
+    {
+        const auto* service = RuntimeChestPersistenceService::Impl::instance;
+        return service ? service->journal_revision : 0;
+    }
+    auto read_native_chest_journal() -> std::optional<NativeChestJournalSnapshot>
+    {
+        auto* service = RuntimeChestPersistenceService::Impl::instance;
+        if (!service || !service->initialized || service->failed)
+        {
+            return {};
+        }
+        std::lock_guard lock(service->completed_mutex);
+        NativeChestJournalSnapshot snapshot;
+        for (const auto& [raw, id] : service->names)
+        {
+            snapshot.registered.insert(id);
+        }
+        snapshot.opened = service->completed;
+        return snapshot;
+    }
     bool native_chest_was_opened(std::wstring_view id)
     {
         auto* s = RuntimeChestPersistenceService::Impl::instance;
@@ -797,6 +822,7 @@ namespace kh3ap
     {
         impl_->restore_requested = true;
         impl_->failed = false;
+        ++impl_->journal_revision;
     }
     auto RuntimeChestPersistenceService::process(RuntimeState& state,
                                                  const std::optional<std::filesystem::path>& path,

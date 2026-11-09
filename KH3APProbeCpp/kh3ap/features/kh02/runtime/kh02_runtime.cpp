@@ -47,7 +47,8 @@ namespace kh3ap
                                    lifecycle.prepare();
                                    return ensure_story().prepare_entry(context);
                                },
-                               [this] { return story && story->entry_assets_notified(); }};
+                               [this] { return story && story->entry_assets_notified(); },
+                               [this] { ensure_story().prepare_asset_access(); }};
         Kh02RecoveryService recovery{{[this] { return config.gameplay_ready() && !config.game_over(); },
                                       [this](const std::string& message) { report(message); }}};
         FWeakObjectPtr observed_world;

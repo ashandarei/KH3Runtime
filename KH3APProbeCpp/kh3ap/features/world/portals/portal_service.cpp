@@ -1962,6 +1962,15 @@ namespace kh3ap
     {
     }
     RuntimePortalService::~RuntimePortalService() = default;
+    auto RuntimePortalService::kh02_access() -> portals::Kh02Access
+    {
+        if (!Impl::instance)
+        {
+            return {};
+        }
+        const auto& access = Impl::instance->access;
+        return portals::kh02_access(access.access_ready, access.kh02_enabled, access.items.contains(L"Oblivion"));
+    }
     void RuntimePortalService::on_map_jump()
     {
         if (Impl::instance)

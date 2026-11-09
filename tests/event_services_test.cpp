@@ -1,4 +1,5 @@
 #include "kh3ap/core/events/event_work.h"
+#include "kh3ap/features/world/portals/portal_policy.h"
 #include "kh3ap/features/story/minigames/beat_of_lead_completion.h"
 #include "kh3ap/features/story/minigames/union_cross_completion.h"
 #include "kh3ap/features/story/cutscenes/guardians_of_light_skip.h"
@@ -86,15 +87,21 @@ inline std::shared_ptr<const View> snapshot = std::make_shared<const View>();
 int64_t epoch(){return generation;}
 auto view(){return snapshot;}
 }
-inline uint64_t adversary_generation{};
+inline uint64_t adversary_generation{}, chest_generation{};
+inline portals::Kh02Access kh02_access_value;
+struct RuntimePortalService {
+    static auto kh02_access() { return kh02_access_value; }
+};
+uint64_t native_chest_journal_revision(){return chest_generation;}
 uint64_t read_adversary_revision(){return adversary_generation;}
 template<bool>struct RuntimeConditionalProfileScope {explicit RuntimeConditionalProfileScope(const wchar_t*){}};
 struct Journal {
-    uint64_t incoming{},collected_revision{},adversary_revision{};int64_t observed_epoch{-1};
+    uint64_t incoming{},collected_revision{},adversary_revision{},chest_revision{};int64_t observed_epoch{-1};
     struct Config {std::function<uint64_t()> collected_revision;}config{[this]{return incoming;}};
     RuntimeEventWork preload_work,page_work;
     std::shared_ptr<const reconciliation::View> gate_view;
-    bool app_gates{};
+    bool app_gates{}, app_chests{};
+    portals::Kh02Access kh02_access;
     bool movie_complete{},preload_ready{},page_ready=true;
     int preloads{},updates{};
     void preload(std::chrono::steady_clock::time_point){++preloads;movie_complete=preload_ready;}
@@ -214,6 +221,14 @@ int main(){
     before=journal.updates;for(int i=0;i<10000;++i)journal.tick();assert(journal.updates==before);
     ++journal.incoming;journal.tick();assert(journal.updates==before+1);
     ++adversary_generation;journal.tick();assert(journal.updates==before+2);
+    ++chest_generation;journal.tick();assert(journal.updates==before+3);
+    journal.app_chests=true;
+    kh02_access_value=portals::kh02_access(true,true,false);
+    journal.tick();assert(journal.updates==before+4);
+    kh02_access_value=portals::kh02_access(true,true,true);
+    journal.tick();assert(journal.updates==before+5);
+    journal.tick();assert(journal.updates==before+5);
+    before=journal.updates;for(int i=0;i<10000;++i)journal.tick();assert(journal.updates==before);
     journal.page_ready=false;journal.page_work.request();journal.tick();auto attempts=journal.updates;journal.tick();assert(journal.updates==attempts);
     journal.page_ready=true;journal.page_work.request();journal.tick();assert(journal.updates==attempts+1);
     journal.app_gates = true;

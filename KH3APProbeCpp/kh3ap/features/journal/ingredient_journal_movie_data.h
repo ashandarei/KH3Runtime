@@ -3,18 +3,21 @@
 // Variable guide: docs/MOVIE_SOURCES.md.
 // Binary contains only our helper, constructor hooks, identifiers and encoded sizes.
 // All game method bodies and graphics are copied from the runtime movie.
-// Helper source SHA256 (LF): c28e1861293bb1fe4a1310d5638b312b936ae0afc02ab407342bc9285e692d42
+// Helper source SHA256 (LF): 41b7d008120981b6960fe4f14a0c53d185931aa3a125ee164e71c167761c2b20
+// Shared input SHA256 map_overlay/chest.png: 3f3d45779869a1a5dc8cd955e32977df1290ddce4f33b6cb3610859a661f3d56
+// Shared input SHA256 map_overlay/build_chest_icon.py: 82a0a6f7d80324a084f6d7bf703274c4bc728207f4e4927f21deaf8297c2ba20
+// Shared input SHA256 ingredient_journal/build_runtime_patch.py: 51d0acfa20a2d22dbbae167fdd01b1e37edf45aef08b27060c8f3904758e01fd
 // Original SHA256: 15fbc0209353d107e470f6eb54f36554494d3c7ea0d793b064564aad5d1a1343
-// Extended SHA256: 228ba9cd6e3fdc5f4b176f806a569f6b1582eed9922e4f27a799c52123191119
-// Resource SHA256: 90f0c54748950c8d41f8fe462d34defb6078b4b038d628d7b6c20c1c812367d3
+// Extended SHA256: c1edcee6474be1a0383f284f63d724868d0f34f8a545be05ce789f5176b235c2
+// Resource SHA256: 50060ea58dce985b6d53c591ff121983f12669d3d41c0c77d950c60e26fa439d
 #pragma once
 #include "kh3ap/core/ui/embedded_movie_resource.h"
 namespace kh3ap::ingredient_journal_movie {
 inline constexpr uint32_t original_size = 82866;
-inline constexpr uint32_t patched_size = 100267;
+inline constexpr uint32_t patched_size = 115003;
 inline constexpr uint64_t original_hash = 0x2a57b98b257adbf2ULL;
-inline constexpr uint64_t patched_hash = 0x981009f03b9b3c9fULL;
-inline constexpr uint32_t delta_size = 17569;
+inline constexpr uint64_t patched_hash = 0x6032375c8f8fbbbfULL;
+inline constexpr uint32_t delta_size = 32305;
 inline auto delta_bytes() -> std::span<const uint8_t> {
     static const auto bytes = load_embedded_movie_resource(L"KH3AP_INGREDIENT_JOURNAL_PATCH", delta_size);
     return bytes;

@@ -1,5 +1,6 @@
 #include "kh02_entry_service.h"
 #include "kh02_bootstrap.h"
+#include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/features/kh02/world/kh02_portal.h"
 #include "kh3ap/features/kh02/transport/kh02_asset_companion.h"
 #include <stdexcept>
@@ -20,6 +21,7 @@ namespace kh3ap
         Source preparation_source{Source::none};
         Prepare prepare;
         std::function<bool()> assets_notified;
+        std::function<void()> prepare_asset_access;
         Kh02Bootstrap bootstrap{[this](RC::Unreal::UObject* context)
                                 { return run_prepare(context, Source::bootstrap); }};
         Kh02Portal portal{[this](RC::Unreal::UObject* context) { return run_prepare(context, Source::portal); },
@@ -31,8 +33,9 @@ namespace kh3ap
             return prepare(context);
         }
 
-        explicit Impl(Prepare callback, std::function<bool()> notification)
-            : prepare(std::move(callback)), assets_notified(std::move(notification))
+        explicit Impl(Prepare callback, std::function<bool()> notification, std::function<void()> asset_access)
+            : prepare(std::move(callback)), assets_notified(std::move(notification)),
+              prepare_asset_access(std::move(asset_access))
         {
             owner = this;
         }
@@ -46,12 +49,34 @@ namespace kh3ap
         }
     };
 
-    Kh02EntryService::Kh02EntryService(Prepare prepare, std::function<bool()> assets_notified)
-        : impl(std::make_unique<Impl>(std::move(prepare), std::move(assets_notified)))
+    Kh02EntryService::Kh02EntryService(Prepare prepare, std::function<bool()> assets_notified,
+                                     std::function<void()> prepare_asset_access)
+        : impl(std::make_unique<Impl>(std::move(prepare), std::move(assets_notified),
+                                     std::move(prepare_asset_access)))
     {
     }
 
     Kh02EntryService::~Kh02EntryService() = default;
+
+    auto Kh02EntryService::prepare_journal_assets() -> bool
+    {
+        if (!RuntimePortalService::kh02_access().unlocked)
+        {
+            throw std::runtime_error("kh02_journal_locked");
+        }
+        if (!Impl::owner || !Impl::owner->prepare_asset_access)
+        {
+            throw std::runtime_error("kh02_journal_asset_service_unavailable");
+        }
+        if (!prepare_kh02_provider())
+        {
+            return false;
+        }
+        // Register source descriptors without arming travel, loading Aqua,
+        // changing the story bank or preparing gameplay presentation.
+        Impl::owner->prepare_asset_access();
+        return true;
+    }
 
     auto Kh02EntryService::prepare_startup(RC::Unreal::UObject* context) -> bool
     {

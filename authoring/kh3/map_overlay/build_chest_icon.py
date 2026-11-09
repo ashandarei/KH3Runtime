@@ -198,12 +198,11 @@ def icon_shape(filename, shape_id, sprite_id):
     return shape + (sprite if sprite_id else b''), bounds[2]-bounds[0], (cx, cy)
 
 
-def rgba_shape(im, shape_id):
-    """Encode authored RGBA artwork as vector fills for KH3's bitmap-free UI."""
+def rgba_rectangles(im):
+    """Shared lossless rectangle representation of the prepared map icon."""
     w, h = im.size
     pixels = list(im.getdata())
     colors = sorted({c for c in pixels if c[3]})
-    color_index = {c: i+1 for i,c in enumerate(colors)}
     # Coalesce identical horizontal runs across adjacent rows.
     rectangles, previous = [], {}
     for y in range(h):
@@ -221,6 +220,14 @@ def rgba_shape(im, shape_id):
         rectangles.extend(previous.values())
         previous = active
     rectangles.extend(previous.values())
+    return colors, rectangles
+
+
+def rgba_shape(im, shape_id):
+    """Encode authored RGBA artwork as vector fills for KH3's bitmap-free UI."""
+    w, h = im.size
+    colors, rectangles = rgba_rectangles(im)
+    color_index = {c: i+1 for i,c in enumerate(colors)}
     shape = struct.pack('<H', shape_id) + rect(0, w*20, 0, h*20)
     shape += (bytes([len(colors)]) if len(colors) < 255 else b'\xff' + struct.pack('<H',len(colors)))
     shape += b''.join(b'\x00'+bytes(c) for c in colors) + b'\x00'

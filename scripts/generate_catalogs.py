@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import re
 
-from runtime_ui_catalogs import generated_ui_files
+from runtime_ui_catalogs import generated_ui_files, chest_journal_header
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +43,8 @@ def generated_files(contract: dict) -> dict[str, str]:
         prefix + "#pragma once\n#include <cstddef>\nnamespace kh3ap::json::limits {\n"
         + "".join(f"inline constexpr size_t {key} = {value};\n" for key, value in limits.items()) + "}\n")
     outputs.update(generated_ui_files(contract["ui"]))
+    sources = json.loads((ROOT / "data/chest-journal-sources.json").read_text(encoding="utf-8"))
+    outputs["kh3ap/features/journal/chest_journal_catalog.h"] = chest_journal_header(contract["locations"]["locations"], sources)
     return outputs
 
 

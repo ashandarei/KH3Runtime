@@ -1953,4 +1953,10 @@ namespace kh3ap
         return impl->prepare_entry(pawn);
     }
 
+    void Kh02Story::prepare_asset_access()
+    {
+        mark_kh02_provider_content_requested();
+        impl->install_compat();
+    }
+
 } // namespace kh3ap

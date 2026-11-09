@@ -1,0 +1,922 @@
+{
+  "BT_LBOX_001": [
+    "/Game/Levels/bt_DLC/bt_08/umap/bt_08_treasure.bt_08_treasure:PersistentLevel.g_bt_TreasureBox_l_2"
+  ],
+  "BT_LBOX_002": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_l_2"
+  ],
+  "BT_SBOX_001": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_2"
+  ],
+  "BT_SBOX_002": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_3"
+  ],
+  "BT_SBOX_003": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_4"
+  ],
+  "BT_SBOX_004": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_5"
+  ],
+  "BT_SBOX_005": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_6"
+  ],
+  "BT_SBOX_006": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_7"
+  ],
+  "BT_SBOX_007": [
+    "/Game/Levels/bt_DLC/bt_07/umap/bt_07_treasure.bt_07_treasure:PersistentLevel.g_bt_TreasureBox_8"
+  ],
+  "BX_LBOX_001": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBoxL_1",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBoxL_1"
+  ],
+  "BX_LBOX_005": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBoxL_5",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBoxL_5"
+  ],
+  "BX_LBOX_006": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBoxL_6",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBoxL_6"
+  ],
+  "BX_LBOX_007": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBoxL_7",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBoxL_7"
+  ],
+  "BX_SBOX_001": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_1",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_1"
+  ],
+  "BX_SBOX_002": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_2",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_2"
+  ],
+  "BX_SBOX_003": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_3",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_3"
+  ],
+  "BX_SBOX_004": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_4",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_4"
+  ],
+  "BX_SBOX_005": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_5",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_5"
+  ],
+  "BX_SBOX_006": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_6",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_6"
+  ],
+  "BX_SBOX_007": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_7",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_7"
+  ],
+  "BX_SBOX_008": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_8",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_8"
+  ],
+  "BX_SBOX_009": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_9",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_9"
+  ],
+  "BX_SBOX_010": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_10",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_10"
+  ],
+  "BX_SBOX_011": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_11",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_11"
+  ],
+  "BX_SBOX_012": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_12",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_12"
+  ],
+  "BX_SBOX_013": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_13",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_13"
+  ],
+  "BX_SBOX_014": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_14",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_14"
+  ],
+  "BX_SBOX_015": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_15",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_15"
+  ],
+  "BX_SBOX_016": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_16",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_16"
+  ],
+  "BX_SBOX_017": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_17",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_17"
+  ],
+  "BX_SBOX_018": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_18",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_18"
+  ],
+  "BX_SBOX_019": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_19",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_19"
+  ],
+  "BX_SBOX_020": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_20",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_20"
+  ],
+  "BX_SBOX_021": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_21",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_21"
+  ],
+  "BX_SBOX_022": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_22",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_22"
+  ],
+  "BX_SBOX_023": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_23",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_23"
+  ],
+  "BX_SBOX_024": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_24",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_24"
+  ],
+  "BX_SBOX_025": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_25",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_25"
+  ],
+  "BX_SBOX_026": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_26",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_26"
+  ],
+  "BX_SBOX_027": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_27",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_27"
+  ],
+  "BX_SBOX_028": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_28",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_28"
+  ],
+  "BX_SBOX_029": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_29",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_29"
+  ],
+  "BX_SBOX_030": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_30",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_30"
+  ],
+  "BX_SBOX_031": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_31",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_31"
+  ],
+  "BX_SBOX_032": [
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure.bx_02_treasure:PersistentLevel.g_bx_TreasureBox_32",
+    "/Game/Levels/bx/bx_02/umap/bx_02_treasure_Day.bx_02_treasure_Day:PersistentLevel.g_bx_TreasureBox_32"
+  ],
+  "CA_LBOX_001": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBoxL_1"
+  ],
+  "CA_LBOX_002": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island02_treasure.ca_02_island02_treasure:PersistentLevel.g_ca_TreasureBoxL_2"
+  ],
+  "CA_LBOX_003": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island03_treasure.ca_02_island03_treasure:PersistentLevel.g_ca_TreasureBoxL_3"
+  ],
+  "CA_LBOX_004": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBoxL_4"
+  ],
+  "CA_LBOX_005": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBoxL_5"
+  ],
+  "CA_LBOX_006": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBoxL_6"
+  ],
+  "CA_LBOX_007": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBoxL_7"
+  ],
+  "CA_LBOX_008": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island04_treasure.ca_02_island04_treasure:PersistentLevel.g_ca_TreasureBoxL_8"
+  ],
+  "CA_LBOX_009": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island08_treasure.ca_02_island08_treasure:PersistentLevel.g_ca_TreasureBoxL_9"
+  ],
+  "CA_LBOX_010": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBoxL_10"
+  ],
+  "CA_LBOX_011": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island02_treasure.ca_02_island02_treasure:PersistentLevel.g_ca_TreasureBoxL_11"
+  ],
+  "CA_SBOX_001": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_1"
+  ],
+  "CA_SBOX_002": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_2"
+  ],
+  "CA_SBOX_003": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_3"
+  ],
+  "CA_SBOX_004": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_4"
+  ],
+  "CA_SBOX_005": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_5"
+  ],
+  "CA_SBOX_006": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_6"
+  ],
+  "CA_SBOX_007": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_7"
+  ],
+  "CA_SBOX_008": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_8"
+  ],
+  "CA_SBOX_009": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_treasure.ca_01_treasure:PersistentLevel.g_ca_TreasureBox_9"
+  ],
+  "CA_SBOX_010": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBox_10"
+  ],
+  "CA_SBOX_011": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBox_11"
+  ],
+  "CA_SBOX_012": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBox_12"
+  ],
+  "CA_SBOX_013": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island02_treasure.ca_02_island02_treasure:PersistentLevel.g_ca_TreasureBox_13"
+  ],
+  "CA_SBOX_014": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island03_treasure.ca_02_island03_treasure:PersistentLevel.g_ca_TreasureBox_14"
+  ],
+  "CA_SBOX_015": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island03_treasure.ca_02_island03_treasure:PersistentLevel.g_ca_TreasureBox_15"
+  ],
+  "CA_SBOX_016": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island04_treasure.ca_02_island04_treasure:PersistentLevel.g_ca_TreasureBox_16"
+  ],
+  "CA_SBOX_017": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_17"
+  ],
+  "CA_SBOX_018": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island06_treasure.ca_02_island06_treasure:PersistentLevel.g_ca_TreasureBox_18"
+  ],
+  "CA_SBOX_019": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island14_treasure.ca_02_island14_treasure:PersistentLevel.g_ca_TreasureBox_19"
+  ],
+  "CA_SBOX_020": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island10_treasure.ca_02_island10_treasure:PersistentLevel.g_ca_TreasureBox_20"
+  ],
+  "CA_SBOX_021": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBox_21"
+  ],
+  "CA_SBOX_022": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island01_treasure01.ca_02_island01_treasure01:PersistentLevel.g_ca_TreasureBox_22"
+  ],
+  "CA_SBOX_023": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island02_treasure.ca_02_island02_treasure:PersistentLevel.g_ca_TreasureBox_23"
+  ],
+  "CA_SBOX_024": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island02_treasure.ca_02_island02_treasure:PersistentLevel.g_ca_TreasureBox_24"
+  ],
+  "CA_SBOX_025": [
+    "/Game/Levels/ca/ca_01/umap/ca_01_mission_search.ca_01_mission_search:PersistentLevel.g_ca_TreasureBox_25"
+  ],
+  "CA_SBOX_026": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island04_treasure.ca_02_island04_treasure:PersistentLevel.g_ca_TreasureBox_26"
+  ],
+  "CA_SBOX_027": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_27"
+  ],
+  "CA_SBOX_028": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_28"
+  ],
+  "CA_SBOX_029": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_29"
+  ],
+  "CA_SBOX_030": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_30"
+  ],
+  "CA_SBOX_031": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_31"
+  ],
+  "CA_SBOX_032": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_32"
+  ],
+  "CA_SBOX_033": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_33"
+  ],
+  "CA_SBOX_034": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_34"
+  ],
+  "CA_SBOX_035": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_35"
+  ],
+  "CA_SBOX_036": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_36"
+  ],
+  "CA_SBOX_037": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_37"
+  ],
+  "CA_SBOX_038": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_38"
+  ],
+  "CA_SBOX_039": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_39"
+  ],
+  "CA_SBOX_040": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_40"
+  ],
+  "CA_SBOX_041": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island05_treasure.ca_02_island05_treasure:PersistentLevel.g_ca_TreasureBox_41"
+  ],
+  "CA_SBOX_042": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island10_treasure.ca_02_island10_treasure:PersistentLevel.g_ca_TreasureBox_42"
+  ],
+  "CA_SBOX_043": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island10_treasure.ca_02_island10_treasure:PersistentLevel.g_ca_TreasureBox_43"
+  ],
+  "CA_SBOX_044": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island10_treasure.ca_02_island10_treasure:PersistentLevel.g_ca_TreasureBox_44"
+  ],
+  "CA_SBOX_045": [
+    "/Game/Levels/ca/ca_02/umap/ca_02_island10_treasure.ca_02_island10_treasure:PersistentLevel.g_ca_TreasureBox_45"
+  ],
+  "DW_BOX002": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure_After_clearing.dw_02_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_2_After_clearing"
+  ],
+  "DW_BOX003": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure.dw_02_treasure:PersistentLevel.g_dw_TreasureBox_4"
+  ],
+  "DW_BOX004": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure.dw_02_treasure:PersistentLevel.g_dw_TreasureBox_5"
+  ],
+  "DW_BOX005": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure_After_clearing.dw_02_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_6_After_clearing"
+  ],
+  "DW_BOX006": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure.dw_02_treasure:PersistentLevel.g_dw_TreasureBox_7"
+  ],
+  "DW_BOX007": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure.dw_02_treasure:PersistentLevel.g_dw_TreasureBox_8"
+  ],
+  "DW_BOX008": [
+    "/Game/Zevels/dw/dw_03/umap/dw_03_treasure.dw_03_treasure:PersistentLevel.g_dw_TreasureBox_2"
+  ],
+  "DW_BOX009": [
+    "/Game/Zevels/dw/dw_03/umap/dw_03_treasure_04.dw_03_treasure_04:PersistentLevel.g_dw_TreasureBox_3"
+  ],
+  "DW_BOX010": [
+    "/Game/Zevels/dw/dw_03/umap/dw_03_treasure_After_clearing.dw_03_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_4_After_clearing"
+  ],
+  "DW_BOX011": [
+    "/Game/Zevels/dw/dw_04/umap/dw_04_treasure.dw_04_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_BOX012": [
+    "/Game/Zevels/dw/dw_05/umap/dw_05_treasure_After_clearing.dw_05_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_2_After_Clearing",
+    "/Game/Zevels/dw/dw_05/umap/dw_05_treasure_After_clearing.dw_05_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_2_After_clearing"
+  ],
+  "DW_BOX013": [
+    "/Game/Zevels/dw/dw_05/umap/dw_05_treasure.dw_05_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_BOX014": [
+    "/Game/Zevels/dw/dw_06/umap/dw_06_treasure_After_clearing.dw_06_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_1_After_clearing"
+  ],
+  "DW_BOX015": [
+    "/Game/Zevels/dw/dw_06/umap/dw_06_treasure.dw_06_treasure:PersistentLevel.g_dw_TreasureBox_2"
+  ],
+  "DW_BOX016": [
+    "/Game/Zevels/dw/dw_06/umap/dw_06_treasure.dw_06_treasure:PersistentLevel.g_dw_TreasureBox_3"
+  ],
+  "DW_BOX017": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_2"
+  ],
+  "DW_BOX018": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_3"
+  ],
+  "DW_BOX019": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_4"
+  ],
+  "DW_BOX020": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_5"
+  ],
+  "DW_BOX021": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_6"
+  ],
+  "DW_BOX022": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_7"
+  ],
+  "DW_BOX023": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_8"
+  ],
+  "DW_BOX024": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_9"
+  ],
+  "DW_BOX025": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_10"
+  ],
+  "DW_BOX026": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure.dw_09_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_BOX027": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure.dw_09_treasure:PersistentLevel.g_dw_TreasureBox_3"
+  ],
+  "DW_BOX028": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure.dw_09_treasure:PersistentLevel.g_dw_TreasureBox_4"
+  ],
+  "DW_BOX029": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure.dw_09_treasure:PersistentLevel.g_dw_TreasureBox_5"
+  ],
+  "DW_BOX030": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure_After_clearing.dw_09_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_6_After_clearing"
+  ],
+  "DW_BOX031": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure_After_clearing.dw_02_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_9_After_clearing"
+  ],
+  "DW_BOX032": [
+    "/Game/Zevels/dw/dw_04/umap/dw_04_treasure_After_clearing.dw_04_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_2_After_clearing"
+  ],
+  "DW_BOX033": [
+    "/Game/Zevels/dw/dw_05/umap/dw_05_treasure.dw_05_treasure:PersistentLevel.g_dw_TreasureBox_3"
+  ],
+  "DW_BOX034": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure_After_clearing.dw_08_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_11_After_clearing"
+  ],
+  "DW_BOX035": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure_After_clearing.dw_08_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_12_After_clearing"
+  ],
+  "DW_BOX036": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure_After_clearing.dw_02_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_10_After_clearing"
+  ],
+  "DW_BOX037": [
+    "/Game/Zevels/dw/dw_06/umap/dw_06_treasure_After_clearing.dw_06_treasure_After_clearing:PersistentLevel.g_dw_TreasureBox_4_After_clearing"
+  ],
+  "DW_LBOX01": [
+    "/Game/Zevels/dw/dw_02/umap/dw_02_treasure.dw_02_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_LBOX02": [
+    "/Game/Zevels/dw/dw_03/umap/dw_03_treasure.dw_03_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_LBOX03": [
+    "/Game/Zevels/dw/dw_08/umap/dw_08_treasure.dw_08_treasure:PersistentLevel.g_dw_TreasureBox_1"
+  ],
+  "DW_LBOX04": [
+    "/Game/Zevels/dw/dw_09/umap/dw_09_treasure.dw_09_treasure:PersistentLevel.g_dw_TreasureBox_2"
+  ],
+  "EW_LBOX_001": [
+    "/Game/Levels/ew/ew_02/umap/ew_02_treasure.ew_02_treasure:PersistentLevel.g_ew_TreasureBoxL_2"
+  ],
+  "FZ_LBOX_001": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_001"
+  ],
+  "FZ_LBOX_002": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_002"
+  ],
+  "FZ_LBOX_003": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_003"
+  ],
+  "FZ_LBOX_004": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_004"
+  ],
+  "FZ_LBOX_005": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_005"
+  ],
+  "FZ_LBOX_006": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_LBOX_006"
+  ],
+  "FZ_SBOX_001": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_001"
+  ],
+  "FZ_SBOX_002": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_002"
+  ],
+  "FZ_SBOX_004": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_004"
+  ],
+  "FZ_SBOX_005": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_005"
+  ],
+  "FZ_SBOX_007": [
+    "/Game/Levels/fz/fz_01/umap/fz_01_treasure.fz_01_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_007"
+  ],
+  "FZ_SBOX_011": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_011_2"
+  ],
+  "FZ_SBOX_012": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_012"
+  ],
+  "FZ_SBOX_013": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_013_3"
+  ],
+  "FZ_SBOX_015": [
+    "/Game/Levels/fz/fz_02/umap/fz_02_treasure.fz_02_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_015"
+  ],
+  "FZ_SBOX_016": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_016"
+  ],
+  "FZ_SBOX_017": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_017"
+  ],
+  "FZ_SBOX_019": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_019"
+  ],
+  "FZ_SBOX_020": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_020"
+  ],
+  "FZ_SBOX_022": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_022"
+  ],
+  "FZ_SBOX_023": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_023"
+  ],
+  "FZ_SBOX_024": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_024"
+  ],
+  "FZ_SBOX_025": [
+    "/Game/Levels/fz/fz_04/umap/fz_04_treasure.fz_04_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_025"
+  ],
+  "FZ_SBOX_027": [
+    "/Game/Levels/fz/fz_05/umap/fz_05_treasure.fz_05_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_027"
+  ],
+  "FZ_SBOX_029": [
+    "/Game/Levels/fz/fz_05/umap/fz_05_treasure.fz_05_treasure:PersistentLevel.g_fz_TreasureBox_FZ_SBOX_029"
+  ],
+  "HE_LBOX_001": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBoxL_1"
+  ],
+  "HE_LBOX_002": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureLBox_02"
+  ],
+  "HE_LBOX_003": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBoxL_3"
+  ],
+  "HE_LBOX_004": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureLBOX_04"
+  ],
+  "HE_SBOX_001": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_1"
+  ],
+  "HE_SBOX_002": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_2"
+  ],
+  "HE_SBOX_003": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_3"
+  ],
+  "HE_SBOX_004": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_4"
+  ],
+  "HE_SBOX_006": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_6"
+  ],
+  "HE_SBOX_008": [
+    "/Game/Levels/he/he_01/umap/he_01_treasure.he_01_treasure:PersistentLevel.g_he_TreasureBox_8"
+  ],
+  "HE_SBOX_009": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_09"
+  ],
+  "HE_SBOX_010": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_10"
+  ],
+  "HE_SBOX_011": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_11"
+  ],
+  "HE_SBOX_012": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_12"
+  ],
+  "HE_SBOX_013": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_13"
+  ],
+  "HE_SBOX_014": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_14"
+  ],
+  "HE_SBOX_015": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_15"
+  ],
+  "HE_SBOX_016": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_16"
+  ],
+  "HE_SBOX_017": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_0"
+  ],
+  "HE_SBOX_020": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_20"
+  ],
+  "HE_SBOX_021": [
+    "/Game/Levels/he/he_02/umap/he_02_treasure.he_02_treasure:PersistentLevel.he_TreasureBox_21"
+  ],
+  "HE_SBOX_022": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_22"
+  ],
+  "HE_SBOX_023": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_23"
+  ],
+  "HE_SBOX_024": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_24"
+  ],
+  "HE_SBOX_025": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_25"
+  ],
+  "HE_SBOX_026": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_0"
+  ],
+  "HE_SBOX_027": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_27"
+  ],
+  "HE_SBOX_028": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_28"
+  ],
+  "HE_SBOX_029": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_29"
+  ],
+  "HE_SBOX_030": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_30"
+  ],
+  "HE_SBOX_031": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_31"
+  ],
+  "HE_SBOX_033": [
+    "/Game/Levels/he/he_03/umap/he_03_treasure.he_03_treasure:PersistentLevel.g_he_TreasureBox_33"
+  ],
+  "KG_LBOX_001": [
+    "/Game/Levels/kg/kg_01/umap/kg_01_treasure.kg_01_treasure:PersistentLevel.01_g_kg_TreasureBoxL"
+  ],
+  "KG_LBOX_002": [
+    "/Game/Levels/kg/kg_02/umap/kg_02_treasure.kg_02_treasure:PersistentLevel.01_g_kg_TreasureBoxL"
+  ],
+  "KG_SBOX_001": [
+    "/Game/Levels/kg/kg_02/umap/kg_02_treasure.kg_02_treasure:PersistentLevel.02_g_kg_TreasureBox"
+  ],
+  "KG_SBOX_002": [
+    "/Game/Levels/kg/kg_02/umap/kg_02_treasure.kg_02_treasure:PersistentLevel.03_g_kg_TreasureBox"
+  ],
+  "KG_SBOX_003": [
+    "/Game/Levels/kg/kg_02/umap/kg_02_treasure.kg_02_treasure:PersistentLevel.04_g_kg_TreasureBox"
+  ],
+  "KG_SBOX_004": [
+    "/Game/Levels/kg/kg_01/umap/kg_01_treasure.kg_01_treasure:PersistentLevel.g_kg_TreasureBox_2"
+  ],
+  "MI_LBOX_001": [
+    "/Game/Levels/mi/mi_01/umap/mi_01_treasure.mi_01_treasure:PersistentLevel.g_mi_TreasureBoxL_1"
+  ],
+  "MI_LBOX_002": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBoxL_2"
+  ],
+  "MI_LBOX_003": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBoxL_3"
+  ],
+  "MI_LBOX_004": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBoxL_0"
+  ],
+  "MI_SBOX_001": [
+    "/Game/Levels/mi/mi_01/umap/mi_01_treasure.mi_01_treasure:PersistentLevel.g_mi_TreasureBox_1"
+  ],
+  "MI_SBOX_002": [
+    "/Game/Levels/mi/mi_01/umap/mi_01_treasure.mi_01_treasure:PersistentLevel.g_mi_TreasureBox_2"
+  ],
+  "MI_SBOX_003": [
+    "/Game/Levels/mi/mi_01/umap/mi_01_treasure.mi_01_treasure:PersistentLevel.g_mi_TreasureBox_3"
+  ],
+  "MI_SBOX_005": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBox_5"
+  ],
+  "MI_SBOX_006": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBox_6"
+  ],
+  "MI_SBOX_007": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBox_7"
+  ],
+  "MI_SBOX_008": [
+    "/Game/Levels/mi/mi_02/umap/mi_02_treasure.mi_02_treasure:PersistentLevel.g_mi_TreasureBox_8"
+  ],
+  "MI_SBOX_009": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_9"
+  ],
+  "MI_SBOX_010": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_10"
+  ],
+  "MI_SBOX_011": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_11"
+  ],
+  "MI_SBOX_012": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_12"
+  ],
+  "MI_SBOX_013": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_13"
+  ],
+  "MI_SBOX_014": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_14"
+  ],
+  "MI_SBOX_015": [
+    "/Game/Levels/mi/mi_03/umap/mi_03_treasure.mi_03_treasure:PersistentLevel.g_mi_TreasureBox_15"
+  ],
+  "MI_SBOX_016": [
+    "/Game/Levels/mi/mi_04/umap/mi_04_treasure.mi_04_treasure:PersistentLevel.g_mi_TreasureBox_16"
+  ],
+  "MI_SBOX_017": [
+    "/Game/Levels/mi/mi_04/umap/mi_04_treasure.mi_04_treasure:PersistentLevel.g_mi_TreasureBox_17"
+  ],
+  "MI_SBOX_018": [
+    "/Game/Levels/mi/mi_04/umap/mi_04_treasure.mi_04_treasure:PersistentLevel.g_mi_TreasureBox_18"
+  ],
+  "MI_SBOX_019": [
+    "/Game/Levels/mi/mi_04/umap/mi_04_treasure.mi_04_treasure:PersistentLevel.g_mi_TreasureBox_0",
+    "/Game/Levels/mi/mi_04/umap/mi_04_treasure.mi_04_treasure:PersistentLevel.g_mi_TreasureBox_19"
+  ],
+  "RA_LBOX_001": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaA.ra_01_treasure_AreaA:PersistentLevel.g_ra_TreasureBoxL_AreaA_1"
+  ],
+  "RA_LBOX_002": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaG.ra_01_treasure_AreaG:PersistentLevel.g_ra_TreasureBoxL_AreaG_2"
+  ],
+  "RA_LBOX_003": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaA.ra_01_treasure_AreaA:PersistentLevel.g_ra_TreasureBoxL_AreaA_3"
+  ],
+  "RA_LBOX_004": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaK.ra_01_treasure_AreaK:PersistentLevel.g_ra_TreasureBoxL_AreaK_4"
+  ],
+  "RA_LBOX_005": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBoxL_5"
+  ],
+  "RA_LBOX_006": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_gimmick_AreaIb.ra_01_gimmick_AreaIb:PersistentLevel.g_ra_TreasureBoxL_AreaI_6"
+  ],
+  "RA_SBOX_001": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaTower.ra_01_treasure_AreaTower:PersistentLevel.g_ra_TreasureBox_Tower_1"
+  ],
+  "RA_SBOX_002": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaF.ra_01_treasure_AreaF:PersistentLevel.g_ra_TreasureBox_AreaF_2"
+  ],
+  "RA_SBOX_003": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaF.ra_01_treasure_AreaF:PersistentLevel.g_ra_TreasureBox_AreaF_3"
+  ],
+  "RA_SBOX_004": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaC.ra_01_treasure_AreaC:PersistentLevel.g_ra_TreasureBox_AreaC_4"
+  ],
+  "RA_SBOX_005": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaC.ra_01_treasure_AreaC:PersistentLevel.g_ra_TreasureBox_AreaC_5"
+  ],
+  "RA_SBOX_006": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaC.ra_01_treasure_AreaC:PersistentLevel.g_ra_TreasureBox_AreaC_6"
+  ],
+  "RA_SBOX_007": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaA.ra_01_treasure_AreaA:PersistentLevel.g_ra_TreasureBox_AreaA_7"
+  ],
+  "RA_SBOX_008": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaG.ra_01_treasure_AreaG:PersistentLevel.g_ra_TreasureBox_AreaG_8"
+  ],
+  "RA_SBOX_009": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaG.ra_01_treasure_AreaG:PersistentLevel.g_ra_TreasureBox_AreaG_9"
+  ],
+  "RA_SBOX_010": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaI.ra_01_treasure_AreaI:PersistentLevel.g_ra_TreasureBox_AreaI_10"
+  ],
+  "RA_SBOX_011": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaI.ra_01_treasure_AreaI:PersistentLevel.g_ra_TreasureBox_AreaI_11"
+  ],
+  "RA_SBOX_012": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaI.ra_01_treasure_AreaI:PersistentLevel.g_ra_TreasureBox_AreaI_12"
+  ],
+  "RA_SBOX_013": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaI.ra_01_treasure_AreaI:PersistentLevel.g_ra_TreasureBox_AreaI_13"
+  ],
+  "RA_SBOX_014": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaI.ra_01_treasure_AreaI:PersistentLevel.g_ra_TreasureBox_AreaI_14"
+  ],
+  "RA_SBOX_015": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaG.ra_01_treasure_AreaG:PersistentLevel.g_ra_TreasureBox_AreaG_15"
+  ],
+  "RA_SBOX_016": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaM.ra_01_treasure_AreaM:PersistentLevel.g_ra_TreasureBox_AreaM_16"
+  ],
+  "RA_SBOX_017": [
+    "/Game/Levels/ra/ra_01/umap/ra_01_treasure_AreaK.ra_01_treasure_AreaK:PersistentLevel.g_ra_TreasureBox_AreaK_17"
+  ],
+  "RA_SBOX_018": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBox_18"
+  ],
+  "RA_SBOX_019": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBox_19"
+  ],
+  "RA_SBOX_020": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBox_20"
+  ],
+  "RA_SBOX_021": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBox_21"
+  ],
+  "RA_SBOX_022": [
+    "/Game/Levels/ra/ra_02/umap/ra_02_Treasure.ra_02_Treasure:PersistentLevel.g_ra_TreasureBox_22"
+  ],
+  "TS_LBOX_001": [
+    "/Game/Levels/ts/ts_01/umap/ts_01_treasure.ts_01_treasure:PersistentLevel.g_TreasureBoxL3"
+  ],
+  "TS_LBOX_002": [
+    "/Game/Levels/ts/ts_01/umap/ts_01_treasure.ts_01_treasure:PersistentLevel.g_TreasureBoxL1"
+  ],
+  "TS_LBOX_003": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBoxL_3"
+  ],
+  "TS_LBOX_004": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBoxL_4"
+  ],
+  "TS_LBOX_005": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBoxL_5"
+  ],
+  "TS_LBOX_006": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBoxL_6"
+  ],
+  "TS_SBOX_001": [
+    "/Game/Levels/ts/ts_01/umap/ts_01_treasure.ts_01_treasure:PersistentLevel.g_ts_TreasureBox_C_1"
+  ],
+  "TS_SBOX_002": [
+    "/Game/Levels/ts/ts_01/umap/ts_01_treasure.ts_01_treasure:PersistentLevel.g_ts_TreasureBox1"
+  ],
+  "TS_SBOX_003": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_3"
+  ],
+  "TS_SBOX_004": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_4"
+  ],
+  "TS_SBOX_005": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_gimmick_Pokapon.ts_02_gimmick_Pokapon:PersistentLevel.g_ts_TreasureBox_5"
+  ],
+  "TS_SBOX_006": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_1"
+  ],
+  "TS_SBOX_007": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_7"
+  ],
+  "TS_SBOX_008": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_8"
+  ],
+  "TS_SBOX_009": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_9"
+  ],
+  "TS_SBOX_011": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_11"
+  ],
+  "TS_SBOX_012": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_12"
+  ],
+  "TS_SBOX_013": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_13"
+  ],
+  "TS_SBOX_014": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_14"
+  ],
+  "TS_SBOX_015": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_15"
+  ],
+  "TS_SBOX_016": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_16"
+  ],
+  "TS_SBOX_017": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_17"
+  ],
+  "TS_SBOX_018": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_18"
+  ],
+  "TS_SBOX_019": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_19"
+  ],
+  "TS_SBOX_020": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_20"
+  ],
+  "TS_SBOX_022": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_22"
+  ],
+  "TS_SBOX_023": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_23"
+  ],
+  "TS_SBOX_024": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_24"
+  ],
+  "TS_SBOX_025": [
+    "/Game/Levels/ts/ts_02/umap/ts_02_treasure.ts_02_treasure:PersistentLevel.g_ts_TreasureBox_25"
+  ],
+  "TT_LBOX_001": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBoxL_1"
+  ],
+  "TT_SBOX_001": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_1"
+  ],
+  "TT_SBOX_002": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_2"
+  ],
+  "TT_SBOX_003": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_3"
+  ],
+  "TT_SBOX_004": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_4"
+  ],
+  "TT_SBOX_005": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_5"
+  ],
+  "TT_SBOX_006": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_6"
+  ],
+  "TT_SBOX_007": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_7"
+  ],
+  "TT_SBOX_008": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_8"
+  ],
+  "TT_SBOX_009": [
+    "/Game/Levels/tt/tt_01/umap/tt_01_treasure.tt_01_treasure:PersistentLevel.g_tt_TreasureBox_9"
+  ]
+}

@@ -72,7 +72,7 @@ struct Colors {
 };
 struct Coordinates {
     struct Actor {std::wstring path;};struct Source {std::wstring actors;};
-    std::vector<Actor> ingredient_spot_actors;std::vector<Source> adversary_journal_sources;
+    std::vector<Actor> ingredient_spot_actors;std::vector<Source> adversary_journal_sources, chest_journal_entries;
     bool actors_indexed=true;
     std::map<std::wstring,std::set<std::wstring>> package_actors;
     std::map<std::wstring,std::array<float,3>> positions;std::set<std::wstring> cached_packages;

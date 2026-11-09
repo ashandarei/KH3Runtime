@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/features/world/portals/portal_policy.h"
 #include <chrono>
 #include <filesystem>
 #include <functional>
@@ -19,6 +20,7 @@ public:
     static void notify_context_ready();
     static auto gate_opener_menu() -> std::wstring;
     static auto use_gate_opener(int portal) -> bool;
+    static auto kh02_access() -> portals::Kh02Access;
     void tick(std::chrono::steady_clock::time_point now);
 private:
     struct Impl;
