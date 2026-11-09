@@ -175,17 +175,35 @@ int main()
         assert(access.access_ready && access.party_portals && access.allowed == std::set<std::wstring>{L"ss"});
     }
 
-    // Only the chapter's master switch controls 0.2 portal routing. Leaving
-    // optional challenges enabled must not reactivate a disabled chapter.
+    // Dark World and the imported chapter share the selected portal unlock.
+    // Neither the other mode's item nor optional challenges can bypass it.
     for (const int enabled : {0, 1}) {
         for (const int challenges : {0, 1}) {
-            pak_options = kh3ap::JsonObject{"{" + protocol +
-                R"("kh3_seed":{"seed_name":"seed","slot":7},"include_space":1,"kh02_enabled":)" +
-                std::to_string(enabled) + R"(,"kh02_challenges":)" + std::to_string(challenges) + "}"};
-            access = RuntimeSpaceAccess([&] { return directory; });
-            access.refresh(configure);
-            assert(access.access_ready);
-            assert(access.kh02_enabled == (enabled == 1));
+            for (const int party : {0, 1}) {
+                pak_options = kh3ap::JsonObject{"{" + protocol +
+                    R"("kh3_seed":{"seed_name":"seed","slot":7},"include_space":1,"kh02_enabled":)" +
+                    std::to_string(enabled) + R"(,"kh02_challenges":)" + std::to_string(challenges) +
+                    R"(,"portal_unlocks":)" + std::to_string(party) + "}"};
+                access = RuntimeSpaceAccess([&] { return directory; });
+                for (const std::string receipt : {"Potion", "Oblivion", "Party Member: Aqua"}) {
+                    snapshots[root / "ap_items.json"] = "{" + protocol +
+                        R"("items":[{"index":0,"item_name":")" + receipt + R"("}]})";
+                    revisions[root / "ap_items.json"]++;
+                    access.refresh(configure);
+                    assert(access.access_ready && access.kh02_enabled == (enabled == 1));
+                    const bool expected = receipt == (party ? "Party Member: Aqua" : "Oblivion");
+                    assert(access.allowed.contains(L"dw") == expected);
+                    const auto chapter = kh3ap::portals::kh02_access(
+                        access.access_ready, access.kh02_enabled, access.allowed.contains(L"dw"));
+                    assert(chapter.enabled == (enabled == 1));
+                    assert(chapter.unlocked == (enabled && expected));
+                }
+                // A revoked receipt must close the gate on the next publication.
+                snapshots[root / "ap_items.json"] = items;
+                revisions[root / "ap_items.json"]++;
+                access.refresh(configure);
+                assert(access.access_ready && !access.allowed.contains(L"dw"));
+            }
         }
     }
 

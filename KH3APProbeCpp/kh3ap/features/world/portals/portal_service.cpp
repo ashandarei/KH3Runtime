@@ -739,14 +739,13 @@ namespace kh3ap
         }
         bool party_portrait(int portal) const
         {
-            return access.party_portals &&
-                   !(portal == portals::dark_world_portal_id && access.kh02_enabled);
+            return access.party_portals && portals::by_id(portal);
         }
         bool owned(int portal) const
         {
             if (portal == portals::dark_world_portal_id && access.kh02_enabled)
             {
-                return access.access_ready && access.items.contains(L"Oblivion");
+                return access.access_ready && access.allowed.contains(L"dw");
             }
             const auto* def = portals::by_id(portal);
             return access.access_ready && def &&
@@ -759,7 +758,7 @@ namespace kh3ap
         }
         bool gate_locked(int portal)
         {
-            // A Gate Opener cannot replace the KH0.2 chapter's Oblivion access.
+            // A Gate Opener cannot replace the KH0.2 chapter's configured portal unlock.
             if (portal == portals::dark_world_portal_id && access.kh02_enabled)
             {
                 return false;
@@ -1588,8 +1587,7 @@ namespace kh3ap
             const auto before_allowed = access.allowed;
             const auto before_seed = access.seed;
             const bool before_ready = access.access_ready, before_party = access.party_portals;
-            const bool before_kh02 = access.kh02_enabled,
-                       before_oblivion = access.items.contains(L"Oblivion");
+            const bool before_kh02 = access.kh02_enabled;
             access.refresh(
                 [](auto&, auto&, auto, bool)
                 {
@@ -1599,8 +1597,7 @@ namespace kh3ap
 #endif
             if (before_allowed != access.allowed || before_seed != access.seed ||
                 before_ready != access.access_ready || before_party != access.party_portals ||
-                before_kh02 != access.kh02_enabled ||
-                before_oblivion != access.items.contains(L"Oblivion"))
+                before_kh02 != access.kh02_enabled)
             {
                 presentation_pending = true;
                 context_refresh_pending = true;
@@ -1962,6 +1959,15 @@ namespace kh3ap
     {
     }
     RuntimePortalService::~RuntimePortalService() = default;
+    auto RuntimePortalService::kh02_access() -> portals::Kh02Access
+    {
+        if (!Impl::instance)
+        {
+            return {};
+        }
+        const auto& access = Impl::instance->access;
+        return portals::kh02_access(access.access_ready, access.kh02_enabled, access.allowed.contains(L"dw"));
+    }
     void RuntimePortalService::on_map_jump()
     {
         if (Impl::instance)

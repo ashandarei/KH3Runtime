@@ -156,6 +156,6 @@ installation. Recovery can request one guarded Garden return when needed.
 Tests compare chapter flags, progress, AP checks and movie retirement rather
 than treating a dispatched command as success.
 
-The APWorld checkout owns the live runner in `tools/kh02/regression.py` and its
+The KH3Tools checkout owns the live runner in `tools/kh02/regression.py` and its
 operator instructions in `tools/kh02/REGRESSION.md`. They are optional external
 development tools, not native build or release dependencies.

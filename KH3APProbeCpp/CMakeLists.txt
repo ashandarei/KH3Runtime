@@ -219,6 +219,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/story/world_fixes/graveyard_backtracking.cpp
     kh3ap/features/story/world_fixes/festival_dance_story_patch.cpp
     kh3ap/features/story/world_fixes/big_hero_rescue_damage.cpp
+    kh3ap/features/story/world_fixes/big_hero_rescue_resume.cpp
     kh3ap/features/story/world_fixes/rapunzel_water_bypass.cpp
     kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.cpp
     kh3ap/features/story/world_fixes/rapunzel_hair_approach.cpp

@@ -47,11 +47,13 @@ namespace kh3ap::chest_manifest
         // Full seed-option pool, independent of owned blades or loaded chests.
         std::map<std::wstring, std::wstring> eligible_keyblades; // Display name -> native item token.
         bool has_vanilla_assignments{};
+        bool roxas_chestsanity{};
 
         auto same_layout(const Snapshot& other) const -> bool
         {
             if (bridge_dir != other.bridge_dir || process_id != other.process_id ||
-                seed != other.seed || slot != other.slot || assignments.size() != other.assignments.size()) return false;
+                seed != other.seed || slot != other.slot || roxas_chestsanity != other.roxas_chestsanity ||
+                assignments.size() != other.assignments.size()) return false;
             auto left = assignments.begin(), right = other.assignments.begin();
             for (; left != assignments.end(); ++left, ++right)
                 if (left->first != right->first || !left->second.same_layout(right->second)) return false;

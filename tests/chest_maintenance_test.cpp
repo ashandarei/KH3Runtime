@@ -70,13 +70,14 @@ struct Service : DeleteListener {
     std::function<void()> during_bind;
     struct Config {
         Service* self;
-        UObject* playable_sora(){++self->pawn_reads;return self->context_ready?&pawn:nullptr;}
+        UObject* playable_pawn(){++self->pawn_reads;return self->context_ready?&pawn:nullptr;}
         bool gameplay_ready(){return self->ready;}
         std::function<void()> chest_rescan;
     } config{this,{}};
     struct Audio {void set_muted(bool){}} audio;
     std::map<std::wstring,Assignment> assignments;
     std::map<std::wstring,Gate> gates;
+    struct Cache {void clear(){}} keyblade_cache;
     ChestDiscoveryQueue<Weak,1024,std::equal_to<Weak>> discovery;
     ChestMaintenanceWork maintenance_work,publication_work,assignment_work;
     MusicChestOpeningWork opening_work;
@@ -132,6 +133,12 @@ int main(){
     for(int i=0;i<10000;++i){Clock::current+=16ms;service.tick();}
     assert(service.maintenance_passes==passes&&service.pawn_reads==pawns&&service.asset_reads==assets);
     assert(service.gate_reads==reads&&service.writes==writes);
+    // A character handoff wakes existing gates, then goes idle again.
+    service.notify_player_changed();service.tick();
+    assert(service.maintenance_passes==passes+1&&service.gate_reads>reads);
+    passes=service.maintenance_passes;pawns=service.pawn_reads;
+    for(int i=0;i<10000;++i){Clock::current+=16ms;service.tick();}
+    assert(service.maintenance_passes==passes&&service.pawn_reads==pawns);
     service.NotifyUObjectDeleted(&unrelated,0);service.tick();assert(service.maintenance_passes==passes);
     service.ready=false;++revision;service.tick();assert(service.applied_inventory_revision!=revision);
     service.ready=true;service.tick();assert(service.applied_inventory_revision==revision);

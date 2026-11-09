@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh02_diagnostic_action_helpers.h"
 #include "kh3ap/features/kh02/story/kh02_entry_session.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
@@ -488,7 +489,7 @@ namespace kh3ap
                 if (action == Action::FlowChestBind)
                 {
                     ReflectedCall bind(controller, L"BP_NotifySetActionCommand1");
-                    bind.integer(L"inCommand", 78);
+                    bind.integer(L"inCommand", player_action_command_value(PlayerActionCommand::OPEN));
                     bind.number(L"inTimer", 2);
                     bind.object(L"inActor", selected);
                     bind.object(L"InComponent", try_read_reflected_object_property_value(selected, L"MyReactor"));

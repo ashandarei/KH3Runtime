@@ -7,6 +7,17 @@ namespace kh3ap::portals
 {
     inline constexpr auto dark_world_portal_id = 8;
 
+    struct Kh02Access
+    {
+        bool enabled{}, unlocked{};
+        bool operator==(const Kh02Access&) const = default;
+    };
+
+    constexpr auto kh02_access(bool ready, bool enabled, bool portal_unlocked) -> Kh02Access
+    {
+        return {ready && enabled, ready && enabled && portal_unlocked};
+    }
+
     inline constexpr float centered_face_x = 0.5f;
 
     struct Definition

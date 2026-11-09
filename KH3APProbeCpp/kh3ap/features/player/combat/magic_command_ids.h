@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/features/player/player_action_commands.h"
 #include <array>
 #include <cstdint>
 #include <cstddef>
@@ -22,17 +23,17 @@ namespace kh3ap::magic_command
     // the ordinary spell tiers. Situation and underwater commands use their
     // own ranges and still require the matching family's implementation assets.
     inline constexpr int family_count = static_cast<int>(Family::Count);
-    inline constexpr int first_normal = 29;
-    inline constexpr int last_normal = 51;
+    inline constexpr int first_normal = player_action_command_value(PlayerActionCommand::FIRE);
+    inline constexpr int last_normal = player_action_command_value(PlayerActionCommand::CURAGA);
     inline constexpr int normal_family_stride = 4;
     inline constexpr int last_normal_tier_offset = 2;
-    inline constexpr int first_situation = 110;
-    inline constexpr int last_situation = 124;
+    inline constexpr int first_situation = player_action_command_value(PlayerActionCommand::S_FIRA);
+    inline constexpr int last_situation = player_action_command_value(PlayerActionCommand::S_AEROGAN);
     inline constexpr int situation_family_stride = 3;
-    inline constexpr int situation_cure = 125;
+    inline constexpr int situation_cure = player_action_command_value(PlayerActionCommand::S_CURAGAN);
     inline constexpr int cure_family_index = static_cast<int>(Family::Cure);
-    inline constexpr int first_underwater = 53;
-    inline constexpr int last_underwater = 56;
+    inline constexpr int first_underwater = player_action_command_value(PlayerActionCommand::WATERFIRE);
+    inline constexpr int last_underwater = player_action_command_value(PlayerActionCommand::WATERAERO);
     using Commands = std::array<uint8_t, family_count>;
 
     [[nodiscard]] constexpr std::optional<size_t> normal_family(int command) noexcept

@@ -7,7 +7,7 @@ namespace RC::Unreal { class UObject; struct FWeakObjectPtr; }
 namespace kh3ap {
 struct RuntimeMusicChestConfig {
     std::function<std::optional<std::filesystem::path>()> bridge_dir;
-    std::function<RC::Unreal::UObject*()> playable_sora;
+    std::function<RC::Unreal::UObject*()> playable_pawn;
     std::function<bool()> gameplay_ready;
     // Share the verified native activation hook with the map's independent roster.
     std::function<void(const RC::Unreal::FWeakObjectPtr&)> chest_changed;
@@ -23,6 +23,7 @@ public:
     ~RuntimeMusicChestService();
     void tick();
     void reset_map_lifecycle();
+    void notify_player_changed();
 private:
     struct Impl;
     std::unique_ptr<Impl> impl_;

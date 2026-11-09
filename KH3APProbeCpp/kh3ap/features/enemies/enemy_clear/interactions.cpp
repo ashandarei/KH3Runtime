@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -80,7 +81,7 @@ namespace kh3ap
         if(!is_uobject_valid_fast(reactor) || !is_uobject_valid_fast(controller)) throw std::runtime_error("missing_chest_reactor");
         if(!boolean(reactor,L"BP_IsGimmickComponentActive"))throw std::runtime_error("chest_reactor_inactive");
         Call set(controller,L"BP_NotifySetActionCommand1");
-        if(!write_integral_function_param(set.field(L"inCommand"),set.params.data(),78) ||
+        if(!write_integral_function_param(set.field(L"inCommand"),set.params.data(),player_action_command_value(PlayerActionCommand::OPEN)) ||
                 !write_float_function_param(set.field(L"inTimer"),set.params.data(),1.0) ||
                 !write_object_function_param(set.function,set.params.data(),L"inActor",chest) ||
                 !write_object_function_param(set.function,set.params.data(),L"InComponent",reactor))

@@ -17,9 +17,11 @@ namespace kh3ap
     {
       public:
         using Prepare = std::function<bool(RC::Unreal::UObject*)>;
-        explicit Kh02EntryService(Prepare prepare, std::function<bool()> assets_notified = {});
+        explicit Kh02EntryService(Prepare prepare, std::function<bool()> assets_notified = {},
+                                  std::function<void()> prepare_asset_access = {});
         ~Kh02EntryService();
         static auto prepare_startup(RC::Unreal::UObject* context) -> bool;
+        static auto prepare_journal_assets() -> bool;
         void initialize();
         void tick_bootstrap();
         void tick_portal(RC::Unreal::UObject* pawn, bool playable);

@@ -1,5 +1,7 @@
 #include "chest_fixture.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
+#include "kh3ap/features/treasure/chest_character_policy.h"
+#include "kh3ap/features/treasure/chest_commands.h"
 #include <cassert>
 #include <iostream>
 #include <source_location>
@@ -16,6 +18,11 @@ static void rejects(const auto& action, std::source_location location = std::sou
 int main()
 {
     using namespace kh3ap;
+    for (int command = 0; command <= 255; ++command)
+    {
+        const auto action = chest_command::action_for_reactor(static_cast<uint8_t>(command));
+        assert(player_action_command_value(action) == (command == 3 ? 78 : command == 4 ? 79 : -1));
+    }
     static_assert(channels::allows_client_operation(channels::ap_items, 4));
     static_assert(!channels::allows_client_operation(channels::runtime_music_chests, 1));
     static_assert(!channels::allows_client_operation(channels::runtime_keyblade_chests, 2));
@@ -96,6 +103,31 @@ int main()
     catalog.configure(colored_seed);
     const auto keys = catalog.keyblades(42)["chests"].get_ref<const Json::array_t&>();
     const auto typed_keys = catalog.snapshot({}, 42, "bridge", widen);
+    assert(!typed_keys.roxas_chestsanity);
+    // Only an explicitly enabled seed grants Roxas these two chest keys.
+    for (int player = -1; player < 32; ++player)
+    {
+        for (const auto blade : {L"Oathkeeper", L"Oblivion", L"Classic Tone", L"Grand Chef", L""})
+        {
+            assert(!roxas_chest_key_allowed(false, player, blade));
+            assert(roxas_chest_key_allowed(true, player, blade) ==
+                   (player == 17 && (std::wstring_view(blade) == L"Oathkeeper" ||
+                                     std::wstring_view(blade) == L"Oblivion")));
+        }
+    }
+    for (const auto setting : {Json(1), Json(true)})
+    {
+        auto roxas_seed = colored_seed;
+        roxas_seed["roxas_chestsanity"] = setting;
+        catalog.configure(roxas_seed);
+        const auto enabled = catalog.snapshot({}, 42, "bridge", widen);
+        assert(enabled.roxas_chestsanity && !enabled.same_layout(typed_keys));
+        roxas_seed["chestsanity"] = 0;
+        catalog.configure(roxas_seed);
+        assert(!catalog.snapshot({}, 42, "bridge", widen).roxas_chestsanity);
+    }
+    catalog.configure(colored_seed);
+    assert(!catalog.snapshot({}, 42, "bridge", widen).roxas_chestsanity);
     assert(keys.size() == 14); // Fifteen palettes minus the native-match chest.
     assert(typed_keys.map_keyblades.size() == 14); // All blades, minus the Melody overlap.
     assert((eligible_names(typed_keys.eligible_keyblades) == std::set<std::wstring>{L"Classic Tone", L"Grand Chef", L"Hunny Spout"}));

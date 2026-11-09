@@ -13,6 +13,19 @@ PATCHES = (
     ('ingredient_journal/APIngredientJournal.as', 'kh3ap/features/journal/ingredient_journal_movie_data.h', 'ingredient_journal_patch.bin'),
 )
 
+EXTRA_INPUTS = {
+    'ingredient_journal/APIngredientJournal.as': (
+        'map_overlay/chest.png', 'map_overlay/build_chest_icon.py',
+        'ingredient_journal/build_runtime_patch.py',
+    ),
+}
+
+
+def input_hashes(source):
+    authoring = Path(__file__).resolve().parent
+    return [f'// Shared input SHA256 {name}: ' + hashlib.sha256((authoring / name).read_bytes()).hexdigest()
+            for name in EXTRA_INPUTS.get(source.relative_to(authoring).as_posix(), ())]
+
 
 def fingerprint(data):
     value = 14695981039346656037
@@ -41,6 +54,7 @@ def write_patch_resource(*, header, resource, resource_name, namespace, source,
         '// Binary contains only our helper, constructor hooks, identifiers and encoded sizes.',
         '// All game method bodies and graphics are copied from the runtime movie.',
         '// Helper source SHA256 (LF): ' + source_hash(source),
+        *input_hashes(source),
         '// Original SHA256: ' + hashlib.sha256(original).hexdigest(),
         '// Extended SHA256: ' + hashlib.sha256(result).hexdigest(),
         '// Resource SHA256: ' + hashlib.sha256(delta).hexdigest(),
@@ -71,6 +85,8 @@ def check_generated():
             raise ValueError(f'Movie patch size mismatch: {resource_name}; regenerate its patch')
         if '// Helper source SHA256 (LF): ' + source_hash(source) not in header:
             raise ValueError(f'{source_name} changed; regenerate its movie patch')
+        if any(line not in header for line in input_hashes(source)):
+            raise ValueError(f'{source_name} shared artwork changed; regenerate its movie patch')
 
 
 if __name__ == '__main__':

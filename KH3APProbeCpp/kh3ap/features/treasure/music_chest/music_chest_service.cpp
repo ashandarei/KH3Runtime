@@ -398,7 +398,7 @@ namespace kh3ap
         {
             RuntimeConditionalProfileScope<s_enable_runtime_hot_path_profiling> profile{
                 L"music_chests:frame_pawn"};
-            pawn = config.playable_sora();
+            pawn = config.playable_pawn();
         }
         update_pause(pawn, audio);
         try
@@ -507,7 +507,7 @@ namespace kh3ap
             }
             if (!pawn)
             {
-                pawn = config.playable_sora();
+                pawn = config.playable_pawn();
             }
             if (!is_uobject_valid_fast(pawn) || !config.gameplay_ready())
             {
@@ -655,6 +655,13 @@ namespace kh3ap
         }
     }
 
+    void RuntimeMusicChestService::Impl::notify_player_changed()
+    {
+        keyblade_cache.clear();
+        discovery.request_scan();
+        maintenance_work.request();
+    }
+
     RuntimeMusicChestService::RuntimeMusicChestService(RuntimeMusicChestConfig c)
         : impl_(std::make_unique<Impl>(std::move(c)))
     {
@@ -669,5 +676,10 @@ namespace kh3ap
         impl_->discovery.request_scan();
         impl_->maintenance_work.request();
         impl_->assignment_work.request();
+    }
+
+    void RuntimeMusicChestService::notify_player_changed()
+    {
+        impl_->notify_player_changed();
     }
 } // namespace kh3ap

@@ -70,6 +70,7 @@ namespace kh3ap::chest_manifest
         Json data;
         std::string seed;
         int64_t slot{};
+        bool roxas_chestsanity{};
         std::map<int64_t, Json> music_rows;
         std::map<std::string, Json> keyblade_rows;
         std::map<std::string, std::string> map_keyblades;
@@ -166,6 +167,10 @@ namespace kh3ap::chest_manifest
             const auto& chestsanity = field(metadata, "chestsanity");
             const bool color_map = (chestsanity.is_boolean() && chestsanity.get<bool>()) ||
                                    (chestsanity.is_number() && chestsanity.get<double>() == 1);
+            const auto& roxas = field(metadata, "roxas_chestsanity");
+            const bool next_roxas = color_map &&
+                ((roxas.is_boolean() && roxas.get<bool>()) ||
+                 (roxas.is_number() && roxas.get<double>() == 1));
             decltype(eligible_keyblades) next_eligible;
             if (color_map)
             {
@@ -278,6 +283,7 @@ namespace kh3ap::chest_manifest
                 throw std::runtime_error("chest_manifest_limit");
             }
             seed = next_seed;
+            roxas_chestsanity = next_roxas;
             slot = next_slot;
             music_rows = std::move(next_music);
             keyblade_rows = std::move(next_keyblades);
@@ -342,6 +348,7 @@ namespace kh3ap::chest_manifest
         {
             Snapshot result{
                 .bridge_dir = root, .process_id = process, .seed = widen(seed), .slot = slot};
+            result.roxas_chestsanity = roxas_chestsanity;
             for (const auto& [id, blade] : map_keyblades)
             {
                 result.map_keyblades.emplace(

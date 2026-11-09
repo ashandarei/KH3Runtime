@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -633,8 +634,8 @@ namespace kh3ap
             Call c(actor,mirror_handler);
             {
                 c.object_param(L"CommandCauser",pawn); c.object_param(L"ReactorComponent",reactor);
-                // ETresCommandKind::CHECK=79; ETresReactorCommandID::CHECK=4.
-                if(byte_property(reactor,L"m_Command")!=4 || !write_integral_function_param(c.param(L"CommandID"),c.params.data(),79))
+                // The reactor uses CHECK=4; the callback takes a player action command.
+                if(byte_property(reactor,L"m_Command")!=4 || !write_integral_function_param(c.param(L"CommandID"),c.params.data(),player_action_command_value(PlayerActionCommand::CHECK)))
                     throw std::runtime_error("mirror_command_mismatch");
             }
             mirror_ref=actor; interactions[step]=true;

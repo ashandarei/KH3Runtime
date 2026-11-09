@@ -17,6 +17,9 @@ package kh3ap
    // Original UI only. The game supplies its existing Icon class and textures.
    public dynamic class APIngredientJournal extends MovieClip
    {
+      // Filled by the authoring build from map_overlay/chest.png using the
+      // same pixels, colors and rectangle encoder as the minimap/map icon.
+      private static const CHEST_ART:String = "__SHARED_MAP_CHEST_ART__";
       public var cursorSoundSerial:int = 0;
       public var active:Boolean = false;
       public var ready:Boolean = false;
@@ -34,6 +37,7 @@ package kh3ap
       private var grid:Sprite;
       private var detail:Sprite;
       private var sourceContent:Sprite;
+      private var sourceHeading:TextField;
       private var sourceDescription:String = "";
       private var sourceScroll:Number = 0;
       private var sourceRows:Array = [];
@@ -59,6 +63,9 @@ package kh3ap
       private var focused:Boolean = false;
       public var adversaries:Boolean = false;
       public var gates:Boolean = false;
+      public var chests:Boolean = false;
+      private function get wideEntries() : Boolean { return adversaries || chests; }
+      private function get allLabel() : String { return chests ? "All Chests" : adversaries ? "All Adversaries" : "All Ingredients"; }
       public var gateRequest:int = 0;
       public var gateCount:int = 0;
       private var gatePage:Sprite;
@@ -69,7 +76,7 @@ package kh3ap
       private var gatePending:Boolean = false;
       public var gateYes:Boolean = true;
       private var gridScroll:Number = 0;
-      private function get columns() : int { return adversaries ? 4 : COLUMNS; }
+      private function get columns() : int { return wideEntries ? 4 : COLUMNS; }
       private var font:String = "$sougei";
       private static const COLUMNS:int = 8;
 
@@ -153,7 +160,8 @@ package kh3ap
          grid.scrollRect = new Rectangle(0,0,824,680);
          grid.addEventListener(MouseEvent.MOUSE_WHEEL,onGridWheel);
          page.addChild(grid);
-         page.addChild(text("Where to find it",928,19,764,40,26,0xFFFFFF));
+         sourceHeading = text("Where to find it",928,19,764,40,26,0xFFFFFF);
+         page.addChild(sourceHeading);
          detail = new Sprite();
          detail.x = 928;
          detail.y = 85;
@@ -237,8 +245,8 @@ package kh3ap
             }
             entries.push({id:columns[0],name:columns[1],icon:columns[2],sources:places});
          }
-         if(entries.length != (adversaries ? 53 : 51)) return null;
-         worlds = [adversaries ? "All Adversaries" : "All Ingredients"].concat(worlds.slice(1).sort());
+         if(!chests && entries.length != (adversaries ? 53 : 51)) return null;
+         worlds = [allLabel].concat(worlds.slice(1).sort());
          ready = true;
          rebuild();
          return this;
@@ -261,13 +269,15 @@ package kh3ap
          setFocus(0);
          adversaries = value == 1;
          gates = value == 2;
+         chests = value == 3;
+         sourceHeading.visible = !chests;
          gateRequest = 0;
          gatePending = false;
          gateSelected = 0;
          ready = false;
          entries = [];
          collected = {};
-         worlds = [adversaries ? "All Adversaries" : "All Ingredients"];
+         worlds = [allLabel];
          worldIndex = selected = selectedSource = 0;
          gridScroll = 0;
          sourceIngredient = "";
@@ -439,7 +449,7 @@ package kh3ap
          while(sourceContent.numChildren > 0) sourceContent.removeChildAt(0);
          sourceRows = [];
          sourceContent.addChild(text(ingredient.name,0,0,740,44,28,0xFFFFFF));
-         var status:String = collected[ingredient.id] === true ? (adversaries ? "Defeated" : "Collected") : (adversaries ? "Not defeated yet" : "Not collected yet");
+         var status:String = collected[ingredient.id] === true ? (chests ? "Opened" : adversaries ? "Defeated" : "Collected") : (chests ? "Not opened yet" : adversaries ? "Not defeated yet" : "Not collected yet");
          sourceContent.addChild(text(status,0,46,740,36,22,collected[ingredient.id] === true ? 0x56DDA9 : 0x9CA8B2));
          sourceDescription = ingredient.name + " | " + status;
          var world:String = "";
@@ -458,9 +468,11 @@ package kh3ap
             }
             if(place.key.length == 0)
             {
-               sourceContent.addChild(text(place.map + " (no map available)",24,ypos,716,36,22,0xFFFFFF));
-               sourceDescription += " " + place.map + " (no map available);";
-               ypos += 36;
+               var location:TextField = text(place.map + (chests ? "" : " (no map available)"),24,ypos,716,chests ? 280 : 36,22,0xFFFFFF);
+               location.wordWrap = chests;
+               sourceContent.addChild(location);
+               sourceDescription += " " + place.map + (chests ? ";" : " (no map available);");
+               ypos += chests ? 280 : 36;
                continue;
             }
             var row:MovieClip = new MovieClip();
@@ -468,13 +480,17 @@ package kh3ap
             row["sourceIndex"] = sourceRows.length;
             row["placeIndex"] = ingredient.sources.indexOf(place);
             row.buttonMode = true;
-            row.addChild(text(place.map,24,0,716,36,22,0xFFFFFF));
+            var rowText:TextField = text(place.map,24,0,716,chests ? 280 : 36,22,0xFFFFFF);
+            rowText.wordWrap = chests;
+            rowText.height = chests ? Math.max(36,rowText.textHeight + 10) : 36;
+            row["rowHeight"] = rowText.height;
+            row.addChild(rowText);
             row.addEventListener(MouseEvent.ROLL_OVER,onSourceHover);
             row.addEventListener(MouseEvent.CLICK,onSourceClick);
             sourceRows.push(row);
             sourceContent.addChild(row);
             sourceDescription += " " + place.map + ";";
-            ypos += 36;
+            ypos += rowText.height;
          }
          paintSources();
       }
@@ -483,13 +499,13 @@ package kh3ap
       {
          for(var i:int=0;i<sourceRows.length;i++)
          {
-            var row:Sprite = sourceRows[i];
+            var row:MovieClip = sourceRows[i];
             row.graphics.clear();
             if(paneMode == 1 && i == selectedSource)
             {
                row.graphics.lineStyle(2,0xA9EAF2);
                row.graphics.beginFill(0x245870);
-               row.graphics.drawRect(0,0,740,36);
+               row.graphics.drawRect(0,0,740,Number(row["rowHeight"]));
                row.graphics.endFill();
             }
          }
@@ -497,7 +513,8 @@ package kh3ap
          {
             var ypos:Number = sourceRows[selectedSource].y;
             if(ypos < sourceScroll) sourceScroll = ypos;
-            if(ypos + 36 > sourceScroll + 779) sourceScroll = ypos + 36 - 779;
+            var rowHeight:Number = Number(sourceRows[selectedSource]["rowHeight"]);
+            if(ypos + rowHeight > sourceScroll + 779) sourceScroll = ypos + rowHeight - 779;
          }
          scrollSources(0);
       }
@@ -525,7 +542,7 @@ package kh3ap
          mapRequestSerial++;
          mapState = "loading";
          mapHeading.text = ingredient.name;
-         mapCaption.text = place.world + " / " + place.map;
+         mapCaption.text = chests ? place.world : place.world + " / " + place.map;
          mapStatus.text = "Loading map...";
          mapPage.visible = true;
       }
@@ -622,23 +639,52 @@ package kh3ap
             var marker:MovieClip = new MovieClip();
             marker.x = mapLoader.x + Number(xy[0])*fit;
             marker.y = mapLoader.y + Number(xy[1])*fit;
-            marker.graphics.lineStyle(3,0xFFE552);
-            marker.graphics.beginFill(0x102633,0.95);
-            marker.graphics.drawCircle(0,0,19);
-            marker.graphics.endFill();
-            if(!adversaries)
+            if(chests)
             {
-               var icon:Object = new IconClass(28,28);
-               icon.x = icon.y = -14;
-               icon.load(visibleEntries[selected].icon,true);
-               marker["foodIcon"] = icon;
-               marker.addChild(icon);
+               marker.addChild(chestMarker());
+            }
+            else
+            {
+               marker.graphics.lineStyle(3,0xFFE552);
+               marker.graphics.beginFill(0x102633,0.95);
+               marker.graphics.drawCircle(0,0,19);
+               marker.graphics.endFill();
+               if(!adversaries)
+               {
+                  var icon:Object = new IconClass(28,28);
+                  icon.x = icon.y = -14;
+                  icon.load(visibleEntries[selected].icon,true);
+                  marker["foodIcon"] = icon;
+                  marker.addChild(icon);
+               }
             }
             mapCanvas.addChild(marker);
             mapMarkerCount++;
          }
          mapState = "ready";
-         mapStatus.text = adversaries ? "Vanilla locations" : "Possible pickup locations: " + mapMarkerCount;
+         mapStatus.text = chests ? "Chest location" : adversaries ? "Vanilla locations" : "Possible pickup locations: " + mapMarkerCount;
+      }
+
+      private function chestMarker() : Sprite
+      {
+         var result:Sprite = new Sprite();
+         var layers:Array = CHEST_ART.split("|");
+         var bounds:Array = String(layers.shift()).split(",");
+         for each(var layer:String in layers)
+         {
+            var parts:Array = layer.split(":");
+            var rgba:uint = uint("0x" + parts[0]);
+            result.graphics.beginFill(rgba >>> 8,(rgba & 255)/255);
+            for each(var box:String in String(parts[1]).split(";"))
+            {
+               var values:Array = box.split(",");
+               result.graphics.drawRect(Number(values[0])-Number(bounds[0]),Number(values[1])-Number(bounds[1]),Number(values[2]),Number(values[3]));
+            }
+            result.graphics.endFill();
+         }
+         result.scaleX = result.scaleY = 36/Number(bounds[2]);
+         result.cacheAsBitmap = true;
+         return result;
       }
 
       private function cursorSelection() : String
@@ -734,25 +780,25 @@ package kh3ap
          for(var i:int=0;i<visibleEntries.length;i++)
          {
             var cell:MovieClip = new MovieClip();
-            cell.x = (i % columns) * (adversaries ? 208 : 104);
+            cell.x = (i % columns) * (wideEntries ? 208 : 104);
             cell.y = int(i / columns) * 88;
             cell["entryIndex"] = i;
             cell.graphics.beginFill(0x153B50);
-            cell.graphics.drawRect(0,0,adversaries ? 200 : 96,80);
+            cell.graphics.drawRect(0,0,wideEntries ? 200 : 96,80);
             cell.graphics.endFill();
-            var icon:Object = adversaries ? new MovieClip() : new IconClass(48,48);
+            var icon:Object = wideEntries ? new MovieClip() : new IconClass(48,48);
             icon.x = 24;
             icon.y = 5;
             icon.mouseEnabled = false;
             icon.mouseChildren = false;
             // Native textures are preloaded and retained by the transient
             // movie. Bypass the stock root's external icon callback queue.
-            if(!adversaries) icon.load(visibleEntries[i].icon,true);
+            if(!wideEntries) icon.load(visibleEntries[i].icon,true);
             cell["foodIcon"] = icon;
             cell.addChild(icon);
-            var label:TextField = adversaries ? text(visibleEntries[i].name,8,7,184,46,18,0xFFFFFF) : text(visibleEntries[i].name,3,57,90,21,14,0xFFFFFF);
-            label.wordWrap = adversaries;
-            if(adversaries)
+            var label:TextField = wideEntries ? text(visibleEntries[i].name,8,7,184,46,18,0xFFFFFF) : text(visibleEntries[i].name,3,57,90,21,14,0xFFFFFF);
+            label.wordWrap = wideEntries;
+            if(wideEntries)
             {
                var badge:TextField = text("",8,56,184,23,15,0xFFFFFF);
                cell["badge"] = badge;
@@ -795,13 +841,20 @@ package kh3ap
             cell.graphics.clear();
             cell.graphics.lineStyle(i == selected && paneMode == 0 ? 2 : 1,i == selected && paneMode == 0 ? 0xA9EAF2 : 0x244A60);
             cell.graphics.beginFill(i == selected ? 0x245870 : 0x153B50);
-            cell.graphics.drawRect(0,0,adversaries ? 200 : 96,80);
-            if(adversaries) { cell.badge.text = done ? "Defeated" : "Not defeated"; cell.badge.textColor = done ? 0x56DDA9 : 0x9CA8B2; }
+            cell.graphics.drawRect(0,0,wideEntries ? 200 : 96,80);
+            if(wideEntries) { cell.badge.text = chests ? (done ? "Opened" : "Unopened") : (done ? "Defeated" : "Not defeated"); cell.badge.textColor = done ? 0x56DDA9 : 0x9CA8B2; }
             cell.graphics.endFill();
          }
-         progress.text = (adversaries ? "Adversaries Defeated     " : "Ingredients Collected     ") + count + " / " + visibleEntries.length;
+         progress.text = (chests ? "Chests Opened     " : adversaries ? "Adversaries Defeated     " : "Ingredients Collected     ") + count + " / " + visibleEntries.length;
          worldLabel.text = selectedWorld;
-         if(visibleEntries.length == 0) return;
+         if(visibleEntries.length == 0)
+         {
+            selectedIngredient = sourceIngredient = sourceDescription = "";
+            sourceRows = [];
+            while(sourceContent.numChildren > 0) sourceContent.removeChildAt(0);
+            sourceContent.addChild(text("No chests are registered for this seed.",0,0,740,80,22,0x9CA8B2));
+            return;
+         }
          var ingredient:Object = visibleEntries[selected];
          selectedIngredient = ingredient.id;
          showSources(ingredient);

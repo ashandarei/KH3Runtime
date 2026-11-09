@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/combat/character_union_cross.h"
 #include "kh3ap/features/player/characters/character_profile.h"
@@ -20,8 +21,8 @@ namespace kh3ap::character_union_cross
     namespace
     {
         constexpr size_t controller_selected_command_offset = 0x87c;
-        constexpr int first_union_cross_finish_command = 180;
-        constexpr int last_union_cross_finish_command = 185;
+        constexpr int first_union_cross_finish_command = player_action_command_value(PlayerActionCommand::FINISH_UNIONX);
+        constexpr int last_union_cross_finish_command = player_action_command_value(PlayerActionCommand::FINISH_UX5);
         constexpr size_t attached_state_owner_offset = 0x68;
         constexpr size_t attached_state_kind_offset = 0xa0;
         constexpr int union_cross_attach_kind = 6;

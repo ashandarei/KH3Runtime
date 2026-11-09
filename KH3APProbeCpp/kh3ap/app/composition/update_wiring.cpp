@@ -178,6 +178,7 @@ namespace kh3ap
             if (character_swap::tick(now))
             {
                 s_runtime_controller_abilities.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
+                m_music_chests.notify_player_changed();
             }
             phase_trace.mark(STR("garden_return"));
             m_save_space.tick(now);

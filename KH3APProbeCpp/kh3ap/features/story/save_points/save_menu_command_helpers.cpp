@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/bridge/session/command_sources.h"
 #include "kh3ap/features/story/save_points/save_menu_commands.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -433,7 +434,7 @@ namespace kh3ap
             const bool wrote_command = write_integral_function_param(
                     find_function_param_by_name(function_object, STR("inCommand")),
                     params.data(),
-                    76);
+                    player_action_command_value(PlayerActionCommand::SAVE));
             const bool wrote_timer = write_float_function_param(
                     find_function_param_by_name(function_object, STR("inTimer")),
                     params.data(),

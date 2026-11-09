@@ -26,6 +26,7 @@ namespace kh3ap
         auto needs_frame() const -> bool;
         void tick_frame(RC::Unreal::UObject* pawn);
         auto prepare_entry(RC::Unreal::UObject* pawn) -> bool;
+        void prepare_asset_access();
         auto preparation_pending() const -> bool;
         auto entry_assets_notified() const -> bool;
         void tick_preparation(RC::Unreal::UObject* pawn);

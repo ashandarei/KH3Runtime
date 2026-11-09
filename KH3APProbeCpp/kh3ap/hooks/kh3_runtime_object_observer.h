@@ -132,6 +132,7 @@ namespace kh3ap
         RC::Unreal::FName lucky_mark_component_class_name_{};
         RC::Unreal::FName festival_dance_story_class_name_{};
         RC::Unreal::FName rapunzel_water_class_name_{};
+        RC::Unreal::FName big_hero_gameflow_class_name_{};
         RC::Unreal::FName rapunzel_swing_camera_class_name_{};
         RC::Unreal::FName rapunzel_hair_approach_class_name_{};
         std::array<RC::Unreal::FName, 3> graveyard_backtracking_class_names_{};

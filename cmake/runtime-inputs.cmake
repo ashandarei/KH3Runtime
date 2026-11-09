@@ -25,4 +25,5 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     ${_native_authored_inputs}
     "${KH3AP_NATIVE_ROOT}/scripts/generate_catalogs.py"
     "${KH3AP_NATIVE_ROOT}/scripts/runtime_ui_catalogs.py"
-    "${KH3AP_NATIVE_ROOT}/data/runtime-inputs.json")
+    "${KH3AP_NATIVE_ROOT}/data/runtime-inputs.json"
+    "${KH3AP_NATIVE_ROOT}/data/chest-journal-sources.json")
