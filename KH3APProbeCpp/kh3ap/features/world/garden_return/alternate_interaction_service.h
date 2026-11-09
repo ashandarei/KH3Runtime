@@ -13,7 +13,6 @@ namespace RC::Unreal
 
 namespace kh3ap::garden_return_detail
 {
-    inline constexpr int32_t check_action_command = 79;
     struct AlternateInteractionConfig
     {
         std::function<bool()> camp_ready;

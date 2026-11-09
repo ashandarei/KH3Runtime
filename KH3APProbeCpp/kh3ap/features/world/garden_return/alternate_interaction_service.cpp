@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "alternate_interaction_service.h"
 #include "runtime_context.h"
 #include "kh3ap/features/player/player_ids.h"
@@ -11,6 +12,7 @@
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/features/kh02/treasure/kh02_chest_interaction_policy.h"
 #include "kh3ap/features/treasure/chest_persistence_service.h"
+#include "kh3ap/features/treasure/chest_commands.h"
 #include "kh3ap/features/world/garden_return/garden_return_policy.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/objects/actor_discovery.h"
@@ -46,15 +48,15 @@ namespace kh3ap::garden_return_detail
         constexpr auto aqua_chest_reconcile_delay = std::chrono::milliseconds(500);
         constexpr auto aqua_save_timeout = std::chrono::seconds(8);
         constexpr auto aqua_interaction_radius = 350.0f;
-        constexpr int32_t save_point_action_command = 76;
+        constexpr int32_t save_point_action_command = player_action_command_value(PlayerActionCommand::SAVE);
         constexpr uint8_t idle_player_state = player_state_ids::idle;
         constexpr uint8_t running_player_state = player_state_ids::run;
         constexpr uint8_t check_reactor_command = 4;
-        constexpr int32_t ship_action_command = 83;
+        constexpr int32_t ship_action_command = player_action_command_value(PlayerActionCommand::SHIP);
         constexpr uint8_t ship_reactor_command = 8;
-        constexpr int32_t shop_action_command = 80;
+        constexpr int32_t shop_action_command = player_action_command_value(PlayerActionCommand::SHOP);
         constexpr uint8_t shop_reactor_command = 5;
-        constexpr int32_t rail_action_command = 87;
+        constexpr int32_t rail_action_command = player_action_command_value(PlayerActionCommand::RAIL);
         constexpr uint8_t rail_reactor_command = 12;
     } // namespace
 
@@ -391,7 +393,7 @@ namespace kh3ap::garden_return_detail
             }
             if (reactor == object_field(actor, L"TresReactorMap") && selected == check_reactor_command)
             {
-                return check_action_command;
+                return player_action_command_value(PlayerActionCommand::CHECK);
             }
             return 0;
         }
@@ -537,9 +539,9 @@ namespace kh3ap::garden_return_detail
             // Use that complete route rather than manufacturing a state or
             // changing the possessed character. Fail closed on other builds.
             const bool alternate = character_swap::current_hero() == pawn && character_traversal::ready(pawn);
-            if ((command != save_point_action_command && command != kh02_chest_interaction::open_chest_command &&
-                 command != check_action_command && command != ship_action_command && command != shop_action_command &&
-                 command != rail_action_command) ||
+            if ((command != save_point_action_command && command != player_action_command_value(PlayerActionCommand::OPEN) &&
+                 command != player_action_command_value(PlayerActionCommand::CHECK) && command != ship_action_command &&
+                 command != shop_action_command && command != rail_action_command) ||
                 (player_id(pawn) != aqua_player_id && !alternate) || !is_uobject_valid_fast(actor))
             {
                 return false;
@@ -567,7 +569,9 @@ namespace kh3ap::garden_return_detail
                 queue_interface, command, actor,
                 selected_reactor
                     ? selected_reactor
-                    : object_field(actor, command == check_action_command ? L"TresReactor" : L"MyReactor"));
+                    : object_field(actor, command == player_action_command_value(PlayerActionCommand::CHECK)
+                                              ? L"TresReactor"
+                                              : L"MyReactor"));
         }
 
         void poll_aqua_interaction(Clock::time_point now)
@@ -655,7 +659,8 @@ namespace kh3ap::garden_return_detail
                     aqua_chest = make_uobject_weak(chest);
                     aqua_chest_observing = false;
                     aqua_collectible_pending = collectible;
-                    int32_t action_command = kh02_chest_interaction::open_chest_command;
+                    int32_t action_command = player_action_command_value(PlayerActionCommand::Invalid);
+                    bool examining_chest = false;
                     if (rail)
                     {
                         action_command = rail_action_command;
@@ -670,20 +675,34 @@ namespace kh3ap::garden_return_detail
                     }
                     else if (check_target || barrel)
                     {
-                        action_command = check_action_command;
+                        action_command = player_action_command_value(PlayerActionCommand::CHECK);
+                    }
+                    else
+                    {
+                        auto* command = selected_reactor->GetPropertyByNameInChain(L"m_Command");
+                        if (command && command->GetElementSize() == 1)
+                        {
+                            action_command = player_action_command_value(chest_command::action_for_reactor(
+                                *command->ContainerPtrToValuePtr<uint8_t>(selected_reactor)));
+                            examining_chest = action_command == player_action_command_value(PlayerActionCommand::CHECK);
+                        }
                     }
                     if (!dispatch_aqua_interaction(pawn, action_command, chest, selected_reactor))
                     {
                         cancel(L"aqua_interaction_command_rejected");
                         return;
                     }
-                    if (mirror || experimental_garden_portal(chest, pawn) || ship_command || barrel || ingredient || shop || simple_check || rail)
+                    if (examining_chest || mirror || experimental_garden_portal(chest, pawn) || ship_command || barrel || ingredient || shop || simple_check || rail)
                     {
                         // The selected mirror's native Check state owns its
                         // reaction, puzzle changes and map/cutscene transition.
                         // Unlike a pickup it remains alive after completion.
                         const wchar_t* completed_phase = L"checking_portal_with_alternate";
-                        if (rail)
+                        if (examining_chest)
+                        {
+                            completed_phase = L"examining_chest_with_alternate";
+                        }
+                        else if (rail)
                         {
                             completed_phase = L"boarding_rail_with_alternate";
                         }

@@ -31,7 +31,8 @@ def method(name):
 out = Path(sys.argv[1])
 out.parent.mkdir(parents=True, exist_ok=True)
 extracted = '\n'.join(method(name) for name in (
-    'NotifyUObjectDeleted', 'watch_gates', 'pause_active', 'update_pause', 'tick', 'maintain'))
+    'NotifyUObjectDeleted', 'watch_gates', 'pause_active', 'update_pause', 'tick', 'maintain',
+    'notify_player_changed'))
 constants = ''.join(
     f'static constexpr auto {key} = {value};\n'
     for key, value in re.findall(r'^\s*(?:inline\s+)?constexpr auto (\w+) = ([^;\n]+);', constants_source, re.M)

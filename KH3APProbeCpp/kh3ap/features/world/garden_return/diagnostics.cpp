@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include <chrono>
 #include "service_impl.h"
 #include "kh3ap/core/ui/ui_layout.h"
@@ -321,7 +322,7 @@ namespace kh3ap
         auto* actor = object_field(info, L"m_Actor");
         auto* component = object_field(info, L"m_Component");
         if (interactions.selected_ship_command(actor, component, pawn, false) !=
-                check_action_command ||
+                player_action_command_value(PlayerActionCommand::CHECK) ||
             component != object_field(actor, L"TresReactorMap") || !loading_closed())
         {
             request.reason = L"owned_alternate_ship_chart_required";
@@ -442,7 +443,7 @@ namespace kh3ap
                 }
             }
             auto* reactor = object_field(ship, L"TresReactorMap");
-            if (interactions.selected_ship_command(ship, reactor, pawn) != check_action_command)
+            if (interactions.selected_ship_command(ship, reactor, pawn) != player_action_command_value(PlayerActionCommand::CHECK))
             {
                 request.reason = L"nearby_active_ship_chart_required";
             }
@@ -450,7 +451,7 @@ namespace kh3ap
             {
                 Kh02ReflectedCall select(controller, L"BP_NotifySetActionCommand1", "ship_chart",
                                          max_ship_chart_parameter_bytes);
-                select.integer(L"inCommand", check_action_command);
+                select.integer(L"inCommand", player_action_command_value(PlayerActionCommand::CHECK));
                 select.number(L"inTimer", 1.0f);
                 select.object(L"inActor", ship);
                 select.object(L"InComponent", reactor);

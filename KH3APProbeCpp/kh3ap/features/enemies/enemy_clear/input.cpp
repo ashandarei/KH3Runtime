@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include <chrono>
 #include "kh3ap/features/treasure/chest_commands.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
@@ -403,7 +404,7 @@ namespace kh3ap
             throw std::runtime_error("pooh_sign_requires_check_reactor");
         }
         // Reactor CHECK=4 maps to the controller's distinct command CHECK=79.
-        constexpr int action = 79;
+        constexpr int action = player_action_command_value(PlayerActionCommand::CHECK);
         auto* controller = try_read_reflected_object_property_value(pawn, L"Controller");
         Call set(controller, L"BP_NotifySetActionCommand1");
         if (!write_integral_function_param(set.field(L"inCommand"), set.params.data(), action) ||

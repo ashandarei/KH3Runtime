@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/characters/character_layout.h"
 #include <polyhook2/Detour/x64Detour.hpp>
@@ -29,8 +30,8 @@ namespace kh3ap
 
     namespace
     {
-        constexpr int light_chain_command = 197;
-        constexpr int popping_holy_command = 237;
+        constexpr int light_chain_command = player_action_command_value(PlayerActionCommand::FR_MICKEYCHAIN);
+        constexpr int popping_holy_command = player_action_command_value(PlayerActionCommand::FR_POPPINGHOLY);
         constexpr int sora_player_id = player_id_value(PlayerId::Sora);
         constexpr int aqua_player_id = player_id_value(PlayerId::Aqua);
         constexpr auto link_handoff_timeout = std::chrono::seconds(5);

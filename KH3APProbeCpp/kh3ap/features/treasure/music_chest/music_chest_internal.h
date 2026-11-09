@@ -122,6 +122,7 @@ namespace kh3ap
         void install_activation_hook();
         void retire(Gate& gate);
         void reset();
+        void notify_player_changed();
         bool keyblade_owned(UObject* pawn, const Assignment& a);
         uint8_t desired_command(UObject* pawn, Gate& gate, const Assignment& a);
         void refresh_keyblade_gates(UObject* pawn);

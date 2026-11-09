@@ -2,6 +2,8 @@
 #include <memory>
 #include <utility>
 #include "kh3ap/features/treasure/chest_commands.h"
+#include "kh3ap/features/treasure/chest_character_policy.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/treasure/music_chest/music_chest_internal.h"
 #include "kh3ap/features/treasure/music_chest/music_chest_pause.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -37,6 +39,19 @@ namespace kh3ap
 
     bool RuntimeMusicChestService::Impl::keyblade_owned(UObject* pawn, const Assignment& a)
     {
+        // This is chest access only. Do not cache Roxas's exception as inventory
+        // ownership or let it survive a return to Sora/another character.
+        if (last_snapshot && last_snapshot->roxas_chestsanity &&
+            character_swap::owns_swap_pawn(pawn))
+        {
+            auto* id = pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID");
+            if (id && id->GetElementSize() == sizeof(uint8_t) &&
+                roxas_chest_key_allowed(true, *id->ContainerPtrToValuePtr<uint8_t>(pawn),
+                                       a.keyblade_name))
+            {
+                return true;
+            }
+        }
         const auto epoch = reconciliation::epoch();
         if (inventory_pawn.Get() != pawn || inventory_epoch != epoch)
         {
@@ -147,7 +162,7 @@ namespace kh3ap
             std::memcpy(&reactor,
                         reinterpret_cast<std::byte*>(f->Locals) + chest_command_reactor_offset,
                         sizeof(reactor));
-            auto* pawn = self->config.playable_sora();
+            auto* pawn = self->config.playable_pawn();
             if (a.cleared || !gate.bound || causer != pawn || reactor != gate.reactor.Get() ||
                 !self->config.gameplay_ready() ||
                 !(gate.spawned ? is_uobject_valid_fast(gate.chest.Get()) && !gate.opened

@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/features/player/player_action_commands.h"
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -45,13 +46,13 @@ namespace kh3ap
         constexpr uint8_t magic_flag = 1;
         constexpr int fire_element = 1;
         constexpr int lightning_element = 3;
-        constexpr int first_fire_magic_command = 29;
-        constexpr int last_fire_magic_command = 32;
+        constexpr int first_fire_magic_command = player_action_command_value(PlayerActionCommand::FIRE);
+        constexpr int last_fire_magic_command = player_action_command_value(PlayerActionCommand::FIRAGAN);
         constexpr int magic_commands_per_element = 4;
-        constexpr int guard_counter_command = 6;
-        constexpr int first_counter_command = 215;
-        constexpr int last_counter_command = 217;
-        constexpr int spellweaver_finish_command = 167;
+        constexpr int guard_counter_command = player_action_command_value(PlayerActionCommand::BARRIERCRACKER);
+        constexpr int first_counter_command = player_action_command_value(PlayerActionCommand::BARRIERCRACKER2);
+        constexpr int last_counter_command = player_action_command_value(PlayerActionCommand::BARRIERCRACKER4);
+        constexpr int spellweaver_finish_command = player_action_command_value(PlayerActionCommand::FINISH_AQ);
 
         const bool magic = (metadata.magic_flags & magic_flag) && metadata.element >= fire_element &&
                            metadata.element <= lightning_element &&
