@@ -13,9 +13,9 @@ namespace kh3ap::portals
         bool operator==(const Kh02Access&) const = default;
     };
 
-    constexpr auto kh02_access(bool ready, bool enabled, bool oblivion) -> Kh02Access
+    constexpr auto kh02_access(bool ready, bool enabled, bool portal_unlocked) -> Kh02Access
     {
-        return {ready && enabled, ready && enabled && oblivion};
+        return {ready && enabled, ready && enabled && portal_unlocked};
     }
 
     inline constexpr float centered_face_x = 0.5f;
