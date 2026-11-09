@@ -5,6 +5,7 @@
 #include "kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.h"
 #include "kh3ap/features/story/world_fixes/rapunzel_hair_approach.h"
 #include "kh3ap/features/story/world_fixes/graveyard_backtracking.h"
+#include "kh3ap/features/story/world_fixes/big_hero_rescue_resume.h"
 #include "kh3ap/features/music/shuffle/goa_music_patch.h"
 #include "kh3ap/features/music/music_object_registry.h"
 #include "kh3ap/features/colors/color_object_registry.h"
@@ -123,6 +124,7 @@ namespace kh3ap
             {&death_mirror_class_object_name_, L"A_GoA_DeathMirror_C",
              options.observe_runtime_portal_classes},
             {&rapunzel_water_class_name_, runtime_rapunzel_water_class, true},
+            {&big_hero_gameflow_class_name_, L"bx_02_gameflow_C", true},
             {&rapunzel_swing_camera_class_name_, runtime_rapunzel_swing_camera_class, true},
             {&rapunzel_hair_approach_class_name_, runtime_rapunzel_hair_approach_class, true},
             {&goa_level_script_class_name_, runtime_goa_level_script_class, true},
@@ -525,6 +527,11 @@ namespace kh3ap
     {
         // Apply alongside existing help/ending patches on every map reload.
         // Only fixed FName comparisons run for unrelated objects.
+        if (fname_equals(*class_name, big_hero_gameflow_class_name_))
+        {
+            (void)try_apply_big_hero_rescue_resume(
+                    static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        }
         for (size_t index = 0; index < graveyard_backtracking_class_names_.size(); ++index)
         {
             if (fname_equals(*class_name, graveyard_backtracking_class_names_[index]))

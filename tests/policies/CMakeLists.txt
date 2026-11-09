@@ -1421,6 +1421,16 @@ else()
 endif()
 add_test(NAME big_hero_rescue_damage_test COMMAND big_hero_rescue_damage_test)
 
+add_executable(big_hero_rescue_resume_test big_hero_rescue_resume_test.cpp)
+target_compile_features(big_hero_rescue_resume_test PRIVATE cxx_std_20)
+target_include_directories(big_hero_rescue_resume_test PRIVATE ../../KH3APProbeCpp)
+if(MSVC)
+    target_compile_options(big_hero_rescue_resume_test PRIVATE /UNDEBUG)
+else()
+    target_compile_options(big_hero_rescue_resume_test PRIVATE -UNDEBUG)
+endif()
+add_test(NAME big_hero_rescue_resume_test COMMAND big_hero_rescue_resume_test)
+
 add_executable(test_kh3_moogle_shop_catalog_unlock
     test_moogle_shop_catalog_unlock.cpp
     "${KH3AP_PROBE_ROOT}/kh3ap/features/moogle_shop/moogle_shop_catalog.cpp"
