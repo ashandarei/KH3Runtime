@@ -12,6 +12,11 @@ upstream attributions for dependency components used by the runtime toolchain.
 That notice collection also describes the separate loader release; this project's
 release archive does not bundle UE4SS, Microsoft DirectX/XInput, or loader fonts.
 
+UE4SS's Unreal/UEPseudo dependency is subject to Epic Games' licensing terms.
+The MIT licenses of UE4SS's main repository and this project's first-party code
+do not apply to UEPseudo. UEPseudo source is excluded from the release archive.
+See https://docs.ue4ss.com/dev/contributing.html#uepseudo-code-licensing.
+
 ## JSON and audio
 
 JSON for Modern C++ and stb are pinned and verified by the CMake dependency
@@ -35,6 +40,7 @@ or the DLL release archive. Authored helper movies and patch descriptions use
 original game content only from the installed game at runtime where required.
 Unreal Engine technology remains subject to Epic's license terms:
 https://www.unrealengine.com/eula/unreal
+These terms also apply to engine code compiled from header templates into the DLL.
 
 The optional UI authoring workflow invokes a separately installed Java/JPEXS
 compiler. That compiler is not bundled or linked into the runtime DLL.

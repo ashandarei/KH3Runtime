@@ -148,7 +148,8 @@ if (-not $SkipBuild) {
     }
     $ProbeSourceDir = $RepoRoot
     $DevEnvironment = "`"$VsDevCmd`" -arch=x64 -host_arch=x64 -vcvars_ver=$VcVarsVer"
-    $PreflightCommand = "$DevEnvironment && `"$PreflightPowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$PreflightScript`" -BuildDir `"$BuildDir`" -SourceDir `"$ProbeSourceDir`" -VcVarsVer $VcVarsVer"
+    $RecordArgument = if ($CheckSetup) { '' } else { " -RecordPath `"$(Join-Path $BuildDir 'toolchain.json')`"" }
+    $PreflightCommand = "$DevEnvironment && `"$PreflightPowerShell`" -NoProfile -ExecutionPolicy Bypass -File `"$PreflightScript`" -BuildDir `"$BuildDir`" -SourceDir `"$ProbeSourceDir`" -VcVarsVer $VcVarsVer$RecordArgument"
     Invoke-CheckedCommand -FilePath "cmd.exe" -CommandArguments @("/d", "/s", "/c", $PreflightCommand)
     if ($CheckSetup) { return }
 

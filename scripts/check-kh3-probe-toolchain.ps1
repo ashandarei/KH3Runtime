@@ -2,7 +2,8 @@
 param(
     [Parameter(Mandatory = $true)][string] $BuildDir,
     [Parameter(Mandatory = $true)][string] $SourceDir,
-    [Parameter(Mandatory = $true)][string] $VcVarsVer
+    [Parameter(Mandatory = $true)][string] $VcVarsVer,
+    [string] $RecordPath = ''
 )
 
 Set-StrictMode -Version Latest
@@ -77,3 +78,38 @@ if (Test-Path -LiteralPath $CacheFile) {
     Write-Host 'No CMake cache yet; the build will configure a fresh Ninja directory.'
 }
 Write-Host "KH3 toolchain preflight passed (MSVC $env:VCToolsVersion). This checks setup, not whether the source compiles."
+
+if ($RecordPath) {
+    . (Join-Path $PSScriptRoot 'toolchain.ps1')
+    $RustTools = Resolve-RustTools
+    $Tools = [ordered]@{}
+    foreach ($Name in $ToolPaths.Keys | Sort-Object) {
+        $Path = $ToolPaths[$Name]
+        if ($Name -in @('cargo.exe', 'rustc.exe')) { $Path = $RustTools[$Name.Replace('.exe', '')] }
+        $Version = if ($Name -in @('cl.exe', 'link.exe', 'rc.exe')) {
+            (Get-Item -LiteralPath $Path).VersionInfo.FileVersion
+        } else {
+            $Text = & $Path --version
+            if ($LASTEXITCODE -ne 0) { throw "Could not record $Name version." }
+            ($Text -join "`n").Trim()
+        }
+        $Tools[$Name] = [ordered]@{
+            version = $Version
+            sha256 = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    }
+    $PythonVersion = & python --version
+    if ($LASTEXITCODE -ne 0) { throw 'Could not record Python version.' }
+    $Record = [ordered]@{
+        schema = 1
+        msvc = $env:VCToolsVersion.TrimEnd('\')
+        windows_sdk = $env:WindowsSDKVersion.TrimEnd('\')
+        architecture = $env:VSCMD_ARG_TGT_ARCH
+        os_version = [Environment]::OSVersion.VersionString
+        powershell = $PSVersionTable.PSVersion.ToString()
+        python = ($PythonVersion -join "`n").Trim()
+        tools = $Tools
+    }
+    New-Item -ItemType Directory -Path (Split-Path $RecordPath -Parent) -Force > $null
+    [IO.File]::WriteAllText($RecordPath, ($Record | ConvertTo-Json -Depth 6), [Text.UTF8Encoding]::new($false))
+}
