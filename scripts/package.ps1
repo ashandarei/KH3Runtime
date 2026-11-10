@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string] $BuildDir = '', [string] $OutputDir = '')
+param([string] $BuildDir = '', [string] $OutputDir = '', [string] $ProvenancePath = '')
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $ProjectRoot = Split-Path $PSScriptRoot -Parent
@@ -34,6 +34,14 @@ $InputsHash = (Get-FileHash -LiteralPath (Join-Path $ProjectRoot 'data/runtime-i
 if ($Info.runtime_inputs_sha256 -ne $InputsHash) { throw 'The DLL was built against different runtime catalogs.' }
 $Version = (Get-Content -LiteralPath (Join-Path $ProjectRoot 'VERSION.txt') -Raw).Trim()
 if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION.txt must contain major.minor.patch.' }
+$Provenance = $null
+if ($ProvenancePath) {
+    $ProvenancePath = (Resolve-Path -LiteralPath $ProvenancePath).Path
+    & python (Join-Path $PSScriptRoot 'release_record.py') validate --repo $ProjectRoot `
+        --build $BuildDir --output $ProvenancePath
+    if ($LASTEXITCODE -ne 0) { throw 'Release provenance validation failed.' }
+    $Provenance = Get-Content -LiteralPath $ProvenancePath -Raw | ConvertFrom-Json
+}
 New-Item -ItemType Directory -Path $OutputDir -Force > $null
 $ArchivePath = Join-Path $OutputDir "KH3Runtime-$Version-$($DllHash.Substring(0, 12)).zip"
 if (Test-Path -LiteralPath $ArchivePath) { throw "Package already exists: $ArchivePath" }
@@ -45,6 +53,7 @@ $Files = [ordered]@{
     'LICENSE' = (Join-Path $ProjectRoot 'LICENSE')
     'THIRD_PARTY_NOTICES.md' = (Join-Path $ProjectRoot 'THIRD_PARTY_NOTICES.md')
 }
+if ($ProvenancePath) { $Files['release-provenance.json'] = $ProvenancePath }
 $LicenseRoot = Join-Path $ProjectRoot 'licenses'
 foreach ($File in Get-ChildItem -LiteralPath $LicenseRoot -File -Recurse) {
     $Relative = $File.FullName.Substring($LicenseRoot.Length).TrimStart('\', '/').Replace('\', '/')
@@ -60,14 +69,20 @@ try {
     $Entry = $Archive.CreateEntry('manifest.json')
     $Stream = [IO.StreamWriter]::new($Entry.Open(), [Text.UTF8Encoding]::new($false))
     try {
-        $Stream.Write((@{
+        $Manifest = @{
             schema = 1; version = $Version; mod_id = 'KH3APProbeCpp'; sha256 = $DllHash
             runtime_inputs_sha256 = $InputsHash; first_party_license = 'MIT'
             performance_diagnostics = $false; automation_handlers = $false
-        } | ConvertTo-Json))
+        }
+        if ($Provenance) {
+            $Manifest.source_commit = $Provenance.source.commit
+            $Manifest.provenance_sha256 = (Get-FileHash -LiteralPath $ProvenancePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+        $Stream.Write(($Manifest | ConvertTo-Json))
     } finally { $Stream.Dispose() }
 } finally { $Archive.Dispose() }
 Move-Item -LiteralPath $Temporary -Destination $ArchivePath
+if ($ProvenancePath) { Copy-Item -LiteralPath $ProvenancePath -Destination "$ArchivePath.provenance.json" }
 $ArchiveHash = (Get-FileHash -LiteralPath $ArchivePath -Algorithm SHA256).Hash.ToLowerInvariant()
 [IO.File]::WriteAllText("$ArchivePath.sha256", "$ArchiveHash  $([IO.Path]::GetFileName($ArchivePath))`n",
     [Text.UTF8Encoding]::new($false))
