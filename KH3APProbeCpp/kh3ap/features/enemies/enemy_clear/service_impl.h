@@ -116,6 +116,13 @@ namespace kh3ap
         std::array<float, 3> center_original{}, center_before{}, center_after{};
         std::wstring center_actor;
         int64_t center_expires{};
+        FWeakObjectPtr anchor_boss{}, anchor_entity{}, anchor_pawn{}, anchor_world{};
+        FWeakObjectPtr anchor_actor{}, anchor_original{};
+        int64_t anchor_expires{};
+        std::string anchor_snapshot{"null"};
+        void accept_xemnas_anchor(UObject* pawn, const std::string& text);
+        void restore_xemnas_anchor();
+        void tick_xemnas_anchor();
         // Agent-only experiment. The supported EGS native getter copies this
         // non-reflected Vector; verify its image, instructions and reflected
         // return against storage before any game-thread write.

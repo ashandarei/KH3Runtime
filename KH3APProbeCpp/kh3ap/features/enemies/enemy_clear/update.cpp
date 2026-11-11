@@ -33,6 +33,7 @@ namespace kh3ap
             }
             tick_protection();
             tick_test_center();
+            tick_xemnas_anchor();
             mom_barrier.tick();
             if (update_camera_input(now))
             {

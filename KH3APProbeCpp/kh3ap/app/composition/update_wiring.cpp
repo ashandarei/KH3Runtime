@@ -14,6 +14,8 @@
 #include "kh3ap/features/player/controller_abilities/controller_ability_service.h"
 #include "kh3ap/app/enums.h"
 #include "kh3ap/features/enemies/experience_multiplier_service.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_queries.h"
 #include "kh3ap/features/music/shuffle/bgm_shuffle_service.h"
 #include "kh3ap/features/music/now_playing/now_playing_overlay.h"
 #include "kh3ap/features/ui/options_menu_service.h"
@@ -202,6 +204,8 @@ namespace kh3ap
         m_experience_multiplier.tick();
         phase_trace.mark(STR("experience_multiplier"));
         m_enemy_remaps.process_pending_class_prewarm();
+        process_pending_master_ascension_centers();
+        process_pending_master_query_contexts();
         m_fun_heartless.tick();
         phase_trace.mark(STR("enemy_prewarm"));
         m_party_members.tick();

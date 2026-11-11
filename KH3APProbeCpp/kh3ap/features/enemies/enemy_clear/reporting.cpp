@@ -85,6 +85,7 @@ namespace kh3ap
             << ",\"keyblade_ownership\":" << keyblade_ownership
             << ",\"boss_setting\":" << boss_setting
             << ",\"boss_hp_setup\":" << boss_hp_setup_result
+            << ",\"xemnas_anchor\":" << anchor_snapshot
             << ",\"level_before\":" << experience_before.level << ",\"level_after\":" << experience_after.level
             << ",\"exp_before\":" << experience_before.total_exp << ",\"exp_after\":" << experience_after.total_exp
             << ",\"exp_requested\":" << experience_requested << ",\"exp_dispatched\":" << experience_dispatched

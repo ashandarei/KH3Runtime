@@ -58,6 +58,7 @@ namespace kh3ap
             {L"kh02_boss_hp_setup", &Impl::accept_boss_hp_setup, true, false},
             {L"sora_protection", &Impl::accept_protection, true, false},
             {L"boss_center", &Impl::accept_boss_center, true, false},
+            {L"xemnas_anchor", &Impl::accept_xemnas_anchor, true, false},
             {L"set_position", nullptr, true, false},
             {L"press_action", &Impl::accept_press_action, true, false},
             {L"pooh_sign", &Impl::accept_pooh_sign, true, false},
@@ -78,6 +79,7 @@ namespace kh3ap
         }
         return nullptr;
     }
+
     void RuntimeEnemyClearService::Impl::accept_cactuar_spawn(UObject* pawn, const std::string&)
     {
         // Diagnostics-only service: start the full authored appearance scene.

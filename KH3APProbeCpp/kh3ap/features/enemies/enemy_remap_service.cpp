@@ -2,6 +2,7 @@
 #include "randomization.h"
 #include "kh3ap/features/enemies/bosses/completion.h"
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
 #include "kh3ap/features/enemies/bosses/hp_limits.h"
 #include "kh3ap/features/enemies/level_entity_remap.h"
 #include "kh3ap/features/enemies/remap_catalog.h"
@@ -197,6 +198,7 @@ namespace kh3ap
             install_terranort_controller_guard();
             install_boss_death_partner_guard();
             install_runtime_boss_phase_guard();
+            install_master_xehanort_center_support();
             install_grim_guardianess_mode_guard();
             install_opening_ansem_phase_driver();
             install_kg_replacement_reveal_guard();
