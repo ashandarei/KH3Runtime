@@ -404,7 +404,6 @@ namespace kh3ap
         UObject* const navigation_manager = resolve_friend_manager();
         UObject* const navigation_level = persistent_level_for(navigation_manager);
         if (navigation_level &&
-            runtime_party_requires_navigation_fallback(navigation_level->GetFullName()) &&
             observed_party_map_policy(navigation_level, config_.runtime_state) ==
                 RuntimePartyMapPolicy::managed)
         {

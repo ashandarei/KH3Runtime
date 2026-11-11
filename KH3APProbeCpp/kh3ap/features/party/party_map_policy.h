@@ -114,9 +114,21 @@ namespace kh3ap
 
     [[nodiscard]] constexpr auto
     runtime_party_navigation_fallback(std::wstring_view navigation_name,
-                                      std::wstring_view level_name)
+                                      std::wstring_view level_name,
+                                      std::wstring_view pawn_class_name = {})
         -> RuntimePartyNavigationFallback
     {
+        constexpr std::wstring_view frozen_level_prefix = L"Level /Game/Levels/fz/";
+        // Outside his home world, Marshmallow needs the same navigation
+        // profile as Lea and Aqua, including their map-specific fallbacks.
+        const bool use_medium_profile =
+            pawn_class_name == L"n_fz214_Pawn_C" &&
+            !runtime_party_navigation_level_matches(
+                level_name.substr(0, frozen_level_prefix.size()), frozen_level_prefix);
+        if (use_medium_profile)
+        {
+            navigation_name = runtime_party_medium_navigation.mesh_name;
+        }
         if (navigation_name == runtime_party_large_navigation.mesh_name)
         {
             for (const auto& map : runtime_party_large_navigation_maps)
@@ -143,18 +155,7 @@ namespace kh3ap
                            : runtime_party_normal_navigation;
             }
         }
-        return {};
-    }
-
-    [[nodiscard]] constexpr auto
-    runtime_party_requires_navigation_fallback(std::wstring_view level_name) -> bool
-    {
-        return !runtime_party_navigation_fallback(runtime_party_medium_navigation.mesh_name,
-                                                  level_name)
-                    .mesh_name.empty() ||
-               !runtime_party_navigation_fallback(runtime_party_large_navigation.mesh_name,
-                                                  level_name)
-                    .mesh_name.empty();
+        return use_medium_profile ? runtime_party_medium_navigation : RuntimePartyNavigationFallback{};
     }
 
     [[nodiscard]] constexpr auto

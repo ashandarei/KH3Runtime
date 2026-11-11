@@ -377,7 +377,6 @@ int main()
         assert(
             runtime_party_navigation_fallback(L"RecastNavMesh-Group2", upper_level + L"_Streaming")
                 .mesh_name.empty());
-        assert(runtime_party_requires_navigation_fallback(map.level));
         // Already-selected fallback meshes must be stable (no oscillation).
         assert(runtime_party_navigation_fallback(fallback.mesh_name, map.level).mesh_name.empty());
         for (auto nav : {L"RecastNavMesh-Group1", L"RecastNavMesh-Group20"})
@@ -395,7 +394,6 @@ int main()
                (map.group == 2 ? L"RecastNavMesh-Group2" : L"RecastNavMesh-Group1"));
         assert(fallback.radius == 71.0f);
         assert(fallback.height == (map.group == 2 ? 270.0f : 180.0f));
-        assert(runtime_party_requires_navigation_fallback(map.level));
         // Restored Thebes still needs its navigation fallback, while Cherry
         // Flan's startup keeps the story-owned Donald/Goofy party.
         assert(runtime_party_map_policy(map.level) ==
@@ -418,7 +416,6 @@ int main()
         {
             assert(runtime_party_navigation_fallback(L"RecastNavMesh-Group3", level)
                        .mesh_name.empty());
-            assert(!runtime_party_requires_navigation_fallback(level));
         }
         for (auto nav :
              {L"RecastNavMesh-Group1", L"RecastNavMesh-Group4", L"RecastNavMesh-Group30", L""})
@@ -454,6 +451,25 @@ int main()
     const auto fz_nav = runtime_party_navigation_fallback(L"RecastNavMesh-Group2", frozen);
     assert(fz_nav.mesh_name == L"RecastNavMesh-Group1");
     assert(fz_nav.radius == 71.0f && fz_nav.height == 180.0f);
+    constexpr auto marshmallow = L"n_fz214_Pawn_C";
+    constexpr auto corona = L"Level /Game/Levels/ra/ra_01/ra_01.ra_01:PersistentLevel";
+    constexpr auto group4 = L"RecastNavMesh-Group4";
+    for (auto current : {L"", group4, L"RecastNavMesh-Group2"})
+    {
+        const auto profile = runtime_party_navigation_fallback(current, corona, marshmallow);
+        assert(profile.mesh_name == L"RecastNavMesh-Group2");
+        assert(profile.radius == 71.0f && profile.height == 270.0f);
+    }
+    const auto marshmallow_city = runtime_party_navigation_fallback(group4, city, marshmallow);
+    assert(marshmallow_city.mesh_name == bx_nav.mesh_name);
+    assert(marshmallow_city.radius == bx_nav.radius && marshmallow_city.height == bx_nav.height);
+    assert(runtime_party_navigation_fallback(marshmallow_city.mesh_name, city, marshmallow)
+               .mesh_name == marshmallow_city.mesh_name);
+    assert(runtime_party_navigation_fallback(group4, frozen, marshmallow).mesh_name.empty());
+    assert(runtime_party_navigation_fallback(
+               group4, L"Level /GAME/LEVELS/FZ/fz_04/fz_04.FZ_04:PersistentLevel", marshmallow)
+               .mesh_name.empty());
+    assert(runtime_party_navigation_fallback(group4, corona, L"n_mi201_Pawn_C").mesh_name.empty());
     constexpr auto frozen04 = L"Level /Game/Levels/fz/fz_04/fz_04.FZ_04:PersistentLevel";
     const auto fz04_nav = runtime_party_navigation_fallback(L"RecastNavMesh-Group2", frozen04);
     assert(fz04_nav.mesh_name == L"RecastNavMesh-Group1");
@@ -462,6 +478,10 @@ int main()
     const auto scala_nav = runtime_party_navigation_fallback(L"RecastNavMesh-Group2", scala);
     assert(scala_nav.mesh_name == L"RecastNavMesh-Group1");
     assert(scala_nav.radius == 71.0f && scala_nav.height == 180.0f);
+    const auto marshmallow_scala = runtime_party_navigation_fallback(group4, scala, marshmallow);
+    assert(marshmallow_scala.mesh_name == scala_nav.mesh_name);
+    assert(marshmallow_scala.radius == scala_nav.radius &&
+           marshmallow_scala.height == scala_nav.height);
     constexpr auto scala04 = L"Level /Game/Levels/bt/bt_04/bt_04.bt_04:PersistentLevel";
     const auto scala04_nav = runtime_party_navigation_fallback(L"RecastNavMesh-Group2", scala04);
     assert(scala04_nav.mesh_name == L"RecastNavMesh-Group1");
