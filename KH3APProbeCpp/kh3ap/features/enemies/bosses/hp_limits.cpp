@@ -1,4 +1,5 @@
 #include "kh3ap/features/enemies/bosses/binding.h"
+#include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/bosses/hp_limits.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -58,14 +59,14 @@ namespace kh3ap::enemy_remap_detail
                         // this path performs weak validation and scalar reads.
                         std::memcpy(&spawns, reinterpret_cast<const std::byte*>(luxord) + gate.luxord_spawn_offset, sizeof(spawns));
                         std::memcpy(&kills, reinterpret_cast<const std::byte*>(luxord) + gate.luxord_kill_offset, sizeof(kills));
-                        locked = !luxord_native_defeat_observed(spawns, kills);
+                        locked = !luxord_partner_hp_floor_released(spawns, kills, gate.entered_solo_phase);
                     }
                     if (locked && !gate.blocked_logged)
                     {
                         gate.blocked_logged = true;
                         log_blocked = true;
                     }
-                    if (!locked && gate.blocked_logged && !gate.released_logged)
+                    if (!locked && (gate.blocked_logged || gate.entered_solo_phase) && !gate.released_logged)
                     {
                         gate.released_logged = true;
                         log_released = true;
@@ -76,7 +77,11 @@ namespace kh3ap::enemy_remap_detail
         if (log_blocked)
             Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Luxord partner HP floor active pawn_address={} native_card_game_must_finish_first=true polling=false\n"), reinterpret_cast<uintptr_t>(pawn));
         if (log_released)
-            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Luxord partner HP floor released pawn_address={} luxord_spawns={} luxord_kills={} native_defeat=true polling=false\n"), reinterpret_cast<uintptr_t>(pawn), spawns, kills);
+            Output::send<LogLevel::Normal>(
+                STR("[KH3APProbeCpp] Luxord partner HP floor released pawn_address={} "
+                    "luxord_spawns={} luxord_kills={} proof={} polling=false\n"),
+                reinterpret_cast<uintptr_t>(pawn), spawns, kills,
+                luxord_native_defeat_observed(spawns, kills) ? L"native_defeat" : L"solo_checkpoint");
         // The encounter's required order takes precedence over a replacement's
         // own scripted-floor bypass. No flags or native damage events are edited.
         return locked || (original && original(pawn));
@@ -121,6 +126,10 @@ namespace kh3ap::enemy_remap_detail
         const auto source = tracked_boss_source_class(binding.level_entity_path);
         if (!source || *source == pawn->GetClassPrivate()->GetPathName() ||
             !is_luxord_partner_slot(binding.level_entity_path, *source)) return;
+        // Read once at pawn binding. The damage hook can run under engine
+        // object locks and must stay limited to cached state and counter reads.
+        const bool entered_solo_phase = binding.level_entity_path.starts_with(base_kg_area_b_entity_prefix) &&
+            read_boss_gameflow_flag(L"gameflow_KG_13_B") == base_kg_area_b_solo_phase;
         auto* const function = UObjectGlobals::StaticFindObject<UFunction*>(
                 nullptr, nullptr, STR("/Script/TresGame.TresCharPawnBase:IsConditionHpLimitOne"));
         auto* const property = pawn->GetPropertyByNameInChain(STR("m_bIsHpLimitOne"));
@@ -163,6 +172,7 @@ namespace kh3ap::enemy_remap_detail
             if (!it->second.pawn.Get()) it = repairs.luxord_hp_gates.erase(it); else ++it;
         auto& gate = repairs.luxord_hp_gates[pawn];
         gate.pawn = make_uobject_weak(pawn); gate.entity = make_uobject_weak(binding.level_entity);
+        gate.entered_solo_phase = entered_solo_phase;
         const auto cached = repairs.luxord_source_entities.find(binding.level_entity->GetOuterPrivate());
         if (cached != repairs.luxord_source_entities.end())
         {

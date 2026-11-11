@@ -565,7 +565,7 @@ namespace kh3ap::enemy_remap_detail
         Hook::RegisterProcessEventPostCallback(&reveal_kg_replacement_bosses);
     }
 
-    static auto remind_opening_flag() -> std::optional<int64_t>
+    auto read_boss_gameflow_flag(std::wstring_view flag_name) -> std::optional<int64_t>
     {
         auto* library = UObjectGlobals::StaticFindObject<UObject*>(
             nullptr, nullptr, STR("/Script/TresGame.Default__TresGameBlueprintLibrary"));
@@ -582,7 +582,7 @@ namespace kh3ap::enemy_remap_detail
             return std::nullopt;
         }
         std::vector<std::byte> params(function->GetParmsSize());
-        if (!write_name_or_string_function_param(flag, params.data(), L"gameflow_KG_DLC_13_A"))
+        if (!write_name_or_string_function_param(flag, params.data(), flag_name))
         {
             return std::nullopt;
         }
@@ -720,7 +720,8 @@ namespace kh3ap::enemy_remap_detail
                             : nullptr;
         if (!is_uobject_valid_fast(current) ||
             current->GetName().find(L"Cinematic") != std::wstring::npos ||
-            remind_opening_flag() != remind_opening_story_flag || !opening_player_has_control(pawn))
+            read_boss_gameflow_flag(L"gameflow_KG_DLC_13_A") != remind_opening_story_flag ||
+            !opening_player_has_control(pawn))
         {
             return;
         }
