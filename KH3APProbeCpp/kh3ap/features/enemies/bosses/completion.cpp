@@ -1,6 +1,8 @@
 #include "kh3ap/features/enemies/bosses/binding.h"
 #include "kh3ap/features/enemies/bosses/completion.h"
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
+#include "kh3ap/features/enemies/bosses/xemnas_center.h"
 #include "kh3ap/features/enemies/bosses/hp_limits.h"
 #include "kh3ap/features/enemies/boss_remap_policy.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -783,6 +785,8 @@ namespace kh3ap::enemy_remap_detail
         }
 
         prepare_luxord_partner_hp_gate(pawn);
+        prepare_master_xehanort_action(pawn);
+        prepare_runtime_xemnas_center(pawn);
 
         UFunction* const function =
                 get_frame_node(callback_context.TheStack);
@@ -822,6 +826,8 @@ namespace kh3ap::enemy_remap_detail
             return;
         }
 
+        prepare_master_xehanort_center(pawn);
+
         UFunction* const function =
                 get_frame_node(callback_context.TheStack);
         void* const params = get_frame_locals(callback_context.TheStack);
@@ -849,6 +855,8 @@ namespace kh3ap::enemy_remap_detail
         }
         if (*state_id == tres_state_appear)
         {
+            initialize_master_xehanort_center(pawn, binding.level_entity);
+            prepare_runtime_xemnas_center(pawn);
             initialize_runtime_larxene_phase(pawn);
         }
         if (*state_id == tres_state_appear &&
@@ -866,6 +874,7 @@ namespace kh3ap::enemy_remap_detail
         {
             return;
         }
+        retire_runtime_xemnas_center(pawn);
         dispatch_runtime_boss_wipe_out(pawn, binding);
     }
 

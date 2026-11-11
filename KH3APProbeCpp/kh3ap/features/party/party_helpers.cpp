@@ -119,29 +119,29 @@ namespace kh3ap::party_native
     auto configure_party_navigation(UObject* pawn, UObject* controller) -> bool
     {
         UObject* const level = persistent_level_for(pawn);
+        UClass* const pawn_class = pawn->GetClassPrivate();
+        if (!level || !is_uobject_valid_fast(pawn_class))
+        {
+            return false;
+        }
         UObject* const path_following =
             read_object_like_property(controller, STR("PathFollowingComponent"));
         UObject* const current_nav_data =
             read_object_like_property(path_following, STR("MyNavData"));
-        if (!level || !current_nav_data)
-        {
-            return true;
-        }
-        const auto fallback =
-            runtime_party_navigation_fallback(current_nav_data->GetName(), level->GetFullName());
+        const auto current_nav_name = current_nav_data ? current_nav_data->GetName() : STR("");
+        const auto fallback = runtime_party_navigation_fallback(
+            current_nav_name, level->GetFullName(), pawn_class->GetName());
         if (fallback.mesh_name.empty())
         {
             return true;
         }
-        // The audited current mesh is empty or lacks follow coverage here.
-        // Keep collision unchanged; use the map's fallback profile for both
-        // EQS agent selection and path following.
-        // The policy above accepts only exact persistent-level names.
+        // Apply the selected profile to both EQS and path following.
         // Retry can load another level with the same full path. Supplying
         // its live outer also avoids UE4SS's global full-name cache, which
         // may still return the previous map's navigation object.
         UObject* const nav_data = UObjectGlobals::StaticFindObject<UObject*>(
-            current_nav_data->GetClassPrivate(), level, fallback.mesh_name);
+            current_nav_data ? current_nav_data->GetClassPrivate() : nullptr, level,
+            fallback.mesh_name);
         UObject* const movement = read_object_like_property(pawn, STR("MyMovement"));
         if (!nav_data || !is_uobject_valid_fast(nav_data) ||
             persistent_level_for(nav_data) != level || !movement || !path_following)
@@ -174,14 +174,27 @@ namespace kh3ap::party_native
             return false;
         }
         void* const agent = agent_property->ContainerPtrToValuePtr<void>(movement);
-        float* const radius = radius_property->ContainerPtrToValuePtr<float>(agent);
-        float* const height = height_property->ContainerPtrToValuePtr<float>(agent);
-        if (!agent || !radius || !height ||
-            !write_object_like_property(path_following, STR("MyNavData"), nav_data))
+        if (!agent)
         {
             return false;
         }
-        static_cast<FBoolProperty*>(update_property)->SetPropertyValueInContainer(movement, false);
+        float* const radius = radius_property->ContainerPtrToValuePtr<float>(agent);
+        float* const height = height_property->ContainerPtrToValuePtr<float>(agent);
+        if (!radius || !height)
+        {
+            return false;
+        }
+        auto* const update_from_collision = static_cast<FBoolProperty*>(update_property);
+        if (nav_data == current_nav_data && *radius == fallback.radius &&
+            *height == fallback.height && !update_from_collision->GetPropertyValueInContainer(movement))
+        {
+            return true;
+        }
+        if (!write_object_like_property(path_following, STR("MyNavData"), nav_data))
+        {
+            return false;
+        }
+        update_from_collision->SetPropertyValueInContainer(movement, false);
         *radius = fallback.radius;
         *height = fallback.height;
         Output::send<LogLevel::Normal>(

@@ -1166,7 +1166,7 @@ namespace kh3ap::character_swap
             }
             else if (!session.pending && !swap_preparation_pending(king_mickey_id) &&
                      sora_variant(pawn) && ready(pawn) &&
-                     current_runtime_trap_live_state_status(pawn).ready)
+                     runtime_trap_application_state_status(pawn).ready)
             {
                 trap.phase = CharacterTrapState::Phase::Starting;
                 if (!RuntimeGardenReturnService::request_character_trap_swap(pawn))
@@ -1184,6 +1184,12 @@ namespace kh3ap::character_swap
             else if (now > trap_prepare_deadline && !session.pending)
             {
                 clear_trap();
+            }
+            else if (!session.pending && !RuntimeGardenReturnService::character_trap_swap_pending())
+            {
+                // The queued swap was rejected at dispatch. Keep the receipt pending
+                // and retry within the same preparation deadline.
+                trap.phase = CharacterTrapState::Phase::Preparing;
             }
         }
         if (trap.due(now))
@@ -1714,7 +1720,7 @@ namespace kh3ap::character_swap
     bool start_king_mickey_trap(UObject* pawn, int64_t receipt_index)
     {
         if (manual_swaps_blocked() || session.pending || !sora_variant(pawn) || !ready(pawn) ||
-            !current_runtime_trap_live_state_status(pawn).ready)
+            !runtime_trap_application_state_status(pawn).ready)
         {
             return false;
         }
@@ -1783,12 +1789,14 @@ namespace kh3ap::character_swap
 
     bool dispatch_swap(UObject* pawn, int target)
     {
-        const bool trap_target =
-            (trap.phase == CharacterTrapState::Phase::Starting && target == king_mickey_id) ||
+        const bool starting_trap = trap.phase == CharacterTrapState::Phase::Starting &&
+                                   target == king_mickey_id;
+        const bool trap_target = starting_trap ||
             (trap.phase == CharacterTrapState::Phase::Returning && target == trap.return_player);
         if (ascension_locked() || session.pending ||
             (!trap_target && pawn != current_hero() && !character_unlocks::available(target)) ||
-            target != swap_target(pawn))
+            target != swap_target(pawn) ||
+            (starting_trap && !runtime_trap_application_state_status(pawn).ready))
         {
             return false;
         }

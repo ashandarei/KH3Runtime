@@ -211,6 +211,7 @@ namespace kh3ap::enemy_remap_detail
     {
         FWeakObjectPtr pawn{}, entity{}, luxord_entity{};
         int32_t luxord_spawn_offset{-1}, luxord_kill_offset{-1};
+        bool entered_solo_phase{};
         bool blocked_logged{}, released_logged{};
     };
 

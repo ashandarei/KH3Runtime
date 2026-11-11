@@ -126,17 +126,6 @@ namespace kh3ap
             replacements,
             [](const auto& entry)
             {
-                // TT's first Tide and Corona Guardianess: sustained idle, then the Data
-                // Xemnas combo moves Sora toward an unset XY destination and loses
-                // possession. Retain the native boss for already-generated seeds.
-                if ((entry.first ==
-                         L"/Game/Blueprints/Enemy/e_dw401_s0/e_dw401_Pawn_s0.e_dw401_Pawn_s0_C" ||
-                     entry.first ==
-                         L"/Game/Blueprints/Enemy/e_ex721/e_ex721_Pawn.e_ex721_Pawn_C") &&
-                    entry.second == L"/Game/Blueprints/Enemy/e_ex353/e_ex353_Pawn.e_ex353_Pawn_C")
-                {
-                    return true;
-                }
                 // Protect existing seeds from all Young Xehanort variants in the
                 // Ice/Lava Titan encounter, retaining the native Titan instead.
                 if ((entry.first == L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C" ||

@@ -26,6 +26,7 @@ namespace kh3ap
         static bool route_kh02_character(int controller, std::wstring_view key, int event, bool gamepad);
         static bool request_experimental_swap(RC::Unreal::UObject* pawn);
         static bool request_character_trap_swap(RC::Unreal::UObject* pawn);
+        static bool character_trap_swap_pending();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         void set_gummiphone_diagnostic(std::function<std::string(int)>);
 #endif

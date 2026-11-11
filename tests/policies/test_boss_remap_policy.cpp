@@ -13,9 +13,8 @@ int main()
         const std::wstring kg = L"/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C";
         const std::wstring corona = L"/Game/Blueprints/Enemy/e_ex721/e_ex721_Pawn.e_ex721_Pawn_C";
         std::unordered_map<std::wstring, std::wstring> pairs{{tt, data}, {corona, data}, {kg, data}};
-        assert(remove_incompatible_boss_arena_replacements(pairs) == 2);
-        assert(!pairs.contains(tt) && !pairs.contains(corona) && pairs.at(kg) == data);
         assert(remove_incompatible_boss_arena_replacements(pairs) == 0);
+        assert(pairs.at(tt) == data && pairs.at(corona) == data && pairs.at(kg) == data);
         for (const auto* story : {L"/Game/Blueprints/Enemy/e_ex309/e_ex309_Pawn.e_ex309_Pawn_C",
                 L"/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C"})
         {

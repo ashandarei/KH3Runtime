@@ -40,6 +40,7 @@ set(_kh3_policy_tests
     ui_input_event
     ui_control_command_catalog
     magic_command_policy
+    master_xehanort_center
     character_style_state
     character_ascension_state
     ultima_weapon_shard_policy

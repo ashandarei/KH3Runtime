@@ -15,13 +15,16 @@ namespace kh3ap
     inline constexpr auto boss_hp_full_percent = 100;
     inline constexpr auto boss_hp_percent_scale = 100.0f;
 
+    inline constexpr std::wstring_view base_kg_area_b_entity_prefix =
+        L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_B.kg_02_enemy_Area_B:PersistentLevel.";
+    inline constexpr int32_t base_kg_area_b_solo_phase = 1600;
+
     // Luxord's card game must finish before either of his two arena partners
     // can die. Otherwise their source death script skips the card-game phase.
     [[nodiscard]] inline auto is_luxord_partner_slot(std::wstring_view entity,
                                                      std::wstring_view source) -> bool
     {
-        const bool base = entity.starts_with(
-            L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_B.kg_02_enemy_Area_B:PersistentLevel.");
+        const bool base = entity.starts_with(base_kg_area_b_entity_prefix);
         const bool remind =
             entity.starts_with(L"/Game/Levels/kg_DLC/kg_05/umap/"
                                L"kg_05_enemy_Area_B.kg_05_enemy_Area_B:PersistentLevel.");
@@ -52,6 +55,14 @@ namespace kh3ap
     [[nodiscard]] inline auto luxord_native_defeat_observed(int32_t spawns, int32_t kills) -> bool
     {
         return spawns > 0 && kills >= spawns;
+    }
+
+    [[nodiscard]] inline auto luxord_partner_hp_floor_released(
+        int32_t spawns, int32_t kills, bool entered_solo_phase) -> bool
+    {
+        // Area B Retry loads the solo checkpoint without respawning Luxord.
+        return luxord_native_defeat_observed(spawns, kills) ||
+               (entered_solo_phase && spawns == 0 && kills == 0);
     }
 
     enum class BossHpLimitKind

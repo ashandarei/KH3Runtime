@@ -285,7 +285,7 @@ namespace kh3ap
             {
                 return general_status;
             }
-            return current_runtime_trap_live_state_status(world_context_object);
+            return runtime_trap_application_state_status(world_context_object);
         }
 
         bool apply_manual_munny(const RuntimeItemGrantRequest& request,

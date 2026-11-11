@@ -23,6 +23,11 @@ int main()
     assert(!luxord_native_defeat_observed(2, 1));
     assert(luxord_native_defeat_observed(1, 1));
     assert(luxord_native_defeat_observed(2, 2));
+    assert(!luxord_partner_hp_floor_released(0, 0, false));
+    assert(luxord_partner_hp_floor_released(0, 0, true));
+    assert(!luxord_partner_hp_floor_released(1, 0, true));
+    assert(!luxord_partner_hp_floor_released(0, 1, true));
+    assert(luxord_partner_hp_floor_released(1, 1, false));
     const auto master = std::find_if(boss_hp_limit_policies.begin(), boss_hp_limit_policies.end(),
             [](const auto& policy) { return policy.class_name == L"e_ex301_Pawn_s0_C"; });
     assert(master != boss_hp_limit_policies.end());

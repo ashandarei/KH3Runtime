@@ -113,6 +113,9 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/bosses/binding.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
+    kh3ap/features/enemies/bosses/master_xehanort_center.cpp
+    kh3ap/features/enemies/bosses/master_xehanort_queries.cpp
+    kh3ap/features/enemies/bosses/xemnas_center.cpp
     kh3ap/features/enemies/bosses/hp_limits.cpp
     kh3ap/features/enemies/titan_object_registry.cpp
     kh3ap/features/enemies/titan_arena.cpp
@@ -481,6 +484,7 @@ if(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS)
         kh3ap/features/enemies/enemy_clear/support.cpp
         kh3ap/features/enemies/enemy_clear/discovery.cpp
         kh3ap/features/enemies/enemy_clear/movement.cpp
+        kh3ap/features/enemies/enemy_clear/xemnas_anchor.cpp
         kh3ap/features/enemies/enemy_clear/damage.cpp
         kh3ap/features/enemies/enemy_clear/protection.cpp
         kh3ap/features/enemies/enemy_clear/camera.cpp

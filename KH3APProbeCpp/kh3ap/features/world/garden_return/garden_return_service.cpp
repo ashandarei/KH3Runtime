@@ -929,6 +929,11 @@ namespace kh3ap
                Impl::active->combat_swap.request(pawn, true);
     }
 
+    bool RuntimeGardenReturnService::character_trap_swap_pending()
+    {
+        return Impl::active && Impl::active->combat_swap.busy();
+    }
+
     bool RuntimeGardenReturnService::finish_kh02_arrival(UObject* pawn)
     {
         return !Impl::active || Impl::active->restoration.finish_arrival(pawn);
