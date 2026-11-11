@@ -24,6 +24,7 @@
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/TArray.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
 
@@ -450,10 +451,9 @@ namespace kh3ap
         };
     }
 
-    auto current_runtime_trap_live_state_status(RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus
+    static auto trap_current_state_status(RC::Unreal::UObject* pawn, RC::Unreal::UObject* component)
+            -> RuntimeGrantSafetyStatus
     {
-        // Read only when a trap is ready to execute, never from idle frame work.
-        auto* component = try_read_runtime_sora_state_object_property(pawn, L"MyStateComp");
         auto* current = try_read_runtime_sora_state_object_property(component, L"m_pCurrentState");
         if (!is_uobject_valid_fast(current) ||
             try_read_runtime_sora_state_object_property(current, L"MyCharPawn") != pawn)
@@ -463,6 +463,54 @@ namespace kh3ap
         const auto state = read_u8_runtime_sora_state_property(current, L"MyStateID");
         const bool allowed = state && runtime_trap_state_allowed(*state);
         return {allowed, allowed ? L"ready" : L"trap_live_state_not_allowed", {}};
+    }
+
+    auto current_runtime_trap_live_state_status(RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus
+    {
+        return trap_current_state_status(pawn, try_read_runtime_sora_state_object_property(pawn, L"MyStateComp"));
+    }
+
+    auto runtime_trap_application_state_status(RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus
+    {
+        auto* component = try_read_runtime_sora_state_object_property(pawn, L"MyStateComp");
+        auto status = trap_current_state_status(pawn, component);
+        if (!status.ready)
+        {
+            return status;
+        }
+
+        // Airstep can be queued while the current state still reports Idle or Jump.
+        // Burn prepends its own state, so check the native queue before applying a trap.
+        using namespace RC::Unreal;
+        using StateQueue = TArray<UObject*>;
+        constexpr int max_state_queue_entries = 64;
+        auto* property = component->GetPropertyByNameInChain(L"m_StateQueue");
+        if (!property || property->GetClass().GetName() != L"ArrayProperty" ||
+            property->GetElementSize() != sizeof(StateQueue))
+        {
+            return {false, L"trap_state_queue_unavailable", {}};
+        }
+        auto* inner = const_cast<FProperty*>(static_cast<FArrayProperty*>(property)->GetInner());
+        if (!inner || inner->GetClass().GetName() != L"ObjectProperty" ||
+            inner->GetElementSize() != sizeof(UObject*))
+        {
+            return {false, L"trap_state_queue_unavailable", {}};
+        }
+        const auto* queue = property->ContainerPtrToValuePtr<StateQueue>(component);
+        if (queue->Num() < 0 || queue->Num() > max_state_queue_entries ||
+            queue->Max() < queue->Num() || (queue->Num() && !queue->GetData()))
+        {
+            return {false, L"trap_state_queue_unavailable", {}};
+        }
+        for (auto* queued : *queue)
+        {
+            if (is_uobject_valid_fast(queued) &&
+                read_u8_runtime_sora_state_property(queued, L"MyStateID") == player_state_ids::athletic_flow)
+            {
+                return {false, L"trap_athletic_flow_queued", {}};
+            }
+        }
+        return status;
     }
 
     auto runtime_alternate_bad_status_safety_status(RuntimeState& runtime_state, RC::Unreal::UObject* pawn)
@@ -479,7 +527,7 @@ namespace kh3ap
             current_runtime_bistro_return_gate_status(runtime_state.grant_state(), now),
             current_runtime_classic_kingdom_transition_gate_status(runtime_state.grant_state(), now),
             current_runtime_olympus_coliseum_transition_gate_status(runtime_state.grant_state(), now),
-            current_runtime_trap_live_state_status(pawn)};
+            runtime_trap_application_state_status(pawn)};
         for (const auto& gate : gates)
         {
             if (!gate.ready)

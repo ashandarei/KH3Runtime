@@ -58,6 +58,7 @@ namespace kh3ap
             const RuntimeSoraCurrentStateCacheView& sora_current_state_cache) -> RuntimeGrantSafetyStatus;
 
     auto current_runtime_trap_live_state_status(RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus;
+    auto runtime_trap_application_state_status(RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus;
     auto runtime_persistent_reward_safety_status(RuntimeState& runtime_state,
             RC::Unreal::UObject* pawn, std::chrono::steady_clock::time_point now)
             -> RuntimeGrantSafetyStatus;
