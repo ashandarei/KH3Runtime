@@ -62,6 +62,8 @@ namespace kh3ap::character_exploration
             SharedState{character_underwater_combat::state_id, L"/Script/TresGame.TresPlayerState_ComboSwim", {}, true},
             SharedState{character_shotlock::state_id, L"/Script/TresGame.TresPlayerState_ShootFlow", {}},
             SharedState{alternate_wall_run::state_id, L"/Script/TresGame.TresPlayerState_WallRun", {}},
+            SharedState{player_state_ids::dangle, L"/Script/TresGame.TresPlayerState_Dangle", {}},
+            SharedState{player_state_ids::climbing, L"/Script/TresGame.TresPlayerState_Climbing", {}},
             SharedState{player_state_ids::gimmick_attach, L"/Script/TresGame.TresPlayerState_GimmickAttach", {}},
             SharedState{player_state_ids::check, L"/Script/TresGame.TresPlayerState_Check", {}},
             SharedState{player_state_ids::shop_menu, L"/Script/TresGame.TresPlayerState_ShopMenu", {}},
@@ -203,7 +205,9 @@ namespace kh3ap::character_exploration
                     {
                         return nullptr;
                     }
-                    if (state_id == alternate_wall_run::state_id && !alternate_wall_run::ready(state_owner.Get()))
+                    if ((state_id == alternate_wall_run::state_id ||
+                         state_id == player_state_ids::dangle || state_id == player_state_ids::climbing) &&
+                        !alternate_wall_run::ready(state_owner.Get()))
                     {
                         return nullptr;
                     }
