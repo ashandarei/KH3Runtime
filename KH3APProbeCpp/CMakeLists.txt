@@ -39,6 +39,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/randomization.cpp
     kh3ap/core/settings/goa_settings_service.cpp
     kh3ap/core/input/controller_preferences_service.cpp
+    kh3ap/core/input/menu_face_button.cpp
     kh3ap/features/treasure/music_chest/music_chest_service.cpp
     kh3ap/features/treasure/music_chest/music_chest.cpp
     kh3ap/features/treasure/music_chest/music_chest_assets.cpp

@@ -1,4 +1,5 @@
 #include "kh3ap/features/ui/options_menu/host.h"
+#include "kh3ap/core/input/menu_face_button.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include <DynamicOutput/DynamicOutput.hpp>
@@ -19,14 +20,13 @@ namespace kh3ap
     auto RuntimeOptionsMenuService::Impl::is_confirm_key(std::wstring_view key_name) -> bool
     {
         return key_name == STR("Enter") || key_name == STR("Virtual_Accept") ||
-               key_name == STR("LeftMouseButton") || key_name == STR("Gamepad_FaceButton_Bottom");
+               key_name == STR("LeftMouseButton");
     }
 
     auto RuntimeOptionsMenuService::Impl::is_back_key(std::wstring_view key_name) -> bool
     {
         return key_name == STR("SpaceBar") || key_name == STR("Escape") ||
-               key_name == STR("BackSpace") || key_name == STR("Virtual_Back") ||
-               key_name == STR("Gamepad_FaceButton_Right");
+               key_name == STR("BackSpace") || key_name == STR("Virtual_Back");
     }
 
     auto RuntimeOptionsMenuService::Impl::is_previous_navigation_key(std::wstring_view key_name)
@@ -129,8 +129,8 @@ namespace kh3ap
         -> bool
     {
         const std::wstring key = key_name.ToString();
-        if (!is_confirm_key(key) && !is_back_key(key) && !is_previous_navigation_key(key) &&
-            !is_next_navigation_key(key))
+        if (!is_menu_face_button(key) && !is_confirm_key(key) && !is_back_key(key) &&
+            !is_previous_navigation_key(key) && !is_next_navigation_key(key))
         {
             return false;
         }
@@ -177,9 +177,15 @@ namespace kh3ap
     auto RuntimeOptionsMenuService::Impl::handle_viewport_key(const FName& key_name,
                                                               int32_t event_type) -> bool
     {
+        if (!injection_ready_)
+        {
+            return false;
+        }
+
         const std::wstring key = key_name.ToString();
-        const bool confirm = is_confirm_key(key);
-        const bool back = is_back_key(key);
+        const auto face_button = runtime_menu_face_button(key);
+        const bool confirm = is_confirm_key(key) || face_button == RuntimeMenuFaceButton::confirm;
+        const bool back = is_back_key(key) || face_button == RuntimeMenuFaceButton::back;
         const bool previous_row = is_previous_navigation_key(key);
         const bool next_row = is_next_navigation_key(key);
         const int32_t navigation_direction = previous_row ? -1 : next_row ? 1 : 0;
@@ -193,11 +199,6 @@ namespace kh3ap
         const bool choice_navigation =
             navigation_item && !navigation_item->choices.empty() && (previous_row || next_row);
         if (!confirm && !back && !page_navigation && !choice_navigation)
-        {
-            return false;
-        }
-
-        if (!injection_ready_)
         {
             return false;
         }

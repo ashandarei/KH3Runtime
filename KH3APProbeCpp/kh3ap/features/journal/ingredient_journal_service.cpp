@@ -16,6 +16,7 @@
 #include "kh3ap/features/grants/abilities/ability_snapshot_helpers.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/input/options_input_ownership.h"
+#include "kh3ap/core/input/menu_face_button.h"
 #include "kh3ap/features/ui/ui_sound_service.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -1384,8 +1385,9 @@ namespace kh3ap
                     {
                         return false;
                     }
-                    else if (key == L"Left" || key == L"A" || key == L"Gamepad_DPad_Left" ||
-                             key == L"Gamepad_LeftStick_Left")
+                    const auto face_button = runtime_menu_face_button(key);
+                    if (key == L"Left" || key == L"A" || key == L"Gamepad_DPad_Left" ||
+                        key == L"Gamepad_LeftStick_Left")
                     {
                         command = navigate_left;
                     }
@@ -1413,7 +1415,7 @@ namespace kh3ap
                         command = navigate_next_category;
                     }
                     else if (key == L"Escape" || key == L"BackSpace" || key == L"SpaceBar" ||
-                             key == L"Gamepad_FaceButton_Right")
+                             face_button == RuntimeMenuFaceButton::back)
                     {
                         // Back returns through map -> sources -> grid before handing
                         // the grid's Back to the normal native app controller.
@@ -1432,7 +1434,7 @@ namespace kh3ap
                     {
                         command = navigate_next_page;
                     }
-                    else if (key == L"Enter" || key == L"Gamepad_FaceButton_Bottom")
+                    else if (key == L"Enter" || face_button == RuntimeMenuFaceButton::confirm)
                     {
                         command = navigate_confirm;
                     }

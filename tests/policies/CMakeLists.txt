@@ -46,6 +46,7 @@ set(_kh3_policy_tests
     ultima_weapon_shard_policy
     integer
     fast_start_policy
+    menu_face_button
     options_input_ownership)
 if(WIN32)
     list(APPEND _kh3_policy_tests request_file_watcher)
