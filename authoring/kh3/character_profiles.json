@@ -1843,6 +1843,23 @@
       "evidence": "TickComponent resolves the weak player index at +0x338 and serial at +0x33c before crowd updates.",
       "live_egs_validated": true,
       "live_egs_evidence": "2026-11-07: Corona RA_END re-entry and in-town swaps as Aqua, Kairi, Roxas and Riku retained current-pawn crowd ownership and visible villagers. Aqua/Kairi/Roxas returns to Sora passed. Riku resource restoration and return remain separately blocked by character_magic_meter_restore."
+    },
+    {
+      "id": "party_spawn_default_roster",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_party.cpp",
+      "egs": {
+        "rva": "0x152fa10",
+        "bytes": "4c8bdc564881ecc0000000"
+      },
+      "steam": {
+        "rva": "0x125b630",
+        "bytes": "4c8bdc574881ecf0000000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Player-pawn possession calls this friend-component initializer. Both versions guard on the live count at +0x248 and spawn from the class array at +0x358 into the six weak slots at +0x218.",
+      "live_egs_validated": true,
+      "live_egs_evidence": "2026-11-12: Twelve swaps between Sora and Kairi, Roxas or Aqua in Corona kept the three existing companions alive and suppressed the native possession roster on each swap."
     }
   ],
   "remaining_requirements": [

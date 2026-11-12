@@ -540,13 +540,13 @@ namespace kh3ap::character_swap
                 if (cinematic_handoff)
                 {
                     character_pawn_pool::clear();
-                    change.run();
+                    session.party_handoff->run_factory(change);
                 }
                 else
                 {
                     character_style::capture(pawn, target);
                     character_pawn_pool::Transaction pooled(pawn, target);
-                    change.run();
+                    session.party_handoff->run_factory(change);
                     pooled.finish();
                 }
             }
@@ -554,6 +554,11 @@ namespace kh3ap::character_swap
             auto* possessed = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
             if (owns_swap_pawn(possessed))
             {
+                if (id(possessed) == session.target_id)
+                {
+                    session.party_handoff->finish(possessed);
+                    session.party_handoff.reset();
+                }
                 character_shotlock::prepare_incoming_input(possessed);
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -822,7 +827,7 @@ namespace kh3ap::character_swap
                 change.object(L"WorldContextObject", outgoing);
                 change.integer(L"InKind", session.sora_id);
                 session.party_handoff = std::make_unique<character_party::Handoff>(outgoing);
-                change.run();
+                session.party_handoff->run_factory(change);
                 auto* incoming = player();
                 if (is_uobject_valid_fast(incoming) && id(incoming) == session.target_id &&
                     owns_swap_pawn(incoming))

@@ -1,4 +1,6 @@
+#include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/characters/character_party.h"
+#include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/combat/combat_blackboard_handoff.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -8,9 +10,13 @@
 #include <Unreal/FProperty.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
+#define NOMINMAX
+#include <Windows.h>
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include <DynamicOutput/DynamicOutput.hpp>
 #endif
+#include <algorithm>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 
@@ -20,17 +26,81 @@ namespace kh3ap::character_party
     namespace
     {
         constexpr size_t friend_count = 6;
+        constexpr size_t friend_slots_offset = 0x218;
+        constexpr size_t live_count_offset = 0x248;
         bool active{};
         FWeakObjectPtr active_world;
         Observer observer;
+        thread_local const FWeakObjectPtr* factory_source{};
+        uint64_t original_spawn_default_roster{};
+
+        int32_t live_count(const FWeakObjectPtr* pawns)
+        {
+            return static_cast<int32_t>(std::count_if(pawns, pawns + friend_count,
+                                                    [](const auto& pawn) { return pawn.Get(); }));
+        }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         void trace(const wchar_t* stage, const std::array<FWeakObjectPtr, friend_count>& friends)
         {
-            size_t alive{};
-            for (const auto& pawn : friends) { alive += pawn.Get() != nullptr; }
-            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] CharacterParty stage={} alive={}\n"), stage, alive);
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] CharacterParty stage={} alive={}\n"), stage,
+                live_count(friends.data()));
         }
 #endif
+
+        void spawn_default_roster(UObject* manager)
+        {
+            if (factory_source && manager != factory_source->Get() && transferring() &&
+                party_native::is_friend_component(manager))
+            {
+                auto* pawn = manager->GetOuterPrivate();
+                auto* controller = party_native::read_object_like_property(manager, L"m_pController");
+                if (controller && kh02_actor_world(pawn) == active_world.Get() &&
+                    party_native::read_object_like_property(pawn, L"MyFrdMgr") == manager &&
+                    party_native::read_object_like_property(pawn, L"Controller") == controller)
+                {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                    RC::Output::send<RC::LogLevel::Normal>(
+                        STR("[KH3APProbeCpp] CharacterParty suppressed possession roster\n"));
+#endif
+                    return;
+                }
+            }
+            reinterpret_cast<void (*)(UObject*)>(original_spawn_default_roster)(manager);
+        }
+
+        bool install_default_roster_hook()
+        {
+            using character_native::Site;
+            static const auto hook = []() -> std::unique_ptr<PLH::x64Detour>
+            {
+                if (!character_native::verify_sites({Site::party_spawn_default_roster}))
+                {
+                    return {};
+                }
+                const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+                auto detour = std::make_unique<PLH::x64Detour>(
+                    base + character_native::rva(Site::party_spawn_default_roster),
+                    reinterpret_cast<uintptr_t>(&spawn_default_roster), &original_spawn_default_roster);
+                if (!detour->hook())
+                {
+                    return {};
+                }
+                return detour;
+            }();
+            return hook != nullptr;
+        }
+
+        void update_live_count(UObject* manager, FWeakObjectPtr* pawns)
+        {
+            auto* storage = reinterpret_cast<std::byte*>(manager);
+            // Both supported builds place the native count after the six weak slots.
+            if (reinterpret_cast<std::byte*>(pawns) == storage + friend_slots_offset &&
+                character_native::verify_sites({character_native::Site::party_spawn_default_roster}))
+            {
+                *reinterpret_cast<int32_t*>(storage + live_count_offset) = live_count(pawns);
+            }
+        }
 
         template <typename T> T *slots(UObject *manager, const wchar_t *name, const wchar_t *kind)
         {
@@ -102,6 +172,7 @@ namespace kh3ap::character_party
         {
             pawns[index] = {};
         }
+        update_live_count(manager, pawns);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         trace(L"detached", friends_);
 #endif
@@ -123,12 +194,29 @@ namespace kh3ap::character_party
                 {
                     pawns[index] = friends_[index];
                 }
+                update_live_count(manager, pawns);
             }
         }
         catch (...)
         { /* Never throw while unwinding a failed native factory. */
         }
         active = false;
+    }
+
+    void Handoff::run_factory(Kh02ReflectedCall& change)
+    {
+        if (!detached_ || !install_default_roster_hook())
+        {
+            change.run();
+            return;
+        }
+        struct FactoryScope
+        {
+            explicit FactoryScope(const FWeakObjectPtr& source) { factory_source = &source; }
+            ~FactoryScope() { factory_source = nullptr; }
+        };
+        const FactoryScope scope{source_manager_};
+        change.run();
     }
 
     void Handoff::finish(UObject *incoming)
@@ -177,12 +265,12 @@ namespace kh3ap::character_party
                     }
                 }
             }
-            bool has_replacements = false;
-            for (size_t index = 0; index < friend_count; ++index)
-            {
-                has_replacements = has_replacements || pawns[index].Get() != nullptr;
-            }
-            if (has_replacements)
+            const auto replacements = live_count(pawns);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] CharacterParty factory_replacements={}\n"), replacements);
+#endif
+            if (replacements)
             {
                 Kh02ReflectedCall retire(manager, L"DeleteFriendAll", "character party", 64);
                 retire.run();
@@ -202,6 +290,7 @@ namespace kh3ap::character_party
             defaults[index] = default_classes_[index].Get();
             classes[index] = classes_[index].Get();
         }
+        update_live_count(manager, pawns);
         if (observer)
         {
             observer(source_manager_.Get(), manager, incoming);
