@@ -116,6 +116,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/bosses/master_xehanort_center.cpp
     kh3ap/features/enemies/bosses/master_xehanort_queries.cpp
     kh3ap/features/enemies/bosses/xemnas_center.cpp
+    kh3ap/features/enemies/bosses/xigbar_field.cpp
     kh3ap/features/enemies/bosses/hp_limits.cpp
     kh3ap/features/enemies/titan_object_registry.cpp
     kh3ap/features/enemies/titan_arena.cpp

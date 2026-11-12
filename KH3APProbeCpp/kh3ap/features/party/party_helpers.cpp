@@ -1,10 +1,13 @@
 #include "kh3ap/features/party/party_helpers.h"
 #include "kh3ap/features/party/party_map_policy.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
+#include "kh3ap/core/objects/actor_discovery.h"
+#include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
+#include <Unreal/AActor.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/FWeakObjectPtr.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
@@ -13,7 +16,6 @@
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/UObject.hpp>
-#include <Unreal/UObjectGlobals.hpp>
 #include <UnrealDef.hpp>
 
 #include <algorithm>
@@ -30,6 +32,7 @@ namespace kh3ap::party_native
     namespace
     {
         constexpr int maximum_persistent_level_outer_depth = 8;
+        constexpr std::size_t maximum_world_navigation_meshes = 128;
         constexpr std::size_t actor_position_size = sizeof(std::array<float, 3>);
         // TresNpcLocomotionDefinitionLand_FollowPlayer's shipped default.
         constexpr double native_follow_distance = 3000.0;
@@ -135,16 +138,27 @@ namespace kh3ap::party_native
         {
             return true;
         }
-        // Apply the selected profile to both EQS and path following.
-        // Retry can load another level with the same full path. Supplying
-        // its live outer also avoids UE4SS's global full-name cache, which
-        // may still return the previous map's navigation object.
-        UObject* const nav_data = UObjectGlobals::StaticFindObject<UObject*>(
-            current_nav_data ? current_nav_data->GetClassPrivate() : nullptr, level,
-            fallback.mesh_name);
         UObject* const movement = read_object_like_property(pawn, STR("MyMovement"));
-        if (!nav_data || !is_uobject_valid_fast(nav_data) ||
-            persistent_level_for(nav_data) != level || !movement || !path_following)
+        if (!movement || !path_following)
+        {
+            return false;
+        }
+
+        UObject* nav_data = current_nav_data;
+        if (current_nav_name != fallback.mesh_name || persistent_level_for(nav_data) != level)
+        {
+            // UE4SS's outer-scoped global lookup can dereference a null outer.
+            // Query live actors in the pawn's world and require the same level
+            // instance, including when Retry reloads an identical package path.
+            auto* nav_class = find_loaded_runtime_asset_class(L"/Script/Engine.RecastNavMesh");
+            const auto meshes = find_live_actors_of_class(pawn, nav_class, maximum_world_navigation_meshes);
+            const auto selected = std::find_if(meshes.begin(), meshes.end(), [&](AActor* mesh)
+            {
+                return mesh->GetName() == fallback.mesh_name && persistent_level_for(mesh) == level;
+            });
+            nav_data = selected == meshes.end() ? nullptr : *selected;
+        }
+        if (!nav_data)
         {
             return false;
         }

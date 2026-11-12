@@ -118,6 +118,13 @@ namespace kh3ap
                                       std::wstring_view pawn_class_name = {})
         -> RuntimePartyNavigationFallback
     {
+        constexpr std::wstring_view garden_level =
+            L"Level /Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01:PersistentLevel";
+        if (runtime_party_navigation_level_matches(level_name, garden_level))
+        {
+            // The Garden has only AbstractNavData-Default.
+            return {};
+        }
         constexpr std::wstring_view frozen_level_prefix = L"Level /Game/Levels/fz/";
         // Outside his home world, Marshmallow needs the same navigation
         // profile as Lea and Aqua, including their map-specific fallbacks.
