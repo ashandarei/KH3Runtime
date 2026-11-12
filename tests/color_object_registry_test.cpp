@@ -36,12 +36,53 @@ int main() {
     pawn.name=FName(L"Pawn",0);derived.name=FName(L"Ralph_Pawn_C",0);derived.parent=&pawn;
     other.name=FName(L"Unrelated",0);
     UObject a,cd,ignored;add(a,derived);add(cd,derived,RF_ClassDefaultObject);add(ignored,other);
+    UClass weapon_base, keyblade_type;
+    weapon_base.name = FName(L"TresWeaponBase", 0);
+    weapon_base.parent = &pawn;
+    keyblade_type.name = FName(L"w_so120_Wep_C", 0);
+    keyblade_type.parent = &weapon_base;
+    UObject initial_weapon;
+    add(initial_weapon, keyblade_type);
+    UClass spectator_type;
+    spectator_type.name = FName(L"SpectatorPawn", 0);
+    spectator_type.parent = &pawn;
+    UObject initial_spectator;
+    add(initial_spectator, spectator_type);
     objects::initialize();objects::initialize();
     auto snapshot=objects::snapshot();
     assert(snapshot.bootstrap_scans==1&&UObjectGlobals::enumerations==1);
     assert(snapshot.pawns==std::vector<UObject*>{&a});
     const auto initial=objects::generation();
     objects::constructed(&a);objects::constructed(&ignored);assert(objects::generation()==initial);
+    // Weapon/spectator creation and destruction must not wake either consumer.
+    // Cover bootstrap, loader-thread spawn, unfinished PostLoad and replacement.
+    const auto before_weapon_gummi_generation = objects::gummi_generation();
+    for (int swap = 0; swap < 4; ++swap) {
+        UObject weapon;
+        add(weapon, keyblade_type, RF_NeedPostLoad);
+        UObject spectator;
+        add(spectator, spectator_type, RF_NeedPostLoad);
+        std::thread weapon_loader([&] {
+            objects::constructed(&weapon);
+            objects::constructed(&spectator);
+        });
+        weapon_loader.join();
+        assert(objects::generation() == initial);
+        assert(objects::gummi_generation() == before_weapon_gummi_generation);
+        snapshot = objects::snapshot();
+        assert(!snapshot.unfinished && snapshot.pawns == std::vector<UObject*>{&a});
+        weapon.flags = 0;
+        spectator.flags = 0;
+        objects::constructed(&weapon);
+        objects::constructed(&spectator);
+        remove(weapon);
+        remove(spectator);
+        assert(objects::generation() == initial);
+        assert(objects::gummi_generation() == before_weapon_gummi_generation);
+    }
+    remove(initial_weapon);
+    remove(initial_spectator);
+    assert(objects::generation() == initial);
     UObject stream;add(stream,derived,RF_NeedPostLoad);
     std::thread loader([&]{objects::constructed(&stream);});loader.join();
     assert(objects::generation()>initial);

@@ -81,12 +81,16 @@ namespace kh3ap
 
     auto RuntimeColorService::on_character_swap() -> void
     {
-        // The incoming pawn or its weapons can come from the swap pool
-        // without a new UObject creation event.
-        impl_->pawn_discovery_pending_ = true;
-        impl_->pawn_retry_at_ = {};
+        if (!impl_->enabled())
+        {
+            return;
+        }
+        // A pooled pawn has no new creation event. Check only the committed,
+        // locally owned incoming pawn; already-colored pawns remain untouched.
+        // Equipment rebuilds have their own revision, including fresh weapons
+        // on a reused pawn, and do not require another character discovery.
+        impl_->maybe_queue(character_swap::party_owner(), std::chrono::steady_clock::now());
         impl_->alternate_context_retry_at_ = {};
-        impl_->weapons_dirty_ = true;
     }
 
     auto RuntimeColorService::reroll_colors() -> void

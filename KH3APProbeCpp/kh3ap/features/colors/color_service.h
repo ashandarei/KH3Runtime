@@ -77,6 +77,8 @@ namespace kh3ap
         // Sora's own possession is observed. Pawns whose class isn't one of
         // the supported CharacterKeys are ignored.
         auto on_pawn_possessed(RC::Unreal::UObject* pawn) -> void;
+        // Checks the committed incoming pawn only. Weapon changes arrive via
+        // the native equipment-rebuild revision, not character rediscovery.
         auto on_character_swap() -> void;
         auto on_sora_state(RC::Unreal::UObject* pawn) -> void;
 
