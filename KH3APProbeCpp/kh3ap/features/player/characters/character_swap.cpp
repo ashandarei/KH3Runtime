@@ -120,6 +120,7 @@ namespace kh3ap::character_swap
             FWeakObjectPtr diagnostic_outgoing;
 #endif
             int sora_id{}, target_id{-1}, hp{}, focus{};
+            std::optional<CharacterSwapHpBreak> hp_break;
             CharacterSwapStats stats;
             int active_character_id{-1};
             int travel_character_id{-1};
@@ -486,6 +487,7 @@ namespace kh3ap::character_swap
                 character_underwater_combat::capture_sora(pawn);
             }
             session.hp = character_integer_value(pawn, L"GetHitPoint");
+            session.hp_break = CharacterSwapHpBreak::capture(pawn);
             character_magic::capture(pawn);
             session.focus = character_integer_value(pawn, L"GetFocusPoint");
             auto* outgoing_controller = object(pawn, L"Controller");
@@ -788,6 +790,7 @@ namespace kh3ap::character_swap
             // Cinematic input is already locked; ordinary input readiness is not
             // an appropriate gate for this owned-pawn lifecycle transition.
             session.hp = character_integer_value(outgoing, L"GetHitPoint");
+            session.hp_break = CharacterSwapHpBreak::capture(outgoing);
             character_magic::capture(outgoing);
             session.focus = character_integer_value(outgoing, L"GetFocusPoint");
             if (!combat_target_handoff::prepare(outgoing))
@@ -1007,6 +1010,7 @@ namespace kh3ap::character_swap
             // Rebind only after the existing player-start event, then stop.
             session.swap_world = make_uobject_weak(kh02_actor_world(pawn));
             session.hp = character_integer_value(pawn, L"GetHitPoint");
+            session.hp_break.reset();
             character_magic::capture(pawn);
             session.focus = character_integer_value(pawn, L"GetFocusPoint");
             session.target_id = id(pawn);
@@ -1251,6 +1255,7 @@ namespace kh3ap::character_swap
                 session.party_handoff.reset();
                 combat_target_handoff::cancel();
                 session.pending = false;
+                session.hp_break.reset();
                 if (session.cinematic_return_pending)
                 {
                     session.cinematic_return_pending = false;
@@ -1354,6 +1359,10 @@ namespace kh3ap::character_swap
             // Ownership is committed now. Resource restoration can fail after
             // possession, but crowds must still follow the actual local pawn.
             character_crowd::rebind(pawn);
+            if (auto hp_break = std::exchange(session.hp_break, std::nullopt))
+            {
+                hp_break->restore(pawn);
+            }
             Call health(pawn, L"SetHitPoint");
             health.integer(L"InHP", std::clamp(session.hp, 1,
                                                character_integer_value(pawn, L"GetMaxHitPoint")));

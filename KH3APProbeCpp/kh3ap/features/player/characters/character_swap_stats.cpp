@@ -1,12 +1,18 @@
 #include "kh3ap/features/player/characters/character_swap_stats.h"
 #include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/core/objects/uobject_weak.h"
+#include "kh3ap/core/performance_build.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
+#include <cmath>
 #include <cstring>
 #include <stdexcept>
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+#include <DynamicOutput/DynamicOutput.hpp>
+#endif
 #define NOMINMAX
 #include <Windows.h>
 
@@ -24,6 +30,25 @@ namespace kh3ap::character_swap
 
         constexpr int alternate_max_ap = 100;
         constexpr size_t base_ability_point_index = 6;
+        constexpr uint8_t hp_break_kind = 18;
+        constexpr size_t bad_status_kind_offset = 0x85d;
+        constexpr size_t bad_status_time_offset = 0x860;
+        constexpr size_t hp_break_cap_offset = 0x61c;
+        constexpr size_t clear_bad_status_slot = 0xf38 / sizeof(void*);
+        constexpr size_t apply_bad_status_slot = 0xf58 / sizeof(void*);
+
+        template <typename T>
+        auto pawn_field(UObject* pawn, size_t offset) -> T&
+        {
+            return *reinterpret_cast<T*>(reinterpret_cast<std::byte*>(pawn) + offset);
+        }
+
+        bool has_hp_break(UObject* pawn)
+        {
+            return pawn_field<uint8_t>(pawn, bad_status_kind_offset) == hp_break_kind &&
+                   pawn_field<int32_t>(pawn, hp_break_cap_offset) > 0;
+        }
+
         UObject* parameters(UObject* pawn)
         {
             auto* parameter = stat_properties.read_object(pawn, L"m_pBaseParam");
@@ -37,6 +62,80 @@ namespace kh3ap::character_swap
         }
 
     } // namespace
+
+    auto CharacterSwapHpBreak::capture(UObject* pawn) -> std::optional<CharacterSwapHpBreak>
+    {
+        using Clock = std::chrono::steady_clock;
+        if (!is_uobject_valid_fast(pawn) ||
+            !character_native::verify_sites({character_native::Site::hp_break_max_hp}) ||
+            !has_hp_break(pawn))
+        {
+            return std::nullopt;
+        }
+        const auto remaining = pawn_field<float>(pawn, bad_status_time_offset);
+        if (!std::isfinite(remaining) || remaining <= 0)
+        {
+            return std::nullopt;
+        }
+        return CharacterSwapHpBreak{
+            pawn_field<int32_t>(pawn, hp_break_cap_offset), remaining, Clock::now()};
+    }
+
+    void CharacterSwapHpBreak::clear_parked(UObject* pawn)
+    {
+        if (!is_uobject_valid_fast(pawn) ||
+            !character_native::verify_sites({character_native::Site::hp_break_max_hp}) ||
+            !has_hp_break(pawn) ||
+            !character_native::verify_sites({character_native::Site::clear_bad_status}))
+        {
+            return;
+        }
+        const auto clear = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)) +
+                           character_native::rva(character_native::Site::clear_bad_status);
+        const auto* vtable = *reinterpret_cast<const uintptr_t* const*>(pawn);
+        if (vtable[clear_bad_status_slot] == clear)
+        {
+            reinterpret_cast<void (*)(UObject*, uint8_t)>(clear)(pawn, hp_break_kind);
+        }
+    }
+
+    void CharacterSwapHpBreak::restore(UObject* pawn) const
+    {
+        const auto elapsed = std::chrono::duration<float>(
+                                 std::chrono::steady_clock::now() - captured_at).count();
+        const auto remaining = seconds - elapsed;
+        if (remaining <= 0 || !is_uobject_valid_fast(pawn) ||
+            !character_native::verify_sites({character_native::Site::apply_bad_status}))
+        {
+            return;
+        }
+        const auto apply = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)) +
+                           character_native::rva(character_native::Site::apply_bad_status);
+        const auto* vtable = *reinterpret_cast<const uintptr_t* const*>(pawn);
+        if (vtable[apply_bad_status_slot] != apply)
+        {
+            return;
+        }
+        const auto kind = pawn_field<uint8_t>(pawn, bad_status_kind_offset);
+        if (kind != 0 && kind != hp_break_kind)
+        {
+            return;
+        }
+        const auto owner = make_uobject_weak(pawn);
+        using ApplyBadStatus = void (*)(UObject*, uint8_t, float, void*, void*);
+        reinterpret_cast<ApplyBadStatus>(apply)(pawn, hp_break_kind, remaining, nullptr, nullptr);
+        if (owner.Get() == pawn && pawn_field<uint8_t>(pawn, bad_status_kind_offset) == hp_break_kind)
+        {
+            // The native setter derives the cap from current HP. The outgoing
+            // cap can be higher than current HP after a non-HP-Break hit.
+            pawn_field<int32_t>(pawn, hp_break_cap_offset) = cap;
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] HP Break carried across character swap pawn={} cap={} captured_seconds={} remaining_seconds={}\n"),
+                pawn->GetName(), cap, seconds, pawn_field<float>(pawn, bad_status_time_offset));
+#endif
+        }
+    }
 
     auto character_integer_value(UObject* pawn, const wchar_t* method) -> int
     {
@@ -68,6 +167,15 @@ namespace kh3ap::character_swap
         }
         std::array<int32_t, 5> result{character_integer_value(pawn, L"GetMaxHitPoint"),
                                       character_integer_value(pawn, L"GetMaxMagicPoint")};
+        if (character_native::verify_sites({character_native::Site::hp_break_max_hp}) &&
+            has_hp_break(pawn) &&
+            character_native::verify_sites({character_native::Site::stat_hp}))
+        {
+            // Stat synchronization must use the permanent maximum. The
+            // temporary combat cap is restored separately after possession.
+            result[0] = reinterpret_cast<int32_t (*)(UObject*)>(
+                base + character_native::rva(character_native::Site::stat_hp))(parameter);
+        }
         for (size_t index = 0; index < getters.size(); ++index)
         {
             result[index + 2] =

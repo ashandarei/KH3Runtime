@@ -16,6 +16,66 @@
   },
   "sites": [
     {
+      "id": "stat_hp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x704500",
+        "bytes": "4883ec08440fbf496c44034950488b8138010000"
+      },
+      "steam": {
+        "rva": "0x583990",
+        "bytes": "40534883ec200fbf596c035950488b8138010000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "The native maximum-HP getter calls this base-parameter stat getter when HP Break is inactive. Both builds read base HP +0x50 and bonus HP +0x6c."
+    },
+    {
+      "id": "hp_break_max_hp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x744960",
+        "bytes": "80b95d08000012750a8b811c06000085c07f12"
+      },
+      "steam": {
+        "rva": "0x5ab200",
+        "bytes": "80b95d08000012750a8b811c06000085c07f12"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Both builds check HP Break (0x12) at +0x85d and return the positive cap at +0x61c."
+    },
+    {
+      "id": "apply_bad_status",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x7492b0",
+        "bytes": "4055535741564157488d6c24d14881ecc0000000"
+      },
+      "steam": {
+        "rva": "0x5b7c50",
+        "bytes": "4055535741564157488d6c24d14881ecc0000000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "Native bad-status application uses virtual slot +0xf58, stores the HP Break cap at +0x61c, and stores the effect duration at +0x860 on both builds."
+    },
+    {
+      "id": "clear_bad_status",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
+      "egs": {
+        "rva": "0x748fc0",
+        "bytes": "40534883ec20488bd984d2740c3a915d080000"
+      },
+      "steam": {
+        "rva": "0x5a5c40",
+        "bytes": "40534883ec20488bd984d2740c3a915d080000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "The native clear routine at virtual slot +0xf38 accepts a status kind and clears the matching kind, duration, and cap on both builds."
+    },
+    {
       "id": "stat_strength",
       "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap_stats.cpp",
       "egs": {
