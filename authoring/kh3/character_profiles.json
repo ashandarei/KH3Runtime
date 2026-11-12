@@ -1905,6 +1905,42 @@
       "evidence": "Player-pawn possession calls this friend-component initializer. Both versions guard on the live count at +0x248 and spawn from the class array at +0x358 into the six weak slots at +0x218.",
       "live_egs_validated": true,
       "live_egs_evidence": "2026-11-12: Twelve swaps between Sora and Kairi, Roxas or Aqua in Corona kept the three existing companions alive and suppressed the native possession roster on each swap."
+    },
+    {
+      "id": "mickey_hud_close",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap.cpp",
+      "egs": {
+        "rva": "0x18e3a60",
+        "bytes": "48895c2408574883ec20488b9960010000488bf94885db0f"
+      },
+      "steam": {
+        "rva": "0x1577bf0",
+        "bytes": "40534883ec20488bd9488b89600100004885c97425488b01"
+      },
+      "evidence": "Paired native cockpit MiRx close: hides HudXehanort, restores status flags, and clears cockpit command mode at +0x1bc. Called only after trap possession returns to Sora.",
+      "runtime": true,
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "live_egs_validated": true,
+      "live_egs_evidence": "2026-11-12: APTestArena trap expiration restored shared cockpit mode 0 and Check completion on pooled Sora. Mickey retained mode 4 and could not activate Check during the trap. Sora subsequently opened the native save menu and small chest animations."
+    },
+    {
+      "id": "mickey_hud_restore_mode",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_swap.cpp",
+      "egs": {
+        "rva": "0x18e3b74",
+        "bytes": "c787bc01000000000000"
+      },
+      "steam": {
+        "rva": "0x1577c20",
+        "bytes": "c783bc01000000000000"
+      },
+      "evidence": "Paired native cockpit MiRx close: hides HudXehanort, restores status flags, and clears cockpit command mode at +0x1bc. Called only after trap possession returns to Sora.",
+      "runtime": true,
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "live_egs_validated": true,
+      "live_egs_evidence": "2026-11-12: APTestArena trap expiration restored shared cockpit mode 0 and Check completion on pooled Sora. Mickey retained mode 4 and could not activate Check during the trap. Sora subsequently opened the native save menu and small chest animations."
     }
   ],
   "remaining_requirements": [

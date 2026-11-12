@@ -165,6 +165,27 @@ returns to Sora also passed for Aqua, Kairi, and Roxas. Riku's separate
 test; crowd ownership and spawning remain correct despite that restoration
 failure. This validation covers villagers, not Riku's resource restoration.
 
+## King Mickey trap reaction cleanup
+
+Mickey's MiRx factory changes the shared cockpit to command mode 4. Returning
+through Sora's factory alone leaves that mode active, so normal reaction prompts
+can appear while their input still routes to the special Mickey HUD. The trap
+captures a weak reference to the original cockpit and invokes the game's paired
+MiRx close function only after Sora possesses the controller. This closes the
+special HUD, restores status presentation and returns command routing to mode 0.
+Mickey retains his restricted reactions throughout the trap. Changed or destroyed
+cockpits retire the reference; cleanup also participates in cinematic returns.
+
+Both storefronts have independently matched native close and mode-reset sites.
+Steam live validation remains outstanding.
+
+EGS validation on 2026-11-12 used APTestArena with pooled Sora. Check completed
+before and after the trap while remaining blocked as Mickey; cockpit mode was
+4 during the trap and 0 after return. Repeated expirations also preserved Sora's
+native chest opening and save-menu access. Mickey could activate neither the
+chest nor save-point interaction. All three arena chest reactors became inactive
+after native opening, and the save menu opened with its enabled Save row.
+
 ## Final Xehanort Ascension
 
 The authored `bt_04_camera_assension:PersistentLevel.assention` movie's Play

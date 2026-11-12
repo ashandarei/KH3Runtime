@@ -126,6 +126,8 @@ namespace kh3ap::character_native
         crowd_player_binding,
         crowd_player_tick,
         party_spawn_default_roster,
+        mickey_hud_close,
+        mickey_hud_restore_mode,
         count
     };
 
@@ -253,6 +255,8 @@ namespace kh3ap::character_native
         Entry{0x1449cb5, 0x1184f63, std::string_view{"\x48\x8d\x8e\x38\x03\x00\x00\x48\x8b\x93\xe8\x03\x00", 13}, std::string_view{"\x48\x8d\x8e\x38\x03\x00\x00\x48\x8b\x93\xe8\x03\x00", 13}}, // crowd_player_binding
         Entry{0x144a78a, 0x1194e6b, std::string_view{"\x49\x63\x8d\x38\x03\x00\x00", 7}, std::string_view{"\x49\x63\x8d\x38\x03\x00\x00", 7}}, // crowd_player_tick
         Entry{0x152fa10, 0x125b630, std::string_view{"\x4c\x8b\xdc\x56\x48\x81\xec\xc0\x00\x00\x00", 11}, std::string_view{"\x4c\x8b\xdc\x57\x48\x81\xec\xf0\x00\x00\x00", 11}}, // party_spawn_default_roster
+        Entry{0x18e3a60, 0x1577bf0, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x99\x60\x01\x00\x00\x48\x8b\xf9\x48\x85\xdb\x0f", 24}, std::string_view{"\x40\x53\x48\x83\xec\x20\x48\x8b\xd9\x48\x8b\x89\x60\x01\x00\x00\x48\x85\xc9\x74\x25\x48\x8b\x01", 24}}, // mickey_hud_close
+        Entry{0x18e3b74, 0x1577c20, std::string_view{"\xc7\x87\xbc\x01\x00\x00\x00\x00\x00\x00", 10}, std::string_view{"\xc7\x83\xbc\x01\x00\x00\x00\x00\x00\x00", 10}}, // mickey_hud_restore_mode
     };
     static_assert(entries.size() == static_cast<size_t>(Site::count));
 }

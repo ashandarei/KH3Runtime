@@ -166,14 +166,19 @@ namespace kh3ap::character_swap
         }
         CharacterTrapState trap;
         FWeakObjectPtr trap_world;
+        FWeakObjectPtr trap_cockpit;
         int64_t trap_receipt_index{-1};
         Clock::time_point trap_prepare_deadline{};
         constexpr int king_mickey_id = static_cast<int>(PlayerId::KingMickey);
+        constexpr int32_t normal_hud_command_mode = 0;
+        constexpr int32_t king_mickey_hud_command_mode = 4;
 
         void request_asset_preload(int player_id);
+        bool restore_trap_hud();
 
         void clear_trap()
         {
+            restore_trap_hud();
             trap.clear();
             trap_receipt_index = -1;
             trap_world = {};
@@ -317,6 +322,57 @@ namespace kh3ap::character_swap
                            kh02_actor_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
+        }
+
+        UObject* current_cockpit()
+        {
+            auto* manager = object(object(kh02_current_viewport(), L"GameInstance"), L"m_UIManager");
+            return object(object(manager, L"m_ActiveHUD"), L"TresCockpit");
+        }
+
+        bool restore_trap_hud()
+        {
+            auto* cockpit = trap_cockpit.Get();
+            if (!cockpit)
+            {
+                trap_cockpit = {};
+                return true;
+            }
+            // Mickey must retain his restricted reaction route until possession
+            // has actually returned to Sora, including cinematic returns.
+            if (!sora_variant(player()))
+            {
+                return false;
+            }
+            if (cockpit != current_cockpit())
+            {
+                trap_cockpit = {};
+                return true;
+            }
+            auto& mode = *reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(cockpit) + 0x1bc);
+            if (mode == king_mickey_hud_command_mode)
+            {
+                auto* part = object(cockpit, L"m_pHudXehanort");
+                if (!part || part->GetClassPrivate()->GetName() != L"TresUIP_HudXehanort" ||
+                    !character_native::verify_sites({character_native::Site::mickey_hud_close,
+                                                    character_native::Site::mickey_hud_restore_mode}))
+                {
+                    return false;
+                }
+                // The MiRx factory switches the shared cockpit to Mickey's mode, but
+                // Sora's factory never closes it. Use the shipping close path:
+                // retire its special command presentation, restore the status
+                // display, and return to normal reaction routing.
+                const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+                reinterpret_cast<void (*)(UObject*)>(base + character_native::rva(
+                    character_native::Site::mickey_hud_close))(cockpit);
+                if (mode != normal_hud_command_mode)
+                {
+                    return false;
+                }
+            }
+            trap_cockpit = {};
+            return true;
         }
 
         bool has_doom(UObject* pawn)
@@ -1348,6 +1404,10 @@ namespace kh3ap::character_swap
             }
             if (session.target_id == session.sora_id)
             {
+                if (!restore_trap_hud())
+                {
+                    return false;
+                }
                 Kh02Story::refresh_sora_experience(pawn);
             }
             if (session.target_id != session.sora_id)
@@ -1757,6 +1817,18 @@ namespace kh3ap::character_swap
         {
             return false;
         }
+        if (!character_native::verify_sites({character_native::Site::mickey_hud_close,
+                                            character_native::Site::mickey_hud_restore_mode}))
+        {
+            return false;
+        }
+        auto* cockpit = current_cockpit();
+        if (!cockpit || cockpit->GetClassPrivate()->GetName() != L"TresCockpit" ||
+            *reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(cockpit) + 0x1bc) != normal_hud_command_mode)
+        {
+            return false;
+        }
+        trap_cockpit = make_uobject_weak(cockpit);
         request_asset_preload(king_mickey_id);
         trap.prepare(id(pawn));
         trap_receipt_index = receipt_index;
