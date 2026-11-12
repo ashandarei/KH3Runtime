@@ -10,6 +10,16 @@ int main()
     assert(!cinematic_requires_native_sora(L"/Game/Levels/ra/ra_02/ra_02.ra_02"));
     assert(!cinematic_requires_native_sora(L"/Game/Levels/kg_DLC/kg_06/kg_06.kg_06"));
     assert(!cinematic_requires_native_sora(L""));
+    using kh3ap::character_swap::is_remind_area_c_exit_cinematic;
+    constexpr auto remind_skein = L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05";
+    constexpr auto area_d_exit =
+        L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081.kg_02_camera_ms081:PersistentLevel.ms081_C-D";
+    constexpr auto area_e_exit =
+        L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081.kg_02_camera_ms081:PersistentLevel.ms081_C-E";
+    assert(is_remind_area_c_exit_cinematic(remind_skein, area_d_exit));
+    assert(!is_remind_area_c_exit_cinematic(remind_skein, area_e_exit));
+    assert(!is_remind_area_c_exit_cinematic(L"/Game/Levels/kg/kg_02/kg_02.kg_02", area_d_exit));
+    assert(!is_remind_area_c_exit_cinematic(remind_skein, L"ms081_C-D"));
     int intent = travel_target_after_swap(-1, 16, 0, false);
     assert(intent == 16);
     // A native cinematic Sora handoff must not undo the player's choice.

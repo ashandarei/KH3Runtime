@@ -10,6 +10,13 @@ namespace kh3ap::character_swap
         return world.find(L"/Game/Levels/ca/") != world.npos;
     }
 
+    constexpr bool is_remind_area_c_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
+    {
+        return world == L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05" &&
+               matinee == L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081."
+                          L"kg_02_camera_ms081:PersistentLevel.ms081_C-D";
+    }
+
     constexpr int travel_target_after_swap(int retained, int incoming, int sora, bool cinematic)
     {
         return cinematic ? retained : incoming == sora ? -1 : incoming;

@@ -80,6 +80,8 @@ namespace kh3ap::ui_control_detail
     inline constexpr auto egs_message_confirm_rva = 0x1a4b540;
     inline constexpr auto egs_key_item_vtable_rva = 0x7c540b8;
     inline constexpr auto egs_key_item_input_rva = 0x19ebb60;
+    inline constexpr auto steam_key_item_vtable_rva = 0x6aea4f0;
+    inline constexpr auto steam_key_item_input_rva = 0x1676400;
     // The Key Item handler accepts the advance event for its single-page movie.
     inline constexpr int32_t key_item_confirm_event = 5;
     inline constexpr auto egs_message_page_check_rva = 0x1a4b697;

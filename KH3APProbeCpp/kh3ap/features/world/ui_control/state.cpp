@@ -187,8 +187,9 @@ namespace kh3ap
     UObject* RuntimeUiControlService::Impl::sample_key_item(UObject* manager)
     {
         auto* panel = try_read_reflected_object_property_value(manager, L"m_KeyItem");
+        const auto vtable = death_ui.steam ? steam_key_item_vtable_rva : egs_key_item_vtable_rva;
         if (!is_uobject_valid_fast(panel) ||
-            field<uintptr_t>(panel, 0) != base + egs_key_item_vtable_rva ||
+            field<uintptr_t>(panel, 0) != base + vtable ||
             try_read_reflected_object_property_value(panel, L"m_pUIManager") != manager)
         {
             key_item_open = key_item_ready = false;
@@ -271,7 +272,7 @@ namespace kh3ap
         auto* flight = RuntimeSpaceService::diagnostic_flight_pawn();
         space_pawn = flight ? flight->GetFullName() : L"";
         space_hp = flight_hp(flight);
-        if (!death_ui.steam && command == L"inspect")
+        if (command == L"inspect")
         {
             sample_key_item(manager);
         }

@@ -78,7 +78,7 @@ namespace kh3ap::ui_control_detail
         {L"workshop_deposit", CommandKind::workshop, false, true, false},
         {L"acknowledge_notice", CommandKind::notice, false, true, true},
         {L"dismiss_message", CommandKind::dismiss_message, false, true, true},
-        {L"dismiss_key_item", CommandKind::dismiss_key_item, false, true, false},
+        {L"dismiss_key_item", CommandKind::dismiss_key_item, true, true, false},
         {L"retry", CommandKind::retry, true, true, false},
         {L"continue", CommandKind::retry, true, true, false},
         {L"space_retry", CommandKind::retry, false, true, false},

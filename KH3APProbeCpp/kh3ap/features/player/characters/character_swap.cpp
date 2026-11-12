@@ -745,11 +745,18 @@ namespace kh3ap::character_swap
             }
             const bool native_sora = is_uobject_valid_fast(world) &&
                                      cinematic_requires_native_sora(world->GetPathName());
+            // These sequences move Sora across a labyrinth door. The
+            // authored position must reach the native pawn before we restore
+            // the combat ally at the end of cinematic mode.
+            const bool native_exit = is_uobject_valid_fast(matinee) && is_uobject_valid_fast(world) &&
+                                     kh02_actor_world(matinee) == world &&
+                                     is_remind_area_c_exit_cinematic(world->GetPathName(),
+                                                                    matinee->GetPathName());
             if (native_sora && session.travel_character_id >= 0 && cinematic_uses_sora(matinee))
             {
                 session.native_cinematic_world = make_uobject_weak(world);
             }
-            if (!native_sora && !ascension_locked() && session.travel_character_id >= 0 &&
+            if (!native_sora && !native_exit && !ascension_locked() && session.travel_character_id >= 0 &&
                 cinematic_uses_sora(matinee) &&
                 character_cinematic_binding::can_bind(matinee))
             {
@@ -789,7 +796,13 @@ namespace kh3ap::character_swap
             }
             session.pending = true;
             session.cinematic_return_pending = true;
-            session.native_cinematic_world = make_uobject_weak(kh02_current_world());
+            // The Area C transition is a level Matinee. Input readiness
+            // returns after the gameflow ends cinematic mode, without the
+            // movie-class pause-menu notification that clears this hold.
+            if (!native_exit)
+            {
+                session.native_cinematic_world = make_uobject_weak(world);
+            }
             session.cinematic_actor = make_uobject_weak(matinee);
             session.deadline = Clock::now() + character_swap_handoff_timeout;
             session.rebind_pending = false;

@@ -233,7 +233,7 @@ namespace kh3ap
         {
             throw std::runtime_error("expected_ready_key_item_required");
         }
-        const auto input = base + egs_key_item_input_rva;
+        const auto input = base + (death_ui.steam ? steam_key_item_input_rva : egs_key_item_input_rva);
         const auto vtable = field<uintptr_t>(panel, 0);
         if (field<uintptr_t>(reinterpret_cast<void*>(vtable),
                              native_ui::input_handler_vtable_index * sizeof(void*)) != input ||
