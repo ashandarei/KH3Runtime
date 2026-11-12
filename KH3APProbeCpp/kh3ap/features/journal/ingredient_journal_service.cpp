@@ -1,3 +1,4 @@
+#include <polyhook2/Detour/x64Detour.hpp>
 #include <memory>
 #include <optional>
 #include "kh3ap/features/journal/ingredient_journal_service.h"
@@ -21,6 +22,7 @@
 #include "kh3ap/core/events/event_work.h"
 #include "kh3ap/bridge/rewards/reconciliation.h"
 #include "kh3ap/core/conditional_profile_scope.h"
+#include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/bridge/utilities.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FProperty.hpp>
@@ -91,6 +93,15 @@ namespace kh3ap
         constexpr auto adversaries_home_anchor = 23;
         constexpr auto gates_home_anchor = 12;
         constexpr auto chests_home_anchor = 33;
+
+        constexpr uintptr_t egs_journal_state_refresh_rva = 0x190f9c0;
+        constexpr uintptr_t egs_treasure_availability_store_rva = 0x19106e0;
+        constexpr size_t egs_treasure_availability_offset = 0x5659;
+        constexpr uint8_t egs_journal_state_refresh_signature[]{
+            0x40, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57,
+            0x48, 0x8d, 0xac, 0x24, 0x48, 0xff, 0xff, 0xff};
+        constexpr uint8_t egs_treasure_availability_store_signature[]{
+            0x45, 0x88, 0x8f, 0x59, 0x56, 0x00, 0x00};
 
         constexpr auto focus_in = L"/Script/TresGame.TresUIParts:OnFocusIn";
         constexpr auto focus_out = L"/Script/TresGame.TresUIParts:OnFocusOut";
@@ -185,6 +196,68 @@ namespace kh3ap
         RuntimeEventWork preload_work, page_work;
         uint64_t collected_revision{}, adversary_revision{}, chest_revision{};
         int64_t observed_epoch{-1};
+        using RefreshJournalState = void (*)(uint8_t*, void*, void*, void*, void*);
+        inline static uint64_t original_journal_state_refresh{};
+        std::unique_ptr<PLH::x64Detour> journal_state_refresh_hook;
+
+        static auto refresh_journal_state(uint8_t* journal_state, void* game_data,
+                                          void* camp_data, void* ui_data, void* treasure_data)
+            -> void
+        {
+            reinterpret_cast<RefreshJournalState>(original_journal_state_refresh)(
+                journal_state, game_data, camp_data, ui_data, treasure_data);
+            const auto binding = reconciliation::view();
+            if (binding && !binding->seed.empty() && binding->chests &&
+                binding->epoch == reconciliation::epoch())
+            {
+                // Camp rebuilds this transient flag from world-start progression.
+                // The AP Chests page has its own seed catalog from the first menu.
+                journal_state[egs_treasure_availability_offset] = 1;
+            }
+        }
+
+        auto install_journal_state_refresh() -> void
+        {
+            const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+            const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+            if (!dos || dos->e_magic != IMAGE_DOS_SIGNATURE || dos->e_lfanew <= 0 ||
+                dos->e_lfanew >= 0x1000)
+            {
+                return;
+            }
+            const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
+            if (nt->Signature != IMAGE_NT_SIGNATURE ||
+                nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
+                !native_build::egs.matches(nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage))
+            {
+                return;
+            }
+            const auto refresh = base + egs_journal_state_refresh_rva;
+            if (std::memcmp(reinterpret_cast<const void*>(refresh),
+                            egs_journal_state_refresh_signature,
+                            sizeof(egs_journal_state_refresh_signature)) != 0 ||
+                std::memcmp(reinterpret_cast<const void*>(base + egs_treasure_availability_store_rva),
+                            egs_treasure_availability_store_signature,
+                            sizeof(egs_treasure_availability_store_signature)) != 0)
+            {
+                Output::send<LogLevel::Warning>(
+                    L"[KH3APProbeCpp] Chests menu availability signature mismatch\n");
+                return;
+            }
+            auto hook = std::make_unique<PLH::x64Detour>(
+                refresh, reinterpret_cast<uintptr_t>(&refresh_journal_state),
+                &original_journal_state_refresh);
+            if (!hook->hook())
+            {
+                Output::send<LogLevel::Warning>(
+                    L"[KH3APProbeCpp] Chests menu availability hook failed\n");
+                return;
+            }
+            journal_state_refresh_hook = std::move(hook);
+            Output::send<LogLevel::Normal>(
+                L"[KH3APProbeCpp] Chests menu availability hook installed\n");
+        }
+
         explicit Impl(RuntimeIngredientJournalConfig value)
             : config(std::move(value)), maps(
                                             config.gfx_paths,
@@ -200,6 +273,10 @@ namespace kh3ap
         }
         ~Impl()
         {
+            if (journal_state_refresh_hook && journal_state_refresh_hook->isHooked())
+            {
+                journal_state_refresh_hook->unHook();
+            }
             if (registered)
             {
                 try
@@ -402,6 +479,7 @@ namespace kh3ap
                 UObjectGlobals::UnregisterHook(focus_out, out_ids);
                 throw;
             }
+            install_journal_state_refresh();
         }
         auto startup_asset_context() -> UObject*
         {

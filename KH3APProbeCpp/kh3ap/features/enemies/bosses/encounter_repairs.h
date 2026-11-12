@@ -12,6 +12,7 @@ namespace kh3ap::enemy_remap_detail
     auto install_kg_replacement_reveal_guard() -> void;
 
     auto install_opening_ansem_phase_driver() -> void;
+    void install_runtime_xigbar_field_support();
     auto read_boss_gameflow_flag(std::wstring_view flag_name) -> std::optional<int64_t>;
 
     auto prepare_marshmallow_replacement_cutscene(

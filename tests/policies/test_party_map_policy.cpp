@@ -453,7 +453,13 @@ int main()
     assert(fz_nav.radius == 71.0f && fz_nav.height == 180.0f);
     constexpr auto marshmallow = L"n_fz214_Pawn_C";
     constexpr auto corona = L"Level /Game/Levels/ra/ra_01/ra_01.ra_01:PersistentLevel";
+    constexpr auto garden =
+        L"Level /Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01:PersistentLevel";
     constexpr auto group4 = L"RecastNavMesh-Group4";
+    for (auto current : {L"", L"AbstractNavData-Default"})
+    {
+        assert(runtime_party_navigation_fallback(current, garden, marshmallow).mesh_name.empty());
+    }
     for (auto current : {L"", group4, L"RecastNavMesh-Group2"})
     {
         const auto profile = runtime_party_navigation_fallback(current, corona, marshmallow);

@@ -201,6 +201,7 @@ namespace kh3ap
             install_master_xehanort_center_support();
             install_grim_guardianess_mode_guard();
             install_opening_ansem_phase_driver();
+            install_runtime_xigbar_field_support();
             install_kg_replacement_reveal_guard();
             s_runtime_enemy_remap.boss.tracking.boss_state_hook_ids =
                     UObjectGlobals::RegisterHook(
