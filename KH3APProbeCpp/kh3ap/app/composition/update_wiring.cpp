@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/app/composition/service_graph.h"
 #include "kh3ap/app/composition/bindings.h"
 #include "kh3ap/app/composition/settings.h"
@@ -181,6 +182,7 @@ namespace kh3ap
             {
                 s_runtime_controller_abilities.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
                 m_music_chests.notify_player_changed();
+                RuntimePortalService::notify_context_ready();
             }
             phase_trace.mark(STR("garden_return"));
             m_save_space.tick(now);

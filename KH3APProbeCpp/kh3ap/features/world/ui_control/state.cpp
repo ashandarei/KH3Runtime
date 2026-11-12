@@ -59,6 +59,8 @@ namespace kh3ap
             << ",\"notice_advances\":" << notice_advances << ",\"message_ready\":" << message_ready
             << ",\"message_dismissed\":" << message_dismissed << ",\"message_text\":\""
             << json_escape(message_text) << "\""
+            << ",\"key_item_open\":" << key_item_open << ",\"key_item_ready\":" << key_item_ready
+            << ",\"key_item_dismissed\":" << key_item_dismissed
             << ",\"player_select_open\":" << player_select_open
             << ",\"player_select_ready\":" << player_select_ready
             << ",\"player_selected\":" << player_selected
@@ -182,6 +184,21 @@ namespace kh3ap
         return character_swap::owns_swap_pawn(hero) ? hero : nullptr;
     }
 
+    UObject* RuntimeUiControlService::Impl::sample_key_item(UObject* manager)
+    {
+        auto* panel = try_read_reflected_object_property_value(manager, L"m_KeyItem");
+        if (!is_uobject_valid_fast(panel) ||
+            field<uintptr_t>(panel, 0) != base + egs_key_item_vtable_rva ||
+            try_read_reflected_object_property_value(panel, L"m_pUIManager") != manager)
+        {
+            key_item_open = key_item_ready = false;
+            return nullptr;
+        }
+        key_item_open = field<uint8_t>(panel, native_ui::panel_open_offset) == 1;
+        key_item_ready = key_item_open && field<uint8_t>(panel, native_ui::panel_ready_offset) == 1;
+        return panel;
+    }
+
     UObject* RuntimeUiControlService::Impl::sample()
     {
         // Some UI objects have no allocated weak serial. Resolve the
@@ -239,7 +256,8 @@ namespace kh3ap
              (texture_action == L"portal_inspect" || texture_action == L"portal_interact" ||
               texture_action == L"portal_button"));
         const bool notice_command =
-            command == L"dismiss_message" || command == L"acknowledge_notice";
+            command == L"dismiss_message" || command == L"acknowledge_notice" ||
+            command == L"dismiss_key_item";
         // Camera milestones can display their normal notices while an
         // owned alternate is possessed. Match the same current pawn that
         // inspection reports, retaining the expected-pawn/message guards.
@@ -253,6 +271,10 @@ namespace kh3ap
         auto* flight = RuntimeSpaceService::diagnostic_flight_pawn();
         space_pawn = flight ? flight->GetFullName() : L"";
         space_hp = flight_hp(flight);
+        if (!death_ui.steam && command == L"inspect")
+        {
+            sample_key_item(manager);
+        }
         if (!death_ui.steam && (command == L"inspect" || command == L"dismiss_message" ||
                                 command == L"acknowledge_notice"))
         {

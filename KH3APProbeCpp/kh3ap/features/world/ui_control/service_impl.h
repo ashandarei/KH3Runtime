@@ -37,6 +37,7 @@ namespace kh3ap
         int message_page{-1}, notice_last_page{-1}, notice_advances{};
         Clock::time_point notice_next{};
         bool message_ready{}, message_dismissed{};
+        bool key_item_open{}, key_item_ready{}, key_item_dismissed{};
         bool player_select_open{}, player_select_ready{}, player_selection_observed{},
             selection_key_down{};
         int player_selected{-1}, player_sora_index{-1};
@@ -73,6 +74,7 @@ namespace kh3ap
         DeathUiProfile death_ui;
         UObject* cutscene_pawn();
         UObject* sample();
+        UObject* sample_key_item(UObject* manager);
         void advance_event_benchmark();
         void advance_ingredient_benchmark();
         void advance_kh02_remote();
@@ -94,6 +96,7 @@ namespace kh3ap
         void advance_workshop();
         void advance_notice(UObject* dialog);
         void advance_dismiss_message(UObject* dialog);
+        void advance_dismiss_key_item();
         void advance_retry();
         void advance_space_game_over();
         void advance_game_over();
