@@ -1,6 +1,7 @@
 #include <polyhook2/Detour/x64Detour.hpp>
 #include <memory>
 #include <optional>
+#include <span>
 #include "kh3ap/features/journal/ingredient_journal_service.h"
 #include "kh3ap/features/journal/ingredient_journal_map_service.h"
 #include "kh3ap/features/journal/ingredient_journal_catalog.h"
@@ -15,6 +16,7 @@
 #include "kh3ap/features/grants/abilities/ability_snapshot_helpers.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/input/options_input_ownership.h"
+#include "kh3ap/core/input/menu_face_button.h"
 #include "kh3ap/features/ui/ui_sound_service.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -96,12 +98,19 @@ namespace kh3ap
 
         constexpr uintptr_t egs_journal_state_refresh_rva = 0x190f9c0;
         constexpr uintptr_t egs_treasure_availability_store_rva = 0x19106e0;
-        constexpr size_t egs_treasure_availability_offset = 0x5659;
+        constexpr uintptr_t steam_journal_state_refresh_rva = 0x15b2c20;
+        constexpr uintptr_t steam_treasure_availability_store_rva = 0x15b3607;
+        constexpr size_t treasure_availability_offset = 0x5659;
         constexpr uint8_t egs_journal_state_refresh_signature[]{
             0x40, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57,
             0x48, 0x8d, 0xac, 0x24, 0x48, 0xff, 0xff, 0xff};
         constexpr uint8_t egs_treasure_availability_store_signature[]{
             0x45, 0x88, 0x8f, 0x59, 0x56, 0x00, 0x00};
+        constexpr uint8_t steam_journal_state_refresh_signature[]{
+            0x40, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57,
+            0x48, 0x8d, 0xac, 0x24, 0x58, 0xff, 0xff, 0xff};
+        constexpr uint8_t steam_treasure_availability_store_signature[]{
+            0x88, 0x97, 0x59, 0x56, 0x00, 0x00};
 
         constexpr auto focus_in = L"/Script/TresGame.TresUIParts:OnFocusIn";
         constexpr auto focus_out = L"/Script/TresGame.TresUIParts:OnFocusOut";
@@ -212,7 +221,7 @@ namespace kh3ap
             {
                 // Camp rebuilds this transient flag from world-start progression.
                 // The AP Chests page has its own seed catalog from the first menu.
-                journal_state[egs_treasure_availability_offset] = 1;
+                journal_state[treasure_availability_offset] = 1;
             }
         }
 
@@ -227,18 +236,30 @@ namespace kh3ap
             }
             const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
             if (nt->Signature != IMAGE_NT_SIGNATURE ||
-                nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-                !native_build::egs.matches(nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage))
+                nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64)
             {
                 return;
             }
-            const auto refresh = base + egs_journal_state_refresh_rva;
+            const auto build = native_build::identify(nt->FileHeader.TimeDateStamp,
+                                                      nt->OptionalHeader.SizeOfImage);
+            if (build == native_build::Build::Unsupported)
+            {
+                return;
+            }
+            const bool steam = build == native_build::Build::Steam;
+            const auto refresh = base + (steam ? steam_journal_state_refresh_rva
+                                               : egs_journal_state_refresh_rva);
+            const auto store = base + (steam ? steam_treasure_availability_store_rva
+                                             : egs_treasure_availability_store_rva);
+            const std::span<const uint8_t> refresh_signature =
+                steam ? steam_journal_state_refresh_signature : egs_journal_state_refresh_signature;
+            const auto store_signature = steam
+                ? std::span<const uint8_t>{steam_treasure_availability_store_signature}
+                : std::span<const uint8_t>{egs_treasure_availability_store_signature};
             if (std::memcmp(reinterpret_cast<const void*>(refresh),
-                            egs_journal_state_refresh_signature,
-                            sizeof(egs_journal_state_refresh_signature)) != 0 ||
-                std::memcmp(reinterpret_cast<const void*>(base + egs_treasure_availability_store_rva),
-                            egs_treasure_availability_store_signature,
-                            sizeof(egs_treasure_availability_store_signature)) != 0)
+                            refresh_signature.data(), refresh_signature.size()) != 0 ||
+                std::memcmp(reinterpret_cast<const void*>(store),
+                            store_signature.data(), store_signature.size()) != 0)
             {
                 Output::send<LogLevel::Warning>(
                     L"[KH3APProbeCpp] Chests menu availability signature mismatch\n");
@@ -255,7 +276,8 @@ namespace kh3ap
             }
             journal_state_refresh_hook = std::move(hook);
             Output::send<LogLevel::Normal>(
-                L"[KH3APProbeCpp] Chests menu availability hook installed\n");
+                L"[KH3APProbeCpp] Chests menu availability hook installed storefront={}\n",
+                steam ? L"steam" : L"egs");
         }
 
         explicit Impl(RuntimeIngredientJournalConfig value)
@@ -1363,8 +1385,9 @@ namespace kh3ap
                     {
                         return false;
                     }
-                    else if (key == L"Left" || key == L"A" || key == L"Gamepad_DPad_Left" ||
-                             key == L"Gamepad_LeftStick_Left")
+                    const auto face_button = runtime_menu_face_button(key);
+                    if (key == L"Left" || key == L"A" || key == L"Gamepad_DPad_Left" ||
+                        key == L"Gamepad_LeftStick_Left")
                     {
                         command = navigate_left;
                     }
@@ -1392,7 +1415,7 @@ namespace kh3ap
                         command = navigate_next_category;
                     }
                     else if (key == L"Escape" || key == L"BackSpace" || key == L"SpaceBar" ||
-                             key == L"Gamepad_FaceButton_Right")
+                             face_button == RuntimeMenuFaceButton::back)
                     {
                         // Back returns through map -> sources -> grid before handing
                         // the grid's Back to the normal native app controller.
@@ -1411,7 +1434,7 @@ namespace kh3ap
                     {
                         command = navigate_next_page;
                     }
-                    else if (key == L"Enter" || key == L"Gamepad_FaceButton_Bottom")
+                    else if (key == L"Enter" || face_button == RuntimeMenuFaceButton::confirm)
                     {
                         command = navigate_confirm;
                     }

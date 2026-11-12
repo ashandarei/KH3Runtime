@@ -32,6 +32,7 @@ namespace kh3ap::color_objects
             struct Pending { UObject* object; FUObjectItem* slot; Kind kind; };
             struct Entry { FWeakObjectPtr weak; Kind kind; };
             std::array<FName, 5> classes{};
+            std::array<FName, 2> excluded_pawn_classes{};
             std::mutex mutex;
             std::unordered_map<const UObjectBase*, Pending> pending;
             std::unordered_map<const UObjectBase*, Entry> tracked;
@@ -48,8 +49,15 @@ namespace kh3ap::color_objects
                 size_t depth = 0;
                 for (auto* type = object->GetClassPrivate(); type && depth++ < max_color_class_ancestry_depth;
                      type = static_cast<UClass*>(type->GetSuperStruct()))
+                {
+                    // Weapons and possession-handoff spectators derive from
+                    // Pawn, but are not colorable characters. Equipment rebuilds
+                    // own weapon work; neither actor should rediscover the cast.
+                    for (const auto& excluded : excluded_pawn_classes)
+                        if (type->GetNamePrivate().Equals(excluded)) return Kind::Other;
                     for (size_t i = 0; i < classes.size(); ++i)
                         if (type->GetNamePrivate().Equals(classes[i])) return static_cast<Kind>(i);
+                }
                 return Kind::Other;
             }
             auto enqueue(UObject* object) -> void
@@ -93,6 +101,8 @@ namespace kh3ap::color_objects
         // keeping Gummi ships separate from character discovery.
         state.classes = {FName{L"Pawn", FNAME_Add}, FName{L"TresCreateGummiShipActor", FNAME_Add},
             FName{L"TresGummiEditorManager", FNAME_Add}, FName{L"DataTable", FNAME_Add}, FName{L"World", FNAME_Add}};
+        state.excluded_pawn_classes = {FName{L"TresWeaponBase", FNAME_Add},
+            FName{L"SpectatorPawn", FNAME_Add}};
         UObjectArray::AddUObjectDeleteListener(&state);
         state.enabled.store(true, std::memory_order_release);
         ++state.bootstrap_scans;

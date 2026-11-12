@@ -106,10 +106,7 @@ namespace kh3ap
         // Without this the answer to "is this character coloured?" is
         // unobservable: resolve_supported_character_key returns nullopt in
         // silence, so an unknown pawn looks exactly like a pawn that was
-        // never detected at all - and those two have completely different
-        // fixes. The open case is the playable Roxas/Kairi/Aqua segments:
-        // if they reuse the n_ex* pawns they are already covered, and if
-        // they spawn dedicated ones this prints the class name to add.
+        // never detected at all.
         //
         // Debug-only, and deduplicated by class name on top of that, so even
         // with logging on it is one line per class for the session.
@@ -121,6 +118,7 @@ namespace kh3ap
         uint64_t pawn_generation_{~uint64_t{0}};
         bool pawn_discovery_pending_{true};
         std::chrono::steady_clock::time_point pawn_retry_at_{};
+        std::chrono::steady_clock::time_point alternate_context_retry_at_{};
         bool weapons_dirty_{true};
         std::chrono::steady_clock::time_point weapon_retry_at_{};
         uint64_t equipment_generation_{};

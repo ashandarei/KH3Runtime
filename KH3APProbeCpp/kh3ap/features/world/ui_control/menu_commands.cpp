@@ -207,6 +207,53 @@ namespace kh3ap
         return;
     }
 
+    void RuntimeUiControlService::Impl::advance_dismiss_key_item()
+    {
+        auto* manager = manager_ref.Get();
+        if (!is_uobject_valid_fast(manager))
+        {
+            throw std::runtime_error("key_item_manager_unavailable");
+        }
+        auto* panel = sample_key_item(manager);
+        if (!panel)
+        {
+            throw std::runtime_error("key_item_panel_unavailable");
+        }
+        if (dispatched)
+        {
+            if (!key_item_open)
+            {
+                key_item_dismissed = true;
+                finish(L"completed", L"native_key_item_closed");
+            }
+            return;
+        }
+        if (pawn_name != expected_pawn || pause_open || !key_item_ready ||
+            !is_uobject_valid_fast(try_read_reflected_object_property_value(panel, L"m_pMoviePlayer")))
+        {
+            throw std::runtime_error("expected_ready_key_item_required");
+        }
+        const auto input = base + (death_ui.steam ? steam_key_item_input_rva : egs_key_item_input_rva);
+        const auto vtable = field<uintptr_t>(panel, 0);
+        if (field<uintptr_t>(reinterpret_cast<void*>(vtable),
+                             native_ui::input_handler_vtable_index * sizeof(void*)) != input ||
+            !signature(input, {0x40, 0x53, 0x48, 0x83, 0xec, 0x60, 0x48, 0xc7, 0x44, 0x24, 0x20,
+                               0xfe, 0xff, 0xff, 0xff}))
+        {
+            throw std::runtime_error("key_item_handler_build_mismatch");
+        }
+        native_ui::InputEvent event{key_item_confirm_event};
+        dispatched = true;
+        selected = 0;
+        report(L"accepted", L"dispatching_native_key_item_confirm");
+        using Confirm = bool(__fastcall*)(UObject*, void*);
+        if (!reinterpret_cast<Confirm>(input)(panel, event.data()) ||
+            !is_uobject_valid_fast(panel) || field<uint8_t>(panel, native_ui::panel_ready_offset) != 0)
+        {
+            throw std::runtime_error("key_item_confirmation_not_observed");
+        }
+    }
+
     void RuntimeUiControlService::Impl::advance_retry()
     {
         const bool flying = command == L"space_retry";

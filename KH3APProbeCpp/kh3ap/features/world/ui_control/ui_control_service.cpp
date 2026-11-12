@@ -102,6 +102,9 @@ namespace kh3ap
         case ui_control_detail::CommandKind::dismiss_message:
             advance_dismiss_message(dialog);
             return;
+        case ui_control_detail::CommandKind::dismiss_key_item:
+            advance_dismiss_key_item();
+            return;
         case ui_control_detail::CommandKind::retry:
             advance_retry();
             return;
@@ -159,6 +162,7 @@ namespace kh3ap
                 JsonFieldReader::int64_field(*text, "expected_message_id").value_or(-1))
                 .value_or(-1);
         message_dismissed = false;
+        key_item_open = key_item_ready = key_item_dismissed = false;
         notice_last_page = -1;
         notice_advances = 0;
         notice_next = {};

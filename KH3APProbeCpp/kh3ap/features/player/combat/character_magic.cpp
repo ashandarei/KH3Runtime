@@ -41,6 +41,7 @@ namespace kh3ap::character_magic
             aqua_meter,
             kairi_meter,
             roxas_meter,
+            riku_meter,
             mickey_meter,
             meter_count,
         };
@@ -105,6 +106,10 @@ namespace kh3ap::character_magic
             if (id == player_id_value(PlayerId::Roxas))
             {
                 return roxas_meter;
+            }
+            if (id == player_id_value(PlayerId::Riku))
+            {
+                return riku_meter;
             }
             if (id == player_id_value(PlayerId::KingMickey))
             {

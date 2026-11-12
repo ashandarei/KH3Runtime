@@ -7,6 +7,10 @@ namespace RC::Unreal
 {
     class UObject;
 }
+namespace kh3ap
+{
+    class Kh02ReflectedCall;
+}
 namespace kh3ap::character_party
 {
     using Observer =
@@ -22,6 +26,7 @@ namespace kh3ap::character_party
         ~Handoff();
         Handoff(const Handoff &) = delete;
         Handoff &operator=(const Handoff &) = delete;
+        void run_factory(Kh02ReflectedCall &change);
         void finish(RC::Unreal::UObject *incoming);
 
       private:

@@ -49,10 +49,7 @@ namespace kh3ap
     };
 
     // Native replacement for the retired Blueprint/map/anim-notify color
-    // randomization mechanism. Fully decoupled from the party and grant
-    // features it borrows signals/safety gating from: they call into this
-    // service, it never reaches back into their internals beyond the shared
-    // RuntimeState accessors already used for that purpose elsewhere.
+    // randomization mechanism.
     class RuntimeColorService
     {
     public:
@@ -80,6 +77,9 @@ namespace kh3ap
         // Sora's own possession is observed. Pawns whose class isn't one of
         // the supported CharacterKeys are ignored.
         auto on_pawn_possessed(RC::Unreal::UObject* pawn) -> void;
+        // Checks the committed incoming pawn only. Weapon changes arrive via
+        // the native equipment-rebuild revision, not character rediscovery.
+        auto on_character_swap() -> void;
         auto on_sora_state(RC::Unreal::UObject* pawn) -> void;
 
         // Called from the TresMapJump pre-hook, alongside the other

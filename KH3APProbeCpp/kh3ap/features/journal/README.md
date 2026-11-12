@@ -25,6 +25,11 @@ UI proxies through `make_uobject_weak`, including missing UI serial allocation,
 then resolve their GFx object. No home-screen custom input capture is installed.
 The existing viewport owner routes custom navigation and retains ownership
 through releases. Hide/disable the layer on focus loss and reuse it on later opens.
+Custom pages and the extra settings menu share `core/input/menu_face_button`:
+controller Confirm/Back follow `TresLSIGameActor::NeedToExchangeActionButton`
+at the input boundary. Its true result means bottom/Cross is Confirm. Only
+object references are cached; changing the native setting applies to the next
+press. Keyboard, mouse and virtual actions retain their existing meanings.
 
 Icons use the game's `tres.controls.Icon` and eight resident food textures,
 preloaded/retained by the transient movie. Food-category art is shared; ingredient

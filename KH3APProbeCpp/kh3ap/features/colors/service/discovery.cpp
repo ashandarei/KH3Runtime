@@ -124,14 +124,14 @@ namespace kh3ap
     auto RuntimeColorService::Impl::maybe_queue(UObject* pawn,
                                                 std::chrono::steady_clock::time_point now) -> void
     {
+        if (state.is_colored(pawn) || state.is_pending(pawn))
+        {
+            return;
+        }
         const std::optional<std::wstring> character_key = resolve_supported_character_key(pawn);
         if (!character_key)
         {
             note_unsupported_pawn(pawn);
-            return;
-        }
-        if (state.is_colored(pawn) || state.is_pending(pawn))
-        {
             return;
         }
         std::wstring full_name;

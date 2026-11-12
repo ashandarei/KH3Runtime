@@ -11,6 +11,7 @@
 #include "kh3ap/features/grants/grant_pawn_state.h"
 #include "kh3ap/features/grants/grant_safety.h"
 #include "kh3ap/features/grants/grant_state.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <UnrealDef.hpp>
@@ -78,6 +79,20 @@ namespace kh3ap
         impl_->link_repaints_.clear();
     }
 
+    auto RuntimeColorService::on_character_swap() -> void
+    {
+        if (!impl_->enabled())
+        {
+            return;
+        }
+        // A pooled pawn has no new creation event. Check only the committed,
+        // locally owned incoming pawn; already-colored pawns remain untouched.
+        // Equipment rebuilds have their own revision, including fresh weapons
+        // on a reused pawn, and do not require another character discovery.
+        impl_->maybe_queue(character_swap::party_owner(), std::chrono::steady_clock::now());
+        impl_->alternate_context_retry_at_ = {};
+    }
+
     auto RuntimeColorService::reroll_colors() -> void
     {
         // UE4SS input callbacks run outside the game thread.
@@ -137,19 +152,6 @@ namespace kh3ap
                       {
                           return !is_uobject_valid_fast(entry.first.Get());
                       });
-        const std::vector<UObject*> pawn_candidates =
-            collect_cached_runtime_grant_pawn_candidates(impl_->config.runtime_state, nullptr);
-        RuntimeGrantPawnState& pawn_state = impl_->config.runtime_state.grant_state().pawn_state();
-        const RuntimeGrantSafetyStatus safety_status = runtime_grant_playable_safety_status(
-            impl_->config.runtime_state.ui_diagnostic_state().blocking_ui_state(), pawn_state,
-            pawn_candidates, now);
-        const bool color_ready =
-            runtime_color_safety_ready(safety_status.ready, safety_status.reason);
-
-        if (color_ready && pawn_state.candidate_trusted())
-        {
-            impl_->discover_pawns(pawn_state.object(), now);
-        }
         const auto equipment_generation =
             color_equipment_generation.load(std::memory_order_acquire);
         if (equipment_generation != impl_->equipment_generation_)
@@ -157,12 +159,44 @@ namespace kh3ap
             impl_->equipment_generation_ = equipment_generation;
             impl_->weapons_dirty_ = true;
         }
+        auto& pending = impl_->state.pending();
+        if (character_swap::handoff_pending())
+        {
+            return;
+        }
+
+        auto& runtime_state = impl_->config.runtime_state;
+        auto& pawn_state = runtime_state.grant_state().pawn_state();
+        const auto& blocking_ui = runtime_state.ui_diagnostic_state().blocking_ui_state();
+        const auto pawn_candidates =
+            collect_cached_runtime_grant_pawn_candidates(runtime_state, nullptr);
+        const auto safety_status =
+            runtime_grant_playable_safety_status(blocking_ui, pawn_state, pawn_candidates, now);
+        bool color_ready = runtime_color_safety_ready(safety_status.ready, safety_status.reason);
+        UObject* reference_pawn = color_ready && pawn_state.candidate_trusted()
+                                      ? pawn_state.object()
+                                      : nullptr;
+        if (!color_ready && now >= impl_->alternate_context_retry_at_ &&
+            (!pending.empty() || !impl_->link_repaints_.empty() ||
+             (impl_->weapons_dirty_ && now >= impl_->weapon_retry_at_) ||
+             impl_->pawn_discovery_pending_ ||
+             color_objects::generation() != impl_->pawn_generation_) &&
+            current_runtime_blocking_ui_status(blocking_ui).ready)
+        {
+            // Verify possession and loading/control readiness only while color work is pending.
+            impl_->alternate_context_retry_at_ = now + Impl::apply_retry_interval;
+            reference_pawn = character_swap::reward_context();
+            color_ready = reference_pawn != nullptr;
+        }
+        if (reference_pawn)
+        {
+            impl_->discover_pawns(reference_pawn, now);
+        }
         if (color_ready)
         {
             impl_->repaint_links(now);
         }
 
-        std::vector<RuntimeColorPendingPawn>& pending = impl_->state.pending();
         if (pending.empty())
         {
             if (color_ready)

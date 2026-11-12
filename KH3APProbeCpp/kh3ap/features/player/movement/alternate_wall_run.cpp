@@ -12,11 +12,15 @@
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObjectGlobals.hpp>
+#include <Unreal/UScriptStruct.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <stdexcept>
@@ -32,7 +36,13 @@ namespace kh3ap::alternate_wall_run
             L"WallRunLoopR",   L"WallRunLoopL",    L"WallRunRollF",    L"WallRunRollR",
             L"WallRunRollL",   L"WallRunChangeR",  L"WallRunChangeRF", L"WallRunChangeFR",
             L"WallRunChangeL", L"WallRunChangeLF", L"WallRunChangeFL", L"WallRunJump",
-            L"WallRunJumpH",   L"WallRunJumpF"};
+            L"WallRunJumpH",   L"WallRunJumpF",
+            // WallRun also plays ClimbingH as the player crests a wall.
+            L"ClimbingR",     L"ClimbingRB",     L"ClimbingL",    L"ClimbingLB",
+            L"ClimbingMR",    L"ClimbingMRB",    L"ClimbingML",   L"ClimbingMLB",
+            L"ClimbingH",     L"ClimbingHB",
+            // Dangle has its own hang and pull-up animations.
+            L"GripStart",     L"GripLoop",      L"GripRise"};
         using player_animation_support::AnimationEntry;
         using player_animation_support::PlayerId;
         constexpr std::array supported_players{PlayerId::Riku, PlayerId::Kairi, PlayerId::Roxas,
@@ -58,7 +68,10 @@ namespace kh3ap::alternate_wall_run
         constexpr std::array speed_fields{L"MyWallRunSpeedScaleUp", L"MyWallRunSpeedScaleSide",
                                           L"MyWallRunSideMoveSpeed"};
         std::array<float, speed_fields.size()> sora_speeds{};
+        using DangleOffset = std::array<float, 3>;
+        DangleOffset sora_dangle_offset{};
         bool speeds_captured{};
+        bool sora_climbing_enabled{};
         FWeakObjectPtr requested_pawn;
         std::chrono::steady_clock::time_point deadline{};
 
@@ -90,6 +103,20 @@ namespace kh3ap::alternate_wall_run
             return -1;
         }
 
+        auto dangle_offset(UObject* pawn) -> DangleOffset&
+        {
+            auto* field = is_uobject_valid_fast(pawn)
+                              ? pawn->GetPropertyByNameInChain(L"m_DangleOffsetPos")
+                              : nullptr;
+            if (!field || !field->IsA<FStructProperty>() ||
+                field->GetElementSize() != sizeof(DangleOffset) ||
+                static_cast<FStructProperty*>(field)->GetStruct()->GetName() != L"Vector")
+            {
+                throw std::runtime_error("alternate_dangle_offset_layout");
+            }
+            return *field->ContainerPtrToValuePtr<DangleOffset>(pawn);
+        }
+
     } // namespace
 
     bool ready(UObject* pawn)
@@ -113,6 +140,19 @@ namespace kh3ap::alternate_wall_run
     void capture_sora(UObject* pawn)
     {
         speeds_captured = false;
+        auto* climbing = is_uobject_valid_fast(pawn)
+                             ? pawn->GetPropertyByNameInChain(L"m_bEnableClimbing")
+                             : nullptr;
+        if (!climbing || !climbing->IsA<FBoolProperty>())
+        {
+            throw std::runtime_error("alternate_climbing_source_flag_layout");
+        }
+        sora_climbing_enabled = static_cast<FBoolProperty*>(climbing)->GetPropertyValueInContainer(pawn);
+        sora_dangle_offset = dangle_offset(pawn);
+        if (!std::ranges::all_of(sora_dangle_offset, [](float value) { return std::isfinite(value); }))
+        {
+            throw std::runtime_error("alternate_dangle_offset_value");
+        }
         for (size_t index = 0; index < speed_fields.size(); ++index)
         {
             auto* field = is_uobject_valid_fast(pawn)
@@ -204,9 +244,6 @@ namespace kh3ap::alternate_wall_run
         {
             destination->Add(animation);
         }
-        // Per-instance additions leave every authored combo and the source
-        // animation set intact. No work runs while the feature is idle.
-        sets->ContainerPtrToValuePtr<TArray<UObject*>>(animation_instance)->Add(private_set);
         // Start disabled until the possession/unlock event resolves Sora's
         // equipped ability. Retain the game's shared ability gate as well.
         if (!write_bool_function_param(pawn->GetPropertyByNameInChain(L"m_bEnableWallRun"), pawn,
@@ -228,6 +265,16 @@ namespace kh3ap::alternate_wall_run
             }
             *field->ContainerPtrToValuePtr<float>(pawn) = sora_speeds[index];
         }
+        if (!write_bool_function_param(pawn->GetPropertyByNameInChain(L"m_bEnableClimbing"), pawn,
+                                       sora_climbing_enabled))
+        {
+            throw std::runtime_error("alternate_climbing_enable_readback");
+        }
+        // GripStart and GripLoop use Sora's reach. The hang point must use
+        // the same anchor as the borrowed pose for the hand to meet the lip.
+        dangle_offset(pawn) = sora_dangle_offset;
+        // Publish the complete per-instance set once its native flags and tuning are ready.
+        sets->ContainerPtrToValuePtr<TArray<UObject*>>(animation_instance)->Add(private_set);
         prepared[index] = {make_uobject_weak(pawn), make_uobject_weak(animation_instance)};
         RC::Output::send<RC::LogLevel::Normal>(
             STR("[KH3APProbeCpp] Alternate wall run ready pawn={} animations={}\n"),

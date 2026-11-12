@@ -78,6 +78,12 @@ namespace kh3ap::ui_control_detail
     inline constexpr auto player_selector_selected_index_offset = 0x278;
     inline constexpr auto player_selector_enabled_flags_offset = 0x274;
     inline constexpr auto egs_message_confirm_rva = 0x1a4b540;
+    inline constexpr auto egs_key_item_vtable_rva = 0x7c540b8;
+    inline constexpr auto egs_key_item_input_rva = 0x19ebb60;
+    inline constexpr auto steam_key_item_vtable_rva = 0x6aea4f0;
+    inline constexpr auto steam_key_item_input_rva = 0x1676400;
+    // The Key Item handler accepts the advance event for its single-page movie.
+    inline constexpr int32_t key_item_confirm_event = 5;
     inline constexpr auto egs_message_page_check_rva = 0x1a4b697;
     inline constexpr auto message_completion_state_offset = 0x290;
     inline constexpr auto game_over_retry_action = 2;

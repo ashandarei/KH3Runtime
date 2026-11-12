@@ -19,6 +19,7 @@ int main()
                                         L"game_over",
                                         L"select_sora",
                                         L"skip_cutscene",
+                                        L"dismiss_key_item",
                                         L"command_inspect",
                                         L"command_step",
                                         L"bootstrap_inspect",

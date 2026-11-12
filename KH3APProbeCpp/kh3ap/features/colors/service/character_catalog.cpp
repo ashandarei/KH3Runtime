@@ -1,5 +1,6 @@
 #include "kh3ap/features/colors/service/character.h"
 #include "kh3ap/core/objects/uobject_validity.h"
+#include "kh3ap/features/player/characters/character_swap_assets.h"
 #include "kh3ap/features/player/state/sora_pawn_catalog.h"
 
 #include <Unreal/UClass.hpp>
@@ -45,10 +46,7 @@ namespace kh3ap::color_service_detail
                link_character_keys.end();
     }
 
-    // Every world-variant Sora pawn (Baymax, Toy Box, Monstropolis, ...)
-    // and every companion/guest party-member pawn gets its own colours,
-    // keyed by its own pawn id, so a seed does not hand two different
-    // pawns the same palette.
+    // Each playable variant, companion, and Link has its own seeded palette.
     [[nodiscard]] auto resolve_supported_character_key(UObject* pawn) -> std::optional<std::wstring>
     {
         if (!pawn || !is_uobject_valid_fast(pawn))
@@ -65,6 +63,10 @@ namespace kh3ap::color_service_detail
                 runtime_sora_pawn_catalog_match(class_name))
         {
             return std::wstring{entry->pawn_id};
+        }
+        if (const auto key = character_swap_assets::pawn_key_for_class(class_name); !key.empty())
+        {
+            return std::wstring{key};
         }
         for (const auto& keys : {std::span<const std::wstring_view>{companion_character_keys},
                                  std::span<const std::wstring_view>{link_character_keys}})

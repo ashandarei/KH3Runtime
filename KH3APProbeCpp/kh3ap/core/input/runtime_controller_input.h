@@ -38,9 +38,9 @@ namespace kh3ap
         -> RuntimeControllerStickState;
     void runtime_controller_restore_stick(RC::Unreal::UObject* controller, bool right_stick,
                                           const RuntimeControllerStickState& state);
-    // Retired controllers have no player or pawn. Their queued axes belong to
-    // the preceding possession and must not override a later swap's handoff.
-    void runtime_controller_clear_parked_sticks(RC::Unreal::UObject* controller);
+    // Retired controllers have no player or pawn. Discard their old stick
+    // samples and navigation presses before the next possession.
+    void runtime_controller_clear_parked_input(RC::Unreal::UObject* controller);
     // Pair native InputKey press/release across ticks; no desktop input is used.
     void runtime_controller_action_input(RC::Unreal::UObject* controller, std::wstring_view action,
                                          bool pressed);

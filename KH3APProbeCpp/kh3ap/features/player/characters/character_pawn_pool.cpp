@@ -1,5 +1,6 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_pawn_pool.h"
+#include "kh3ap/features/player/characters/character_swap_stats.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -198,7 +199,7 @@ namespace kh3ap::character_pawn_pool
         }
         void park(Pair& pair)
         {
-            runtime_controller_clear_parked_sticks(pair.controller.Get());
+            runtime_controller_clear_parked_input(pair.controller.Get());
             for (const auto& entry : pair.actors)
             {
                 if (auto* actor = entry.actor.Get())
@@ -503,6 +504,9 @@ namespace kh3ap::character_pawn_pool
             throw std::runtime_error("pool_reuse_incomplete");
         }
         park(active.source);
+        // A parked pawn does not tick its status timer. The swap session owns
+        // the active HP Break now, so reusing this pawn cannot revive an old cap.
+        character_swap::CharacterSwapHpBreak::clear_parked(active.source.pawn.Get());
         standby = std::move(active.source);
         ++retained;
         impl_->finished = true;

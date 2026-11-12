@@ -1,6 +1,8 @@
 #pragma once
 #include <array>
+#include <chrono>
 #include <cstdint>
+#include <optional>
 
 namespace RC::Unreal
 {
@@ -9,6 +11,17 @@ namespace RC::Unreal
 namespace kh3ap::character_swap
 {
     auto character_integer_value(RC::Unreal::UObject* pawn, const wchar_t* method) -> int;
+
+    struct CharacterSwapHpBreak
+    {
+        static auto capture(RC::Unreal::UObject* pawn) -> std::optional<CharacterSwapHpBreak>;
+        static void clear_parked(RC::Unreal::UObject* pawn);
+        void restore(RC::Unreal::UObject* pawn) const;
+
+        int32_t cap{};
+        float seconds{};
+        std::chrono::steady_clock::time_point captured_at{};
+    };
 
     // Copies values only. No pointer into the outgoing pawn survives a swap.
     class CharacterSwapStats
