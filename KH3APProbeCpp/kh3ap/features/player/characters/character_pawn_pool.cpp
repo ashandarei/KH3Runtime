@@ -199,7 +199,7 @@ namespace kh3ap::character_pawn_pool
         }
         void park(Pair& pair)
         {
-            runtime_controller_clear_parked_sticks(pair.controller.Get());
+            runtime_controller_clear_parked_input(pair.controller.Get());
             for (const auto& entry : pair.actors)
             {
                 if (auto* actor = entry.actor.Get())

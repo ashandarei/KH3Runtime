@@ -7,6 +7,7 @@
 #include "kh3ap/core/input/runtime_controller_input_profile.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
+#include <Unreal/FScriptArray.hpp>
 #include <Unreal/NameTypes.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
 #include <array>
@@ -43,6 +44,11 @@ namespace kh3ap
         constexpr auto key_state_raw_value_offset = 0x18;
         constexpr auto key_state_processed_value_offset =
             key_state_raw_value_offset + 3 * sizeof(float);
+        constexpr auto key_state_button_flags_offset = 0x34;
+        constexpr uint32_t key_state_down_flags = 0x03;
+        // Five frame-event arrays followed by five pending-event arrays.
+        constexpr auto key_state_events_offset = 0x40;
+        constexpr auto key_state_event_arrays = 10;
         constexpr auto key_state_raw_accumulator_offset = 0xe0;
         constexpr auto key_state_sample_count_offset = 0xec;
         constexpr auto native_fkey_bytes = 24;
@@ -212,8 +218,10 @@ namespace kh3ap
         send_axis(controller, base, L"Gamepad_RightY", y);
     }
 
-    static auto controller_stick_entries(UObject* controller, bool right_stick)
-        -> std::array<void*, 2>
+    template <size_t Count>
+    static auto controller_key_entries(UObject* controller,
+                                       const std::array<const wchar_t*, Count>& names)
+        -> std::array<void*, Count>
     {
         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
         DeathUiProfile profile;
@@ -234,7 +242,7 @@ namespace kh3ap
         // Re-injecting processed values applies the dead zone a second time.
         const int count = field<int>(input, key_state_count_offset);
         const int free_count = field<int>(input, key_state_free_count_offset);
-        std::array<void*, 2> result{};
+        std::array<void*, Count> result{};
         if (count == free_count)
         {
             return result;
@@ -250,11 +258,9 @@ namespace kh3ap
         const auto hash = external_hash
                               ? external_hash
                               : reinterpret_cast<uintptr_t>(input) + key_state_inline_hash_offset;
-        size_t axis{};
-        for (const auto* name : {right_stick ? L"Gamepad_RightX" : L"Gamepad_LeftX",
-                                 right_stick ? L"Gamepad_RightY" : L"Gamepad_LeftY"})
+        for (size_t key_index = 0; key_index < names.size(); ++key_index)
         {
-            FName key{name};
+            FName key{names[key_index]};
             uint64_t encoded{};
             static_assert(sizeof(key) == sizeof(encoded));
             std::memcpy(&encoded, &key, sizeof(encoded));
@@ -272,14 +278,21 @@ namespace kh3ap
                                                                  key_state_entry_bytes);
                 if (field<uint64_t>(entry, 0) == encoded)
                 {
-                    result[axis] = entry;
+                    result[key_index] = entry;
                     break;
                 }
                 index = field<int>(entry, key_state_hash_next_offset);
             }
-            ++axis;
         }
         return result;
+    }
+
+    static auto controller_stick_entries(UObject* controller, bool right_stick)
+        -> std::array<void*, 2>
+    {
+        return controller_key_entries(controller,
+                                      right_stick ? std::array{L"Gamepad_RightX", L"Gamepad_RightY"}
+                                                  : std::array{L"Gamepad_LeftX", L"Gamepad_LeftY"});
     }
 
     auto runtime_controller_capture_stick(UObject* controller, bool right_stick)
@@ -575,29 +588,62 @@ namespace kh3ap
         send_axis(controller, base, L"Gamepad_LeftY", forward);
     }
 
-    void runtime_controller_clear_parked_sticks(UObject* controller)
+    void runtime_controller_clear_parked_input(UObject* controller)
     {
         if (!is_uobject_valid_fast(controller) ||
             try_read_reflected_object_property_value(controller, L"Player") ||
             try_read_reflected_object_property_value(controller, L"Pawn"))
         {
-            throw std::runtime_error("controller_stick_clear_requires_parked_controller");
+            throw std::runtime_error("controller_input_clear_requires_parked_controller");
         }
-        for (const bool right_stick : {false, true})
+        auto* input = try_read_reflected_object_property_value(controller, L"PlayerInput");
+        if (!is_uobject_valid_fast(input) || input->GetOuterPrivate() != controller)
         {
-            for (auto* entry : controller_stick_entries(controller, right_stick))
+            throw std::runtime_error("parked_controller_input_owner_mismatch");
+        }
+
+        const auto clear_values = [](std::byte* entry)
+        {
+            constexpr std::array<float, 3> zero{};
+            constexpr uint8_t no_samples{};
+            std::memcpy(entry + key_state_raw_value_offset, zero.data(), sizeof(zero));
+            std::memcpy(entry + key_state_processed_value_offset, zero.data(), sizeof(zero));
+            std::memcpy(entry + key_state_raw_accumulator_offset, zero.data(), sizeof(zero));
+            std::memcpy(entry + key_state_sample_count_offset, &no_samples, sizeof(no_samples));
+        };
+        for (auto* entry : controller_key_entries(controller, axis_names))
+        {
+            if (entry)
             {
-                if (!entry)
-                {
-                    continue;
-                }
-                auto* bytes = reinterpret_cast<std::byte*>(entry);
-                constexpr std::array<float, 3> zero{};
-                constexpr uint8_t no_samples{};
-                std::memcpy(bytes + key_state_raw_value_offset, zero.data(), sizeof(zero));
-                std::memcpy(bytes + key_state_processed_value_offset, zero.data(), sizeof(zero));
-                std::memcpy(bytes + key_state_raw_accumulator_offset, zero.data(), sizeof(zero));
-                std::memcpy(bytes + key_state_sample_count_offset, &no_samples, sizeof(no_samples));
+                clear_values(static_cast<std::byte*>(entry));
+            }
+        }
+
+        // Releases received during the swap go to the new controller. The
+        // parked one must discard both its held state and any queued repeats.
+        constexpr std::array navigation_keys{
+            L"Gamepad_DPad_Up", L"Gamepad_DPad_Down", L"Gamepad_DPad_Left", L"Gamepad_DPad_Right",
+            L"Gamepad_LeftStick_Up", L"Gamepad_LeftStick_Down", L"Gamepad_LeftStick_Left",
+            L"Gamepad_LeftStick_Right", L"Up", L"Down", L"Left", L"Right",
+        };
+        static_assert(key_state_events_offset + key_state_event_arrays * sizeof(FScriptArray) ==
+                      key_state_raw_accumulator_offset);
+        for (auto* entry : controller_key_entries(controller, navigation_keys))
+        {
+            if (!entry)
+            {
+                continue;
+            }
+            auto* bytes = static_cast<std::byte*>(entry);
+            clear_values(bytes);
+            const uint32_t flags = field<uint32_t>(entry, key_state_button_flags_offset) &
+                                   ~key_state_down_flags;
+            std::memcpy(bytes + key_state_button_flags_offset, &flags, sizeof(flags));
+            for (size_t index = 0; index < key_state_event_arrays; ++index)
+            {
+                auto* events = reinterpret_cast<FScriptArray*>(
+                    bytes + key_state_events_offset + index * sizeof(FScriptArray));
+                events->Empty(events->Max(), sizeof(uint32_t), alignof(uint32_t));
             }
         }
         if (seeded_controller.Get() == controller)

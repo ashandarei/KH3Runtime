@@ -9,6 +9,7 @@
 #include "kh3ap/features/music/shuffle/bgm_shuffle_table.h"
 #include "kh3ap/features/colors/color_service.h"
 #include "kh3ap/features/colors/color_material_ops.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/music/events/sead_bgm.h"
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
@@ -199,6 +200,11 @@ namespace kh3ap
                 return;
             }
             UObject* const pawn = config.sora();
+            UObject* material_pawn = character_swap::reward_context();
+            if (!material_pawn)
+            {
+                material_pawn = pawn;
+            }
             const auto settings = config.settings.status();
             std::ostringstream out;
             out << std::boolalpha << "{\"schema\":\"kh3ap.randomizer_test.v1\",\"request_id\":\""
@@ -210,6 +216,8 @@ namespace kh3ap
                 << "\",\"session_active\":" << !session.empty()
                 << ",\"gameplay\":" << config.gameplay() << ",\"pawn\":\""
                 << json_escape(is_uobject_valid_fast(pawn) ? pawn->GetFullName() : L"")
+                << "\",\"material_pawn\":\""
+                << json_escape(is_uobject_valid_fast(material_pawn) ? material_pawn->GetFullName() : L"")
                 << "\",\"settings\":{\"music\":" << settings.music_shuffle_mode
                 << ",\"color\":" << settings.color_randomization_mode
                 << ",\"forms\":" << settings.form_themes_enabled
@@ -217,7 +225,7 @@ namespace kh3ap
                 << ",\"song_display\":" << settings.song_display
                 << "},\"music\":" << config.music.test_snapshot()
                 << ",\"now_playing\":" << (config.now_playing ? config.now_playing() : "{}")
-                << ",\"materials\":" << material_snapshot(pawn)
+                << ",\"materials\":" << material_snapshot(material_pawn)
                 << ",\"gummi\":" << config.colors.test_gummi_snapshot() << "}\n";
             write_text_file_atomic_verified(*dir / result_name, out.str());
             append_text_file(*dir / events_name, out.str());

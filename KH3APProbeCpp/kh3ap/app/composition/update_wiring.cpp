@@ -180,6 +180,7 @@ namespace kh3ap
             m_garden_return.tick(now);
             if (character_swap::tick(now))
             {
+                m_colors.on_character_swap();
                 s_runtime_controller_abilities.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
                 m_music_chests.notify_player_changed();
                 RuntimePortalService::notify_context_ready();

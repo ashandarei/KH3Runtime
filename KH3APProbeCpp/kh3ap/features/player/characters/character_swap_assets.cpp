@@ -268,6 +268,21 @@ namespace kh3ap::character_swap_assets
         }
     } // namespace
 
+    auto pawn_key_for_class(std::wstring_view class_name) -> std::wstring_view
+    {
+        for (const auto& character : characters)
+        {
+            const std::wstring_view path{character.pawn_class};
+            if (class_name == path.substr(path.rfind(L'.') + 1))
+            {
+                // Both p_ex002_Pawn_C and p_ex008_MiRxPawn_C use the
+                // model ID before the second underscore as their palette key.
+                return class_name.substr(0, class_name.find(L'_', 2));
+            }
+        }
+        return {};
+    }
+
     void select(int player_id)
     {
         // Reselecting an already prepared character needs no new work.

@@ -1,6 +1,7 @@
 #pragma once
 #include "kh3ap/core/performance_build.h"
 #include <chrono>
+#include <string_view>
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include <nlohmann/json_fwd.hpp>
 #endif
@@ -12,6 +13,8 @@ namespace RC::Unreal
 
 namespace kh3ap::character_swap_assets
 {
+    [[nodiscard]] auto pawn_key_for_class(std::wstring_view class_name) -> std::wstring_view;
+
     // Game-thread selection and player-start events arm one bounded preload.
     void select(int player_id);
     bool preparation_pending(int player_id);
