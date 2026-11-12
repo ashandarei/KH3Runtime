@@ -255,6 +255,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_swap_effects.cpp
     kh3ap/features/player/combat/kairi_shining_hud.cpp
     kh3ap/features/player/characters/character_exploration.cpp
+    kh3ap/features/player/characters/character_reactions.cpp
     kh3ap/features/player/characters/character_crowd.cpp
         kh3ap/features/player/movement/character_airstep.cpp
         kh3ap/features/player/movement/character_floating.cpp

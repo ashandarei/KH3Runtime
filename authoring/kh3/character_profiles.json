@@ -1346,6 +1346,21 @@
       "live_steam_validated": false
     },
     {
+      "id": "reaction_action_riku",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_union_cross.cpp",
+      "egs": {
+        "rva": "0x16ff0d0",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "steam": {
+        "rva": "0x13e46c0",
+        "bytes": "48895c241048896c2418565741564883"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-12: EGS live TresPlayerControllerRiku action-command slot +0x1530 resolves 0x16ff0d0 (vtable 0x7b8d988). Separate dispatcher omits Rescue and other selected reactions. Steam paired dispatcher 0x13e46c0 at vtable 0x694ecc8 +0x1530 matches command +0x87c, pawn +0x3e8, eligibility slot +0x1548 and native switch structure. Steam remains offline-only."
+    },
+    {
       "id": "airstep_eligibility",
       "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_airstep.cpp",
       "egs": {

@@ -43,6 +43,7 @@ set(_kh3_policy_tests
     master_xehanort_center
     character_style_state
     character_ascension_state
+    character_reaction_policy
     ultima_weapon_shard_policy
     integer
     fast_start_policy

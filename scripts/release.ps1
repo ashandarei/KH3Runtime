@@ -123,12 +123,12 @@ try {
             if ($TagCommit -ne $Commit) { throw 'The remote release tag points at a different commit.' }
         }
         $Notes = Join-Path $RunRoot 'release-notes.md'
-        $Text = "KH3 Runtime $Version ($Channel)`n`nSource commit: $Commit`nArchive SHA-256: $ArchiveHash`n`nClean player build; catalog and native tests passed. Build provenance is included. Live-game validation was not performed by this script.`n"
-        if ($NotesFile) { $Text += "`n" + [IO.File]::ReadAllText($NotesFile) }
+        $Text = if ($NotesFile) { [IO.File]::ReadAllText($NotesFile) }
+            else { "KH3 Runtime $ReleaseTag`n" }
         [IO.File]::WriteAllText($Notes, $Text, [Text.UTF8Encoding]::new($false))
         $ReleaseArguments = @('release', 'create', $ReleaseTag, $Archive.FullName,
-            ("$($Archive.FullName).provenance.json"), '--repo', $Repository, '--target', $Commit,
-            '--title', "KH3 Runtime $Version $Channel", '--notes-file', $Notes)
+            '--repo', $Repository, '--target', $Commit,
+            '--title', "KH3 Runtime $ReleaseTag", '--notes-file', $Notes)
         if ($Channel -eq 'Beta') { $ReleaseArguments += @('--prerelease', '--latest=false') }
         else { $ReleaseArguments += '--latest' }
         if ($PublishMode -eq 'Draft') { $ReleaseArguments += '--draft' }

@@ -3,6 +3,7 @@
 #include "kh3ap/features/player/characters/character_swap_effects.h"
 #include "kh3ap/features/player/combat/character_shotlock.h"
 #include "kh3ap/features/player/movement/character_rails.h"
+#include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/combat/character_underwater_combat.h"
 #include "kh3ap/features/player/combat/character_union_cross.h"
 #include "kh3ap/features/player/combat/kairi_ground_slam.h"
@@ -318,6 +319,7 @@ namespace kh3ap::character_swap_assets
             assets.push_back({character_magic::sora_magic_set_path, false});
             assets.push_back({character_underwater_combat::animation_set_path, false});
             assets.push_back({character_union_cross::animation_set_path, false});
+            assets.push_back({character_traversal::gigas_animation_set_path, false});
             assets.push_back({L"/Game/Blueprints/Player/AthleticFlowRootEffect.AthleticFlowRootEffect_C", true});
             assets.push_back({L"/Game/Effects/PC/Free_f/par/vp_ffa_arv0.vp_ffa_arv0", false});
             assets.push_back({character_underwater_combat::vertical_projectile_path, true});

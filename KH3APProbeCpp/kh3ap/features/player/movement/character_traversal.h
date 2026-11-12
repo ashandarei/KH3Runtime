@@ -9,6 +9,8 @@ namespace RC::Unreal
 
 namespace kh3ap::character_traversal
 {
+    inline constexpr auto gigas_animation_set_path =
+        L"/Game/Character/pc/p_ex001/anm/AnimSet/world/p_ex001_AnimSet_TSGigas.p_ex001_AnimSet_TSGigas";
     // ETresStateID entries shared by the native exploration controllers.
     inline constexpr int pole_turn_state = player_state_ids::pole_turn;
     inline constexpr int open_chest_state = player_state_ids::open_treasure_box;

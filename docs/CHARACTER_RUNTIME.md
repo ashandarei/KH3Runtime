@@ -52,6 +52,35 @@ scaling and cinematic handoffs. Presented-frame performance on Steam is not
 established by these checks; the low-level swap timing tracer is EGS-only.
 Each changed DLL needs appropriate EGS regression checks before release.
 
+## Priority reaction commands
+
+Owned alternates route selected Talk, Check, Rescue and Gigas reactor commands
+through Sora's native controller dispatcher. Cover Slide uses the same route
+from Idle, Run or Cover, retaining native target selection. Riku has a separate
+dispatcher and audited hook; ordinary Riku commands continue through his original function.
+The selected actor/component, current world, local possession, active reactor
+and command identity are checked on demand. Native eligibility and actor
+callbacks still control completion. There is no idle actor scan or story-flag
+override. Required world prompts using Check share this route; this does not
+enable every combat situation command or certify every world's scripted scene.
+
+Shared Talk, Rescue, Gigas and Cover states are available when an alternate's
+authored state set omits them. Prepared traversal animsets include Cover motions
+and Gigas entry/exit, with Sora's cover movement tuning. Trick accepts the original
+Caribbean and Olympus acrobat barrels with their ODanceSpecialAct1 motion.
+
+EGS arena checks on 2026-11-12 passed for Aqua, Riku, Kairi and Roxas:
+one callback per Talk/Rescue/Check interaction; native Gigas boarding, movement
+and L1 exit; both barrel Trick animations returning to Idle; and native Cover
+Slide target selection, accepted command and movement into cover. Talk/Rescue
+stations validate the reactor callback, not complete world-specific scenes.
+
+The barrel paths retain the original handlers. Documentary native audit RVAs
+(EGS / Steam) are reactor `0x11e0f70` / `0xf57120`, start `0x11e11d0` /
+`0xf569f0`, end `0x11e1420` / `0xf56860`, RequestOneAction `0x1778260` /
+`0x14415e0`, and performance broadcast `0x5f2540` / `0x45bda0`.
+These addresses are evidence, not additional hooks.
+
 ## Crowd player ownership
 
 `TresComNpcActionComponent::InitializeComponent` caches its local controller's

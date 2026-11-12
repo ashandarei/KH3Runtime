@@ -15,6 +15,8 @@ namespace kh3ap::character_barrel_spin
     {
         constexpr auto barrel_class_path = L"/Game/Blueprints/Gimmick/ca/g_ca_acrobatbarrel/"
                                            L"g_ca_acrobatbarrel_01.g_ca_acrobatbarrel_01_C";
+        constexpr auto olympus_barrel_class_path = L"/Game/Blueprints/Gimmick/he/g_he_acrobatbarrel/"
+                                                   L"g_he_acrobatbarrel_01.g_he_acrobatbarrel_01_C";
         constexpr auto motion_name = L"ODanceSpecialAct1";
         constexpr uint8_t perform_reactor_command = 15;
         constexpr float interaction_radius = 350.0f;
@@ -41,7 +43,8 @@ namespace kh3ap::character_barrel_spin
         if (!pawn || character_swap::current_hero() != pawn ||
             !character_swap::owns_swap_pawn(pawn) ||
             !character_traversal::barrel_spin_ready(pawn) || !is_uobject_valid_fast(actor) ||
-            actor->GetClassPrivate()->GetPathName() != barrel_class_path ||
+            (actor->GetClassPrivate()->GetPathName() != barrel_class_path &&
+             actor->GetClassPrivate()->GetPathName() != olympus_barrel_class_path) ||
             object(actor, L"MyReactor") != reactor || !is_uobject_valid_fast(reactor) ||
             kh02_actor_world(actor) != kh02_actor_world(pawn))
         {
