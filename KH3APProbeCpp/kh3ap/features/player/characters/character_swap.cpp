@@ -50,6 +50,7 @@
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/input/runtime_player_control.h"
+#include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
@@ -491,6 +492,7 @@ namespace kh3ap::character_swap
             character_magic::capture(pawn);
             session.focus = character_integer_value(pawn, L"GetFocusPoint");
             auto* outgoing_controller = object(pawn, L"Controller");
+            const bool jump_held = !cinematic_handoff && runtime_controller_jump_held(outgoing_controller);
             const auto local_player = make_uobject_weak(object(outgoing_controller, L"Player"));
             Call get_control_rotation(outgoing_controller, L"GetControlRotation");
             get_control_rotation.run();
@@ -554,6 +556,10 @@ namespace kh3ap::character_swap
             auto* possessed = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
             if (owns_swap_pawn(possessed))
             {
+                if (!cinematic_handoff)
+                {
+                    runtime_controller_restore_jump_hold(object(possessed, L"Controller"), jump_held);
+                }
                 if (id(possessed) == session.target_id)
                 {
                     session.party_handoff->finish(possessed);

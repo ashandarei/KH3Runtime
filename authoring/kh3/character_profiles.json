@@ -1421,6 +1421,36 @@
       "evidence": "Sora-kind cmp/jne inside Airstep target discovery, with pawn in RBX on both stores. Native failure returns before building +0xb18/+0xb20 and the Airstep marker. Only the comparison input is remapped for the prepared owned alternate; all Shotlock selectors retain the authored identity."
     },
     {
+      "id": "jump_capability",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/kairi_glide.cpp",
+      "egs": {
+        "rva": "0x1758240",
+        "bytes": "48895c24084889742410574883ec30488d99b0fbffff"
+      },
+      "steam": {
+        "rva": "0x142a3d0",
+        "bytes": "48895c24084889742410574883ec30488d99b0fbffff"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-12: shared pawn state-interface +0x148, bool(void*), interface at pawn+0x450. Jump-state branch retains queue, Doubleflight ownership and available-air-jump checks before testing the authored double-jump window. Steam paired through interface vtables containing verified Glide request +0x218."
+    },
+    {
+      "id": "jump_doubleflight_window",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/kairi_glide.cpp",
+      "egs": {
+        "rva": "0x17584c8",
+        "bytes": "f6871401000008e977060000"
+      },
+      "steam": {
+        "rva": "0x142a589",
+        "bytes": "f6871401000008e9aa040000"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-12: Jump-state +0x114 bit8 gates Doubleflight after ability17 and pawn+0xe48 availability checks. A set bit permits jumping. Kairi launch/rising substeps0..2 delay this authored window; scope its override to the native capability query for the owned Kairi pawn, restoring the bit immediately afterward."
+    },
+    {
       "id": "glide_request",
       "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
       "egs": {

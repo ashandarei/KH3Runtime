@@ -81,6 +81,57 @@ The barrel paths retain the original handlers. Documentary native audit RVAs
 `0x14415e0`, and performance broadcast `0x5f2540` / `0x45bda0`.
 These addresses are evidence, not additional hooks.
 
+## Kairi Glide ownership
+
+The shared ability refresh grants Kairi an equipped Glide entry in her own
+character ability record once Sora's persistent bank owns Glide. It uses
+the durable ability-source mutator and the game's verified normalizer on Kairi's
+own record, with readback and rollback on failure. `BP_AbilityAdd` does not retain
+this new movement entry for her. An existing copy is left alone, including a
+manually unequipped copy. This runs before unrelated shared command and spell
+preparation.
+
+Successful Glide deliveries explicitly wake the existing ability refresh because
+durable Sora grants bypass native ability-add notifications. Possession and map
+events also reconcile Kairi when Glide was unlocked before switching to her.
+The implementation is shared by EGS and Steam; live validation uses EGS.
+
+EGS arena validation on 2026-11-12 received Glide while controlling Kairi,
+observed her own equipped entry and Sora's unchanged single-copy count, entered
+`TresPlayerState_Glide` through held jump input, and retained the same entry
+after swapping to Sora and back.
+
+Pooled controller parking clears all live key states and queued input events,
+including jump/glide and remapped keyboard keys. A button release while Sora is
+active cannot reach Kairi's parked controller; retaining that held key otherwise
+restarts Glide when she is reused. Cleanup walks validated live hash chains once
+at departure, with no idle polling or forced movement-state transition.
+The EGS airborne regression returned Kairi in Jump with jump released after
+swapping out during Glide, then entered Glide again with a fresh jump press.
+
+The synchronous swap captures the outgoing controller's current jump/glide hold
+and seeds it on the newly possessed controller. Pending button events determine
+the latest held state, so a queued release overrides an earlier hold. Only the
+held state carries across: pressed/released event queues are discarded and both
+current/previous down flags are initialized together to avoid a new jump edge.
+This allows holding Glide through Sora/alternate swaps while keeping released
+inputs from resurfacing on pooled characters.
+EGS validation held jump on airborne Sora, swapped to Kairi, and observed Glide
+with the key still down throughout the handoff. Releasing on Kairi returned her
+to Jump; another Sora/Kairi round trip retained the released state.
+
+Kairi's launch/rising Jump substeps also permit an early Doubleflight press.
+Her authored Jump window otherwise opens near the apex, dropping an earlier
+second press and allowing the subsequent held input to start Glide. The guarded
+native jump-capability hook scopes the window bit to that query and immediately
+restores it. Native ability ownership, the spent-air-jump flag, pending-state and
+movement restrictions remain authoritative; it does not synthesize jump input,
+force a new movement state, or change Sora's timing.
+EGS checks used a 50 ms initial jump tap followed by 0/50/200/450 ms release
+gaps. Every second press consumed the available Doubleflight before any Glide;
+the early cases did so with positive vertical velocity. Held-Glide handoff,
+release, and released-character reuse also passed after this change.
+
 ## Crowd player ownership
 
 `TresComNpcActionComponent::InitializeComponent` caches its local controller's

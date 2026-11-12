@@ -695,6 +695,12 @@ namespace kh3ap
             {
                 *payload = RuntimeGrantTokens::build_apply_payload(request);
             }
+            if (request.runtime_token == L"ETresAbilityKind::GLIDE")
+            {
+                // Direct durable ability grants bypass the native add hook.
+                // Wake Kairi's shared unlock refresh after a successful receipt.
+                deps.controller_unlock_deps.controller_abilities.request_refresh(RuntimeControllerAbilityEvent::Grant);
+            }
             const bool show_info = RuntimeGrantTokens::effective_show_info(request);
             // Blueprint stock also drives travel and the lock panel. Refresh
             // it after Sora grants and silent save replays, independently of

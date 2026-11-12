@@ -39,8 +39,12 @@ namespace kh3ap
     void runtime_controller_restore_stick(RC::Unreal::UObject* controller, bool right_stick,
                                           const RuntimeControllerStickState& state);
     // Retired controllers have no player or pawn. Discard their old stick
-    // samples and navigation presses before the next possession.
+    // samples and button presses before the next possession.
     void runtime_controller_clear_parked_input(RC::Unreal::UObject* controller);
+    // Carry current jump/glide hold across a synchronous possession handoff,
+    // without replaying a press edge or any parked controller's event queue.
+    bool runtime_controller_jump_held(RC::Unreal::UObject* controller);
+    void runtime_controller_restore_jump_hold(RC::Unreal::UObject* controller, bool held);
     // Pair native InputKey press/release across ticks; no desktop input is used.
     void runtime_controller_action_input(RC::Unreal::UObject* controller, std::wstring_view action,
                                          bool pressed);

@@ -103,7 +103,15 @@ namespace kh3ap
             if (auto* aqua = persistent_player_reward_context())
             {
                 std::wstring failure;
-                return refresh_shared_aqua_unlocks(aqua, &failure) && complete;
+                const bool refreshed = refresh_shared_aqua_unlocks(aqua, &failure);
+                if (!refreshed && !failure.empty() && failure != last_query_failure_)
+                {
+                    Output::send<LogLevel::Warning>(
+                        STR("[KH3APProbeCpp] Shared character ability refresh unavailable failure={}\n"),
+                        failure);
+                }
+                last_query_failure_ = refreshed ? std::wstring{} : failure;
+                return refreshed && complete;
             }
             UObject* const pawn = config_.runtime_state.grant_state().pawn_state().object();
             UObject* const controller = resolve_controller();

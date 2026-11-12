@@ -260,6 +260,7 @@ add_library(${TARGET} SHARED
         kh3ap/features/player/movement/character_airstep.cpp
         kh3ap/features/player/movement/character_floating.cpp
     kh3ap/features/player/movement/character_traversal.cpp
+    kh3ap/features/player/movement/kairi_glide.cpp
     kh3ap/features/player/movement/character_rails.cpp
     kh3ap/features/player/combat/character_magic.cpp
     kh3ap/features/player/combat/character_style.cpp
