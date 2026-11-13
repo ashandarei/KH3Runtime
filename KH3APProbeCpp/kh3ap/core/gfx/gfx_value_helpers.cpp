@@ -1,3 +1,4 @@
+#include "kh3ap/core/gfx/as_value_type.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/gfx/gfx_reflection_internal.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -50,7 +51,7 @@ namespace kh3ap
         }
 
         std::vector<std::wstring> parts{};
-        uint64_t as_type = 0;
+        uint64_t as_type = as_value_type_id(ASValueType::Undefined);
         if (FProperty* const as_type_field =
                 find_struct_field_by_name(script_struct, STR("ASType")))
         {
@@ -60,7 +61,7 @@ namespace kh3ap
                 parts.push_back(std::format(STR("ASType={}"), as_type));
             }
         }
-        if (as_type == 0)
+        if (as_type == as_value_type_id(ASValueType::Undefined))
         {
             return parts.empty() ? std::wstring{STR("<empty>")} : join_wide_parts(parts, STR(", "));
         }
@@ -76,11 +77,16 @@ namespace kh3ap
             {
                 continue;
             }
-            if ((as_type == 2 && field_name != STR("ASBoolean")) ||
-                (as_type == 3 && field_name != STR("ASInt")) ||
-                (as_type == 4 && field_name != STR("ASNumber")) ||
-                ((as_type == 5 || as_type == 6) && field_name != STR("ASString")) ||
-                ((as_type == 7 || as_type == 8) && field_name != STR("ASObject")))
+            if ((as_type == as_value_type_id(ASValueType::Boolean) &&
+                 field_name != STR("ASBoolean")) ||
+                (as_type == as_value_type_id(ASValueType::Int) && field_name != STR("ASInt")) ||
+                (as_type == as_value_type_id(ASValueType::Number) && field_name != STR("ASNumber")) ||
+                ((as_type == as_value_type_id(ASValueType::String) ||
+                  as_type == as_value_type_id(ASValueType::StringW)) &&
+                 field_name != STR("ASString")) ||
+                ((as_type == as_value_type_id(ASValueType::Object) ||
+                  as_type == as_value_type_id(ASValueType::DisplayObject)) &&
+                 field_name != STR("ASObject")))
             {
                 continue;
             }
@@ -163,7 +169,8 @@ namespace kh3ap
         }
         const uint64_t as_type =
             read_unsigned_param_value(as_type_ptr, as_type_field->GetElementSize());
-        if (as_type != 7 && as_type != 8)
+        if (as_type != as_value_type_id(ASValueType::Object) &&
+            as_type != as_value_type_id(ASValueType::DisplayObject))
         {
             return nullptr;
         }
@@ -194,7 +201,7 @@ namespace kh3ap
         }
         const uint64_t as_type =
             read_unsigned_param_value(as_type_ptr, as_type_field->GetElementSize());
-        if (as_type == 3)
+        if (as_type == as_value_type_id(ASValueType::Int))
         {
             FProperty* const field = find_struct_field_by_name(script_struct, STR("ASInt"));
             void* const field_ptr =
@@ -208,7 +215,7 @@ namespace kh3ap
                         std::min(sizeof(value), static_cast<size_t>(field->GetElementSize())));
             return static_cast<double>(value);
         }
-        if (as_type != 4)
+        if (as_type != as_value_type_id(ASValueType::Number))
         {
             return std::nullopt;
         }
@@ -261,7 +268,8 @@ namespace kh3ap
         }
         const uint64_t as_type =
             read_unsigned_param_value(as_type_ptr, as_type_field->GetElementSize());
-        if (as_type != 5 && as_type != 6)
+        if (as_type != as_value_type_id(ASValueType::String) &&
+            as_type != as_value_type_id(ASValueType::StringW))
         {
             return std::nullopt;
         }
@@ -299,7 +307,7 @@ namespace kh3ap
         }
         if (void* const as_type_ptr = as_type_field->ContainerPtrToValuePtr<void>(value_ptr))
         {
-            const uint8_t type_int = 3;
+            const auto type_int = ASValueType::Int;
             std::memcpy(
                 as_type_ptr, &type_int,
                 std::min(sizeof(type_int), static_cast<size_t>(as_type_field->GetElementSize())));
@@ -339,7 +347,7 @@ namespace kh3ap
         }
         if (void* const as_type_ptr = as_type_field->ContainerPtrToValuePtr<void>(value_ptr))
         {
-            const uint8_t type_bool = 2;
+            const auto type_bool = ASValueType::Boolean;
             std::memcpy(
                 as_type_ptr, &type_bool,
                 std::min(sizeof(type_bool), static_cast<size_t>(as_type_field->GetElementSize())));
@@ -374,7 +382,7 @@ namespace kh3ap
         }
         if (void* const as_type_ptr = as_type_field->ContainerPtrToValuePtr<void>(value_ptr))
         {
-            const uint8_t type_number = 4;
+            const auto type_number = ASValueType::Number;
             std::memcpy(as_type_ptr, &type_number,
                         std::min(sizeof(type_number),
                                  static_cast<size_t>(as_type_field->GetElementSize())));
@@ -425,7 +433,7 @@ namespace kh3ap
         }
         if (void* const as_type_ptr = as_type_field->ContainerPtrToValuePtr<void>(value_ptr))
         {
-            const uint8_t type_object = 7;
+            const auto type_object = ASValueType::Object;
             std::memcpy(as_type_ptr, &type_object,
                         std::min(sizeof(type_object),
                                  static_cast<size_t>(as_type_field->GetElementSize())));
@@ -471,7 +479,7 @@ namespace kh3ap
             // UE4's Scaleform bridge distinguishes narrow AS_String (5)
             // from AS_StringW (6). FString is UTF-16 on Windows, so using 5
             // produces GFx's Japanese placeholder text for injected labels.
-            const uint8_t type_string = 6;
+            const auto type_string = ASValueType::StringW;
             std::memcpy(as_type_ptr, &type_string,
                         std::min(sizeof(type_string),
                                  static_cast<size_t>(as_type_field->GetElementSize())));

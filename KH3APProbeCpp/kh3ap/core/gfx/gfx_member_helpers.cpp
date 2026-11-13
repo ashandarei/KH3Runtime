@@ -1,3 +1,4 @@
+#include "kh3ap/core/gfx/as_value_type.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/gfx/gfx_reflection_internal.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -258,7 +259,8 @@ namespace kh3ap
                     return false;
                 }
                 std::memset(value_ptr, 0, static_cast<size_t>(property->GetElementSize()));
-                *type->ContainerPtrToValuePtr<uint8_t>(value_ptr) = 1; // AS_Null
+                *type->ContainerPtrToValuePtr<uint8_t>(value_ptr) =
+                    as_value_type_id(ASValueType::Null);
                 return true;
             });
     }

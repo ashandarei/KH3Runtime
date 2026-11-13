@@ -1,3 +1,4 @@
+#include "kh3ap/core/gfx/as_value_type.h"
 #include "kh3ap/features/ui/map_overlay/gfx_bindings.h"
 #include "kh3ap/features/ui/map_overlay/support.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
@@ -272,7 +273,8 @@ namespace kh3ap
                 {
                     return false;
                 }
-                *type->ContainerPtrToValuePtr<uint8_t>(argument.data()) = 6;
+                *type->ContainerPtrToValuePtr<uint8_t>(argument.data()) =
+                    as_value_type_id(ASValueType::StringW);
                 struct Array
                 {
                     void* data;
