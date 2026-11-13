@@ -196,7 +196,7 @@ namespace kh3ap::composition_detail
     }
 
     auto maybe_rearm_runtime_grant_for_ready_context(const RuntimeContextSnapshot& snapshot,
-                                                     bool auto_equip_movement) -> void
+                                                     bool auto_equip_essential) -> void
     {
         const auto bridge_dir = try_get_bridge_dir();
         const auto priority_request_path =
@@ -210,12 +210,12 @@ namespace kh3ap::composition_detail
                 : normal_request_path;
         kh3ap::maybe_rearm_runtime_grant_for_ready_context(
             snapshot, request_path, s_runtime_item_grant_delay, s_runtime_state, bridge_dir,
-            [auto_equip_movement]
+            [auto_equip_essential]
             {
                 const std::wstring runtime_item_grant_context_summary =
                     composition_context_summary();
                 auto apply_deps = runtime_item_grant_apply_deps(runtime_item_grant_context_summary);
-                apply_deps.auto_equip_movement_abilities = auto_equip_movement;
+                apply_deps.auto_equip_essential_abilities = auto_equip_essential;
                 kh3ap::process_pending_runtime_item_grant(kh3ap::make_runtime_item_grant_poll_deps(
                     s_runtime_state, try_get_bridge_dir(), s_runtime_item_grant_filename,
                     s_runtime_item_grant_priority_filename, s_runtime_item_apply_event_filename,
@@ -230,14 +230,14 @@ namespace kh3ap::composition_detail
     }
 
     auto update_composition_frame_context(UFunction* frame_node, std::wstring_view hook_name,
-                                           bool auto_equip_movement)
+                                           bool auto_equip_essential)
         -> std::optional<RuntimeContextSnapshot>
     {
         const auto derived = kh3ap::update_current_frame_context(
             frame_node, hook_name, s_runtime_state, try_get_bridge_dir());
         if (derived.has_value())
         {
-            maybe_rearm_runtime_grant_for_ready_context(*derived, auto_equip_movement);
+            maybe_rearm_runtime_grant_for_ready_context(*derived, auto_equip_essential);
         }
         return derived;
     }

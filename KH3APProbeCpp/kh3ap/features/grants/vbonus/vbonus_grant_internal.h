@@ -187,7 +187,7 @@ namespace kh3ap::vbonus_detail
                                                uint32_t auto_equip_mask = 0)
         -> bool;
 
-    auto try_movement_auto_equip_mask(const VanillaSoraAbilityBanks& banks,
+    auto try_essential_auto_equip_mask(const VanillaSoraAbilityBanks& banks,
                                       UObject* sora_pawn, uint64_t ability_value,
                                       uint32_t* mask, std::wstring* failure_reason) -> bool;
 

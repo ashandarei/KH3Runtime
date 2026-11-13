@@ -64,13 +64,13 @@ namespace kh3ap
                                               ? randomized_friend_2_choice
                                               : vanilla_party_member_choice};
             std::optional<bool> legacy_controller_focus_enabled{};
-            int32_t color_randomization_mode{seed_color_mode_coordinated};
+            ColorRandomizationMode color_randomization_mode{ColorRandomizationMode::Coordinated};
             int32_t music_shuffle_mode{};
             bool include_custom_music{true};
             bool form_themes_enabled{};
             bool map_overlay_enabled{true};
             bool song_display{true};
-            bool auto_equip_movement_abilities{true};
+            bool auto_equip_essential_abilities{true};
             uint32_t map_icon_options{map_icon_defaults};
             bool loaded{};
             bool needs_migration{};
@@ -105,7 +105,7 @@ namespace kh3ap
             std::wstring_view slot_name, bool seed_enemy_randomization_enabled,
             bool seed_boss_randomization_enabled, bool seed_battle_level_sync_enabled,
             int32_t seed_experience_multiplier_half_steps, bool seed_party_randomization_enabled,
-            bool seed_party_reroll_every_room, int32_t seed_color_randomization_mode,
+            bool seed_party_reroll_every_room, ColorRandomizationMode seed_color_randomization_mode,
             int32_t seed_music_shuffle_mode, bool seed_include_custom_music,
             bool seed_form_themes_enabled, const RuntimeUiSeedDefaults& seed_ui)
             -> PersistedRuntimeSettings
@@ -125,7 +125,7 @@ namespace kh3ap
             result.battle_level_offset = seed_ui.battle_level_offset;
             result.map_overlay_enabled = seed_ui.map_overlay_enabled;
             result.song_display = seed_ui.song_display;
-            result.auto_equip_movement_abilities = seed_ui.auto_equip_movement_abilities;
+            result.auto_equip_essential_abilities = seed_ui.auto_equip_essential_abilities;
             result.map_icon_options = seed_ui.map_icon_options;
             const auto defaults = result;
             if (!bridge_dir)
@@ -173,7 +173,7 @@ namespace kh3ap
             const auto saved_ui = apply_saved_map_ui_options(JsonObject{*text}, seed_ui);
             result.map_overlay_enabled = saved_ui.map_overlay_enabled;
             result.song_display = saved_ui.song_display;
-            result.auto_equip_movement_abilities = saved_ui.auto_equip_movement_abilities;
+            result.auto_equip_essential_abilities = saved_ui.auto_equip_essential_abilities;
             result.map_icon_options = saved_ui.map_icon_options;
             // Read-only compatibility with the retired seed-scoped preference.
             result.legacy_controller_focus_enabled =
@@ -236,10 +236,10 @@ namespace kh3ap
             // than failing the whole read.
             if (const auto color_mode =
                     JsonFieldReader::int64_field(*text, "color_randomization_mode");
-                color_mode.has_value() && *color_mode >= seed_color_mode_off &&
-                *color_mode <= seed_color_mode_wild)
+                color_mode.has_value())
             {
-                result.color_randomization_mode = static_cast<int32_t>(*color_mode);
+                result.color_randomization_mode = color_randomization_mode_from_id(*color_mode)
+                                                      .value_or(result.color_randomization_mode);
             }
             if (const auto music_mode = JsonFieldReader::int64_field(*text, "music_shuffle_mode");
                 music_mode.has_value() && *music_mode >= 0 &&
@@ -345,7 +345,7 @@ namespace kh3ap
             seed_experience_multiplier_default(seed_document);
         const bool seed_party_enabled = seed_party_randomization_default(*metadata);
         const bool seed_party_reroll_every_room = seed_party_reroll_default(*metadata);
-        const int32_t seed_color_randomization_mode =
+        const ColorRandomizationMode seed_color_randomization_mode =
             seed_color_randomization_default(seed_document);
         const auto music = seed_music_options(seed_document.object_field("slot_data"));
         const int32_t seed_music_shuffle_mode = music.shuffle_mode;
@@ -374,7 +374,7 @@ namespace kh3ap
         form_themes_enabled_.store(persisted.form_themes_enabled);
         map_overlay_enabled_.store(persisted.map_overlay_enabled);
         song_display_.store(persisted.song_display);
-        auto_equip_movement_abilities_.store(persisted.auto_equip_movement_abilities);
+        auto_equip_essential_abilities_.store(persisted.auto_equip_essential_abilities);
         map_icon_options_.store(persisted.map_icon_options);
         loaded_from_disk_.store(persisted.loaded);
         request_music_update(MusicUpdate::Settings);
@@ -429,7 +429,7 @@ namespace kh3ap
             .form_themes_enabled = form_themes_enabled_.load(),
             .map_overlay_enabled = map_overlay_enabled(),
             .song_display = song_display(),
-            .auto_equip_movement_abilities = auto_equip_movement_abilities(),
+            .auto_equip_essential_abilities = auto_equip_essential_abilities(),
             .map_icon_options = map_icon_options(),
             .loaded_from_disk = loaded_from_disk_.load(),
             .persistence_ready =
@@ -477,14 +477,12 @@ namespace kh3ap
         return persist_settings();
     }
 
-    auto RuntimeGoaSettingsService::set_color_randomization_mode(int32_t mode) -> bool
+    auto RuntimeGoaSettingsService::set_color_randomization_mode(ColorRandomizationMode mode) -> bool
     {
-        // Clamped rather than rejected: an out-of-range value can only
-        // come from a hand-edited settings file, and falling back to the
-        // default beats refusing to save anything.
-        color_randomization_mode_.store(mode < seed_color_mode_off || mode > seed_color_mode_wild
-                                            ? seed_color_mode_coordinated
-                                            : mode);
+        // Preserve the default fallback if a caller supplies an invalid enum value.
+        color_randomization_mode_.store(
+            color_randomization_mode_from_id(color_randomization_mode_id(mode))
+                .value_or(ColorRandomizationMode::Coordinated));
         return persist_settings();
     }
 
@@ -525,9 +523,9 @@ namespace kh3ap
         return persist_settings();
     }
 
-    auto RuntimeGoaSettingsService::set_auto_equip_movement_abilities(bool enabled) -> bool
+    auto RuntimeGoaSettingsService::set_auto_equip_essential_abilities(bool enabled) -> bool
     {
-        auto_equip_movement_abilities_.store(enabled);
+        auto_equip_essential_abilities_.store(enabled);
         return persist_settings();
     }
 
@@ -605,7 +603,8 @@ namespace kh3ap
              << snapshot.experience_multiplier_half_steps << ",\n"
              << "  \"party_randomization_enabled\": "
              << (snapshot.party_randomization_enabled ? "true" : "false") << ",\n"
-             << "  \"color_randomization_mode\": " << snapshot.color_randomization_mode << ",\n"
+             << "  \"color_randomization_mode\": "
+             << color_randomization_mode_id(snapshot.color_randomization_mode) << ",\n"
              << "  \"music_shuffle_mode\": " << snapshot.music_shuffle_mode << ",\n"
              << "  \"include_custom_music\": " << (snapshot.include_custom_music ? "true" : "false")
              << ",\n"
@@ -614,8 +613,8 @@ namespace kh3ap
              << "  \"map_overlay_enabled\": " << (snapshot.map_overlay_enabled ? "true" : "false")
              << ",\n"
              << "  \"song_display\": " << (snapshot.song_display ? "true" : "false") << ",\n"
-             << "  \"auto_equip_movement_abilities\": "
-             << (snapshot.auto_equip_movement_abilities ? "true" : "false") << ",\n"
+             << "  \"auto_equip_essential_abilities\": "
+             << (snapshot.auto_equip_essential_abilities ? "true" : "false") << ",\n"
              << "  \"map_chest_icons\": "
              << (map_icon_enabled(snapshot.map_icon_options, MapIconOption::Chests) ? "true"
                                                                                     : "false")

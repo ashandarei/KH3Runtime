@@ -1,15 +1,13 @@
 #pragma once
 
 #include "kh3ap/bridge/serialization/json_fields.h"
+#include "kh3ap/core/settings/color_randomization_mode.h"
 #include "kh3ap/core/settings/seed_slot_options.h"
 #include "kh3ap/features/enemies/experience_multiplier_math.h"
 
 namespace kh3ap
 {
     inline constexpr int32_t max_seed_music_shuffle_mode = 3;
-    inline constexpr int32_t seed_color_mode_off = 0;
-    inline constexpr int32_t seed_color_mode_coordinated = 1;
-    inline constexpr int32_t seed_color_mode_wild = 2;
 
     struct SeedMusicOptions
     {
@@ -27,14 +25,13 @@ namespace kh3ap
     // runtime_seed_settings.json keeps generation options inside slot_data.
     // Read explicit object paths: unrelated nested keys must never win.
     [[nodiscard]] inline auto seed_color_randomization_default(const JsonObject& metadata)
-        -> int32_t
+        -> ColorRandomizationMode
     {
-        const auto mode = metadata.object_field("slot_data")
-                              .int64_field("color_randomization")
-                              .value_or(seed_color_mode_coordinated);
-        return mode >= seed_color_mode_off && mode <= seed_color_mode_wild
-                   ? static_cast<int32_t>(mode)
-                   : seed_color_mode_coordinated;
+        const auto mode =
+            metadata.object_field("slot_data")
+                .int64_field("color_randomization")
+                .value_or(color_randomization_mode_id(ColorRandomizationMode::Coordinated));
+        return color_randomization_mode_from_id(mode).value_or(ColorRandomizationMode::Coordinated);
     }
 
     [[nodiscard]] inline auto seed_battle_level_sync_default(const JsonObject& metadata) -> bool

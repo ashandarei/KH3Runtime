@@ -129,13 +129,13 @@ namespace kh3ap
             // and persists from there.
             .harmony_mode_resolver = [this]() -> kh3ap::RuntimeColorHarmonyMode
             {
-                return m_goa_settings.status().color_randomization_mode == 2
+                return m_goa_settings.status().color_randomization_mode == ColorRandomizationMode::Wild
                            ? kh3ap::RuntimeColorHarmonyMode::Wild
                            : kh3ap::RuntimeColorHarmonyMode::Coordinated;
             },
             .enabled_resolver = [this]() -> bool
             {
-                return m_goa_settings.status().color_randomization_mode != 0;
+                return m_goa_settings.status().color_randomization_mode != ColorRandomizationMode::Off;
             },
         }};
     }

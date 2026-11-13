@@ -13,9 +13,9 @@ int main() {
     storage.front()=storage.back()=std::byte{0x55};
     auto* value=storage.data()+1;
     assert(layout.write_number(value,42.75));
-    assert(layout.read_type(value)==4 && layout.read_number(value)==42.75);
+    assert(layout.read_type(value)==ASValueType::Number && layout.read_number(value)==42.75);
     const int32_t negative=-12345;
-    layout.write_type(value,3);
+    layout.write_type(value,ASValueType::Int);
     std::memcpy(value+8,&negative,sizeof(negative));
     assert(layout.read_number(value)==negative);
     layout.number_size=4;
@@ -26,10 +26,11 @@ int main() {
     int object{};
     assert(layout.write_object(value,&object));
     assert(layout.read_object(value)==&object && !layout.read_number(value));
-    layout.write_type(value,8);
+    layout.write_type(value,ASValueType::DisplayObject);
     assert(layout.read_object(value)==&object);
-    for (auto kind:{0,1,2,5,6}) {
-        layout.write_type(value,static_cast<uint8_t>(kind));
+    for (auto kind:{ASValueType::Undefined,ASValueType::Null,ASValueType::Boolean,
+                    ASValueType::String,ASValueType::StringW}) {
+        layout.write_type(value,kind);
         assert(!layout.read_number(value) && !layout.read_object(value));
     }
     assert(!layout.write_object(value,nullptr));
@@ -45,15 +46,15 @@ int main() {
     layout.type=3;
     layout.number=46;
     assert(!layout.write_number(value,1));
-    layout.write_type(value,4);
+    layout.write_type(value,ASValueType::Number);
     assert(!layout.read_number(value));
     layout.object=-1;
     assert(!layout.write_object(value,&object));
-    layout.write_type(value,7);
+    layout.write_type(value,ASValueType::Object);
     assert(!layout.read_object(value));
     layout.number=16; layout.number_size=3;
     assert(!layout.write_number(value,1));
     layout.size=-1;
-    assert(!layout.write_type(value,3) && !layout.write_object(value,&object));
+    assert(!layout.write_type(value,ASValueType::Int) && !layout.write_object(value,&object));
     assert(storage.front()==before.front() && storage.back()==before.back());
 }

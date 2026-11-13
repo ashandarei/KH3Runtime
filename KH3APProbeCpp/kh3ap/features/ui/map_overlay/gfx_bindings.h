@@ -164,7 +164,7 @@ namespace kh3ap::map_overlay_detail
         }
         auto read_bool(void* value) const -> std::optional<double>
         {
-            if (!valid() || !boolean || layout.read_type(value) != 2)
+            if (!valid() || !boolean || layout.read_type(value) != ASValueType::Boolean)
             {
                 return {};
             }
@@ -185,7 +185,7 @@ namespace kh3ap::map_overlay_detail
                 return false;
             }
             std::memset(value, 0, layout.size);
-            layout.write_type(value, 2);
+            layout.write_type(value, ASValueType::Boolean);
             boolean->SetPropertyValueInContainer(value, input);
             return boolean->GetPropertyValueInContainer(value) == input;
         }

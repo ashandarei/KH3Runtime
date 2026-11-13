@@ -1,5 +1,6 @@
 #pragma once
 
+#include "kh3ap/core/settings/color_randomization_mode.h"
 #include "kh3ap/features/colors/color_service.h"
 #include "kh3ap/features/colors/color_apply_state.h"
 #include "kh3ap/features/colors/color_gummi.h"
@@ -9,6 +10,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -77,9 +79,9 @@ namespace kh3ap
 
         uint32_t reroll_counter_{0};
         std::chrono::steady_clock::time_point last_reroll_at_{};
-        // -1 until the first tick, so the opening read is not treated
+        // Empty until the first tick, so the opening read is not treated
         // as a change and does not force a redundant re-apply.
-        int last_mode_{-1};
+        std::optional<ColorRandomizationMode> last_mode_{};
 
         [[nodiscard]] auto seed_identity() const -> std::wstring;
 
@@ -147,9 +149,8 @@ namespace kh3ap
         // redrawn under the new mode, not different ones.
         auto reapply_in_place(std::chrono::steady_clock::time_point now) -> void;
 
-        // 0 off, 1 coordinated, 2 wild - recomposed from the two
-        // resolvers so the change check has a single value to compare.
-        [[nodiscard]] auto current_mode() const -> int;
+        // Recompose the two resolvers into one mode for the change check.
+        [[nodiscard]] auto current_mode() const -> ColorRandomizationMode;
 
         auto try_apply(const RuntimeColorPendingPawn& entry,
                        std::chrono::steady_clock::time_point now) -> bool;

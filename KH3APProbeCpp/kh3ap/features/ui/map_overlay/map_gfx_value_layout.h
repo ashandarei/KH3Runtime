@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kh3ap/core/gfx/as_value_type.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -14,20 +16,20 @@ struct MapGfxValueLayout {
         return size>0 && offset>=0 && bytes<=static_cast<size_t>(size) &&
             static_cast<size_t>(offset)<=static_cast<size_t>(size)-bytes;
     }
-    auto read_type(const void* value) const -> std::optional<uint8_t> {
+    auto read_type(const void* value) const -> std::optional<ASValueType> {
         if (!value || !contains(type,1)) return {};
         uint8_t result{};
         std::memcpy(&result,static_cast<const std::byte*>(value)+type,1);
-        return result;
+        return static_cast<ASValueType>(result);
     }
     auto read_number(const void* value) const -> std::optional<double> {
         const auto kind=read_type(value);
-        if (kind==3 && contains(integer,sizeof(int32_t))) {
+        if (kind==ASValueType::Int && contains(integer,sizeof(int32_t))) {
             int32_t result{};
             std::memcpy(&result,static_cast<const std::byte*>(value)+integer,sizeof(result));
             return static_cast<double>(result);
         }
-        if (kind!=4 || !contains(number,number_size)) return {};
+        if (kind!=ASValueType::Number || !contains(number,number_size)) return {};
         if (number_size==sizeof(float)) {
             float result{};
             std::memcpy(&result,static_cast<const std::byte*>(value)+number,sizeof(result));
@@ -42,12 +44,13 @@ struct MapGfxValueLayout {
     }
     auto read_object(const void* value) const -> void* {
         const auto kind=read_type(value);
-        if ((kind!=7 && kind!=8) || !contains(object,sizeof(void*))) return nullptr;
+        if ((kind!=ASValueType::Object && kind!=ASValueType::DisplayObject) ||
+            !contains(object,sizeof(void*))) return nullptr;
         void* result{};
         std::memcpy(&result,static_cast<const std::byte*>(value)+object,sizeof(result));
         return result;
     }
-    auto write_type(void* value,uint8_t kind) const -> bool {
+    auto write_type(void* value,ASValueType kind) const -> bool {
         if (!value || !contains(type,1)) return false;
         std::memcpy(static_cast<std::byte*>(value)+type,&kind,1);
         return true;
@@ -56,7 +59,7 @@ struct MapGfxValueLayout {
         if (!value || !contains(number,number_size) ||
             (number_size!=sizeof(float) && number_size!=sizeof(double)) || !contains(type,1)) return false;
         std::memset(value,0,size);
-        write_type(value,4);
+        write_type(value,ASValueType::Number);
         if (number_size==sizeof(float)) {
             const float converted=static_cast<float>(input);
             std::memcpy(static_cast<std::byte*>(value)+number,&converted,sizeof(converted));
@@ -66,7 +69,7 @@ struct MapGfxValueLayout {
     auto write_object(void* value,void* input) const -> bool {
         if (!value || !input || !contains(object,sizeof(void*)) || !contains(type,1)) return false;
         std::memset(value,0,size);
-        write_type(value,7);
+        write_type(value,ASValueType::Object);
         std::memcpy(static_cast<std::byte*>(value)+object,&input,sizeof(input));
         return true;
     }

@@ -159,7 +159,7 @@ namespace kh3ap::kh02_progress
         if (value.cosmetics)
         {
             const auto& selection = *value.cosmetics;
-            if (selection.color_mode < 0 || selection.color_mode > 2)
+            if (selection.color_mode < WardrobeColorMode::Default || selection.color_mode > WardrobeColorMode::Gradient)
             {
                 throw std::runtime_error("Invalid 0.2 wardrobe selection");
             }
@@ -194,14 +194,14 @@ namespace kh3ap::kh02_progress
     inline auto cosmetic_selection(const Json& value) -> CosmeticSelection
     {
         kh02cosmetics::validate(value);
-        return {value.at("equipped").get<std::array<int, 4>>(), value.at("color_mode").get<int>(),
+        return {value.at("equipped").get<std::array<int, 4>>(), value.at("color_mode").get<WardrobeColorMode>(),
                 value.at("top").get<std::array<int, 3>>(), value.at("bottom").get<std::array<int, 3>>()};
     }
 
     inline auto to_json(const CosmeticSelection& value) -> Json
     {
         return {{"equipped", value.equipped},
-                {"color_mode", value.color_mode},
+                {"color_mode", static_cast<int>(value.color_mode)},
                 {"top", value.top},
                 {"bottom", value.bottom}};
     }

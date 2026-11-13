@@ -176,19 +176,19 @@ namespace kh3ap
         character_swap::append_menu(page);
         add_deathlink_options(page, std::move(bridge_dir));
         page.toggle(
-            STR("auto_equip_movement_abilities"), STR("Auto Equip Movement Abilities"),
+            STR("auto_equip_essential_abilities"), STR("Auto Equip Essential Abilities"),
             [&goa_settings]()
             {
-                return goa_settings.auto_equip_movement_abilities();
+                return goa_settings.auto_equip_essential_abilities();
             },
             [&goa_settings](bool enabled)
             {
-                (void)goa_settings.set_auto_equip_movement_abilities(enabled);
+                (void)goa_settings.set_auto_equip_essential_abilities(enabled);
             },
             {},
             []()
             {
-                return std::wstring{STR("Equip received movement abilities when enough AP is free")};
+                return std::wstring{STR("Equip received movement and essential defensive abilities, including Scan, when enough AP is free")};
             });
         page.toggle(
             STR("background_controller_input"), STR("Background Controller Input"),

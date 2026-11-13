@@ -1,4 +1,4 @@
-#include "movement_auto_equip_policy.h"
+#include "essential_auto_equip_policy.h"
 #include "sora_ability_layout.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_internal.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -39,13 +39,13 @@ namespace kh3ap::vbonus_detail
                 property->GetOffset_Internal() < 0 ||
                 property->GetOffset_Internal() >= table.schema->GetStructureSize())
             {
-                throw std::runtime_error("movement_auto_equip_ability_table_schema");
+                throw std::runtime_error("essential_auto_equip_ability_table_schema");
             }
             return property;
         }
     }
 
-    auto try_movement_auto_equip_mask(const VanillaSoraAbilityBanks& banks,
+    auto try_essential_auto_equip_mask(const VanillaSoraAbilityBanks& banks,
                                       RC::Unreal::UObject* sora_pawn, uint64_t ability_value,
                                       uint32_t* mask, std::wstring* failure_reason) -> bool
     {
@@ -61,14 +61,14 @@ namespace kh3ap::vbonus_detail
             const auto& module = native_vbonus_module_cache();
             if (!module.ready)
             {
-                return fail_vanilla_ability_bank(L"movement_auto_equip_unsupported_image", failure_reason);
+                return fail_vanilla_ability_bank(L"essential_auto_equip_unsupported_image", failure_reason);
             }
             const uint64_t getter = module.module_base + (module.profile->storefront == L"egs"
                                                               ? egs_total_ap_getter_rva
                                                               : steam_total_ap_getter_rva);
             if (!native_signature_matches(getter, {total_ap_signature.data(), total_ap_signature.size()}))
             {
-                return fail_vanilla_ability_bank(L"movement_auto_equip_ap_getter_signature", failure_reason);
+                return fail_vanilla_ability_bank(L"essential_auto_equip_ap_getter_signature", failure_reason);
             }
             auto* parameter = try_read_reflected_object_property_value(sora_pawn, L"m_pBaseParam");
             if (!is_uobject_valid_fast(parameter) ||
@@ -77,13 +77,13 @@ namespace kh3ap::vbonus_detail
                                                  base_parameter_record_offset) !=
                     banks.active_record)
             {
-                return fail_vanilla_ability_bank(L"movement_auto_equip_parameter_identity", failure_reason);
+                return fail_vanilla_ability_bank(L"essential_auto_equip_parameter_identity", failure_reason);
             }
             const int32_t total_ap = reinterpret_cast<int32_t (*)(RC::Unreal::UObject*)>(getter)(parameter);
 
             auto* asset = find_loaded_runtime_asset(L"/Game/Load/Tres/TresAbilityData.TresAbilityData");
             Kh02DataTableView table(asset, L"/Script/TresGame.TresAbilityDataTable",
-                                    "movement_auto_equip_ability_table_unavailable");
+                                    "essential_auto_equip_ability_table_unavailable");
             auto* cost_field = byte_field(table, L"m_UseAP");
             auto* max_field = byte_field(table, L"m_MaxEquip");
             const auto entries =
@@ -91,7 +91,7 @@ namespace kh3ap::vbonus_detail
                                        sora_ability_layout::entry_count * sizeof(uint32_t));
             if (!entries)
             {
-                return fail_vanilla_ability_bank(L"movement_auto_equip_entries_unreadable", failure_reason);
+                return fail_vanilla_ability_bank(L"essential_auto_equip_entries_unreadable", failure_reason);
             }
             int32_t used_ap = 0;
             uint32_t target_entry = 0;
@@ -109,7 +109,7 @@ namespace kh3ap::vbonus_detail
                 auto* row = table.find(std::format(L"A{:05}", value).c_str());
                 if (!row)
                 {
-                    return fail_vanilla_ability_bank(L"movement_auto_equip_missing_cost_row", failure_reason);
+                    return fail_vanilla_ability_bank(L"essential_auto_equip_missing_cost_row", failure_reason);
                 }
                 const auto cost = *cost_field->ContainerPtrToValuePtr<uint8_t>(row);
                 used_ap += equipped * cost;
@@ -120,12 +120,12 @@ namespace kh3ap::vbonus_detail
                     target_max = *max_field->ContainerPtrToValuePtr<uint8_t>(row);
                 }
             }
-            *mask = movement_auto_equip_mask(target_entry, total_ap, used_ap, target_cost, target_max);
+            *mask = essential_auto_equip_mask(target_entry, total_ap, used_ap, target_cost, target_max);
             return true;
         }
         catch (const std::exception&)
         {
-            return fail_vanilla_ability_bank(L"movement_auto_equip_ability_table_unavailable", failure_reason);
+            return fail_vanilla_ability_bank(L"essential_auto_equip_ability_table_unavailable", failure_reason);
         }
     }
 }

@@ -1,3 +1,4 @@
+#include "kh02_wardrobe_color_mode.h"
 #include "kh02_wardrobe_companion_movies.h"
 #include "kh02_wardrobe_edit_transaction.h"
 #include "kh02_wardrobe_focus.h"
@@ -203,7 +204,7 @@ namespace kh3ap
                 auto selection = value();
                 if (selected == 2)
                 {
-                    selection["color_mode"] = 0;
+                    selection["color_mode"] = static_cast<int>(WardrobeColorMode::Default);
                     apply(selection);
                     info(root);
                     return;
@@ -211,7 +212,8 @@ namespace kh3ap
                 transaction.begin(selection);
                 gradient = selected == 1;
                 region = 0;
-                selection["color_mode"] = gradient ? 2 : 1;
+                selection["color_mode"] =
+                    static_cast<int>(gradient ? WardrobeColorMode::Gradient : WardrobeColorMode::SingleColor);
                 apply(selection);
                 if (!gradient)
                 {

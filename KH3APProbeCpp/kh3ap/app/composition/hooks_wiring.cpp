@@ -257,7 +257,7 @@ namespace kh3ap
                 [this](UFunction* frame, std::wstring_view hook)
             {
                 return update_composition_frame_context(
-                    frame, hook, m_goa_settings.auto_equip_movement_abilities());
+                    frame, hook, m_goa_settings.auto_equip_essential_abilities());
             },
             .runtime_context_resolver =
                 []()

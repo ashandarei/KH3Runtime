@@ -36,19 +36,23 @@ int main() {
     assert(seed_keyblade_levels_start_at_max(JsonObject{R"({"keyblade_levels":0})"}));
     assert(!seed_keyblade_levels_start_at_max(JsonObject{R"({"keyblade_levels":1,"other":{"keyblade_levels":0}})"}));
     assert(!seed_keyblade_levels_start_at_max(JsonObject{"{}"}));
+    const ColorRandomizationMode color_modes[]{ColorRandomizationMode::Off,
+                                               ColorRandomizationMode::Coordinated,
+                                               ColorRandomizationMode::Wild};
     for (const int mode : {0, 1, 2}) {
         const json::Value metadata = {
             {"color_randomization", 99},
             {"slot_data", {{"color_randomization", mode},
                            {"unrelated", {{"color_randomization", 99}}}}}
         };
-        assert(seed_color_randomization_default(JsonObject{json::write(metadata)}) == mode);
+        assert(seed_color_randomization_default(JsonObject{json::write(metadata)}) == color_modes[mode]);
+        assert(color_randomization_mode_id(color_modes[mode]) == mode);
     }
-    for (const auto value : {"-1", "3", "true", "null", "\"wild\""}) {
+    for (const auto value : {"-1", "3", "true", "null", "\"wild\"", "4294967296", "-4294967296"}) {
         assert(seed_color_randomization_default(JsonObject{
-            std::string{"{\"slot_data\":{\"color_randomization\":"} + value + "}}"}) == 1);
+            std::string{"{\"slot_data\":{\"color_randomization\":"} + value + "}}"}) == ColorRandomizationMode::Coordinated);
     }
-    assert(seed_color_randomization_default(JsonObject{"{}"}) == 1);
+    assert(seed_color_randomization_default(JsonObject{"{}"}) == ColorRandomizationMode::Coordinated);
     // Match the generated runtime document, including misleading keys outside
     // the authoritative slot/config objects. Exercise every supported EXP value.
     for (const int32_t half_steps : runtime_experience_multiplier_half_steps) {
@@ -74,15 +78,15 @@ int main() {
     const auto defaults = read_runtime_ui_seed_defaults(JsonObject{"{}"});
     assert(defaults.map_icon_options == 63 && defaults.map_overlay_enabled);
     assert(defaults.song_display);
-    assert(defaults.auto_equip_movement_abilities);
-    const auto movement_off = read_runtime_ui_seed_defaults(
-        JsonObject{R"({"auto_equip_movement_abilities":0})"});
-    assert(!movement_off.auto_equip_movement_abilities);
-    assert(!apply_saved_map_ui_options(JsonObject{"{}"}, movement_off).auto_equip_movement_abilities);
+    assert(defaults.auto_equip_essential_abilities);
+    const auto essential_off = read_runtime_ui_seed_defaults(
+        JsonObject{R"({"auto_equip_essential_abilities":0})"});
+    assert(!essential_off.auto_equip_essential_abilities);
+    assert(!apply_saved_map_ui_options(JsonObject{"{}"}, essential_off).auto_equip_essential_abilities);
     assert(apply_saved_map_ui_options(
-        JsonObject{R"({"auto_equip_movement_abilities":true})"}, movement_off).auto_equip_movement_abilities);
+        JsonObject{R"({"auto_equip_essential_abilities":true})"}, essential_off).auto_equip_essential_abilities);
     assert(!apply_saved_map_ui_options(
-        JsonObject{R"({"auto_equip_movement_abilities":false})"}, defaults).auto_equip_movement_abilities);
+        JsonObject{R"({"auto_equip_essential_abilities":false})"}, defaults).auto_equip_essential_abilities);
     const auto seed = read_runtime_ui_seed_defaults(JsonObject{R"({"map_overlay_enabled":0,"song_display":0,
         "map_chest_icons":0,"map_emblem_icons":0,"map_ingredient_icons":0,"minimap_icons":0,"large_map_icons":0,
         "hide_locked_chest_icons":1,"battle_level_offset":10,"melody_of_memory_party":3,

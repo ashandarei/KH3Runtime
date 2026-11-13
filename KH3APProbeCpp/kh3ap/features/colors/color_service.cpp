@@ -112,17 +112,18 @@ namespace kh3ap
         // Picked up before the enabled gate below, so switching the
         // in-game AP Options row takes effect on the characters already
         // standing there instead of waiting for the next map load.
-        if (const int mode = impl_->current_mode(); mode != impl_->last_mode_)
+        if (const auto mode = impl_->current_mode(); mode != impl_->last_mode_)
         {
-            const int previous = impl_->last_mode_;
+            const auto previous = impl_->last_mode_;
             impl_->last_mode_ = mode;
-            if (previous >= 0)
+            if (previous.has_value())
             {
                 // Remove the old mode's overrides before applying the new
                 // one, including parameters Coordinated deliberately skips.
                 impl_->restore_all_colored(now);
                 Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Color mode changed {} -> {}\n"),
-                                               previous, mode);
+                                               color_randomization_mode_id(*previous),
+                                               color_randomization_mode_id(mode));
             }
         }
 
