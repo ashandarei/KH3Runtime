@@ -1,5 +1,7 @@
 #pragma once
 
+#include "kh3ap/features/kh02/wardrobe/kh02_wardrobe_color_mode.h"
+
 #include <array>
 #include <cstdint>
 #include <map>
@@ -17,7 +19,7 @@ namespace kh3ap::kh02_progress
     struct CosmeticSelection
     {
         std::array<int, 4> equipped{};
-        int color_mode{};
+        WardrobeColorMode color_mode{WardrobeColorMode::Default};
         std::array<int, 3> top{255, 255, 255};
         std::array<int, 3> bottom{};
 

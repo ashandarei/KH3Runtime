@@ -1,3 +1,4 @@
+#include "kh02_wardrobe_color_mode.h"
 #include "kh02_wardrobe_movie_view.h"
 #include "kh02_wardrobe_presentation.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -43,10 +44,11 @@ namespace kh3ap
 
     void Kh02WardrobeMovieView::info(UObject* root, const Json& selection, int region)
     {
-        const int mode = selection["color_mode"];
-        std::vector<MovieArgument> arguments{mode != 2, std::wstring(mode == 0   ? L"Default"
-                                                                     : mode == 1 ? L"One Color"
-                                                                                 : L"Gradation")};
+        const auto mode = selection["color_mode"].get<WardrobeColorMode>();
+        std::vector<MovieArgument> arguments{mode != WardrobeColorMode::Gradient,
+                                             std::wstring(mode == WardrobeColorMode::Default       ? L"Default"
+                                                          : mode == WardrobeColorMode::SingleColor ? L"One Color"
+                                                                                                   : L"Gradation")};
         auto rgb = colors(selection);
         arguments.insert(arguments.end(), rgb.begin(), rgb.end());
         invoke_movie(root, L"setColorTypeInfo", arguments);

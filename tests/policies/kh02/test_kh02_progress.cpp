@@ -240,7 +240,8 @@ void typed_progress_handoff()
         largest.counts[index] = 1000000;
         largest.events[index] = false;
     }
-    largest.cosmetics = CosmeticSelection{{12, 9, 9, 22}, 2, {255, 255, 255}, {255, 255, 255}};
+    largest.cosmetics =
+        CosmeticSelection{{12, 9, 9, 22}, kh3ap::WardrobeColorMode::Gradient, {255, 255, 255}, {255, 255, 255}};
     const auto largest_json = to_json(freeze(largest));
     assert(largest_json.dump().size() < 32768);
     validate(largest_json);
@@ -488,6 +489,15 @@ int main()
 
     auto wardrobe = progress(700, 1);
     wardrobe["cosmetics"] = kh3ap::kh02cosmetics::default_selection();
+    const kh3ap::WardrobeColorMode color_modes[]{
+        kh3ap::WardrobeColorMode::Default, kh3ap::WardrobeColorMode::SingleColor, kh3ap::WardrobeColorMode::Gradient};
+    for (int id = 0; id < 3; ++id)
+    {
+        wardrobe["cosmetics"]["color_mode"] = id;
+        const auto selection = cosmetic_selection(wardrobe["cosmetics"]);
+        assert(selection.color_mode == color_modes[id]);
+        assert(to_json(selection) == wardrobe["cosmetics"]);
+    }
     wardrobe["cosmetics"]["equipped"] = {12, 9, 9, 22};
     wardrobe["cosmetics"]["color_mode"] = 2;
     wardrobe["cosmetics"]["top"] = {8, 128, 255};
@@ -515,8 +525,12 @@ int main()
         rejected([&] { validate(bad); });
     }
     auto invalid_color = wardrobe;
-    invalid_color["cosmetics"]["color_mode"] = 3;
-    rejected([&] { validate(invalid_color); });
+    for (const auto& invalid :
+         {Json(-1), Json(3), Json(1.5), Json("1"), Json(true), Json(UINT64_MAX), Json(int64_t{4294967296})})
+    {
+        invalid_color["cosmetics"]["color_mode"] = invalid;
+        rejected([&] { validate(invalid_color); });
+    }
     invalid_color = wardrobe;
     invalid_color["cosmetics"]["equipped"].push_back(0);
     rejected([&] { validate(invalid_color); });

@@ -1,4 +1,5 @@
 #pragma once
+#include "kh02_wardrobe_color_mode.h"
 #include <array>
 #include <algorithm>
 #include <nlohmann/json.hpp>
@@ -10,7 +11,10 @@ namespace kh3ap::kh02cosmetics
 
     inline auto default_selection() -> nlohmann::json
     {
-        return {{"equipped", {0, 0, 0, 0}}, {"color_mode", 0}, {"top", {255, 255, 255}}, {"bottom", {0, 0, 0}}};
+        return {{"equipped", {0, 0, 0, 0}},
+                {"color_mode", static_cast<int>(WardrobeColorMode::Default)},
+                {"top", {255, 255, 255}},
+                {"bottom", {0, 0, 0}}};
     }
 
     inline auto adjust_channel(nlohmann::json& selection, int row, int delta) -> bool
@@ -23,14 +27,16 @@ namespace kh3ap::kh02cosmetics
         const int channel = (row - 3) % 3;
         const int current = selection[region][channel];
         const int adjusted = static_cast<int>(std::clamp(int64_t(current) + delta, int64_t(0), int64_t(255)));
-        const int mode = selection["color_mode"];
-        const int adjusted_mode = row >= 6 ? 2 : mode == 0 ? 1 : mode;
+        const auto mode = selection["color_mode"].get<WardrobeColorMode>();
+        const auto adjusted_mode = row >= 6                             ? WardrobeColorMode::Gradient
+                                   : mode == WardrobeColorMode::Default ? WardrobeColorMode::SingleColor
+                                                                        : mode;
         if (current == adjusted && mode == adjusted_mode)
         {
             return false;
         }
         selection[region][channel] = adjusted;
-        selection["color_mode"] = adjusted_mode;
+        selection["color_mode"] = static_cast<int>(adjusted_mode);
         return true;
     }
 
@@ -47,7 +53,8 @@ namespace kh3ap::kh02cosmetics
         };
         if (!value.is_object() || value.size() != 4 || !value.contains("equipped") || !value.contains("color_mode") ||
             !value.contains("top") || !value.contains("bottom") || !value["equipped"].is_array() ||
-            value["equipped"].size() != 4 || !integer(value["color_mode"], 2))
+            value["equipped"].size() != 4 ||
+            !integer(value["color_mode"], static_cast<int>(WardrobeColorMode::Gradient)))
         {
             throw std::runtime_error("Invalid 0.2 wardrobe selection");
         }

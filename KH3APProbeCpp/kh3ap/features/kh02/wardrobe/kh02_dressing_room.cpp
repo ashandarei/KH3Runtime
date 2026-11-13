@@ -104,11 +104,12 @@ namespace kh3ap
 
         void apply(UObject* pawn)
         {
+            const auto color_mode = selected["color_mode"].get<WardrobeColorMode>();
             std::array<UObject*, 4> assets{};
             for (int category = 0; category < 4; ++category)
             {
                 int selected_index = selected["equipped"][category];
-                if (category == 3 && selected_index == 0 && selected["color_mode"] != 0)
+                if (category == 3 && selected_index == 0 && color_mode != WardrobeColorMode::Default)
                 {
                     selected_index = 1; // The original plain mask also supports custom outfit colors.
                 }
@@ -248,11 +249,11 @@ namespace kh3ap
         }
         else
         {
-            const int mode = impl->selected["color_mode"];
-            result.selected = mode;
-            add(L"Default colors", mode == 0);
-            add(L"Single color", mode == 1);
-            add(L"Gradient", mode == 2);
+            const auto mode = impl->selected["color_mode"].get<WardrobeColorMode>();
+            result.selected = static_cast<int>(mode);
+            add(L"Default colors", mode == WardrobeColorMode::Default);
+            add(L"Single color", mode == WardrobeColorMode::SingleColor);
+            add(L"Gradient", mode == WardrobeColorMode::Gradient);
             for (const auto* region : {"top", "bottom"})
             {
                 for (int channel = 0; channel < 3; ++channel)
@@ -262,7 +263,7 @@ namespace kh3ap
                     add(label + L": " + std::to_wstring(impl->selected[region][channel].get<int>()), false);
                     result.rows.back().progress = L"0 - 255";
                     result.rows.back().description =
-                        region[0] == 'b' && mode != 2
+                        region[0] == 'b' && mode != WardrobeColorMode::Gradient
                             ? L"Editing this channel enables Gradient. Gamepad: D-pad Left/Right adjusts by 8; "
                               L"A adds 1; X subtracts 1."
                             : L"Editing enables custom colors. Gamepad: D-pad Left/Right adjusts by 8; A adds 1; "
@@ -283,7 +284,7 @@ namespace kh3ap
         {
             impl->selected["equipped"][category] = index;
         }
-        else if (index < 3)
+        else if (index <= static_cast<int>(WardrobeColorMode::Gradient))
         {
             impl->selected["color_mode"] = index;
         }

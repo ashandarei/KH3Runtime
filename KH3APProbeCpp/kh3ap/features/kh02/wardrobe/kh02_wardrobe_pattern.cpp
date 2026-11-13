@@ -1,3 +1,4 @@
+#include "kh02_wardrobe_color_mode.h"
 #include "kh02_wardrobe_pattern.h"
 #include "kh02_wardrobe_reflection.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -28,6 +29,7 @@ namespace kh3ap
         auto* schema = request.schema;
         auto* unit = request.unit;
         const auto& selected = request.selection;
+        const auto color_mode = selected["color_mode"].get<WardrobeColorMode>();
 
         const auto property = [&](const wchar_t* name) -> FProperty*
         {
@@ -124,7 +126,7 @@ namespace kh3ap
                 std::memcpy(color.data(), value->ContainerPtrToValuePtr<void>(unit), sizeof(color));
                 vector(field, color);
             }
-            if (selected["color_mode"] != 0)
+            if (color_mode != WardrobeColorMode::Default)
             {
                 auto convert = [&](const char* key)
                 {
@@ -135,8 +137,8 @@ namespace kh3ap
                 };
                 const auto top = convert("top");
                 scalar(L"BaseColorChangeMode", 1);
-                scalar(L"GradeMode", selected["color_mode"] == 2 ? 1.0f : 0.0f);
-                if (selected["color_mode"] == 2)
+                scalar(L"GradeMode", color_mode == WardrobeColorMode::Gradient ? 1.0f : 0.0f);
+                if (color_mode == WardrobeColorMode::Gradient)
                 {
                     scalar(L"GradePow", 1);
                 }
