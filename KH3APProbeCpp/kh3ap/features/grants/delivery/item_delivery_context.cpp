@@ -45,7 +45,7 @@ namespace kh3ap::item_delivery
         const bool allow_during_special_battle =
                 allow_special_battle_game_over || policy.allow_special_battle_bad_status_trap;
         const bool contains_bad_status_trap = policy.contains_bad_status_trap;
-        auto* alternate = policy.supports_alternate_game_over ? character_swap::game_over_context() :
+        auto* alternate = (policy.supports_alternate_game_over || policy.supports_alternate_betrayal) ? character_swap::game_over_context() :
             policy.supports_alternate_bad_status ? character_swap::bad_status_context() : nullptr;
         // The story hero selects the route only. Sora still resolves through the
         // normal cached-pawn, possession, loading, battle and live-state gates below.
@@ -70,6 +70,10 @@ namespace kh3ap::item_delivery
                              : STR("runtime_item_grant:single_snapshot_safety")};
             if (alternate)
             {
+                if (policy.supports_alternate_betrayal)
+                {
+                    return runtime_alternate_betrayal_safety_status(deps.runtime_state, alternate);
+                }
                 if (policy.supports_alternate_game_over)
                 {
                     return runtime_alternate_game_over_safety_status(deps.runtime_state, alternate);

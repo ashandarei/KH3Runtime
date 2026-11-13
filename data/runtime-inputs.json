@@ -2637,6 +2637,10 @@
       "1263553138": {
         "name": "Gummi Special Weapon: Knight's Arms",
         "token": "GUMIETC_ITEM058"
+      },
+      "1263022660": {
+        "name": "Betrayal Trap",
+        "token": "KH3AP_TRAP::BETRAYAL"
       }
     },
     "tokens": {
@@ -6728,6 +6732,11 @@
         "flags": [],
         "munny": 0,
         "name": "Wheel of Fate"
+      },
+      "KH3AP_TRAP::BETRAYAL": {
+        "flags": [],
+        "munny": 0,
+        "name": "Betrayal Trap"
       }
     },
     "vbonus_bundles": [

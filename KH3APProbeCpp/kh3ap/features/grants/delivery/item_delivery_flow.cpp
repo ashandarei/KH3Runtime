@@ -69,6 +69,10 @@ namespace kh3ap
                         grants.begin(), grants.end(), [](const auto& grant) {
                             return supports_alternate_bad_status(grant.runtime_token, grant.grant_method);
                         }),
+                .supports_alternate_betrayal = !grants.empty() && std::all_of(
+                        grants.begin(), grants.end(), [](const auto& grant) {
+                            return grant.runtime_token == betrayal_trap_token && grant.grant_method == betrayal_trap_method;
+                        }),
                 .supports_alternate_game_over = !grants.empty() && std::all_of(
                         grants.begin(), grants.end(), [](const auto& grant) {
                             return supports_alternate_game_over(grant.action_kind, grant.runtime_token, grant.grant_method);

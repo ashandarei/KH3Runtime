@@ -2,6 +2,7 @@
 
 #include "kh3ap/features/player/objects/object_observation_state.h"
 #include "kh3ap/features/treasure/treasure_class_cache.h"
+#include "kh3ap/features/party/betrayal_trap.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/Hooks.hpp>
@@ -47,6 +48,7 @@ namespace kh3ap
                     // constructor at this point. Keep this shared path bounded: raw
                     // FName comparisons and, only on a match, a fixed-queue push.
                     s_runtime_object_observer.observe_constructed_object(constructed_object);
+                    betrayal_trap::observe_constructed_object(constructed_object);
                     return constructed_object;
                 });
             s_runtime_object_observation_state.mark_static_construct_callback_registered();

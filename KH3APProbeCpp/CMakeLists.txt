@@ -9,6 +9,8 @@ option(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/kh3-movie-resources.cmake")
 
 add_library(${TARGET} SHARED
+    kh3ap/features/party/betrayal_trap.cpp
+    kh3ap/features/party/betrayal_target_hooks.cpp
     kh3ap/features/music/now_playing/now_playing_overlay.cpp
     kh3ap/features/ui/map_overlay/map_chest_movie.cpp
     kh3ap/bridge/catalog/catalog.cpp

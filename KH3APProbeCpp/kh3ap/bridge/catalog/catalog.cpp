@@ -142,6 +142,10 @@ namespace kh3ap::native_catalog
             {
                 return L"ultima_weapon_shard";
             }
+            if (token == "KH3AP_TRAP::BETRAYAL")
+            {
+                return L"betrayal_trap";
+            }
             if (token == "KH3AP_TRAP::KING_MICKEY")
             {
                 return L"king_mickey_trap";
@@ -184,7 +188,7 @@ namespace kh3ap::native_catalog
         auto action_kind(std::string_view name, std::string_view token, std::wstring_view method)
             -> std::wstring
         {
-            if (method == L"direct_player_bad_status" || method == L"king_mickey_trap")
+            if (method == L"direct_player_bad_status" || method == L"king_mickey_trap" || method == L"betrayal_trap")
             {
                 return L"trigger_trap";
             }
@@ -403,7 +407,7 @@ namespace kh3ap::native_catalog
         result.bridge_required =
             result.supported &&
             (flag(field(row, "bridge_delivery_required")) ||
-             method == L"direct_player_bad_status" || method == L"king_mickey_trap" ||
+             method == L"direct_player_bad_status" || method == L"king_mickey_trap" || method == L"betrayal_trap" ||
              method == L"controller_unlock" || method == L"party_member_unlock" ||
              method == L"keyblade_style" || method == L"progressive_keyblade_level" ||
              method == L"character_unlock");

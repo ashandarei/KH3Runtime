@@ -14,12 +14,15 @@ namespace kh3ap
         std::wstring_view name;
     };
 
+    inline constexpr std::wstring_view betrayal_trap_token = L"KH3AP_TRAP::BETRAYAL";
+    inline constexpr std::wstring_view betrayal_trap_method = L"betrayal_trap";
     inline constexpr std::wstring_view king_mickey_trap_token = L"KH3AP_TRAP::KING_MICKEY";
     inline constexpr std::wstring_view king_mickey_trap_method = L"king_mickey_trap";
     inline constexpr std::array runtime_trap_specs{
         RuntimeTrapSpec{L"ETresBadStatusType::TRES_BADSTAT_SNEEZE", L"direct_player_bad_status", L"Sneeze Trap"},
         RuntimeTrapSpec{L"ETresBadStatusType::TRES_BADSTAT_BURN", L"direct_player_bad_status", L"Burn Trap"},
-        RuntimeTrapSpec{king_mickey_trap_token, king_mickey_trap_method, L"King Mickey Trap"}};
+        RuntimeTrapSpec{king_mickey_trap_token, king_mickey_trap_method, L"King Mickey Trap"},
+        RuntimeTrapSpec{betrayal_trap_token, betrayal_trap_method, L"Betrayal Trap"}};
 
     constexpr auto find_runtime_trap_spec(std::wstring_view token, std::wstring_view method)
         -> const RuntimeTrapSpec*

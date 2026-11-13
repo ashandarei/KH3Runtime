@@ -85,7 +85,7 @@ namespace kh3ap::item_delivery
                 // a reward that needs a different playable character/context.
                 if (restricted_context && !context_allowed(group)) continue;
                 const bool direct = std::any_of(group.begin(), group.end(), [](const auto& g) {
-                    return g.grant_method == L"direct_player_bad_status" || g.grant_method == L"king_mickey_trap" || g.grant_method == L"bp_tres_start_game_over";
+                    return g.grant_method == L"direct_player_bad_status" || g.grant_method == L"king_mickey_trap" || g.grant_method == L"betrayal_trap" || g.grant_method == L"bp_tres_start_game_over";
                 });
                 if (direct && !batch.grants.empty()) break;
                 const bool group_simple = std::all_of(group.begin(), group.end(), [](const auto& g) {

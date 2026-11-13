@@ -1,3 +1,4 @@
+#include "kh3ap/features/party/betrayal_trap.h"
 #include "ultima_weapon_shard_policy.h"
 #include "kh3ap/features/grants/trap_catalog.h"
 #include "kh3ap/features/grants/game_over_policy.h"
@@ -254,6 +255,11 @@ namespace kh3ap
             {
                 return runtime_alternate_game_over_safety_status(deps.runtime_state,
                                                                  world_context_object);
+            }
+            if (request.runtime_token == betrayal_trap_token && request.grant_method == betrayal_trap_method &&
+                world_context_object == character_swap::current_hero())
+            {
+                return runtime_alternate_betrayal_safety_status(deps.runtime_state, world_context_object);
             }
             if (supports_alternate_bad_status(request.runtime_token, request.grant_method) &&
                 world_context_object == character_swap::current_hero())
@@ -531,6 +537,37 @@ namespace kh3ap
                     deps.bp_tres_start_game_over_path,
                     deps.tres_game_blueprint_library_default_object_path, deps.debug_logging,
                     &candidate_failure);
+            }
+            else if (request.grant_method == betrayal_trap_method && request.runtime_token == betrayal_trap_token)
+            {
+                applied = betrayal_trap::start(world_context_object);
+                if (!applied)
+                {
+                    candidate_failure = L"betrayal_trap_waiting";
+                }
+                else if (RuntimeGrantTokens::effective_show_info(request))
+                {
+                    RuntimeApMessageRequest notice{};
+                    notice.request_id = std::format(L"betrayal-trap:{}:{}", request.request_id, request.index);
+                    notice.message = L"Betrayal Trap!!";
+                    notice.item_name = request.item_name;
+                    notice.location_name = request.location_name;
+                    notice.duration_seconds = item_grant_message_duration_seconds;
+                    std::wstring notice_failure;
+                    if (!try_call_tresui_open_information(
+                            notice, deps.runtime_state, deps.tresui_open_information_path,
+                            deps.tres_game_blueprint_library_default_object_path, &notice_failure))
+                    {
+                        Output::send<LogLevel::Warning>(
+                            L"[KH3APProbeCpp] Betrayal Trap information failed index={} error={}\n",
+                            request.index, notice_failure);
+                    }
+                    else
+                    {
+                        Output::send<LogLevel::Normal>(
+                            L"[KH3APProbeCpp] Betrayal Trap information shown index={}\n", request.index);
+                    }
+                }
             }
             else if (request.grant_method == king_mickey_trap_method &&
                      request.runtime_token == king_mickey_trap_token)

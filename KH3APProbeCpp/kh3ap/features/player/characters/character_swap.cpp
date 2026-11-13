@@ -1,3 +1,4 @@
+#include "kh3ap/features/party/betrayal_trap.h"
 #include <chrono>
 #include "kh3ap/features/player/character_ids.h"
 #include <utility>
@@ -569,6 +570,7 @@ namespace kh3ap::character_swap
 #endif
             session.pending = true;
             session.cinematic_return_pending = cinematic_handoff;
+            betrayal_trap::prepare_player_swap(pawn);
             session.travel_character_id =
                 target == king_mickey_id
                     ? -1
@@ -645,6 +647,7 @@ namespace kh3ap::character_swap
                 RuntimeEnemyClearService::handoff_protection(session.diagnostic_outgoing, incoming);
 #endif
                 combat_target_handoff::apply(incoming);
+                betrayal_trap::handoff_player(incoming);
             }
             return true;
         }
@@ -1356,6 +1359,7 @@ namespace kh3ap::character_swap
                 RuntimeEnemyClearService::handoff_protection(session.diagnostic_outgoing, pawn);
 #endif
                 combat_target_handoff::apply(pawn);
+                betrayal_trap::handoff_player(pawn);
             }
             if (id(pawn) != session.target_id ||
                 (session.cinematic_return_pending ? !owns_swap_pawn(pawn) : !ready(pawn)))
@@ -1617,6 +1621,7 @@ namespace kh3ap::character_swap
 
     void notify_player_started()
     {
+        betrayal_trap::notify_player_started();
         install_ascension_hooks();
         character_swap_assets::notify_player_started();
         kairi_shining_hud::notify_player_started();
@@ -1745,6 +1750,7 @@ namespace kh3ap::character_swap
 
     void notify_map_jump(UObject* source, std::wstring_view caller)
     {
+        betrayal_trap::cancel();
         if (trap.locked())
         {
             prepare_native_story_travel();
@@ -1798,6 +1804,7 @@ namespace kh3ap::character_swap
 
     void notify_cinematic_started(UObject* source)
     {
+        betrayal_trap::cancel();
         if (is_uobject_valid_fast(source) &&
             source->GetClassPrivate()->GetPathName().starts_with(L"/Game/Cutscene/") &&
             kh02_actor_world(source) == kh02_current_world())
@@ -1960,6 +1967,7 @@ namespace kh3ap::character_swap
 
     void observe_game_over_state_write(uintptr_t component, uintptr_t state)
     {
+        betrayal_trap::observe_state(component, state);
         if (!deathlink::view()->manual_active)
         {
             return;

@@ -22,6 +22,7 @@ int main()
     receipts[21] = {.primary = ability, .rewards = {level}, .supported = true, .local = true, .level_up = true};
     receipts[22] = {.primary = reward(L"ETresBadStatusType::TRES_BADSTAT_BURN", L"direct_player_bad_status"), .supported = true};
     receipts[23] = {.primary = reward(L"KH3AP_TRAP::KING_MICKEY", L"king_mickey_trap"), .supported = true};
+    receipts[24] = {.primary = reward(L"KH3AP_TRAP::BETRAYAL", L"betrayal_trap"), .supported = true};
     auto expanded = expand_catalog(receipts);
     assert(expanded.at(0)[0].runtime_token.ends_with(L"::1"));
     assert(expanded.at(2)[0].runtime_token.ends_with(L"::3"));
@@ -35,8 +36,8 @@ int main()
     const auto plan = schedule_catalog(receipts, expanded, saved, {}, {"Treasure:X"});
     assert(plan.grants.front().index == 2 && plan.grants.front().runtime_token.ends_with(L"::3"));
     assert(std::find(plan.pending.begin(), plan.pending.end(), 20) == plan.pending.end()); // Inventory remains treasure-owned.
-    assert(plan.traps.size() == 2 && plan.traps.front().index == 22);
-    assert(plan.traps.back().index == 23 && plan.traps.back().grant_method == L"king_mickey_trap");
+    assert(plan.traps.size() == 3 && plan.traps.front().index == 22);
+    assert(plan.traps.back().index == 24 && plan.traps.back().grant_method == L"betrayal_trap");
     const auto forced = schedule_catalog(receipts, expanded, saved, {20}, {});
     assert(std::find(forced.pending.begin(), forced.pending.end(), 20) != forced.pending.end());
     receipts[20].always_on = true;
