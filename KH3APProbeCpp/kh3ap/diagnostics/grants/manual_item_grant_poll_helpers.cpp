@@ -6,6 +6,8 @@
 #include "kh3ap/features/grants/grant_safety.h"
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/features/grants/grant_tokens.h"
+#include "kh3ap/features/grants/trap_catalog.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/objects/object_cache.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -165,9 +167,9 @@ namespace kh3ap
         const RuntimeGrantSafetyStatus special_battle_mode_status =
                 current_runtime_special_battle_mode_status(deps.runtime_state.grant_state(), now);
         const bool allow_special_battle_bad_status_trap =
-                request->grant_method == STR("direct_player_bad_status") &&
-                (request->runtime_token == STR("ETresBadStatusType::TRES_BADSTAT_SNEEZE") ||
-                 request->runtime_token == STR("ETresBadStatusType::TRES_BADSTAT_BURN"));
+                supports_alternate_bad_status(request->runtime_token, request->grant_method);
+        auto* alternate = allow_special_battle_bad_status_trap
+                ? character_swap::bad_status_context() : nullptr;
         if (!special_battle_mode_status.ready && !allow_special_battle_bad_status_trap)
         {
             if (deps.emit_pending_results)
@@ -193,7 +195,8 @@ namespace kh3ap
         if (allow_special_battle_bad_status_trap)
         {
             const RuntimeGrantSafetyStatus trap_state_status =
-                    current_runtime_bad_status_trap_sora_state_cache_status(
+                    alternate ? runtime_alternate_bad_status_safety_status(deps.runtime_state, alternate)
+                    : current_runtime_bad_status_trap_sora_state_cache_status(
                             deps.apply_deps.sora_current_state_cache);
             if (!trap_state_status.ready)
             {
@@ -216,6 +219,10 @@ namespace kh3ap
 
         const auto world_context_candidates = [&] {
             const RuntimeHotPathProfileScope profile{L"manual_item_grant:context"};
+            if (alternate)
+            {
+                return std::vector<UObject*>{alternate};
+            }
             return collect_fast_runtime_item_grant_world_context_candidates(deps.runtime_state, preferred_world_context_object);
         }();
         if (world_context_candidates.empty())

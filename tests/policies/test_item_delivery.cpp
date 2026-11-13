@@ -96,7 +96,11 @@ namespace
         assert(inspect({burn, sneeze}).allow_special_battle_bad_status_trap);
         assert(inspect({burn, sneeze}).supports_alternate_bad_status);
         assert(!inspect({burn, grant(3)}).supports_alternate_bad_status);
-        assert(!inspect({burn, stun}).supports_alternate_bad_status);
+        assert(inspect({burn, stun}).supports_alternate_bad_status);
+        assert(inspect({stun}).allow_special_battle_bad_status_trap);
+        auto freeze = burn;
+        freeze.runtime_token = L"ETresBadStatusType::TRES_BADSTAT_FREEZE";
+        assert(!inspect({burn, freeze}).supports_alternate_bad_status);
         assert(!inspect({}).supports_alternate_bad_status);
         auto mickey = grant(4, L"king_mickey_trap");
         mickey.runtime_token = L"KH3AP_TRAP::KING_MICKEY";
@@ -112,7 +116,8 @@ namespace
         assert(!inspect({}).supports_alternate_betrayal);
         betrayal.runtime_token = L"KH3AP_TRAP::KING_MICKEY";
         assert(!inspect({betrayal}).supports_alternate_betrayal);
-        assert(!inspect({burn, stun}).allow_special_battle_bad_status_trap);
+        assert(inspect({burn, stun}).allow_special_battle_bad_status_trap);
+        assert(!inspect({burn, freeze}).allow_special_battle_bad_status_trap);
         assert(inspect({burn, grant(3)}).contains_bad_status_trap);
         const auto mixed = inspect({game_over, burn});
         assert(!mixed.allow_special_battle_game_over && !mixed.allow_special_battle_bad_status_trap);

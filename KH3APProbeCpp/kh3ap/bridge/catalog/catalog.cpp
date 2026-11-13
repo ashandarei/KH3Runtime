@@ -151,7 +151,8 @@ namespace kh3ap::native_catalog
                 return L"king_mickey_trap";
             }
             if (token == "ETresBadStatusType::TRES_BADSTAT_SNEEZE" ||
-                token == "ETresBadStatusType::TRES_BADSTAT_BURN")
+                token == "ETresBadStatusType::TRES_BADSTAT_BURN" ||
+                token == "ETresBadStatusType::TRES_BADSTAT_STUN")
             {
                 return L"direct_player_bad_status";
             }

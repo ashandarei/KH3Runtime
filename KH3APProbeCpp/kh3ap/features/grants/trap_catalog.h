@@ -21,6 +21,7 @@ namespace kh3ap
     inline constexpr std::array runtime_trap_specs{
         RuntimeTrapSpec{L"ETresBadStatusType::TRES_BADSTAT_SNEEZE", L"direct_player_bad_status", L"Sneeze Trap"},
         RuntimeTrapSpec{L"ETresBadStatusType::TRES_BADSTAT_BURN", L"direct_player_bad_status", L"Burn Trap"},
+        RuntimeTrapSpec{L"ETresBadStatusType::TRES_BADSTAT_STUN", L"direct_player_bad_status", L"Stun Trap"},
         RuntimeTrapSpec{king_mickey_trap_token, king_mickey_trap_method, L"King Mickey Trap"},
         RuntimeTrapSpec{betrayal_trap_token, betrayal_trap_method, L"Betrayal Trap"}};
 

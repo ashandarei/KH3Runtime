@@ -2641,6 +2641,10 @@
       "1263022660": {
         "name": "Betrayal Trap",
         "token": "KH3AP_TRAP::BETRAYAL"
+      },
+      "1263022661": {
+        "name": "Stun Trap",
+        "token": "ETresBadStatusType::TRES_BADSTAT_STUN"
       }
     },
     "tokens": {
@@ -6737,308 +6741,313 @@
         "flags": [],
         "munny": 0,
         "name": "Betrayal Trap"
+      },
+      "ETresBadStatusType::TRES_BADSTAT_STUN": {
+        "name": "Stun Trap",
+        "flags": [],
+        "munny": 0
       }
     },
     "vbonus_bundles": [
       {
-        "source_id": "Vbonus_005",
         "tokens": [
           "ETresAbilityKind::AERIAL_DIVE",
           "ETresAbilityKind::FINAL_HEAVEN",
           "ETresVictoryBonusKind::HP_UP10"
-        ]
+        ],
+        "source_id": "Vbonus_005"
       },
       {
-        "source_id": "Vbonus_002",
         "tokens": [
           "ETresAbilityKind::AERIAL_SWEEP",
           "ETresAbilityKind::RADIAL_CUT"
-        ]
+        ],
+        "source_id": "Vbonus_002"
       },
       {
-        "source_id": "Vbonus_060",
         "tokens": [
           "ETresAbilityKind::AIRSLIDE"
-        ]
+        ],
+        "source_id": "Vbonus_060"
       },
       {
-        "source_id": "Vbonus_049",
         "tokens": [
           "ETresAbilityKind::AIRSLIDE",
           "ETresVictoryBonusKind::ACC_SLOT_UP1"
-        ]
+        ],
+        "source_id": "Vbonus_049"
       },
       {
-        "source_id": "Vbonus_023",
         "tokens": [
           "ETresAbilityKind::AIR_DOWN",
           "ETresVictoryBonusKind::HP_UP10"
-        ]
+        ],
+        "source_id": "Vbonus_023"
       },
       {
-        "source_id": "Vbonus_017",
         "tokens": [
           "ETresAbilityKind::AIR_RECOVERY",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_017"
       },
       {
-        "source_id": "Vbonus_041",
         "tokens": [
           "ETresAbilityKind::AIR_ROLL_BEAT",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_041"
       },
       {
-        "source_id": "VBonus_Minigame005",
         "tokens": [
           "ETresAbilityKind::ATTRACTION_UP"
-        ]
+        ],
+        "source_id": "VBonus_Minigame005"
       },
       {
-        "source_id": "Vbonus_066",
         "tokens": [
           "ETresAbilityKind::BLOW_COUNTER",
           "ETresVictoryBonusKind::HP_UP10"
-        ]
+        ],
+        "source_id": "Vbonus_066"
       },
       {
-        "source_id": "Vbonus_039",
         "tokens": [
           "ETresAbilityKind::CHARGE_THRUST"
-        ]
+        ],
+        "source_id": "Vbonus_039"
       },
       {
-        "source_id": "Vbonus_036",
         "tokens": [
           "ETresAbilityKind::COMBO_MASTER"
-        ]
+        ],
+        "source_id": "Vbonus_036"
       },
       {
-        "source_id": "Vbonus_048",
         "tokens": [
           "ETresAbilityKind::DOUBLEFLIGHT"
-        ]
+        ],
+        "source_id": "Vbonus_048"
       },
       {
-        "source_id": "Vbonus_001",
         "tokens": [
           "ETresAbilityKind::FLASH_STEP",
           "ETresAbilityKind::QUICK_SHAFT",
           "ETresVictoryBonusKind::HP_UP10"
-        ]
+        ],
+        "source_id": "Vbonus_001"
       },
       {
-        "source_id": "Vbonus_052",
         "tokens": [
           "ETresAbilityKind::FOCUS_ASPIR",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_052"
       },
       {
-        "source_id": "VBonus_Minigame007",
         "tokens": [
           "ETresAbilityKind::FORM_TIME"
-        ]
+        ],
+        "source_id": "VBonus_Minigame007"
       },
       {
-        "source_id": "VBonus_Minigame003",
         "tokens": [
           "ETresAbilityKind::FUSION_ROCKET"
-        ]
+        ],
+        "source_id": "VBonus_Minigame003"
       },
       {
-        "source_id": "Vbonus_076",
         "tokens": [
           "ETresAbilityKind::GLIDE"
-        ]
+        ],
+        "source_id": "Vbonus_076"
       },
       {
-        "source_id": "Vbonus_026",
         "tokens": [
           "ETresAbilityKind::GUARD_COUNTER",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_026"
       },
       {
-        "source_id": "Vbonus_020",
         "tokens": [
           "ETresAbilityKind::HIGHJUMP",
           "ETresVictoryBonusKind::MP_UP5"
-        ]
+        ],
+        "source_id": "Vbonus_020"
       },
       {
-        "source_id": "Vbonus_063",
         "tokens": [
           "ETresAbilityKind::MAGICFLUSH"
-        ]
+        ],
+        "source_id": "Vbonus_063"
       },
       {
-        "source_id": "VBonus_Minigame004",
         "tokens": [
           "ETresAbilityKind::MASTER_DRAW"
-        ]
+        ],
+        "source_id": "VBonus_Minigame004"
       },
       {
-        "source_id": "Vbonus_014",
         "tokens": [
           "ETresAbilityKind::MP_SAFETY",
           "ETresVictoryBonusKind::MELEM_CURE"
-        ]
+        ],
+        "source_id": "Vbonus_014"
       },
       {
-        "source_id": "VBonus_Minigame009",
         "tokens": [
           "ETresAbilityKind::PRIZE_DRAW"
-        ]
+        ],
+        "source_id": "VBonus_Minigame009"
       },
       {
-        "source_id": "Vbonus_058",
         "tokens": [
           "ETresAbilityKind::REVENGEDIVE"
-        ]
+        ],
+        "source_id": "Vbonus_058"
       },
       {
-        "source_id": "Vbonus_032",
         "tokens": [
           "ETresAbilityKind::REVENGEIMPACT",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_032"
       },
       {
-        "source_id": "Vbonus_069",
         "tokens": [
           "ETresAbilityKind::REVENGE_EX",
           "ETresVictoryBonusKind::ITEM_SLOT_UP1"
-        ]
+        ],
+        "source_id": "Vbonus_069"
       },
       {
-        "source_id": "Vbonus_045",
         "tokens": [
           "ETresAbilityKind::RISKDODGE"
-        ]
+        ],
+        "source_id": "Vbonus_045"
       },
       {
-        "source_id": "Vbonus_028",
         "tokens": [
           "ETresAbilityKind::SLASH_UPPER"
-        ]
+        ],
+        "source_id": "Vbonus_028"
       },
       {
-        "source_id": "Vbonus_027",
         "tokens": [
           "ETresAbilityKind::SUPERJUMP",
           "ETresVictoryBonusKind::MP_UP5"
-        ]
+        ],
+        "source_id": "Vbonus_027"
       },
       {
-        "source_id": "Vbonus_055",
         "tokens": [
           "ETresAbilityKind::SUPERSLIDE"
-        ]
+        ],
+        "source_id": "Vbonus_055"
       },
       {
-        "source_id": "Vbonus_050",
         "tokens": [
           "ETresAbilityKind::SUPERSLIDE",
           "ETresVictoryBonusKind::MP_UP5"
-        ]
+        ],
+        "source_id": "Vbonus_050"
       },
       {
-        "source_id": "Vbonus_019",
         "tokens": [
           "ETresAbilityKind::TRIPPLE_SLASH"
-        ]
+        ],
+        "source_id": "Vbonus_019"
       },
       {
-        "source_id": "VBonus_Minigame011",
         "tokens": [
           "ETresAbilityKind::UNISON_BLIZZARD"
-        ]
+        ],
+        "source_id": "VBonus_Minigame011"
       },
       {
-        "source_id": "VBonus_Minigame002",
         "tokens": [
           "ETresAbilityKind::UNISON_THUNDER"
-        ]
+        ],
+        "source_id": "VBonus_Minigame002"
       },
       {
-        "source_id": "Vbonus_022",
         "tokens": [
           "ETresVictoryBonusKind::ACC_SLOT_UP1"
-        ]
+        ],
+        "source_id": "Vbonus_022"
       },
       {
-        "source_id": "Vbonus_057",
         "tokens": [
           "ETresVictoryBonusKind::HP_UP10",
           "ETresVictoryBonusKind::MELEM_AERO"
-        ]
+        ],
+        "source_id": "Vbonus_057"
       },
       {
-        "source_id": "Vbonus_040",
         "tokens": [
           "ETresVictoryBonusKind::HP_UP10",
           "ETresVictoryBonusKind::MELEM_CURE"
-        ]
+        ],
+        "source_id": "Vbonus_040"
       },
       {
-        "source_id": "Vbonus_006",
         "tokens": [
           "ETresVictoryBonusKind::HP_UP10",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_006"
       },
       {
-        "source_id": "Vbonus_024",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_AERO"
-        ]
+        ],
+        "source_id": "Vbonus_024"
       },
       {
-        "source_id": "Vbonus_068",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_AERO",
           "ETresVictoryBonusKind::MP_UP5"
-        ]
+        ],
+        "source_id": "Vbonus_068"
       },
       {
-        "source_id": "Vbonus_047",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_BLIZZARD"
-        ]
+        ],
+        "source_id": "Vbonus_047"
       },
       {
-        "source_id": "Vbonus_070",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_CURE"
-        ]
+        ],
+        "source_id": "Vbonus_070"
       },
       {
-        "source_id": "Vbonus_082",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_FIRE",
           "ETresVictoryBonusKind::MELEM_WATER"
-        ]
+        ],
+        "source_id": "Vbonus_082"
       },
       {
-        "source_id": "Vbonus_021",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_THUNDER",
           "KEY_ITEM17"
-        ]
+        ],
+        "source_id": "Vbonus_021"
       },
       {
-        "source_id": "Vbonus_037",
         "tokens": [
           "ETresVictoryBonusKind::MELEM_WATER"
-        ]
+        ],
+        "source_id": "Vbonus_037"
       },
       {
-        "source_id": "Vbonus_004",
         "tokens": [
           "ITEM_POTION"
-        ]
+        ],
+        "source_id": "Vbonus_004"
       }
     ],
     "vbonus_flags": {
