@@ -54,7 +54,7 @@ namespace kh3ap
                 [this](std::wstring_view context_summary)
             {
                 auto deps = runtime_item_grant_apply_deps(context_summary);
-                deps.auto_equip_movement_abilities = m_goa_settings.auto_equip_movement_abilities();
+                deps.auto_equip_essential_abilities = m_goa_settings.auto_equip_essential_abilities();
                 deps.party_member_unlock =
                     [this](std::wstring_view token, UObject* sora, std::wstring* failure)
                 {

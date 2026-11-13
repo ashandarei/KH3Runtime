@@ -438,7 +438,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/grants/vbonus/vbonus_hud.cpp
     kh3ap/features/grants/vbonus/vbonus_banks.cpp
     kh3ap/features/grants/vbonus/vbonus_abilities.cpp
-    kh3ap/features/grants/abilities/movement_auto_equip.cpp
+    kh3ap/features/grants/abilities/essential_auto_equip.cpp
     kh3ap/features/grants/vbonus/vbonus_commands.cpp
     kh3ap/features/grants/vbonus/vbonus_inventory.cpp
     kh3ap/features/grants/vbonus/vbonus_diagnostics.cpp

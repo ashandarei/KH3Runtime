@@ -43,7 +43,7 @@ namespace kh3ap
                 std::wstring*)> party_member_unlock{};
         RuntimeSoraCurrentStateCacheView sora_current_state_cache;
         std::function<void()> progressive_keyblade_level_applied{};
-        bool auto_equip_movement_abilities{};
+        bool auto_equip_essential_abilities{};
     };
 
     auto make_runtime_item_grant_apply_deps(

@@ -1,6 +1,6 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_internal.h"
-#include "kh3ap/features/grants/abilities/movement_auto_equip_policy.h"
+#include "kh3ap/features/grants/abilities/essential_auto_equip_policy.h"
 #include "kh3ap/features/world/space/space_service.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/app/enums.h"
@@ -332,7 +332,7 @@ namespace kh3ap
     auto try_call_durable_sora_ability_grant(const RuntimeItemGrantRequest& request,
                                              UObject* sora_pawn, RuntimeState& runtime_state,
                                              std::wstring* failure_reason,
-                                             bool auto_equip_movement) -> bool
+                                             bool auto_equip_essential) -> bool
     {
         std::wstring ability_token{};
         uint64_t ability_value = 0;
@@ -361,15 +361,15 @@ namespace kh3ap
             return false;
         }
         uint32_t equip_mask = 0;
-        if (auto_equip_movement && is_auto_equip_movement_ability(ability_token))
+        if (auto_equip_essential && is_auto_equip_essential_ability(ability_token))
         {
             std::wstring equip_failure;
-            if (!try_movement_auto_equip_mask(vanilla_banks, sora_pawn, ability_value,
+            if (!try_essential_auto_equip_mask(vanilla_banks, sora_pawn, ability_value,
                                                &equip_mask, &equip_failure))
             {
                 // Optional convenience must never reject or repeat an item receipt.
                 Output::send<LogLevel::Warning>(
-                    STR("[KH3APProbeCpp] Movement auto equip skipped token={} reason={}\n"),
+                    STR("[KH3APProbeCpp] Essential auto equip skipped token={} reason={}\n"),
                     ability_token, equip_failure);
             }
         }

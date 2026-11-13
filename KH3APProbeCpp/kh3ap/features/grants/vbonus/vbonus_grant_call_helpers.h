@@ -91,7 +91,7 @@ namespace kh3ap
             RC::Unreal::UObject* sora_pawn,
             RuntimeState& runtime_state,
             std::wstring* failure_reason = nullptr,
-            bool auto_equip_movement = false) -> bool;
+            bool auto_equip_essential = false) -> bool;
 
     auto try_call_durable_sora_vbonus_grant(
             const RuntimeItemGrantRequest& request,

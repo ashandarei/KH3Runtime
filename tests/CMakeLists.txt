@@ -515,9 +515,9 @@ target_include_directories(seed_ui_options_test PRIVATE "${KH3AP_PROBE_ROOT}")
 target_link_libraries(seed_ui_options_test PRIVATE kh3ap_json_headers)
 add_test(NAME seed_ui_options COMMAND seed_ui_options_test)
 
-add_executable(movement_auto_equip_test movement_auto_equip_test.cpp)
-target_include_directories(movement_auto_equip_test PRIVATE "${KH3AP_PROBE_ROOT}")
-add_test(NAME movement_auto_equip COMMAND movement_auto_equip_test)
+add_executable(essential_auto_equip_test essential_auto_equip_test.cpp)
+target_include_directories(essential_auto_equip_test PRIVATE "${KH3AP_PROBE_ROOT}")
+add_test(NAME essential_auto_equip COMMAND essential_auto_equip_test)
 
 add_executable(save_menu_commands_test save_menu_commands_test.cpp)
 target_include_directories(save_menu_commands_test PRIVATE "${KH3AP_PROBE_ROOT}")

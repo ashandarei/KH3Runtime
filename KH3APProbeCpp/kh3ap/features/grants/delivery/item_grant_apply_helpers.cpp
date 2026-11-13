@@ -606,7 +606,7 @@ namespace kh3ap
                 {
                     applied = try_call_durable_sora_ability_grant(
                         request, world_context_object, deps.runtime_state, &candidate_failure,
-                        deps.auto_equip_movement_abilities);
+                        deps.auto_equip_essential_abilities);
                 }
             }
             else if (request.grant_method == STR("durable_sora_vbonus"))

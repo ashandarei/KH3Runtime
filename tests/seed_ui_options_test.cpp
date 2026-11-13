@@ -78,15 +78,15 @@ int main() {
     const auto defaults = read_runtime_ui_seed_defaults(JsonObject{"{}"});
     assert(defaults.map_icon_options == 63 && defaults.map_overlay_enabled);
     assert(defaults.song_display);
-    assert(defaults.auto_equip_movement_abilities);
-    const auto movement_off = read_runtime_ui_seed_defaults(
-        JsonObject{R"({"auto_equip_movement_abilities":0})"});
-    assert(!movement_off.auto_equip_movement_abilities);
-    assert(!apply_saved_map_ui_options(JsonObject{"{}"}, movement_off).auto_equip_movement_abilities);
+    assert(defaults.auto_equip_essential_abilities);
+    const auto essential_off = read_runtime_ui_seed_defaults(
+        JsonObject{R"({"auto_equip_essential_abilities":0})"});
+    assert(!essential_off.auto_equip_essential_abilities);
+    assert(!apply_saved_map_ui_options(JsonObject{"{}"}, essential_off).auto_equip_essential_abilities);
     assert(apply_saved_map_ui_options(
-        JsonObject{R"({"auto_equip_movement_abilities":true})"}, movement_off).auto_equip_movement_abilities);
+        JsonObject{R"({"auto_equip_essential_abilities":true})"}, essential_off).auto_equip_essential_abilities);
     assert(!apply_saved_map_ui_options(
-        JsonObject{R"({"auto_equip_movement_abilities":false})"}, defaults).auto_equip_movement_abilities);
+        JsonObject{R"({"auto_equip_essential_abilities":false})"}, defaults).auto_equip_essential_abilities);
     const auto seed = read_runtime_ui_seed_defaults(JsonObject{R"({"map_overlay_enabled":0,"song_display":0,
         "map_chest_icons":0,"map_emblem_icons":0,"map_ingredient_icons":0,"minimap_icons":0,"large_map_icons":0,
         "hide_locked_chest_icons":1,"battle_level_offset":10,"melody_of_memory_party":3,

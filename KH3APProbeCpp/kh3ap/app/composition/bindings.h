@@ -112,11 +112,11 @@ namespace kh3ap::composition_detail
     auto publish_goa_runtime_context(UObject* context, std::wstring_view hook_name) -> void;
 
     auto maybe_rearm_runtime_grant_for_ready_context(const RuntimeContextSnapshot& snapshot,
-                                                     bool auto_equip_movement)
+                                                     bool auto_equip_essential)
         -> void;
 
     auto update_composition_frame_context(UFunction* frame_node, std::wstring_view hook_name,
-                                           bool auto_equip_movement)
+                                           bool auto_equip_essential)
         -> std::optional<RuntimeContextSnapshot>;
 
     auto build_unique_event_bridge_key_lookup() -> std::unordered_map<std::wstring, std::wstring>;

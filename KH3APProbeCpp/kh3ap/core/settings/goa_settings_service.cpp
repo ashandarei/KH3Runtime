@@ -70,7 +70,7 @@ namespace kh3ap
             bool form_themes_enabled{};
             bool map_overlay_enabled{true};
             bool song_display{true};
-            bool auto_equip_movement_abilities{true};
+            bool auto_equip_essential_abilities{true};
             uint32_t map_icon_options{map_icon_defaults};
             bool loaded{};
             bool needs_migration{};
@@ -125,7 +125,7 @@ namespace kh3ap
             result.battle_level_offset = seed_ui.battle_level_offset;
             result.map_overlay_enabled = seed_ui.map_overlay_enabled;
             result.song_display = seed_ui.song_display;
-            result.auto_equip_movement_abilities = seed_ui.auto_equip_movement_abilities;
+            result.auto_equip_essential_abilities = seed_ui.auto_equip_essential_abilities;
             result.map_icon_options = seed_ui.map_icon_options;
             const auto defaults = result;
             if (!bridge_dir)
@@ -173,7 +173,7 @@ namespace kh3ap
             const auto saved_ui = apply_saved_map_ui_options(JsonObject{*text}, seed_ui);
             result.map_overlay_enabled = saved_ui.map_overlay_enabled;
             result.song_display = saved_ui.song_display;
-            result.auto_equip_movement_abilities = saved_ui.auto_equip_movement_abilities;
+            result.auto_equip_essential_abilities = saved_ui.auto_equip_essential_abilities;
             result.map_icon_options = saved_ui.map_icon_options;
             // Read-only compatibility with the retired seed-scoped preference.
             result.legacy_controller_focus_enabled =
@@ -374,7 +374,7 @@ namespace kh3ap
         form_themes_enabled_.store(persisted.form_themes_enabled);
         map_overlay_enabled_.store(persisted.map_overlay_enabled);
         song_display_.store(persisted.song_display);
-        auto_equip_movement_abilities_.store(persisted.auto_equip_movement_abilities);
+        auto_equip_essential_abilities_.store(persisted.auto_equip_essential_abilities);
         map_icon_options_.store(persisted.map_icon_options);
         loaded_from_disk_.store(persisted.loaded);
         request_music_update(MusicUpdate::Settings);
@@ -429,7 +429,7 @@ namespace kh3ap
             .form_themes_enabled = form_themes_enabled_.load(),
             .map_overlay_enabled = map_overlay_enabled(),
             .song_display = song_display(),
-            .auto_equip_movement_abilities = auto_equip_movement_abilities(),
+            .auto_equip_essential_abilities = auto_equip_essential_abilities(),
             .map_icon_options = map_icon_options(),
             .loaded_from_disk = loaded_from_disk_.load(),
             .persistence_ready =
@@ -523,9 +523,9 @@ namespace kh3ap
         return persist_settings();
     }
 
-    auto RuntimeGoaSettingsService::set_auto_equip_movement_abilities(bool enabled) -> bool
+    auto RuntimeGoaSettingsService::set_auto_equip_essential_abilities(bool enabled) -> bool
     {
-        auto_equip_movement_abilities_.store(enabled);
+        auto_equip_essential_abilities_.store(enabled);
         return persist_settings();
     }
 
@@ -613,8 +613,8 @@ namespace kh3ap
              << "  \"map_overlay_enabled\": " << (snapshot.map_overlay_enabled ? "true" : "false")
              << ",\n"
              << "  \"song_display\": " << (snapshot.song_display ? "true" : "false") << ",\n"
-             << "  \"auto_equip_movement_abilities\": "
-             << (snapshot.auto_equip_movement_abilities ? "true" : "false") << ",\n"
+             << "  \"auto_equip_essential_abilities\": "
+             << (snapshot.auto_equip_essential_abilities ? "true" : "false") << ",\n"
              << "  \"map_chest_icons\": "
              << (map_icon_enabled(snapshot.map_icon_options, MapIconOption::Chests) ? "true"
                                                                                     : "false")
