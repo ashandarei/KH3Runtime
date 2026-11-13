@@ -603,6 +603,16 @@ namespace kh3ap
         return {true, L"alternate_game_over_ready", {}};
     }
 
+    auto runtime_alternate_betrayal_safety_status(RuntimeState& runtime_state, RC::Unreal::UObject* pawn)
+            -> RuntimeGrantSafetyStatus
+    {
+        const auto context = runtime_alternate_game_over_safety_status(runtime_state, pawn);
+        if (!context.ready) { return context; }
+        const auto world = current_runtime_unsafe_map_status(runtime_state);
+        if (!world.ready) { return world; }
+        return runtime_trap_application_state_status(pawn);
+    }
+
     auto update_runtime_grant_pawn_presence_status(
             RuntimeGrantPawnState& pawn_state,
             const std::vector<RC::Unreal::UObject*>& candidates,

@@ -101,7 +101,7 @@ int main()
         });
     };
     for (const auto* deferred : {L"keyblade_style", L"progressive_keyblade_level",
-                                 L"king_mickey_trap", L"unknown_future_method"})
+                                 L"king_mickey_trap", L"betrayal_trap", L"unknown_future_method"})
     {
         queue.clear();
         request.action_kind = L"runtime_item_grant_batch";

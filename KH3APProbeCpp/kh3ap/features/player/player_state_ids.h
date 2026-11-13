@@ -75,12 +75,15 @@ namespace kh3ap::player_state_ids
     inline constexpr uint8_t combo_anti = 86;
     inline constexpr uint8_t combo_swim = 89;
     inline constexpr uint8_t fr_mount_curling = 92;
+    inline constexpr uint8_t gigas = 96;
     inline constexpr uint8_t gimmick_attach = 97;
     inline constexpr uint8_t swim = 102;
     inline constexpr uint8_t special_ship = 103;
+    inline constexpr uint8_t talk = 104;
     inline constexpr uint8_t save_menu = 105;
     inline constexpr uint8_t shop_menu = 106;
     inline constexpr uint8_t check = 108;
+    inline constexpr uint8_t rescue = 109;
     inline constexpr uint8_t use_item = 111;
     inline constexpr uint8_t game_over = 118;
     inline constexpr uint8_t bad_stat_stun = 122;
@@ -88,6 +91,7 @@ namespace kh3ap::player_state_ids
     inline constexpr uint8_t bad_stat_burn = 124;
     inline constexpr uint8_t dm_stitch = 128;
     inline constexpr uint8_t rail_slide_mi = 138;
+    inline constexpr uint8_t cover = 142;
     inline constexpr uint8_t hold_camera = 144;
     inline constexpr uint8_t festival_dance = 145;
     inline constexpr uint8_t one_action = 150;

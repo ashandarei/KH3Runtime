@@ -2,6 +2,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
+#include "kh3ap/features/player/movement/kairi_glide.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/combat/character_magic.h"
 #include "kh3ap/features/player/controller_abilities/host.h"
@@ -175,6 +176,9 @@ namespace kh3ap
         {
             return false;
         }
+        // This own-character grant must not wait for unrelated spell HUD or
+        // shared command preparation to finish.
+        if (!kairi_glide::refresh(aqua, failure)) { return false; }
         constexpr auto& abilities = s_refresh_abilities;
         std::array<RuntimeSoraAbilityEntryState, abilities.size()> states{};
         if (!try_read_runtime_sora_ability_entry_states(abilities, aqua, states, failure))

@@ -212,7 +212,7 @@ if(WIN32)
 endif()
 
 set(remaining_outputs)
-foreach(name workshop party color_discovery color_weapons coordinates journal_level_actors)
+foreach(name workshop party color_discovery color_weapons coordinates journal_level_actors journal_overlay)
     list(APPEND remaining_outputs "${CMAKE_CURRENT_BINARY_DIR}/remaining/${name}_remaining_under_test.h")
 endforeach()
 add_custom_command(OUTPUT ${remaining_outputs}
@@ -223,6 +223,7 @@ add_custom_command(OUTPUT ${remaining_outputs}
         "${KH3AP_COLORS}/service/discovery.cpp"
         "${KH3AP_COLORS}/service/links.cpp"
         "${KH3AP_ROOT}/features/journal/ingredient_journal_map_service.cpp"
+        "${KH3AP_ROOT}/features/journal/ingredient_journal_service.cpp"
     VERBATIM)
 add_executable(remaining_events_test remaining_events_test.cpp ${remaining_outputs})
 target_include_directories(remaining_events_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/remaining" "${KH3AP_PROBE_ROOT}")
@@ -236,6 +237,10 @@ else()
     target_compile_options(journal_level_actors_test PRIVATE -UNDEBUG)
 endif()
 add_test(NAME journal_level_actors COMMAND journal_level_actors_test)
+add_executable(journal_overlay_test journal_overlay_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/remaining/journal_overlay_remaining_under_test.h")
+target_include_directories(journal_overlay_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/remaining")
+add_test(NAME journal_overlay COMMAND journal_overlay_test)
 add_executable(revision_stub_test revision_stub_test.cpp)
 target_include_directories(revision_stub_test PRIVATE "${KH3AP_PROBE_ROOT}")
 add_test(NAME revision_stub COMMAND revision_stub_test)

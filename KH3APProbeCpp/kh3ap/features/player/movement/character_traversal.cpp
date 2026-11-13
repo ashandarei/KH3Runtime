@@ -56,6 +56,14 @@ namespace kh3ap::character_traversal
                                          L"MyFloatingSpeed", L"MyFloatingGravityScale", L"MyFloatingGravityScale2",
                                          L"MyGlideGravityScale", L"MyGlideSpeed", L"MyGlideTurnRate",
                                          L"MySprintSpeed",
+                                         L"MyCoverFindLimit", L"MyCoverMoveSpeed", L"MyCoverSlideTime",
+                                         L"MyCoverSlideSpeed", L"m_CoverSlideMinSpeed", L"MyCoverSlideBreak",
+                                         L"MyCoverSlideMutekiTime", L"MyCoverCommandRreadyTime",
+                                         L"MyCoverSlideSlowRate", L"MyCoverSlideSlowTime",
+                                         L"MyCoverShotSlideTime", L"MyCoverShotSlideSpeed",
+                                         L"m_CoverShotSlideMinSpeed", L"MyCoverShotSlideBreak",
+                                         L"MyCoverShotMutekiTime", L"MyCoverShotSlideHomingRate",
+                                         L"MyCoverShotLockonLimit", L"MyCoverShotLockonSightMoveRate",
                                          L"MyRailSlideCheckRange", L"MyRailSlideCheckAirRange",
                                          L"MyRailSlideShotInterval", L"MyRailSlideSpeed",
                                          L"m_RailSlideJumpInertialVelocity", L"m_RailSlideJumpInertialBrake",
@@ -77,6 +85,9 @@ namespace kh3ap::character_traversal
                                          L"MySwimDivingHighSpeedMoveRotSpeedPitch"};
         constexpr std::array animation_names{
             L"MagicCast", L"MagicCastM", L"MagicChant", L"MagicFire",
+            L"CoverIdle", L"CoverIdleR", L"CoverIdleL", L"CoverMove",
+            L"CoverSlideLoop", L"CoverSlideEnd", L"CoverSlideShot", L"CoverSlideShotEnd",
+            L"GigasStart", L"GigasEnd",
             L"MagicFireMF", L"MagicFireML", L"MagicFireMR", L"MagicShoot",
             L"MagicAirCast", L"MagicAirCastM", L"MagicAirChant", L"MagicAirFire",
             L"MagicAirFireMF", L"MagicAirFireML", L"MagicAirFireMR", L"MagicAirShoot",
@@ -592,10 +603,12 @@ namespace kh3ap::character_traversal
         auto *source = find_loaded_runtime_asset(player_animation_support::sora_animation_set_path);
         auto *caribbean_source = find_loaded_runtime_asset(caribbean_animation_set_path);
         auto *graveyard_source = find_loaded_runtime_asset(character_union_cross::animation_set_path);
+        auto *gigas_source = find_loaded_runtime_asset(gigas_animation_set_path);
         if (!is_uobject_valid_fast(instance) || !is_uobject_valid_fast(source) ||
-            !is_uobject_valid_fast(caribbean_source) || !is_uobject_valid_fast(graveyard_source))
+            !is_uobject_valid_fast(caribbean_source) || !is_uobject_valid_fast(graveyard_source) ||
+            !is_uobject_valid_fast(gigas_source))
         {
-            // Selection preloads general, underwater and Union Cross motions.
+            // Selection preloads general, underwater, Union Cross and Gigas motions.
             return false;
         }
         if (!player_animation_support::supported_skeleton_layout())
@@ -651,7 +664,7 @@ namespace kh3ap::character_traversal
             }
         }
         std::array<UObject *, animation_names.size()> borrowed{};
-        for (auto *source_set : {source, caribbean_source, graveyard_source})
+        for (auto *source_set : {source, caribbean_source, graveyard_source, gigas_source})
         {
             std::array<bool, animation_names.size()> seen{};
             for (const auto &entry : *animations(source_set))

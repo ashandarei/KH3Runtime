@@ -3,6 +3,7 @@
 #include "kh3ap/features/player/combat/character_union_cross.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/features/player/combat/character_magic.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <DynamicOutput/DynamicOutput.hpp>
@@ -29,8 +30,8 @@ namespace kh3ap::character_union_cross
         constexpr size_t attached_ride_weak_pointer_offset = 0xa4;
 
         using ActionCommand = bool (*)(UObject*);
-        std::array<uint64_t, 3> originals{};
-        std::array<std::unique_ptr<PLH::x64Detour>, 3> hooks;
+        std::array<uint64_t, 4> originals{};
+        std::array<std::unique_ptr<PLH::x64Detour>, 4> hooks;
         ActionCommand sora_action_command{};
         bool attempted{};
 
@@ -90,6 +91,22 @@ namespace kh3ap::character_union_cross
         template<size_t Index>
         bool action_command(UObject* controller)
         {
+            if (is_uobject_valid_fast(controller) && character_reactions::owns_command(
+                    controller, field<int>(controller, controller_selected_command_offset)))
+            {
+                const int command = field<int>(controller, controller_selected_command_offset);
+                const bool accepted = sora_action_command(controller);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                RC::Output::send<RC::LogLevel::Normal>(
+                    STR("[KH3APProbeCpp] Character reaction controller={} command={} accepted={}\n"),
+                    controller->GetName(), command, accepted);
+#endif
+                return accepted;
+            }
+            if constexpr (Index == 3)
+            {
+                return reinterpret_cast<ActionCommand>(originals[Index])(controller);
+            }
             if (is_uobject_valid_fast(controller) && character_magic::owns_command(
                     controller, field<int>(controller, controller_selected_command_offset)))
             {
@@ -122,15 +139,15 @@ namespace kh3ap::character_union_cross
         attempted = true;
         using character_native::Site;
         if (!character_native::verify_sites({Site::union_action_sora, Site::union_action_kairi,
-                Site::union_action_aqua, Site::union_action_roxas}))
+                Site::union_action_aqua, Site::union_action_roxas, Site::reaction_action_riku}))
         {
             RC::Output::send<RC::LogLevel::Warning>(STR("[KH3APProbeCpp] Character Union Cross command support unavailable for this build\n"));
             return;
         }
         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
         sora_action_command = reinterpret_cast<ActionCommand>(base + character_native::rva(Site::union_action_sora));
-        const std::array sites{Site::union_action_kairi, Site::union_action_aqua, Site::union_action_roxas};
-        const std::array<ActionCommand, 3> callbacks{action_command<0>, action_command<1>, action_command<2>};
+        const std::array sites{Site::union_action_kairi, Site::union_action_aqua, Site::union_action_roxas, Site::reaction_action_riku};
+        const std::array<ActionCommand, 4> callbacks{action_command<0>, action_command<1>, action_command<2>, action_command<3>};
         for (size_t index = 0; index < hooks.size(); ++index)
         {
             hooks[index] = std::make_unique<PLH::x64Detour>(base + character_native::rva(sites[index]),

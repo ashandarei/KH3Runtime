@@ -22,6 +22,7 @@ namespace kh3ap
         bool supports_space_inventory{};
         bool supports_kh02_persistent_rewards{};
         bool supports_alternate_bad_status{};
+        bool supports_alternate_betrayal{};
         bool supports_alternate_game_over{};
         bool bundle_visible_durable_ability_hud{};
     };

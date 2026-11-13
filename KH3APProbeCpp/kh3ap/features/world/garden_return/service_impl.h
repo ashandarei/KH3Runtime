@@ -193,6 +193,7 @@ namespace kh3ap
         DiagnosticProgress diagnostic_cancel(DiagnosticCommand& request);
         DiagnosticProgress diagnostic_experimental_pool(DiagnosticCommand& request);
         DiagnosticProgress diagnostic_spellweaver_fixture(DiagnosticCommand& request);
+        DiagnosticProgress diagnostic_betrayal_trap(DiagnosticCommand& request);
         DiagnosticProgress diagnostic_king_mickey_trap(DiagnosticCommand& request);
         DiagnosticProgress diagnostic_experimental_select(DiagnosticCommand& request);
         DiagnosticProgress diagnostic_alternate_wall_run_move(DiagnosticCommand& request);

@@ -52,6 +52,86 @@ scaling and cinematic handoffs. Presented-frame performance on Steam is not
 established by these checks; the low-level swap timing tracer is EGS-only.
 Each changed DLL needs appropriate EGS regression checks before release.
 
+## Priority reaction commands
+
+Owned alternates route selected Talk, Check, Rescue and Gigas reactor commands
+through Sora's native controller dispatcher. Cover Slide uses the same route
+from Idle, Run or Cover, retaining native target selection. Riku has a separate
+dispatcher and audited hook; ordinary Riku commands continue through his original function.
+The selected actor/component, current world, local possession, active reactor
+and command identity are checked on demand. Native eligibility and actor
+callbacks still control completion. There is no idle actor scan or story-flag
+override. Required world prompts using Check share this route; this does not
+enable every combat situation command or certify every world's scripted scene.
+
+Shared Talk, Rescue, Gigas and Cover states are available when an alternate's
+authored state set omits them. Prepared traversal animsets include Cover motions
+and Gigas entry/exit, with Sora's cover movement tuning. Trick accepts the original
+Caribbean and Olympus acrobat barrels with their ODanceSpecialAct1 motion.
+
+EGS arena checks on 2026-11-12 passed for Aqua, Riku, Kairi and Roxas:
+one callback per Talk/Rescue/Check interaction; native Gigas boarding, movement
+and L1 exit; both barrel Trick animations returning to Idle; and native Cover
+Slide target selection, accepted command and movement into cover. Talk/Rescue
+stations validate the reactor callback, not complete world-specific scenes.
+
+The barrel paths retain the original handlers. Documentary native audit RVAs
+(EGS / Steam) are reactor `0x11e0f70` / `0xf57120`, start `0x11e11d0` /
+`0xf569f0`, end `0x11e1420` / `0xf56860`, RequestOneAction `0x1778260` /
+`0x14415e0`, and performance broadcast `0x5f2540` / `0x45bda0`.
+These addresses are evidence, not additional hooks.
+
+## Kairi Glide ownership
+
+The shared ability refresh grants Kairi an equipped Glide entry in her own
+character ability record once Sora's persistent bank owns Glide. It uses
+the durable ability-source mutator and the game's verified normalizer on Kairi's
+own record, with readback and rollback on failure. `BP_AbilityAdd` does not retain
+this new movement entry for her. An existing copy is left alone, including a
+manually unequipped copy. This runs before unrelated shared command and spell
+preparation.
+
+Successful Glide deliveries explicitly wake the existing ability refresh because
+durable Sora grants bypass native ability-add notifications. Possession and map
+events also reconcile Kairi when Glide was unlocked before switching to her.
+The implementation is shared by EGS and Steam; live validation uses EGS.
+
+EGS arena validation on 2026-11-12 received Glide while controlling Kairi,
+observed her own equipped entry and Sora's unchanged single-copy count, entered
+`TresPlayerState_Glide` through held jump input, and retained the same entry
+after swapping to Sora and back.
+
+Pooled controller parking clears all live key states and queued input events,
+including jump/glide and remapped keyboard keys. A button release while Sora is
+active cannot reach Kairi's parked controller; retaining that held key otherwise
+restarts Glide when she is reused. Cleanup walks validated live hash chains once
+at departure, with no idle polling or forced movement-state transition.
+The EGS airborne regression returned Kairi in Jump with jump released after
+swapping out during Glide, then entered Glide again with a fresh jump press.
+
+The synchronous swap captures the outgoing controller's current jump/glide hold
+and seeds it on the newly possessed controller. Pending button events determine
+the latest held state, so a queued release overrides an earlier hold. Only the
+held state carries across: pressed/released event queues are discarded and both
+current/previous down flags are initialized together to avoid a new jump edge.
+This allows holding Glide through Sora/alternate swaps while keeping released
+inputs from resurfacing on pooled characters.
+EGS validation held jump on airborne Sora, swapped to Kairi, and observed Glide
+with the key still down throughout the handoff. Releasing on Kairi returned her
+to Jump; another Sora/Kairi round trip retained the released state.
+
+Kairi's launch/rising Jump substeps also permit an early Doubleflight press.
+Her authored Jump window otherwise opens near the apex, dropping an earlier
+second press and allowing the subsequent held input to start Glide. The guarded
+native jump-capability hook scopes the window bit to that query and immediately
+restores it. Native ability ownership, the spent-air-jump flag, pending-state and
+movement restrictions remain authoritative; it does not synthesize jump input,
+force a new movement state, or change Sora's timing.
+EGS checks used a 50 ms initial jump tap followed by 0/50/200/450 ms release
+gaps. Every second press consumed the available Doubleflight before any Glide;
+the early cases did so with positive vertical velocity. Held-Glide handoff,
+release, and released-character reuse also passed after this change.
+
 ## Crowd player ownership
 
 `TresComNpcActionComponent::InitializeComponent` caches its local controller's
@@ -84,6 +164,27 @@ returns to Sora also passed for Aqua, Kairi, and Roxas. Riku's separate
 `character_magic_meter_restore` error still prevents a successful return-swap
 test; crowd ownership and spawning remain correct despite that restoration
 failure. This validation covers villagers, not Riku's resource restoration.
+
+## King Mickey trap reaction cleanup
+
+Mickey's MiRx factory changes the shared cockpit to command mode 4. Returning
+through Sora's factory alone leaves that mode active, so normal reaction prompts
+can appear while their input still routes to the special Mickey HUD. The trap
+captures a weak reference to the original cockpit and invokes the game's paired
+MiRx close function only after Sora possesses the controller. This closes the
+special HUD, restores status presentation and returns command routing to mode 0.
+Mickey retains his restricted reactions throughout the trap. Changed or destroyed
+cockpits retire the reference; cleanup also participates in cinematic returns.
+
+Both storefronts have independently matched native close and mode-reset sites.
+Steam live validation remains outstanding.
+
+EGS validation on 2026-11-12 used APTestArena with pooled Sora. Check completed
+before and after the trap while remaining blocked as Mickey; cockpit mode was
+4 during the trap and 0 after return. Repeated expirations also preserved Sora's
+native chest opening and save-menu access. Mickey could activate neither the
+chest nor save-point interaction. All three arena chest reactors became inactive
+after native opening, and the save menu opened with its enabled Save row.
 
 ## Final Xehanort Ascension
 

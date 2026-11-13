@@ -1,3 +1,4 @@
+#include "kh3ap/features/party/betrayal_trap.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/app/composition/service_graph.h"
@@ -166,6 +167,7 @@ namespace kh3ap
         const auto now = std::chrono::steady_clock::now();
         if (unreal_initialized)
         {
+            betrayal_trap::tick(now);
             m_shop_movie.tick();
             phase_trace.mark(STR("shop_movie"));
             m_ingredients.tick();

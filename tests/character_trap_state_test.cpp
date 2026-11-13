@@ -22,8 +22,13 @@ int main()
     assert(trap.return_player == -1);
 
     assert(find_runtime_trap_spec(king_mickey_trap_token, king_mickey_trap_method));
+    assert(find_runtime_trap_spec(betrayal_trap_token, betrayal_trap_method));
+    assert(!find_runtime_trap_spec(betrayal_trap_token, L"bp_tres_get_item"));
+    assert(!supports_alternate_bad_status(betrayal_trap_token, betrayal_trap_method));
     assert(!find_runtime_trap_spec(king_mickey_trap_token, L"bp_tres_get_item"));
-    assert(!find_runtime_trap_spec(L"ETresBadStatusType::TRES_BADSTAT_STUN", L"direct_player_bad_status"));
+    assert(find_runtime_trap_spec(L"ETresBadStatusType::TRES_BADSTAT_STUN", L"direct_player_bad_status"));
+    assert(supports_alternate_bad_status(L"ETresBadStatusType::TRES_BADSTAT_STUN", L"direct_player_bad_status"));
+    assert(!find_runtime_trap_spec(L"ETresBadStatusType::TRES_BADSTAT_FREEZE", L"direct_player_bad_status"));
     assert(supports_alternate_bad_status(L"ETresBadStatusType::TRES_BADSTAT_BURN", L"direct_player_bad_status"));
     assert(supports_alternate_bad_status(L"ETresBadStatusType::TRES_BADSTAT_SNEEZE", L"direct_player_bad_status"));
     assert(!supports_alternate_bad_status(king_mickey_trap_token, king_mickey_trap_method));

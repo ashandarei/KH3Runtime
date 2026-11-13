@@ -1,3 +1,4 @@
+#include "kh3ap/features/party/betrayal_trap.h"
 #include "kh3ap/features/player/player_action_commands.h"
 #include <chrono>
 #include "service_impl.h"
@@ -161,6 +162,13 @@ namespace kh3ap
             request.reason = L"spellweaver_fixture_ownership_required";
         }
 
+        return DiagnosticProgress::Finished;
+    }
+
+    RuntimeGardenReturnService::Impl::DiagnosticProgress
+    RuntimeGardenReturnService::Impl::diagnostic_betrayal_trap(DiagnosticCommand& request)
+    {
+        if (!betrayal_trap::start(player())) request.reason = L"betrayal_trap_deferred";
         return DiagnosticProgress::Finished;
     }
 
@@ -958,6 +966,7 @@ namespace kh3ap
             {L"spellweaver_fixture_restore", &Impl::diagnostic_spellweaver_fixture, false},
             {L"character_style_inspect", &Impl::diagnostic_character_style, false},
             {L"character_style_offer", &Impl::diagnostic_character_style, false},
+            {L"betrayal_trap", &Impl::diagnostic_betrayal_trap, false},
             {L"king_mickey_trap", &Impl::diagnostic_king_mickey_trap, false},
             {L"experimental_select", &Impl::diagnostic_experimental_select, false},
             {L"alternate_wall_run_move", &Impl::diagnostic_alternate_wall_run_move, false},
@@ -1150,6 +1159,7 @@ namespace kh3ap
             << "],\"mickey_link\":" << mickey_link.snapshot() << ",\"companion_handoff\":\""
             << companion_handoff.status()
             << "\",\"combo_master\":" << combo_master.snapshot(player())
+            << ",\"betrayal_trap\":" << betrayal_trap::snapshot(player()).dump()
             << ",\"character_preload\":" << character_swap_assets::snapshot().dump()
             << ",\"character_effect\":" << character_swap_effects::snapshot().dump()
             << ",\"kairi_shining_hud\":" << kairi_shining_hud::snapshot().dump()

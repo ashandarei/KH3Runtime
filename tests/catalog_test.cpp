@@ -141,6 +141,20 @@ int main(int argc, char** argv)
     assert(decoded.primary.grant.runtime_token == L"KH3AP_TRAP::KING_MICKEY");
     assert(native_catalog::describe(receipt, decoded, item_delivery::expand_catalog({{0, decoded}}).at(0))
         ["action"]["kind"] == "trigger_trap");
+    receipt["item_id"] = 1263022660;
+    decoded = catalog.decode(receipt);
+    assert(decoded.supported && decoded.bridge_required);
+    assert(decoded.primary.grant.grant_method == L"betrayal_trap");
+    assert(decoded.primary.grant.runtime_token == L"KH3AP_TRAP::BETRAYAL");
+    assert(native_catalog::describe(receipt, decoded, item_delivery::expand_catalog({{0, decoded}}).at(0))
+        ["action"]["kind"] == "trigger_trap");
+    receipt["item_id"] = 1263022661;
+    decoded = catalog.decode(receipt);
+    assert(decoded.supported && decoded.bridge_required);
+    assert(decoded.primary.grant.grant_method == L"direct_player_bad_status");
+    assert(decoded.primary.grant.runtime_token == L"ETresBadStatusType::TRES_BADSTAT_STUN");
+    assert(native_catalog::describe(receipt, decoded, item_delivery::expand_catalog({{0, decoded}}).at(0))
+        ["action"]["kind"] == "trigger_trap");
     receipt["location_id"] = 103;
     assert(catalog.decode(receipt).always_on);
     receipt["item_id"] = 999;

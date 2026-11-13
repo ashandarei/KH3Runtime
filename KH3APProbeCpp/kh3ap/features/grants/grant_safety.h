@@ -66,6 +66,8 @@ namespace kh3ap
             RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus;
     auto runtime_alternate_game_over_safety_status(RuntimeState& runtime_state,
             RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus;
+    auto runtime_alternate_betrayal_safety_status(RuntimeState& runtime_state,
+            RC::Unreal::UObject* pawn) -> RuntimeGrantSafetyStatus;
 
     auto update_runtime_grant_pawn_presence_status(
             RuntimeGrantPawnState& pawn_state,

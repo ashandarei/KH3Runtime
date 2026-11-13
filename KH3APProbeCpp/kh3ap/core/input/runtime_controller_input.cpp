@@ -12,6 +12,7 @@
 #include <Unreal/Property/FStructProperty.hpp>
 #include <array>
 #include <cmath>
+#include <vector>
 
 namespace kh3ap
 {
@@ -218,10 +219,13 @@ namespace kh3ap
         send_axis(controller, base, L"Gamepad_RightY", y);
     }
 
-    template <size_t Count>
-    static auto controller_key_entries(UObject* controller,
-                                       const std::array<const wchar_t*, Count>& names)
-        -> std::array<void*, Count>
+    struct ControllerKeyMap
+    {
+        uintptr_t data{}, hash{};
+        int count{}, free_count{}, hash_size{};
+    };
+
+    static auto controller_key_map(UObject* controller) -> ControllerKeyMap
     {
         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
         DeathUiProfile profile;
@@ -242,10 +246,13 @@ namespace kh3ap
         // Re-injecting processed values applies the dead zone a second time.
         const int count = field<int>(input, key_state_count_offset);
         const int free_count = field<int>(input, key_state_free_count_offset);
-        std::array<void*, Count> result{};
+        if (count < 0 || count > max_key_state_entries || free_count < 0 || free_count > count)
+        {
+            throw std::runtime_error("controller_stick_state_map");
+        }
         if (count == free_count)
         {
-            return result;
+            return {};
         }
         const int hash_size = field<int>(input, key_state_hash_size_offset);
         if (count < 0 || count > max_key_state_entries || hash_size <= 0 ||
@@ -258,6 +265,24 @@ namespace kh3ap
         const auto hash = external_hash
                               ? external_hash
                               : reinterpret_cast<uintptr_t>(input) + key_state_inline_hash_offset;
+        if (!data)
+        {
+            throw std::runtime_error("controller_stick_state_data");
+        }
+        return {data, hash, count, free_count, hash_size};
+    }
+
+    template <size_t Count>
+    static auto controller_key_entries(UObject* controller,
+                                       const std::array<const wchar_t*, Count>& names)
+        -> std::array<void*, Count>
+    {
+        const auto [data, hash, count, free_count, hash_size] = controller_key_map(controller);
+        std::array<void*, Count> result{};
+        if (!count)
+        {
+            return result;
+        }
         for (size_t key_index = 0; key_index < names.size(); ++key_index)
         {
             FName key{names[key_index]};
@@ -285,6 +310,73 @@ namespace kh3ap
             }
         }
         return result;
+    }
+
+    bool runtime_controller_jump_held(UObject* controller)
+    {
+        auto* entry = controller_key_entries(controller, std::array{L"Gamepad_FaceButton_Right"})[0];
+        if (!entry) { return false; }
+        bool held = (field<uint32_t>(entry, key_state_button_flags_offset) & 1u) != 0;
+        uint32_t latest{};
+        // InputKey may have queued a release since the last input pass. Use
+        // the latest pending event, rather than reviving that completed hold.
+        for (size_t event = 0; event < 4; ++event)
+        {
+            auto* events = reinterpret_cast<FScriptArray*>(static_cast<std::byte*>(entry) +
+                key_state_events_offset + (5 + event) * sizeof(FScriptArray));
+            if (events->Num() < 0 || events->Num() > max_key_state_entries)
+            {
+                throw std::runtime_error("controller_jump_event_count");
+            }
+            if (events->Num() > 0)
+            {
+                const auto sequence = static_cast<const uint32_t*>(events->GetData())[events->Num() - 1];
+                if (sequence > latest)
+                {
+                    latest = sequence;
+                    held = event != 1; // IE_Released
+                }
+            }
+        }
+        return held;
+    }
+
+    void runtime_controller_restore_jump_hold(UObject* controller, bool held)
+    {
+        auto* pawn = try_read_reflected_object_property_value(controller, L"Pawn");
+        auto* player = try_read_reflected_object_property_value(controller, L"Player");
+        if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(player) ||
+            try_read_reflected_object_property_value(player, L"PlayerController") != controller ||
+            try_read_reflected_object_property_value(pawn, L"Controller") != controller)
+        {
+            throw std::runtime_error("controller_jump_handoff_requires_possession");
+        }
+        auto* entry = controller_key_entries(controller, std::array{L"Gamepad_FaceButton_Right"})[0];
+        if (!entry && held)
+        {
+            // Let InputKey create its native map entry, then discard the
+            // synthetic edge before any input pass can dispatch a new jump.
+            runtime_controller_action_input(controller, L"jump", true);
+            entry = controller_key_entries(controller, std::array{L"Gamepad_FaceButton_Right"})[0];
+            if (!entry) { throw std::runtime_error("controller_jump_handoff_entry_missing"); }
+        }
+        if (!entry) { return; }
+        auto* bytes = static_cast<std::byte*>(entry);
+        const std::array<float, 3> value{held ? 1.0f : 0.0f, 0.0f, 0.0f};
+        constexpr std::array<float, 3> zero{};
+        constexpr uint8_t no_samples{};
+        std::memcpy(bytes + key_state_raw_value_offset, value.data(), sizeof(value));
+        std::memcpy(bytes + key_state_processed_value_offset, value.data(), sizeof(value));
+        std::memcpy(bytes + key_state_raw_accumulator_offset, zero.data(), sizeof(zero));
+        std::memcpy(bytes + key_state_sample_count_offset, &no_samples, sizeof(no_samples));
+        const auto flags = (field<uint32_t>(entry, key_state_button_flags_offset) & ~key_state_down_flags) |
+                           (held ? key_state_down_flags : 0u);
+        std::memcpy(bytes + key_state_button_flags_offset, &flags, sizeof(flags));
+        for (size_t index = 0; index < key_state_event_arrays; ++index)
+        {
+            auto* events = reinterpret_cast<FScriptArray*>(bytes + key_state_events_offset + index * sizeof(FScriptArray));
+            events->Empty(events->Max(), sizeof(uint32_t), alignof(uint32_t));
+        }
     }
 
     static auto controller_stick_entries(UObject* controller, bool right_stick)
@@ -611,24 +703,37 @@ namespace kh3ap
             std::memcpy(entry + key_state_raw_accumulator_offset, zero.data(), sizeof(zero));
             std::memcpy(entry + key_state_sample_count_offset, &no_samples, sizeof(no_samples));
         };
-        for (auto* entry : controller_key_entries(controller, axis_names))
+        // Releases received during the swap go to the new controller. The
+        // parked one must discard every held key and queued event, including
+        // jump/glide and remapped keyboard controls, not just menu navigation.
+        // Walk live hash chains instead of sparse-array holes. Validate the
+        // complete map before mutating it; this runs only on a swap departure.
+        const auto [data, hash, count, free_count, hash_size] = controller_key_map(controller);
+        std::vector<void*> entries;
+        std::vector<bool> seen(count);
+        for (int bucket = 0; bucket < hash_size; ++bucket)
         {
-            if (entry)
+            int index = field<int>(reinterpret_cast<void*>(hash), bucket * sizeof(int));
+            while (index != -1)
             {
-                clear_values(static_cast<std::byte*>(entry));
+                if (index < 0 || index >= count || seen[index])
+                {
+                    throw std::runtime_error("parked_controller_input_map_chain");
+                }
+                seen[index] = true;
+                auto* entry = reinterpret_cast<void*>(data + static_cast<uintptr_t>(index) *
+                                                                 key_state_entry_bytes);
+                entries.push_back(entry);
+                index = field<int>(entry, key_state_hash_next_offset);
             }
         }
-
-        // Releases received during the swap go to the new controller. The
-        // parked one must discard both its held state and any queued repeats.
-        constexpr std::array navigation_keys{
-            L"Gamepad_DPad_Up", L"Gamepad_DPad_Down", L"Gamepad_DPad_Left", L"Gamepad_DPad_Right",
-            L"Gamepad_LeftStick_Up", L"Gamepad_LeftStick_Down", L"Gamepad_LeftStick_Left",
-            L"Gamepad_LeftStick_Right", L"Up", L"Down", L"Left", L"Right",
-        };
+        if (entries.size() != static_cast<size_t>(count - free_count))
+        {
+            throw std::runtime_error("parked_controller_input_map_count");
+        }
         static_assert(key_state_events_offset + key_state_event_arrays * sizeof(FScriptArray) ==
                       key_state_raw_accumulator_offset);
-        for (auto* entry : controller_key_entries(controller, navigation_keys))
+        for (auto* entry : entries)
         {
             if (!entry)
             {

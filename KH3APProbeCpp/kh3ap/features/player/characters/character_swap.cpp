@@ -1,3 +1,4 @@
+#include "kh3ap/features/party/betrayal_trap.h"
 #include <chrono>
 #include "kh3ap/features/player/character_ids.h"
 #include <utility>
@@ -50,6 +51,7 @@
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/input/runtime_player_control.h"
+#include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
@@ -165,14 +167,19 @@ namespace kh3ap::character_swap
         }
         CharacterTrapState trap;
         FWeakObjectPtr trap_world;
+        FWeakObjectPtr trap_cockpit;
         int64_t trap_receipt_index{-1};
         Clock::time_point trap_prepare_deadline{};
         constexpr int king_mickey_id = static_cast<int>(PlayerId::KingMickey);
+        constexpr int32_t normal_hud_command_mode = 0;
+        constexpr int32_t king_mickey_hud_command_mode = 4;
 
         void request_asset_preload(int player_id);
+        bool restore_trap_hud();
 
         void clear_trap()
         {
+            restore_trap_hud();
             trap.clear();
             trap_receipt_index = -1;
             trap_world = {};
@@ -316,6 +323,57 @@ namespace kh3ap::character_swap
                            kh02_actor_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
+        }
+
+        UObject* current_cockpit()
+        {
+            auto* manager = object(object(kh02_current_viewport(), L"GameInstance"), L"m_UIManager");
+            return object(object(manager, L"m_ActiveHUD"), L"TresCockpit");
+        }
+
+        bool restore_trap_hud()
+        {
+            auto* cockpit = trap_cockpit.Get();
+            if (!cockpit)
+            {
+                trap_cockpit = {};
+                return true;
+            }
+            // Mickey must retain his restricted reaction route until possession
+            // has actually returned to Sora, including cinematic returns.
+            if (!sora_variant(player()))
+            {
+                return false;
+            }
+            if (cockpit != current_cockpit())
+            {
+                trap_cockpit = {};
+                return true;
+            }
+            auto& mode = *reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(cockpit) + 0x1bc);
+            if (mode == king_mickey_hud_command_mode)
+            {
+                auto* part = object(cockpit, L"m_pHudXehanort");
+                if (!part || part->GetClassPrivate()->GetName() != L"TresUIP_HudXehanort" ||
+                    !character_native::verify_sites({character_native::Site::mickey_hud_close,
+                                                    character_native::Site::mickey_hud_restore_mode}))
+                {
+                    return false;
+                }
+                // The MiRx factory switches the shared cockpit to Mickey's mode, but
+                // Sora's factory never closes it. Use the shipping close path:
+                // retire its special command presentation, restore the status
+                // display, and return to normal reaction routing.
+                const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+                reinterpret_cast<void (*)(UObject*)>(base + character_native::rva(
+                    character_native::Site::mickey_hud_close))(cockpit);
+                if (mode != normal_hud_command_mode)
+                {
+                    return false;
+                }
+            }
+            trap_cockpit = {};
+            return true;
         }
 
         bool has_doom(UObject* pawn)
@@ -491,6 +549,7 @@ namespace kh3ap::character_swap
             character_magic::capture(pawn);
             session.focus = character_integer_value(pawn, L"GetFocusPoint");
             auto* outgoing_controller = object(pawn, L"Controller");
+            const bool jump_held = !cinematic_handoff && runtime_controller_jump_held(outgoing_controller);
             const auto local_player = make_uobject_weak(object(outgoing_controller, L"Player"));
             Call get_control_rotation(outgoing_controller, L"GetControlRotation");
             get_control_rotation.run();
@@ -511,6 +570,7 @@ namespace kh3ap::character_swap
 #endif
             session.pending = true;
             session.cinematic_return_pending = cinematic_handoff;
+            betrayal_trap::prepare_player_swap(pawn);
             session.travel_character_id =
                 target == king_mickey_id
                     ? -1
@@ -554,6 +614,10 @@ namespace kh3ap::character_swap
             auto* possessed = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
             if (owns_swap_pawn(possessed))
             {
+                if (!cinematic_handoff)
+                {
+                    runtime_controller_restore_jump_hold(object(possessed, L"Controller"), jump_held);
+                }
                 if (id(possessed) == session.target_id)
                 {
                     session.party_handoff->finish(possessed);
@@ -583,6 +647,7 @@ namespace kh3ap::character_swap
                 RuntimeEnemyClearService::handoff_protection(session.diagnostic_outgoing, incoming);
 #endif
                 combat_target_handoff::apply(incoming);
+                betrayal_trap::handoff_player(incoming);
             }
             return true;
         }
@@ -1294,6 +1359,7 @@ namespace kh3ap::character_swap
                 RuntimeEnemyClearService::handoff_protection(session.diagnostic_outgoing, pawn);
 #endif
                 combat_target_handoff::apply(pawn);
+                betrayal_trap::handoff_player(pawn);
             }
             if (id(pawn) != session.target_id ||
                 (session.cinematic_return_pending ? !owns_swap_pawn(pawn) : !ready(pawn)))
@@ -1342,6 +1408,10 @@ namespace kh3ap::character_swap
             }
             if (session.target_id == session.sora_id)
             {
+                if (!restore_trap_hud())
+                {
+                    return false;
+                }
                 Kh02Story::refresh_sora_experience(pawn);
             }
             if (session.target_id != session.sora_id)
@@ -1551,6 +1621,7 @@ namespace kh3ap::character_swap
 
     void notify_player_started()
     {
+        betrayal_trap::notify_player_started();
         install_ascension_hooks();
         character_swap_assets::notify_player_started();
         kairi_shining_hud::notify_player_started();
@@ -1679,6 +1750,7 @@ namespace kh3ap::character_swap
 
     void notify_map_jump(UObject* source, std::wstring_view caller)
     {
+        betrayal_trap::cancel();
         if (trap.locked())
         {
             prepare_native_story_travel();
@@ -1732,6 +1804,7 @@ namespace kh3ap::character_swap
 
     void notify_cinematic_started(UObject* source)
     {
+        betrayal_trap::cancel();
         if (is_uobject_valid_fast(source) &&
             source->GetClassPrivate()->GetPathName().starts_with(L"/Game/Cutscene/") &&
             kh02_actor_world(source) == kh02_current_world())
@@ -1751,6 +1824,18 @@ namespace kh3ap::character_swap
         {
             return false;
         }
+        if (!character_native::verify_sites({character_native::Site::mickey_hud_close,
+                                            character_native::Site::mickey_hud_restore_mode}))
+        {
+            return false;
+        }
+        auto* cockpit = current_cockpit();
+        if (!cockpit || cockpit->GetClassPrivate()->GetName() != L"TresCockpit" ||
+            *reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(cockpit) + 0x1bc) != normal_hud_command_mode)
+        {
+            return false;
+        }
+        trap_cockpit = make_uobject_weak(cockpit);
         request_asset_preload(king_mickey_id);
         trap.prepare(id(pawn));
         trap_receipt_index = receipt_index;
@@ -1882,6 +1967,7 @@ namespace kh3ap::character_swap
 
     void observe_game_over_state_write(uintptr_t component, uintptr_t state)
     {
+        betrayal_trap::observe_state(component, state);
         if (!deathlink::view()->manual_active)
         {
             return;

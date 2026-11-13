@@ -96,13 +96,28 @@ namespace
         assert(inspect({burn, sneeze}).allow_special_battle_bad_status_trap);
         assert(inspect({burn, sneeze}).supports_alternate_bad_status);
         assert(!inspect({burn, grant(3)}).supports_alternate_bad_status);
-        assert(!inspect({burn, stun}).supports_alternate_bad_status);
+        assert(inspect({burn, stun}).supports_alternate_bad_status);
+        assert(inspect({stun}).allow_special_battle_bad_status_trap);
+        auto freeze = burn;
+        freeze.runtime_token = L"ETresBadStatusType::TRES_BADSTAT_FREEZE";
+        assert(!inspect({burn, freeze}).supports_alternate_bad_status);
         assert(!inspect({}).supports_alternate_bad_status);
         auto mickey = grant(4, L"king_mickey_trap");
         mickey.runtime_token = L"KH3AP_TRAP::KING_MICKEY";
         assert(!inspect({mickey}).supports_alternate_bad_status);
         assert(!inspect({burn, mickey}).supports_alternate_bad_status);
-        assert(!inspect({burn, stun}).allow_special_battle_bad_status_trap);
+        auto betrayal = grant(5, L"betrayal_trap");
+        betrayal.runtime_token = L"KH3AP_TRAP::BETRAYAL";
+        assert(inspect({betrayal}).supports_alternate_betrayal);
+        assert(inspect({betrayal, betrayal}).supports_alternate_betrayal);
+        assert(!inspect({betrayal}).supports_alternate_bad_status);
+        assert(!inspect({betrayal, burn}).supports_alternate_betrayal);
+        assert(!inspect({betrayal, grant(6)}).supports_alternate_betrayal);
+        assert(!inspect({}).supports_alternate_betrayal);
+        betrayal.runtime_token = L"KH3AP_TRAP::KING_MICKEY";
+        assert(!inspect({betrayal}).supports_alternate_betrayal);
+        assert(inspect({burn, stun}).allow_special_battle_bad_status_trap);
+        assert(!inspect({burn, freeze}).allow_special_battle_bad_status_trap);
         assert(inspect({burn, grant(3)}).contains_bad_status_trap);
         const auto mixed = inspect({game_over, burn});
         assert(!mixed.allow_special_battle_game_over && !mixed.allow_special_battle_bad_status_trap);
@@ -171,7 +186,7 @@ namespace
             assert(inspect({request}).supports_kh02_persistent_rewards);
             assert(inspect({grant(1), request}).supports_kh02_persistent_rewards);
         }
-        for (const auto* method : {L"bp_tres_start_game_over", L"direct_player_bad_status", L"king_mickey_trap", L"progressive_keyblade_level", L"keyblade_style", L"unknown"})
+        for (const auto* method : {L"bp_tres_start_game_over", L"direct_player_bad_status", L"king_mickey_trap", L"betrayal_trap", L"progressive_keyblade_level", L"keyblade_style", L"unknown"})
         {
             assert(!inspect({grant(1), grant(2, method)}).supports_kh02_persistent_rewards);
         }
