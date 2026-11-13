@@ -1,5 +1,4 @@
 #include <chrono>
-#include "kh3ap/core/settings/seed_gameplay_options.h"
 #include "kh3ap/features/colors/service/service_impl.h"
 #include "kh3ap/features/colors/service/character.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -141,14 +140,15 @@ namespace kh3ap
         gummi_.repaint_all();
     }
 
-    [[nodiscard]] auto RuntimeColorService::Impl::current_mode() const -> int
+    [[nodiscard]] auto RuntimeColorService::Impl::current_mode() const -> ColorRandomizationMode
     {
         if (!enabled())
         {
-            return 0;
+            return ColorRandomizationMode::Off;
         }
-        return harmony_mode() == RuntimeColorHarmonyMode::Wild ? seed_color_mode_wild
-                                                               : seed_color_mode_coordinated;
+        return harmony_mode() == RuntimeColorHarmonyMode::Wild
+                   ? ColorRandomizationMode::Wild
+                   : ColorRandomizationMode::Coordinated;
     }
 
     auto RuntimeColorService::Impl::try_apply(const RuntimeColorPendingPawn& entry,

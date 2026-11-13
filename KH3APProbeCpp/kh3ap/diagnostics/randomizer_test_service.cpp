@@ -219,7 +219,7 @@ namespace kh3ap
                 << "\",\"material_pawn\":\""
                 << json_escape(is_uobject_valid_fast(material_pawn) ? material_pawn->GetFullName() : L"")
                 << "\",\"settings\":{\"music\":" << settings.music_shuffle_mode
-                << ",\"color\":" << settings.color_randomization_mode
+                << ",\"color\":" << color_randomization_mode_id(settings.color_randomization_mode)
                 << ",\"forms\":" << settings.form_themes_enabled
                 << ",\"include_custom_music\":" << settings.include_custom_music
                 << ",\"song_display\":" << settings.song_display
@@ -235,18 +235,18 @@ namespace kh3ap
         {
             const auto music = JsonFieldReader::int64_field(text, "music");
             const auto color = JsonFieldReader::int64_field(text, "color");
+            const auto color_mode = color ? color_randomization_mode_from_id(*color) : std::nullopt;
             const auto forms = JsonFieldReader::bool_field(text, "forms");
             const auto custom = JsonFieldReader::bool_field(text, "include_custom_music");
             const auto song = JsonFieldReader::bool_field(text, "song_display");
             if (!config.gameplay() ||
                 (music && (*music < 0 || *music > max_seed_music_shuffle_mode)) ||
-                (color && (*color < 0 || *color > seed_color_mode_wild)))
+                (color && !color_mode))
             {
                 throw std::runtime_error("invalid_settings_or_gameplay");
             }
             if ((music && !config.settings.set_music_shuffle_mode(static_cast<int32_t>(*music))) ||
-                (color &&
-                 !config.settings.set_color_randomization_mode(static_cast<int32_t>(*color))) ||
+                (color_mode && !config.settings.set_color_randomization_mode(*color_mode)) ||
                 (forms && !config.settings.set_form_themes_enabled(*forms)) ||
                 (custom && !config.settings.set_include_custom_music(*custom)) ||
                 (song && !config.settings.set_song_display(*song)))

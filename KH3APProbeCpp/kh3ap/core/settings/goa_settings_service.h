@@ -1,4 +1,5 @@
 #pragma once
+#include "kh3ap/core/settings/color_randomization_mode.h"
 #include "kh3ap/features/ui/map_overlay/map_icon_options.h"
 
 #include <atomic>
@@ -29,8 +30,7 @@ namespace kh3ap
         int32_t party_friend_1_choice{1};
         int32_t party_friend_2_choice{2};
         std::optional<bool> legacy_controller_focus_enabled{};
-        // 0 off, 1 coordinated, 2 wild.
-        int32_t color_randomization_mode{1};
+        ColorRandomizationMode color_randomization_mode{ColorRandomizationMode::Coordinated};
         // 0 vanilla, 1 shuffle worlds, 2 shuffle battle themes, 3 chaos.
         int32_t music_shuffle_mode{};
         bool include_custom_music{true};
@@ -67,7 +67,7 @@ namespace kh3ap
         auto set_party_randomization_enabled(bool enabled) -> bool;
         auto set_party_reroll_every_room(bool enabled) -> bool;
         auto set_party_friend_choice(int32_t friend_slot, int32_t choice) -> bool;
-        auto set_color_randomization_mode(int32_t mode) -> bool;
+        auto set_color_randomization_mode(ColorRandomizationMode mode) -> bool;
         auto set_music_shuffle_mode(int32_t mode) -> bool;
         [[nodiscard]] auto music_shuffle_mode() const -> int32_t { return music_shuffle_mode_.load(); }
         auto set_include_custom_music(bool enabled) -> bool;
@@ -104,7 +104,8 @@ namespace kh3ap
         std::atomic_int32_t party_friend_1_choice_{1};
         std::atomic_int32_t party_friend_2_choice_{2};
         std::optional<bool> legacy_controller_focus_enabled_{};
-        std::atomic_int32_t color_randomization_mode_{1};
+        std::atomic<ColorRandomizationMode> color_randomization_mode_{
+            ColorRandomizationMode::Coordinated};
         std::atomic_int32_t music_shuffle_mode_{};
         std::atomic_bool include_custom_music_{true};
         std::atomic_bool form_themes_enabled_{};

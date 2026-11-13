@@ -36,19 +36,23 @@ int main() {
     assert(seed_keyblade_levels_start_at_max(JsonObject{R"({"keyblade_levels":0})"}));
     assert(!seed_keyblade_levels_start_at_max(JsonObject{R"({"keyblade_levels":1,"other":{"keyblade_levels":0}})"}));
     assert(!seed_keyblade_levels_start_at_max(JsonObject{"{}"}));
+    const ColorRandomizationMode color_modes[]{ColorRandomizationMode::Off,
+                                               ColorRandomizationMode::Coordinated,
+                                               ColorRandomizationMode::Wild};
     for (const int mode : {0, 1, 2}) {
         const json::Value metadata = {
             {"color_randomization", 99},
             {"slot_data", {{"color_randomization", mode},
                            {"unrelated", {{"color_randomization", 99}}}}}
         };
-        assert(seed_color_randomization_default(JsonObject{json::write(metadata)}) == mode);
+        assert(seed_color_randomization_default(JsonObject{json::write(metadata)}) == color_modes[mode]);
+        assert(color_randomization_mode_id(color_modes[mode]) == mode);
     }
-    for (const auto value : {"-1", "3", "true", "null", "\"wild\""}) {
+    for (const auto value : {"-1", "3", "true", "null", "\"wild\"", "4294967296", "-4294967296"}) {
         assert(seed_color_randomization_default(JsonObject{
-            std::string{"{\"slot_data\":{\"color_randomization\":"} + value + "}}"}) == 1);
+            std::string{"{\"slot_data\":{\"color_randomization\":"} + value + "}}"}) == ColorRandomizationMode::Coordinated);
     }
-    assert(seed_color_randomization_default(JsonObject{"{}"}) == 1);
+    assert(seed_color_randomization_default(JsonObject{"{}"}) == ColorRandomizationMode::Coordinated);
     // Match the generated runtime document, including misleading keys outside
     // the authoritative slot/config objects. Exercise every supported EXP value.
     for (const int32_t half_steps : runtime_experience_multiplier_half_steps) {

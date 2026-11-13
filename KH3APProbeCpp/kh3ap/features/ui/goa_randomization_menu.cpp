@@ -264,15 +264,13 @@ namespace kh3ap
             // in the same order as the choices above.
             [&goa_settings]() -> std::size_t
             {
-                const int32_t mode = goa_settings.status().color_randomization_mode;
-                return static_cast<std::size_t>(mode < seed_color_mode_off ||
-                                                        mode > seed_color_mode_wild
-                                                    ? seed_color_mode_coordinated
-                                                    : mode);
+                const auto mode = goa_settings.status().color_randomization_mode;
+                return static_cast<std::size_t>(mode);
             },
             [&goa_settings](std::size_t index)
             {
-                (void)goa_settings.set_color_randomization_mode(static_cast<int32_t>(index));
+                (void)goa_settings.set_color_randomization_mode(
+                    static_cast<ColorRandomizationMode>(index));
             },
             []()
             {
@@ -280,13 +278,15 @@ namespace kh3ap
             },
             [&goa_settings]()
             {
-                const int32_t mode = goa_settings.status().color_randomization_mode;
+                const auto mode = goa_settings.status().color_randomization_mode;
                 return std::format(
                     STR("Character colors are {}. Select this row to choose "
                         "OFF, COORDINATED or WILD; changes apply to the "
                         "current characters."),
-                    mode == 0 ? STR("OFF")
-                              : (mode == seed_color_mode_wild ? STR("WILD") : STR("COORDINATED")));
+                    mode == ColorRandomizationMode::Off
+                        ? STR("OFF")
+                        : (mode == ColorRandomizationMode::Wild ? STR("WILD")
+                                                               : STR("COORDINATED")));
             },
             []()
             {

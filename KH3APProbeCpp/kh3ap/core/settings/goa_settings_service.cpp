@@ -64,7 +64,7 @@ namespace kh3ap
                                               ? randomized_friend_2_choice
                                               : vanilla_party_member_choice};
             std::optional<bool> legacy_controller_focus_enabled{};
-            int32_t color_randomization_mode{seed_color_mode_coordinated};
+            ColorRandomizationMode color_randomization_mode{ColorRandomizationMode::Coordinated};
             int32_t music_shuffle_mode{};
             bool include_custom_music{true};
             bool form_themes_enabled{};
@@ -105,7 +105,7 @@ namespace kh3ap
             std::wstring_view slot_name, bool seed_enemy_randomization_enabled,
             bool seed_boss_randomization_enabled, bool seed_battle_level_sync_enabled,
             int32_t seed_experience_multiplier_half_steps, bool seed_party_randomization_enabled,
-            bool seed_party_reroll_every_room, int32_t seed_color_randomization_mode,
+            bool seed_party_reroll_every_room, ColorRandomizationMode seed_color_randomization_mode,
             int32_t seed_music_shuffle_mode, bool seed_include_custom_music,
             bool seed_form_themes_enabled, const RuntimeUiSeedDefaults& seed_ui)
             -> PersistedRuntimeSettings
@@ -236,10 +236,10 @@ namespace kh3ap
             // than failing the whole read.
             if (const auto color_mode =
                     JsonFieldReader::int64_field(*text, "color_randomization_mode");
-                color_mode.has_value() && *color_mode >= seed_color_mode_off &&
-                *color_mode <= seed_color_mode_wild)
+                color_mode.has_value())
             {
-                result.color_randomization_mode = static_cast<int32_t>(*color_mode);
+                result.color_randomization_mode = color_randomization_mode_from_id(*color_mode)
+                                                      .value_or(result.color_randomization_mode);
             }
             if (const auto music_mode = JsonFieldReader::int64_field(*text, "music_shuffle_mode");
                 music_mode.has_value() && *music_mode >= 0 &&
@@ -345,7 +345,7 @@ namespace kh3ap
             seed_experience_multiplier_default(seed_document);
         const bool seed_party_enabled = seed_party_randomization_default(*metadata);
         const bool seed_party_reroll_every_room = seed_party_reroll_default(*metadata);
-        const int32_t seed_color_randomization_mode =
+        const ColorRandomizationMode seed_color_randomization_mode =
             seed_color_randomization_default(seed_document);
         const auto music = seed_music_options(seed_document.object_field("slot_data"));
         const int32_t seed_music_shuffle_mode = music.shuffle_mode;
@@ -477,14 +477,12 @@ namespace kh3ap
         return persist_settings();
     }
 
-    auto RuntimeGoaSettingsService::set_color_randomization_mode(int32_t mode) -> bool
+    auto RuntimeGoaSettingsService::set_color_randomization_mode(ColorRandomizationMode mode) -> bool
     {
-        // Clamped rather than rejected: an out-of-range value can only
-        // come from a hand-edited settings file, and falling back to the
-        // default beats refusing to save anything.
-        color_randomization_mode_.store(mode < seed_color_mode_off || mode > seed_color_mode_wild
-                                            ? seed_color_mode_coordinated
-                                            : mode);
+        // Preserve the default fallback if a caller supplies an invalid enum value.
+        color_randomization_mode_.store(
+            color_randomization_mode_from_id(color_randomization_mode_id(mode))
+                .value_or(ColorRandomizationMode::Coordinated));
         return persist_settings();
     }
 
@@ -605,7 +603,8 @@ namespace kh3ap
              << snapshot.experience_multiplier_half_steps << ",\n"
              << "  \"party_randomization_enabled\": "
              << (snapshot.party_randomization_enabled ? "true" : "false") << ",\n"
-             << "  \"color_randomization_mode\": " << snapshot.color_randomization_mode << ",\n"
+             << "  \"color_randomization_mode\": "
+             << color_randomization_mode_id(snapshot.color_randomization_mode) << ",\n"
              << "  \"music_shuffle_mode\": " << snapshot.music_shuffle_mode << ",\n"
              << "  \"include_custom_music\": " << (snapshot.include_custom_music ? "true" : "false")
              << ",\n"
