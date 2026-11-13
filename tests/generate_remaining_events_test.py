@@ -10,6 +10,7 @@ specs={
     'color_weapons':('features/colors/service/links.cpp',r'auto\s+RuntimeColorService::Impl::color_equipped_weapons\('),
     'coordinates':('features/journal/ingredient_journal_map_service.cpp','auto cache_package('),
     'journal_level_actors':('features/journal/ingredient_journal_map_service.cpp','auto authored_level_actors('),
+    'journal_overlay':('features/journal/ingredient_journal_service.cpp','auto helper('),
 }
 out=Path(sys.argv[1]);out.mkdir(parents=True,exist_ok=True)
 for name,(path,signature) in specs.items():

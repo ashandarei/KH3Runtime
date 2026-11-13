@@ -626,9 +626,12 @@ namespace kh3ap
         auto helper() -> UObject*
         {
             auto* movie = overlay_movie.Get();
+            // The patched home movie also contains this helper, but must never
+            // host a journal page. While overlay assets load, publishing there
+            // strands a visible copy when input/cleanup switch to the overlay.
             auto* value = is_uobject_valid_fast(movie)
                               ? try_read_reflected_object_property_value(movie, L"Root")
-                              : root.Get();
+                              : nullptr;
             if (!movie_ready || !is_uobject_valid_fast(value))
             {
                 return nullptr;
@@ -1500,6 +1503,16 @@ namespace kh3ap
                << (dictionary_context(impl_->app_context.Get()) ? "true" : "false")
                << ",\"movie_ready\":" << (impl_->movie_ready ? "true" : "false")
                << ",\"published\":" << (impl_->published ? "true" : "false")
+               << ",\"overlay_visible\":" << (impl_->overlay_visible ? "true" : "false")
+               << ",\"overlay_input_enabled\":"
+               << (impl_->overlay_input_enabled ? "true" : "false")
+               << ",\"home_helper_visible\":"
+               << try_gfx_get_member_value_number(
+                      impl_->config.gfx_paths,
+                      try_gfx_invoke_string_arg_object(impl_->config.gfx_paths, impl_->root.Get(),
+                                                       L"getChildByName", L"kh3apIngredients"),
+                      L"entryVisible")
+                      .value_or(-1)
                << ",\"adversaries\":" << (impl_->app_adversaries ? "true" : "false")
                << ",\"chests\":" << (impl_->app_chests ? "true" : "false")
                << ",\"gates\":" << (impl_->app_gates ? "true" : "false") << ",\"gate_payload\":\""
