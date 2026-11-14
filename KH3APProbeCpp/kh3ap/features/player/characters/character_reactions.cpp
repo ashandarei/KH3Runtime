@@ -39,6 +39,7 @@ namespace kh3ap::character_reactions
         case PlayerActionCommand::VEHICLE:
         case PlayerActionCommand::TRICK:
         case PlayerActionCommand::COVERSLIDE:
+        case PlayerActionCommand::DISPEL:
             break;
         default:
             return false;
@@ -49,6 +50,13 @@ namespace kh3ap::character_reactions
             object(object(controller, L"Player"), L"PlayerController") != controller)
         {
             return false;
+        }
+        if (command == player_action_command_value(PlayerActionCommand::DISPEL))
+        {
+            // Dispel is a Death Sentence command, not a TresReactorComponent.
+            // Sora's dispatcher queries the shared pawn interface before clearing
+            // the countdown and notifying its original owning encounter.
+            return object(pawn, L"m_pDeathSentenceCountEffect") != nullptr;
         }
         if (command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
         {

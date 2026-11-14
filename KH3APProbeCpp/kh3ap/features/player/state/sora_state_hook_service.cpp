@@ -369,6 +369,7 @@ namespace kh3ap
 
         auto flush_current_state_events() -> void
         {
+            flush_native_alternate_bad_status(config.runtime_state);
             if constexpr (!s_enable_current_state_write_polyhook)
             {
                 return;

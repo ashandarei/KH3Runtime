@@ -6,6 +6,7 @@
 #include "kh3ap/features/player/characters/character_swap_stats.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
+#include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_call_helpers.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
@@ -18,6 +19,7 @@
 #include <Unreal/Property/FStructProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/UObjectGlobals.hpp>
+#include <Unreal/UFunction.hpp>
 #include <algorithm>
 #include <array>
 #include <limits>
@@ -26,6 +28,7 @@
 #include <span>
 #include <cmath>
 #include <cstring>
+#include <cwctype>
 #include <stdexcept>
 #define NOMINMAX
 #include <Windows.h>
@@ -80,6 +83,95 @@ namespace kh3ap::character_magic
         std::array<std::optional<Meter>, meter_count> meters;
         std::optional<magic_command::Commands> sora_commands;
         FWeakObjectPtr game_instance;
+
+        struct ElementalHitScope
+        {
+            FFrame* frame{};
+            FWeakObjectPtr component;
+            uint8_t* entry{};
+            uint8_t replacement{};
+        };
+        thread_local std::vector<ElementalHitScope> elemental_hits;
+
+        auto elemental_characters(UObject* component) -> std::span<uint8_t>
+        {
+            auto* field = properties.resolve(component, L"m_ApplyDamageChrUniqueIDs");
+            if (!field || !field->IsA<FArrayProperty>()) { return {}; }
+            auto* inner = static_cast<FArrayProperty*>(field)->GetInner();
+            if (!inner || inner->GetElementSize() != sizeof(uint8_t)) { return {}; }
+            auto* values = field->ContainerPtrToValuePtr<TArray<uint8_t>>(component);
+            if (values->Num() < 1 || values->Num() > 32 || values->Max() < values->Num() ||
+                !values->GetData()) { return {}; }
+            return {values->GetData(), static_cast<size_t>(values->Num())};
+        }
+
+        void install_elemental_hit_hook()
+        {
+            UObjectGlobals::RegisterHook(
+                L"/Script/TresGame.TresGimmickHitCountComponent:OnTresTakeDamageOwner",
+                [](UnrealScriptFunctionCallableContext& context, void*)
+                {
+                    elemental_hits.push_back({&context.TheStack});
+                    auto* component = context.Context;
+                    auto* pawn = character_swap::current_hero();
+                    if (!is_uobject_valid_fast(component) || !is_uobject_valid_fast(pawn) ||
+                        !character_swap::owns_swap_pawn(pawn) ||
+                        component->GetName() != L"TresGimmickHitCountMagic") { return; }
+                    auto* owner = component->GetOuterPrivate();
+                    if (!is_uobject_valid_fast(owner)) { return; }
+                    auto owner_class = owner->GetClassPrivate()->GetName();
+                    std::transform(owner_class.begin(), owner_class.end(), owner_class.begin(),
+                                   [](wchar_t value) { return std::towlower(value); });
+                    if (!owner_class.starts_with(L"g_bx_darkcube_03_leg")) { return; }
+                    auto* function = get_frame_node(context.TheStack);
+                    auto* params = get_frame_locals(context.TheStack);
+                    if (!function || !params || function->GetName() != L"OnTresTakeDamageOwner")
+                    { return; }
+                    auto* instigator = find_function_param_by_name(function, L"InstigatedBy");
+                    auto* causer = find_function_param_by_name(function, L"DamageCauser");
+                    if (!instigator || !causer || instigator->GetElementSize() != sizeof(UObject*) ||
+                        causer->GetElementSize() != sizeof(UObject*)) { return; }
+                    auto* controller = properties.read_object(pawn, L"Controller");
+                    auto* source = *causer->ContainerPtrToValuePtr<UObject*>(params);
+                    auto* damage_controller = *instigator->ContainerPtrToValuePtr<UObject*>(params);
+                    if (!controller || properties.read_object(controller, L"Pawn") != pawn ||
+                        (damage_controller && damage_controller != controller) ||
+                        (source != pawn && properties.read_object(source, L"Owner") != pawn))
+                    { return; }
+                    auto* id = properties.resolve(pawn, L"m_ChrUniqueID");
+                    if (!id || id->GetElementSize() != sizeof(uint8_t)) { return; }
+                    const auto character = *id->ContainerPtrToValuePtr<uint8_t>(pawn);
+                    auto characters = elemental_characters(component);
+                    if (std::find(characters.begin(), characters.end(), character) != characters.end())
+                    { return; }
+                    const auto sora = std::find(characters.begin(), characters.end(), uint8_t{1});
+                    if (sora == characters.end()) { return; }
+                    // Only this locally controlled hit borrows Sora's allowed-character
+                    // entry. Native element, body-part and damage filters still run.
+                    elemental_hits.back() = {&context.TheStack, make_uobject_weak(component),
+                                             &*sora, character};
+                    *sora = character;
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                    RC::Output::send<RC::LogLevel::Normal>(
+                        STR("[KH3APProbeCpp] Elemental goo controlled hit character={} owner={}\n"),
+                        character, owner->GetName());
+#endif
+                },
+                [](UnrealScriptFunctionCallableContext& context, void*)
+                {
+                    if (elemental_hits.empty() || elemental_hits.back().frame != &context.TheStack)
+                    { return; }
+                    const auto scope = elemental_hits.back();
+                    elemental_hits.pop_back();
+                    if (!scope.entry) { return; }
+                    // The callback can destroy its owner after the final valid hit.
+                    // Never retain or dereference its array without revalidating it.
+                    for (auto& value : elemental_characters(scope.component.Get()))
+                    {
+                        if (&value == scope.entry && value == scope.replacement) { value = 1; break; }
+                    }
+                }, nullptr);
+        }
 
         int slot(UObject* pawn)
         {
@@ -399,6 +491,7 @@ namespace kh3ap::character_magic
             return false;
         }
         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        install_elemental_hit_hook();
         set_charge = reinterpret_cast<SetCharge>(base + character_native::rva(Site::mp_charge_set));
         refresh_menu = reinterpret_cast<void (*)(UObject*)>(
             base + character_native::rva(Site::magic_menu_refresh));

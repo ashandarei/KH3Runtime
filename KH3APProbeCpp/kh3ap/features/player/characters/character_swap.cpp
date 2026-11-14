@@ -2040,12 +2040,18 @@ namespace kh3ap::character_swap
     void observe_game_over_state_write(uintptr_t component, uintptr_t state)
     {
         betrayal_trap::observe_state(component, state);
-        if (!deathlink::view()->manual_active)
+        if (!deathlink::view()->observe_alternates)
         {
             return;
         }
-        auto* pawn = current_hero();
+        auto* pawn = player();
         auto* current = reinterpret_cast<UObject*>(state);
+        if (is_uobject_valid_fast(pawn) && is_standard_sora_player_id(id(pawn)) &&
+            object(pawn, L"MyStateComp") == reinterpret_cast<UObject*>(component))
+        {
+            deathlink::release_alternate_player();
+            return;
+        }
         if (!owns_swap_pawn(pawn) ||
             object(pawn, L"MyStateComp") != reinterpret_cast<UObject*>(component) ||
             !is_uobject_valid_fast(current) || object(current, L"MyCharPawn") != pawn)
@@ -2067,7 +2073,7 @@ namespace kh3ap::character_swap
         static_assert(sizeof(weak) == sizeof(uint64_t));
         uint64_t key{};
         std::memcpy(&key, &weak, sizeof(key));
-        deathlink::observe_manual_player(std::to_string(key), dead,
+        deathlink::observe_alternate_player(std::to_string(key), dead,
                                          !dead && !session.pending && ready(pawn) &&
                                              current_runtime_trap_live_state_status(pawn).ready);
     }

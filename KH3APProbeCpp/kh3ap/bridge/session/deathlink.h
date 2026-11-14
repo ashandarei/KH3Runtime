@@ -12,7 +12,7 @@ namespace kh3ap::deathlink
     inline constexpr auto control_file = channels::runtime_deathlink_control_file;
     struct View
     {
-        bool ready{}, fenced{}, awaiting_apply{}, recovery_pending{}, manual_active{};
+        bool ready{}, fenced{}, awaiting_apply{}, recovery_pending{}, observe_alternates{};
         std::string error;
     };
     // Values-only worker. Game-thread delivery retains all UObject safety gates.
@@ -20,7 +20,8 @@ namespace kh3ap::deathlink
     auto stop() -> void;
     auto observe(std::string_view channel, std::string_view json) -> void;
     // Values-only observation from owned swap pawn lifecycle/state events.
-    auto observe_manual_player(std::string player_key, bool dead, bool ready) -> void;
+    auto observe_alternate_player(std::string player_key, bool dead, bool ready) -> void;
+    auto release_alternate_player() -> void;
     auto disconnected() -> void;
     auto view() -> std::shared_ptr<const View>;
 }

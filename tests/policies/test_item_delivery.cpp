@@ -149,6 +149,13 @@ namespace
         manual_game_over.action_kind = L"manual_game_over";
         manual_game_over.runtime_token = L"GAMEOVER_KIND_NORMAL";
         assert(inspect({manual_game_over}).supports_alternate_game_over);
+        auto deathlink_game_over = manual_game_over;
+        deathlink_game_over.action_kind = L"deathlink_game_over";
+        assert(inspect({deathlink_game_over}).supports_alternate_game_over);
+        assert(!inspect({deathlink_game_over, burn}).supports_alternate_game_over);
+        assert(!inspect({deathlink_game_over, grant(3)}).supports_alternate_game_over);
+        deathlink_game_over.grant_method = L"bp_tres_get_item";
+        assert(!inspect({deathlink_game_over}).supports_alternate_game_over);
         assert(!inspect({game_over}).supports_alternate_game_over);
         assert(!inspect({}).supports_alternate_game_over);
         assert(!inspect({manual_game_over, game_over}).supports_alternate_game_over);
