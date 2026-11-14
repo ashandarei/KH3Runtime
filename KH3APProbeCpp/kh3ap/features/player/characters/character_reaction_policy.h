@@ -10,6 +10,7 @@ namespace kh3ap::character_reactions
         switch (static_cast<PlayerActionCommand>(command))
         {
         case PlayerActionCommand::TALK: return reactor == 2;
+        case PlayerActionCommand::OPEN: return reactor == 3;
         case PlayerActionCommand::CHECK: return reactor == 4;
         case PlayerActionCommand::RESCUE: return reactor == 6;
         case PlayerActionCommand::VEHICLE: return reactor == 7;

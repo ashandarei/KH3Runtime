@@ -1,5 +1,6 @@
 #include "kh3ap/features/player/player_action_commands.h"
 #include "alternate_interaction_service.h"
+#include "alternate_interaction_policy.h"
 #include "runtime_context.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/player_state_ids.h"
@@ -10,7 +11,6 @@
 #include "kh3ap/features/player/movement/character_barrel_spin.h"
 #include "kh3ap/features/ingredients/ingredient_tracker.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
-#include "kh3ap/features/kh02/treasure/kh02_chest_interaction_policy.h"
 #include "kh3ap/features/treasure/chest_persistence_service.h"
 #include "kh3ap/features/treasure/chest_commands.h"
 #include "kh3ap/features/world/garden_return/garden_return_policy.h"
@@ -646,7 +646,9 @@ namespace kh3ap::garden_return_detail
                     auto* instance = object_field(viewport(), L"GameInstance");
                     // GetPlayActionCommand describes an executing state, not
                     // the selected reactor after Aqua's failed transition.
-                    if (!kh02_chest_interaction::accepts_player_state(state_id) || !instance ||
+                    const bool swimming_target = character_swap::owns_swap_pawn(pawn) &&
+                        !camp_is_kh02_world(world()) && (ingredient || chest_eligible(chest, pawn));
+                    if (!alternate_interaction::accepts_player_state(state_id, swimming_target) || !instance ||
                         field<int32_t>(instance, 0x8d0) != 0)
                     {
                         cancel(L"aqua_chest_state_busy");
@@ -781,7 +783,11 @@ namespace kh3ap::garden_return_detail
                 }
                 uint8_t state_id{};
                 pawn->ProcessEvent(state, &state_id);
-                if (!kh02_chest_interaction::accepts_player_state(state_id))
+                // The opening state returns to Swim underwater. Reconcile the
+                // original pending chest there as well as on ordinary ground.
+                const bool swimming_target = character_swap::owns_swap_pawn(pawn) &&
+                    character_traversal::ready(pawn) && !camp_is_kh02_world(world());
+                if (!alternate_interaction::accepts_player_state(state_id, swimming_target))
                 {
                     return;
                 }

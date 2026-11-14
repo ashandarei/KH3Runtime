@@ -33,6 +33,7 @@ namespace kh3ap::character_reactions
         switch (static_cast<PlayerActionCommand>(command))
         {
         case PlayerActionCommand::TALK:
+        case PlayerActionCommand::OPEN:
         case PlayerActionCommand::CHECK:
         case PlayerActionCommand::RESCUE:
         case PlayerActionCommand::VEHICLE:
@@ -82,6 +83,13 @@ namespace kh3ap::character_reactions
         if (command == player_action_command_value(PlayerActionCommand::TRICK))
         {
             return character_barrel_spin::selected_barrel(actor, reactor, pawn);
+        }
+        if (command == player_action_command_value(PlayerActionCommand::OPEN))
+        {
+            auto* chest = UObjectGlobals::StaticFindObject<UClass*>(
+                nullptr, nullptr, L"/Script/TresGame.TresTreasureBox");
+            return is_uobject_valid_fast(chest) && is_uobject_a_fast(actor, chest) &&
+                   object(actor, L"MyReactor") == reactor;
         }
         if (command == player_action_command_value(PlayerActionCommand::VEHICLE))
         {

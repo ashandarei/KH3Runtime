@@ -7,6 +7,7 @@ int main()
     using character_reactions::matches_reactor;
     // Prevent confusing UI reactor IDs with the unrelated player-action enum.
     assert(matches_reactor(player_action_command_value(PlayerActionCommand::TALK), 2));
+    assert(matches_reactor(player_action_command_value(PlayerActionCommand::OPEN), 3));
     assert(matches_reactor(player_action_command_value(PlayerActionCommand::RESCUE), 6));
     assert(matches_reactor(player_action_command_value(PlayerActionCommand::VEHICLE), 7));
     assert(matches_reactor(player_action_command_value(PlayerActionCommand::CHECK), 4));
@@ -17,7 +18,7 @@ int main()
         {
             if (matches_reactor(command, static_cast<uint8_t>(reactor)))
             {
-                assert((command == 77 && reactor == 2) || (command == 79 && reactor == 4) ||
+                assert((command == 77 && reactor == 2) || (command == 78 && reactor == 3) || (command == 79 && reactor == 4) ||
                        (command == 81 && reactor == 6) || (command == 82 && reactor == 7) ||
                        (command == 91 && reactor == 15));
             }

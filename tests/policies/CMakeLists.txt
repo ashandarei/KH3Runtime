@@ -46,6 +46,7 @@ set(_kh3_policy_tests
     character_style_state
     character_ascension_state
     character_reaction_policy
+    alternate_interaction_policy
     ultima_weapon_shard_policy
     integer
     fast_start_policy
