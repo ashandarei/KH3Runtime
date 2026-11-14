@@ -46,6 +46,7 @@ namespace kh3ap
         map_ready_context_key.clear();
         map_ready_pawn = nullptr;
         map_ready_world = nullptr;
+        observed_map_ready_world = nullptr;
         config.tutorial_skips.reset_playable_context();
         final_world_capture_armed = false;
         final_world_capture_closed = false;
@@ -71,6 +72,11 @@ namespace kh3ap
     auto RuntimePlayerContextService::map_ready_context_key() const -> std::wstring_view
     {
         return impl_->map_ready_context_key;
+    }
+
+    auto RuntimePlayerContextService::map_ready_for_pawn(UObject* pawn) const -> bool
+    {
+        return impl_->map_ready_for_pawn(pawn);
     }
 
     auto RuntimePlayerContextService::final_world_capture_armed() const -> bool

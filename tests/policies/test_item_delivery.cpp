@@ -1,5 +1,7 @@
 #include "kh3ap/features/grants/delivery/item_delivery_flow.h"
 #include "kh3ap/features/grants/grant_tokens.h"
+#include "kh3ap/features/grants/delivery/item_delivery_queue.h"
+#include "kh3ap/features/kh02/rewards/kh02_reward_policy.h"
 
 #include <array>
 #include <cassert>
@@ -179,17 +181,43 @@ namespace
             return runtime_item_delivery_policy(grants, L"runtime_item_grant_batch", true);
         };
         assert(!inspect({}).supports_kh02_persistent_rewards);
-        for (const auto* method : {L"bp_tres_get_item", L"bp_tres_get_item_add_munny", L"durable_sora_vbonus", L"durable_sora_ability", L"controller_unlock", L"party_member_unlock", L"character_unlock", L"ultima_weapon_shard"})
+        for (const auto* method : {L"bp_tres_get_item", L"bp_tres_get_item_add_munny", L"durable_sora_vbonus", L"durable_sora_ability", L"controller_unlock", L"party_member_unlock", L"character_unlock", L"ultima_weapon_shard", L"progressive_keyblade_level", L"keyblade_style"})
         {
             auto request = grant(7, method);
             request.runtime_token = L"KEY_ITEM06";
             assert(inspect({request}).supports_kh02_persistent_rewards);
             assert(inspect({grant(1), request}).supports_kh02_persistent_rewards);
         }
-        for (const auto* method : {L"bp_tres_start_game_over", L"direct_player_bad_status", L"king_mickey_trap", L"betrayal_trap", L"progressive_keyblade_level", L"keyblade_style", L"unknown"})
+        for (const auto* method : {L"bp_tres_start_game_over", L"direct_player_bad_status", L"king_mickey_trap", L"betrayal_trap", L"unknown"})
         {
             assert(!inspect({grant(1), grant(2, method)}).supports_kh02_persistent_rewards);
         }
+    }
+
+    void alternate_keyblade_receipts_pass_blocked_traps_and_remain_atomic()
+    {
+        item_delivery::DeliveryQueue queue;
+        auto level = grant(2, L"progressive_keyblade_level");
+        level.runtime_token = L"KH3AP_PROGRESSIVE_KEYBLADE_LEVEL::1";
+        auto style = grant(2, L"keyblade_style");
+        style.runtime_token = L"KH3AP_KEYBLADE_STYLE::WEP_KEYBLADE01";
+        assert(queue.replace(batch({grant(1, L"king_mickey_trap"), level, style, grant(3)})));
+        const auto selected = queue.select(true, [](auto grants) {
+            return runtime_item_delivery_policy(grants, L"runtime_item_grant_batch", true)
+                .supports_kh02_persistent_rewards;
+        });
+        assert(selected.grants.size() >= 2);
+        assert(selected.grants[0].index == 2 && selected.grants[1].index == 2);
+        assert(queue.complete_receipts(selected).empty());
+        queue.remember(level, RuntimeGrantTokens::build_apply_payload(level));
+        assert(queue.complete_receipts(selected).empty());
+        queue.remember(style, RuntimeGrantTokens::build_apply_payload(style));
+        const auto complete = queue.complete_receipts(selected);
+        assert(complete.size() == 2);
+        queue.acknowledge(complete);
+        assert(!queue.empty()); // The trap remains pending.
+        assert(kh02rewards::uses_native_ability_popup(L"keyblade_style"));
+        assert(!kh02rewards::uses_native_ability_popup(L"progressive_keyblade_level"));
     }
 
     void munny_pouches_do_not_block_mixed_ally_rewards()
@@ -388,6 +416,7 @@ int main()
     request_permissions_do_not_leak_between_batch_members();
     kh02_sora_uses_normal_delivery_without_relaxing_alternate_handoffs();
     aqua_permissions_require_every_grant_to_target_persistent_records();
+    alternate_keyblade_receipts_pass_blocked_traps_and_remain_atomic();
     munny_pouches_do_not_block_mixed_ally_rewards();
     space_inventory_does_not_starve_behind_priority_deathlink();
     blocked_gates_prevent_pawn_recovery_and_keep_reason_precedence();

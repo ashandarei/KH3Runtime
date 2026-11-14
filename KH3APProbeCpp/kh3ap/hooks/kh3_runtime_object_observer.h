@@ -135,6 +135,9 @@ namespace kh3ap
         RC::Unreal::FName big_hero_gameflow_class_name_{};
         RC::Unreal::FName rapunzel_swing_camera_class_name_{};
         RC::Unreal::FName rapunzel_hair_approach_class_name_{};
+        RC::Unreal::FName olympus_intro_camera_class_name_{};
+        RC::Unreal::FName olympus_collapse_camera_class_name_{};
+        RC::Unreal::FName olympus_collapse_gameflow_class_name_{};
         std::array<RC::Unreal::FName, 3> graveyard_backtracking_class_names_{};
         RC::Unreal::FName goa_level_script_class_name_{};
         RC::Unreal::FName festival_dance_story_manager_class_name_{};

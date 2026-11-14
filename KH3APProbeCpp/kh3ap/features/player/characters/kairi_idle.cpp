@@ -1,6 +1,7 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_pose_handoff.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/performance_build.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -119,6 +120,13 @@ namespace kh3ap::kairi_idle
                     // movement requests at their native timing.
                     blend = std::max(blend, relaxed_blend_seconds);
                 }
+            }
+            // This hook already owns the shared animation-play entry. During
+            // a character handoff no incoming animation may blend from the
+            // parked pose, including the relaxed-idle blend selected above.
+            if (character_pose_handoff::active_for(anim))
+            {
+                blend = 0.0f;
             }
             return reinterpret_cast<Play>(original_play)(anim, name, slot, blend, flags, rate,
                                                          scale_xy, scale_z);

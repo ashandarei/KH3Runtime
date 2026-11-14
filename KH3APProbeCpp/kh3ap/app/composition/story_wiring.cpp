@@ -145,18 +145,9 @@ namespace kh3ap
             },
             []()
             {
-                return composition_context_summary();
-            },
-            []()
-            {
                 return auto_skip_cutscenes_enabled_from_seed();
             },
             s_build_stamp,
-            s_tres_level_script_actor_on_event_skip_path,
-            s_enable_cutscene_skip_candidate_catalog,
-            s_enable_cutscene_ui_probe_hooks,
-            s_enable_cutscene_end_skip_probe_logging,
-            s_enable_cutscene_state_probe_logging,
         }};
     }
 

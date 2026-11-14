@@ -30,7 +30,6 @@ namespace kh3ap::character_camera
         RuntimeOptionsInputOwnership camera_input;
         RC::Unreal::FWeakObjectPtr sora_camera_class;
         RC::Unreal::FWeakObjectPtr height_world;
-        RC::Unreal::FWeakObjectPtr adjusted_camera;
         float sora_target_height{};
         ReflectedPropertyCache<64> properties;
 
@@ -109,16 +108,20 @@ namespace kh3ap::character_camera
     {
         using namespace RC::Unreal;
         auto *id = properties.resolve(pawn, L"m_PlayerUniqueID");
-        if (!id || id->GetElementSize() != sizeof(uint8_t) ||
-            *id->ContainerPtrToValuePtr<uint8_t>(pawn) !=
-                static_cast<uint8_t>(player_animation_support::PlayerId::Roxas) ||
+        if (!id || id->GetElementSize() != sizeof(uint8_t))
+        {
+            return;
+        }
+        const auto player_id = *id->ContainerPtrToValuePtr<uint8_t>(pawn);
+        if ((player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Roxas) &&
+             player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Kairi)) ||
             !character_swap::owns_swap_pawn(pawn) || !height_world.Get() ||
             kh02_actor_world(pawn) != height_world.Get())
         {
             return;
         }
         auto *camera = field_camera(pawn);
-        if (!camera || adjusted_camera.Get() == camera)
+        if (!camera)
         {
             return;
         }
@@ -132,17 +135,18 @@ namespace kh3ap::character_camera
             throw std::runtime_error("character_camera_target_height_invalid");
         }
         // Keep the native camera socket, orbit and collision behavior. Only
-        // this Roxas camera compensates for its socket's different height.
+        // this character's camera compensates for its socket's different height.
+        // Reapply at each handoff: the factory restores authored offsets even
+        // when it reuses the same pooled camera object.
         Call adjust(camera, L"BP_SetTargetOffset");
         adjust.vector(L"TargetOffset", target_offset[0], target_offset[1], target_offset[2]);
         adjust.number(L"Time", 0.0f);
         adjust.run();
-        adjusted_camera = make_uobject_weak(camera);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         RC::Output::send<RC::LogLevel::Normal>(
             STR("[KH3APProbeCpp] CharacterCameraHeight player={} sora_target={} socket={} "
                 "offset={}\n"),
-            player_id_value(PlayerId::Roxas), sora_target_height, original_height,
+            player_id, sora_target_height, original_height,
             target_offset[2]);
 #endif
     }

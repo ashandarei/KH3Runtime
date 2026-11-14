@@ -19,14 +19,14 @@ void set_adversary_defeat_observer(AdversaryDefeatObserver observer) noexcept;
 class RuntimeAdversaryService {
 public:
     RuntimeAdversaryService(std::function<std::optional<std::filesystem::path>()> bridge,
-                           std::function<RC::Unreal::UObject*()> sora);
+                           std::function<RC::Unreal::UObject*()> player);
     ~RuntimeAdversaryService();
     RuntimeAdversaryService(const RuntimeAdversaryService&) = delete;
     RuntimeAdversaryService& operator=(const RuntimeAdversaryService&) = delete;
     void tick(std::chrono::steady_clock::time_point now);
 private:
     std::function<std::optional<std::filesystem::path>()> bridge_;
-    std::function<RC::Unreal::UObject*()> sora_;
+    std::function<RC::Unreal::UObject*()> player_;
     struct CounterHook;
     std::unique_ptr<CounterHook> hook_;
     uint64_t observed_generation_{};

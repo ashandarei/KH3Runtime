@@ -197,9 +197,9 @@ namespace kh3ap
             {
                 return m_player_context.trusted_current_playable_cached_sora_pawn();
             },
-            [this]()
+            [this](UObject* pawn)
             {
-                return m_player_context.map_ready_context_key();
+                return m_player_context.map_ready_for_pawn(pawn);
             },
             []()
             {

@@ -13,7 +13,10 @@ using kh3ap::RuntimeControllerAbilityEvent;
 using kh3ap::is_runtime_mount_olympus_ability_context;
 
 #define STR(value) L##value
-struct UObject { bool valid{true}; int serial{1}; virtual ~UObject() = default; };
+struct UObject {
+    bool valid{true}; int serial{1}; virtual ~UObject() = default;
+    UObject *controller{}, *player{}, *pawn{}, *player_controller{};
+};
 struct AActor : UObject {
     UObject* world{};
     auto GetWorld() -> UObject* { return world; }
@@ -28,8 +31,13 @@ struct FWeakObjectPtr {
 auto make_uobject_weak(UObject* p) -> FWeakObjectPtr { return p; }
 auto is_uobject_valid_fast(UObject* p) -> bool { return p&&p->valid; }
 auto is_uobject_a_fast(UObject* p, int) -> bool { return is_uobject_valid_fast(p)&&dynamic_cast<AActor*>(p); }
+namespace character_swap {
+    UObject* hero{};
+    auto current_hero() -> UObject* { return hero; }
+    auto owns_swap_pawn(UObject* p) -> bool { return p && p == hero; }
+}
 enum class MusicUpdate { Context };
-enum class LogLevel { Warning };
+enum class LogLevel { Warning, Verbose };
 struct Output { template<LogLevel, class... T> static void send(T&&...){} };
 struct RuntimeContextSnapshot { std::wstring hook,world,outer,object,pawn_source; };
 constexpr auto s_bridge_protocol_name="test";
@@ -55,7 +63,16 @@ struct Service {
     bool bridge_available{true};
     int music_wakes{};
     std::wstring map_ready_context_key;
-    FWeakObjectPtr map_ready_pawn,map_ready_world;
+    FWeakObjectPtr map_ready_pawn,map_ready_world,observed_map_ready_world;
+    auto read_object_property_in_chain(UObject* p, const wchar_t* property) const -> UObject* {
+        if (!is_uobject_valid_fast(p)) return nullptr;
+        const std::wstring_view name{property};
+        if (name == L"Controller") return p->controller;
+        if (name == L"Player") return p->player;
+        if (name == L"Pawn") return p->pawn;
+        if (name == L"PlayerController") return p->player_controller;
+        return nullptr;
+    }
     auto mark_trusted_current_playable_context_map_ready(std::wstring_view) { return promoted; }
     auto trusted_current_playable_cached_sora_pawn() -> UObject* { return pawn; }
     auto bridge_dir() -> std::optional<std::filesystem::path> {
@@ -108,6 +125,40 @@ int main() {
     service.pawn=nullptr;assert(!arrive());
     service.promoted.reset();service.config.runtime_state.snapshot=RuntimeContextSnapshot{L"WorldScript",L"map",{},L"script",{}};
     assert(!arrive()&&refreshes==8);
+
+    // Map-name completion while Kairi is possessed must survive a later
+    // return to a newly created Sora, without publishing Kairi as Sora.
+    Service alternate;
+    UObject map, next_map, local, controller;
+    AActor kairi, sora;
+    kairi.world = sora.world = &map;
+    kairi.controller = sora.controller = &controller;
+    controller.player = &local;
+    local.player_controller = &controller;
+    controller.pawn = &kairi;
+    character_swap::hero = &kairi;
+    assert(!alternate.map_ready_for_pawn(&kairi)); // Possession alone is not map readiness.
+    assert(!alternate.write_map_ready_marker(L"map_name", nullptr, nullptr, true));
+    assert(alternate.map_ready_context_key.empty());
+    assert(alternate.map_ready_for_pawn(&kairi));
+    assert(!alternate.map_ready_for_pawn(&sora)); // Parked Sora is not possessed.
+    controller.pawn = &sora;
+    character_swap::hero = nullptr;
+    assert(alternate.map_ready_for_pawn(&sora));
+    assert(!alternate.map_ready_for_pawn(&kairi));
+    sora.world = &next_map;
+    assert(!alternate.map_ready_for_pawn(&sora)); // No readiness across travel.
+    sora.world = &map;
+    ++map.serial;
+    assert(!alternate.map_ready_for_pawn(&sora)); // No readiness across UObject reuse.
+    alternate.pawn = &sora;
+    alternate.write_map_ready_marker(L"map_name", nullptr, nullptr, true);
+    assert(alternate.map_ready_for_pawn(&sora));
+    local.player_controller = nullptr;
+    assert(!alternate.map_ready_for_pawn(&sora)); // Remote/unowned controller rejected.
+    local.player_controller = &controller;
+    alternate.observed_map_ready_world = {};
+    assert(!alternate.map_ready_for_pawn(&sora)); // Explicit lifecycle reset.
 
     AbilityReady ability;
     UObject current_pawn,current_controller,new_controller;

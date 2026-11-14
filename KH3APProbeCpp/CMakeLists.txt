@@ -203,6 +203,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/controller_abilities/refresh.cpp
     kh3ap/features/player/controller_abilities/hooks.cpp
     kh3ap/features/story/cutscenes/cutscene_skip_service.cpp
+    kh3ap/features/story/cutscenes/native_cutscene_skip.cpp
     kh3ap/features/story/cutscenes/cutscene_skip_view.cpp
     kh3ap/diagnostics/diagnostic_state.cpp
     kh3ap/diagnostics/output/diagnostic_probe_output_helpers.cpp
@@ -230,6 +231,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/story/world_fixes/rapunzel_water_bypass.cpp
     kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.cpp
     kh3ap/features/story/world_fixes/rapunzel_hair_approach.cpp
+    kh3ap/features/story/world_fixes/olympus_intro_camera.cpp
+    kh3ap/features/story/world_fixes/olympus_collapse_camera.cpp
     kh3ap/features/story/world_fixes/festival_dance_story_service.cpp
     kh3ap/features/story/minigames/union_cross_command_service.cpp
     kh3ap/features/story/world_fixes/fz02_player_start_service.cpp
@@ -392,6 +395,7 @@ add_library(${TARGET} SHARED
     kh3ap/core/gfx/gfx_value_helpers.cpp
     kh3ap/features/player/state/sora_state_sidecar.cpp
     kh3ap/features/player/state/sora_state_hook_service.cpp
+    kh3ap/features/player/state/shared_sora_progression.cpp
     kh3ap/features/player/state/sora_state_catalog.cpp
     kh3ap/features/player/state/sora_position_probe.cpp
     kh3ap/features/player/state/sora_barrier_helpers.cpp

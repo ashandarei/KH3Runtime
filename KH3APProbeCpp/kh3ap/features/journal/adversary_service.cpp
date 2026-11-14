@@ -92,8 +92,8 @@ struct RuntimeAdversaryService::CounterHook {
 };
 RuntimeAdversaryService::RuntimeAdversaryService(
         std::function<std::optional<std::filesystem::path>()> bridge,
-        std::function<RC::Unreal::UObject*()> sora)
-    :bridge_(std::move(bridge)),sora_(std::move(sora)),hook_(std::make_unique<CounterHook>()){}
+        std::function<RC::Unreal::UObject*()> player)
+    :bridge_(std::move(bridge)),player_(std::move(player)),hook_(std::make_unique<CounterHook>()){}
 RuntimeAdversaryService::~RuntimeAdversaryService()=default;
 auto read_adversary_revision() -> uint64_t {return counter_generation.load(std::memory_order_acquire);}
 void set_adversary_defeat_observer(AdversaryDefeatObserver observer) noexcept {defeat_observer.store(observer,std::memory_order_release);}
@@ -172,15 +172,16 @@ void RuntimeAdversaryService::tick(std::chrono::steady_clock::time_point) {
     // Until one of those or a counter update arrives, there is no gameplay work
     // to validate. Avoid possession/property reads on every idle frame.
     if(!needs_sync_ && generation==observed_generation_)return;
-    const bool playable=is_uobject_valid_fast(sora_());
+    auto* player = player_();
+    const bool playable=is_uobject_valid_fast(player);
     if(!playable){was_playable_=false;needs_sync_=true;return;}
     if(!was_playable_){was_playable_=true;needs_sync_=true;}
     const auto bridge=bridge_();if(!bridge)return;
     const auto defeated=read_adversary_defeats();
     if(!defeated)return;
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-    RC::Output::send<RC::LogLevel::Normal>(L"[KH3APProbeCpp] Adversary counter snapshot reason={} generation={} defeated_rows={}\n",
-            needs_sync_ ? L"reconcile" : L"update_event",generation,defeated->size());
+    RC::Output::send<RC::LogLevel::Normal>(L"[KH3APProbeCpp] Adversary counter snapshot reason={} generation={} defeated_rows={} player={}\n",
+            needs_sync_ ? L"reconcile" : L"update_event",generation,defeated->size(),player->GetName());
 #endif
     if(defeated==reported_){observed_generation_=generation;needs_sync_=false;return;}
     const RuntimeConditionalProfileScope<(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS != 0)> profile{L"adversaries:publish"};

@@ -5,7 +5,8 @@ namespace kh3ap::kh02rewards
 {
     constexpr auto uses_native_ability_popup(std::wstring_view method) -> bool
     {
-        return method == L"controller_unlock" || method == L"durable_sora_ability";
+        return method == L"controller_unlock" || method == L"durable_sora_ability" ||
+               method == L"keyblade_style";
     }
 
     // Ownership-only operations. Traps, DeathLink and live Sora actions stay queued.
@@ -14,6 +15,7 @@ namespace kh3ap::kh02rewards
         return method == L"bp_tres_get_item" || method == L"bp_tres_get_item_add_munny" ||
                method == L"durable_sora_ability" || method == L"durable_sora_vbonus" ||
                method == L"controller_unlock" || method == L"party_member_unlock" || method == L"character_unlock" ||
-               method == L"ultima_weapon_shard";
+               method == L"ultima_weapon_shard" || method == L"progressive_keyblade_level" ||
+               method == L"keyblade_style";
     }
 } // namespace kh3ap::kh02rewards

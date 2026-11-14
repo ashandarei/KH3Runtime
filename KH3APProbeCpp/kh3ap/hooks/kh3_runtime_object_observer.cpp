@@ -4,6 +4,8 @@
 #include "kh3ap/features/story/world_fixes/rapunzel_water_bypass.h"
 #include "kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.h"
 #include "kh3ap/features/story/world_fixes/rapunzel_hair_approach.h"
+#include "kh3ap/features/story/world_fixes/olympus_intro_camera.h"
+#include "kh3ap/features/story/world_fixes/olympus_collapse_camera.h"
 #include "kh3ap/features/story/world_fixes/graveyard_backtracking.h"
 #include "kh3ap/features/story/world_fixes/big_hero_rescue_resume.h"
 #include "kh3ap/features/music/shuffle/goa_music_patch.h"
@@ -129,6 +131,9 @@ namespace kh3ap
             {&big_hero_gameflow_class_name_, L"bx_02_gameflow_C", true},
             {&rapunzel_swing_camera_class_name_, runtime_rapunzel_swing_camera_class, true},
             {&rapunzel_hair_approach_class_name_, runtime_rapunzel_hair_approach_class, true},
+            {&olympus_intro_camera_class_name_, runtime_olympus_intro_camera_class, true},
+            {&olympus_collapse_camera_class_name_, runtime_olympus_collapse_camera_class, true},
+            {&olympus_collapse_gameflow_class_name_, runtime_olympus_collapse_gameflow_class, true},
             {&goa_level_script_class_name_, runtime_goa_level_script_class, true},
             {&festival_dance_story_class_name_, L"ra_02_mission_Dance_C",
              options.observe_festival_dance_story},
@@ -533,6 +538,12 @@ namespace kh3ap
     {
         // Apply alongside existing help/ending patches on every map reload.
         // Only fixed FName comparisons run for unrelated objects.
+        if (fname_equals(*class_name, olympus_collapse_gameflow_class_name_))
+        {
+            // Continue to the other he_03 gameflow patches below.
+            (void)try_apply_olympus_collapse_completion(
+                static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        }
         if (fname_equals(*class_name, big_hero_gameflow_class_name_))
         {
             (void)try_apply_big_hero_rescue_resume(
@@ -577,6 +588,16 @@ namespace kh3ap
         if (fname_equals(*class_name, rapunzel_hair_approach_class_name_))
         {
             return try_apply_rapunzel_hair_approach(
+                static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        }
+        if (fname_equals(*class_name, olympus_intro_camera_class_name_))
+        {
+            return try_apply_olympus_intro_camera(
+                static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        }
+        if (fname_equals(*class_name, olympus_collapse_camera_class_name_))
+        {
+            return try_apply_olympus_collapse_camera(
                 static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
         }
         if (observe_caribbean_sea_spectacle_patch_.load(std::memory_order_relaxed) &&

@@ -7,6 +7,8 @@
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_camera.h"
+#include "kh3ap/features/player/characters/character_pose_handoff.h"
+#include "kh3ap/features/player/characters/kairi_idle.h"
 #include "kh3ap/features/player/combat/character_shotlock.h"
 #include "kh3ap/diagnostics/profiling/engine_hitch_trace.h"
 #include "kh3ap/features/player/player_animation_support.h"
@@ -334,6 +336,7 @@ namespace kh3ap
         struct CameraOrbit
         {
             std::array<float, 3> target_rotation{}, angular_delta{}, pivot{}, target_delta{}, last_target{};
+            std::array<float, 3> camera_local_offset{};
             float recenter_wait{}, input_wait{}, reset_blend{};
             uint8_t reset_rotation{};
             uint8_t rotation_lerp{};
@@ -347,6 +350,7 @@ namespace kh3ap
                     field<std::array<float, 3>>(camera, 0x8b0),
                     field<std::array<float, 3>>(camera, 0x8c0),
                     field<std::array<float, 3>>(camera, 0x8cc),
+                    vector(camera, L"GetCameraLocalOffset"),
                     field<float>(camera, 0x8e4),
                     field<float>(camera, 0x8e8),
                     field<float>(camera, 0x8ec),
@@ -372,6 +376,29 @@ namespace kh3ap
                 }
             }
             return {field<float>(camera, 0x428), field<float>(camera, 0x800), field<float>(camera, 0x900)};
+        }
+
+        auto camera_handoff_distance(UObject* pawn) -> CameraDistance
+        {
+            auto zoom = camera_distance(pawn);
+            auto* camera = object(camera_manager(pawn), L"m_CameraNormal1st");
+            Call configured_distance(camera, L"GetDefaultDistance");
+            configured_distance.run();
+            auto* result = configured_distance.param(L"ReturnValue");
+            if (!result || !result->IsA<FFloatProperty>() || result->GetElementSize() != sizeof(float))
+            {
+                throw std::runtime_error("character_swap_camera_default_distance_layout");
+            }
+            // Dive-fall animates m_Distance down to 30. Its state owns the
+            // eventual reset, which cannot follow a replacement pawn. Carry
+            // the rendered distance for continuity, but converge to the source
+            // camera's authored distance instead of retaining that state zoom.
+            zoom.battle = *result->ContainerPtrToValuePtr<float>(configured_distance.parameters.data());
+            if (!std::isfinite(zoom.battle) || zoom.battle <= 0.0f)
+            {
+                throw std::runtime_error("character_swap_camera_default_distance_invalid");
+            }
+            return zoom;
         }
 
         struct CameraView
@@ -467,11 +494,31 @@ namespace kh3ap
             *rotation_flags = static_cast<uint8_t>((*rotation_flags & ~1u) | orbit.reset_rotation);
             auto* orbit_flags = reinterpret_cast<uint8_t*>(bytes + 0x8f0);
             *orbit_flags = static_cast<uint8_t>((*orbit_flags & ~0x10u) | orbit.rotation_lerp);
-            // Preserve both the current interpolation value and its authored
-            // targets, otherwise the next update zooms to the new hero's default.
+            // Cancel a pooled camera's old state-owned distance animation via
+            // its setter. A raw target write leaves that animation running.
+            Call target_distance(camera, L"SetDistance");
+            target_distance.number(L"Distance", zoom.battle);
+            target_distance.number(L"Time", 0.0f);
+            target_distance.run();
+            // CameraCache is only the last rendered view. The camera component
+            // also retains a state-owned FOV animation (120 during dive-fall).
+            // Replace it through the setter so it cannot resume next frame.
+            Call field_of_view(camera, L"SetFieldOfView");
+            field_of_view.number(L"FieldOfView", rendered_view.fov);
+            field_of_view.number(L"Time", 0.0f);
+            field_of_view.run();
+            // Dive-fall also animates an offset in camera space. Replace its
+            // interpolation after leaving the cached state, or the stationary
+            // incoming pawn's view still slides out of its old dive framing.
+            Call local_offset(camera, L"BP_SetTresCameraLocalOffset");
+            local_offset.vector(L"CameraLocalOffset", orbit.camera_local_offset[0],
+                                orbit.camera_local_offset[1], orbit.camera_local_offset[2]);
+            local_offset.number(L"Time", 0.0f);
+            local_offset.run();
+            // Preserve rendered continuity and the source camera's targets;
+            // native orbit/collision smoothing handles the return from a dive.
             std::memcpy(bytes + 0x428, &zoom.current, sizeof(float));
             std::memcpy(bytes + 0x8bc, &zoom.current, sizeof(float));
-            std::memcpy(bytes + 0x800, &zoom.battle, sizeof(float));
             std::memcpy(bytes + 0x900, &zoom.normal, sizeof(float));
             // Possession has already populated these with the default view.
             // Rendering and view-target blending can consume them before the
@@ -499,7 +546,7 @@ namespace kh3ap
         std::array<uint64_t, 3> original_alternates{};
         uint64_t original_sora{}, original_aqua{}, original_run{}, original_camera{}, original_attack{},
             original_prepare{};
-        bool attempted{}, installed{}, queued{}, dispatched{}, input_seeded{};
+        bool attempted{}, installed{}, queued{}, dispatched{}, input_seeded{}, pose_pending{}, run_pose_pending{};
         bool waiting_for_preload{};
         FWeakObjectPtr outgoing, request_world, incoming, positioned;
         FWeakObjectPtr first_movement_pawn;
@@ -507,7 +554,7 @@ namespace kh3ap
         std::array<float, 3> first_movement_location{};
         Clock::time_point first_movement_deadline{};
         int target{-1}, next_index{-1};
-        bool air{}, falling{};
+        bool air{}, falling{}, grounded{};
         bool air_jump_available{};
         uint32_t floating_mode{};
         std::array<float, 3> location{}, rotation{}, velocity{};
@@ -571,6 +618,7 @@ namespace kh3ap
         bool camera_control_ready{}, camera_ui_current{};
         nlohmann::json camera_deltas = nlohmann::json::array();
         nlohmann::json swing_resume;
+        nlohmann::json pose_handoff;
         uint64_t duplicate_hits_blocked{};
         uint64_t buffered_presses{}, replayed_presses{}, accepted_presses{};
 #endif
@@ -629,6 +677,13 @@ namespace kh3ap
                 return installed;
             }
             attempted = true;
+            // Reuse the existing shared animation-play hook for every hero's
+            // first pose; do not stack a second detour on the same entry.
+            if (!kairi_idle::initialize())
+            {
+                error = "character_swap_animation_hook";
+                return false;
+            }
             const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
             if (!character_native::verify_sites({character_native::Site::sora_selection, character_native::Site::aqua_selection, character_native::Site::attack_enter, character_native::Site::attack_prepare, character_native::Site::queue_clear, character_native::Site::queue_push, character_native::Site::queue_update, character_native::Site::run_enter, character_native::Site::camera_update, character_native::Site::riku_selection, character_native::Site::kairi_selection, character_native::Site::roxas_selection, character_native::Site::camera_target_init, character_native::Site::air_jump_available, character_native::Site::set_air_jump_available, character_native::Site::skeletal_tick_animation, character_native::Site::skeletal_refresh_bones}))
             {
@@ -1000,11 +1055,11 @@ namespace kh3ap
             resuming_swing = false;
         }
 
-        void resume_run(UObject* pawn)
+        bool resume_run(UObject* pawn)
         {
-            if (!run_handoff || swing_pending)
+            if ((!run_handoff && !run_pose_pending) || swing_pending)
             {
-                return;
+                return false;
             }
             auto* component = object(pawn, L"MyStateComp");
             if (!is_uobject_valid_fast(component) ||
@@ -1016,18 +1071,26 @@ namespace kh3ap
             // As with a combo handoff, enter through the native queue lifecycle.
             // Waiting for the initial Idle state costs a movement frame and can
             // apply braking before Run has a chance to restore its progress.
-            reinterpret_cast<void (*)(UObject*)>(base + queue_clear_rva)(component);
-            auto* run = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(component, player_state_ids::run);
+            auto* run = state(pawn);
+            if (run_handoff)
+            {
+                reinterpret_cast<void (*)(UObject*)>(base + queue_clear_rva)(component);
+                run = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(component, player_state_ids::run);
+            }
             if (!is_uobject_valid_fast(run) || object(run, L"MyCharPawn") != pawn ||
                 run->GetClassPrivate()->GetName() != L"TresPlayerState_Run")
             {
                 throw std::runtime_error("character_run_state_creation");
             }
-            reinterpret_cast<void (*)(UObject*, float)>(base + queue_update_rva)(component, 0.0f);
+            if (run_handoff)
+            {
+                reinterpret_cast<void (*)(UObject*, float)>(base + queue_update_rva)(component, 0.0f);
+            }
             if (run_handoff || state(pawn) != run)
             {
-                return;
+                return false;
             }
+            run_pose_pending = false;
             // The queue's initial Run update can choose another stance with
             // its ordinary blend, replacing enter_run's zero-blend request.
             // Restart that final motion without blending the parked pose in,
@@ -1047,29 +1110,12 @@ namespace kh3ap
             const float length = animation_value(anim, L"SQEX_AnimGetCurrentLength");
             if (!std::isfinite(length) || length <= 0.0f)
             {
-                return;
+                return true;
             }
             Call phase(anim, L"SQEX_AnimSetCurrentTime");
             phase.name(L"InSlotName", L"FullBody");
             phase.number(L"InTime", run_phase * length);
             phase.run();
-            // This transaction runs after the engine's mesh tick. Evaluate the
-            // incoming pose now, at zero delta, so its parked bone transforms
-            // cannot be submitted for the first visible frame. Passing no tick
-            // function makes the normal refresh finish synchronously.
-            auto* mesh = object(pawn, L"MyMesh");
-            const auto refresh = base + character_native::rva(character_native::Site::skeletal_refresh_bones);
-            constexpr size_t refresh_bones_vtable_offset = 0xac0;
-            if (!is_uobject_valid_fast(mesh) ||
-                field<uintptr_t>(reinterpret_cast<void*>(field<uintptr_t>(mesh, 0)), refresh_bones_vtable_offset) != refresh)
-            {
-                throw std::runtime_error("character_run_pose_mesh_layout");
-            }
-            using TickAnimation = void (*)(UObject*, float, bool);
-            using RefreshBones = void (*)(UObject*, void*);
-            const auto tick_animation = base + character_native::rva(character_native::Site::skeletal_tick_animation);
-            reinterpret_cast<TickAnimation>(tick_animation)(mesh, 0.0f, false);
-            reinterpret_cast<RefreshBones>(refresh)(mesh, nullptr);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             if (test_locomotion && test_phase != 0)
             {
@@ -1081,6 +1127,29 @@ namespace kh3ap
                     {"motion", to_utf8(field<FName>(run, 0xa0).ToString())}});
             }
 #endif
+            return true;
+        }
+
+        void refresh_handoff_pose(UObject* pawn)
+        {
+            // This transaction runs after the engine's mesh tick. Evaluate the
+            // incoming pose now, at zero delta, so its parked bone transforms
+            // cannot be submitted for the first visible frame. Passing no tick
+            // function makes the normal refresh finish synchronously.
+            const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+            auto* mesh = object(pawn, L"MyMesh");
+            const auto refresh = base + character_native::rva(character_native::Site::skeletal_refresh_bones);
+            constexpr size_t refresh_bones_vtable_offset = 0xac0;
+            if (!is_uobject_valid_fast(mesh) ||
+                field<uintptr_t>(reinterpret_cast<void*>(field<uintptr_t>(mesh, 0)), refresh_bones_vtable_offset) != refresh)
+            {
+                throw std::runtime_error("character_handoff_pose_mesh_layout");
+            }
+            using TickAnimation = void (*)(UObject*, float, bool);
+            using RefreshBones = void (*)(UObject*, void*);
+            const auto tick_animation = base + character_native::rva(character_native::Site::skeletal_tick_animation);
+            reinterpret_cast<TickAnimation>(tick_animation)(mesh, 0.0f, false);
+            reinterpret_cast<RefreshBones>(refresh)(mesh, nullptr);
         }
 
         int select(UObject* current, uint64_t original)
@@ -1427,7 +1496,7 @@ namespace kh3ap
             control_rotation = vector(object(pawn, L"Controller"), L"GetControlRotation");
             rendered_view = field<CameraView>(camera_pov(camera_manager(pawn), L"CameraCache"), 0);
             rendered_timestamp = *camera_timestamp(camera_manager(pawn));
-            zoom = camera_distance(pawn);
+            zoom = camera_handoff_distance(pawn);
             orbit = camera_orbit(pawn);
             Call frame_delta(L"/Script/Engine.Default__GameplayStatics", L"GetWorldDeltaSeconds");
             frame_delta.object(L"WorldContextObject", pawn);
@@ -1495,6 +1564,7 @@ namespace kh3ap
             auto* mode =
                 is_uobject_valid_fast(movement) ? movement->GetPropertyByNameInChain(L"MovementMode") : nullptr;
             falling = mode && mode->GetElementSize() == 1 && *mode->ContainerPtrToValuePtr<uint8_t>(movement) == 3;
+            grounded = mode && mode->GetElementSize() == 1 && *mode->ContainerPtrToValuePtr<uint8_t>(movement) == 1;
         }
 
         bool request(UObject* pawn)
@@ -1542,6 +1612,8 @@ namespace kh3ap
             queued = true;
             dispatched = false;
             input_seeded = false;
+            pose_pending = true;
+            run_pose_pending = false;
             error.clear();
             return true;
         }
@@ -1746,6 +1818,8 @@ namespace kh3ap
             {
                 return std::nullopt;
             }
+            const character_pose_handoff::Scope pose_scope(
+                object(object(pawn, L"MyMesh"), L"AnimScriptInstance"));
             auto* controller = object(pawn, L"Controller");
             if (!input_seeded && is_uobject_valid_fast(object(controller, L"PlayerInput")))
             {
@@ -1753,7 +1827,8 @@ namespace kh3ap
                 runtime_controller_restore_stick(controller, true, look_input);
                 input_seeded = true;
             }
-            if (positioned.Get() != pawn)
+            const bool position_pending = positioned.Get() != pawn;
+            if (position_pending)
             {
                 if (floating_mode && character_swap::owns_swap_pawn(pawn) &&
                     (!character_exploration::prepare_pawn(pawn) || !character_traversal::prepare(pawn)))
@@ -1779,6 +1854,11 @@ namespace kh3ap
                 position.boolean(L"bTeleport", true);
                 position.run();
                 auto* movement = object(pawn, L"MyMovement");
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                pose_handoff = {{"grounded", grounded}, {"falling", falling}, {"floating", floating_mode},
+                                {"source_velocity", velocity}, {"before_state", state_id(state(pawn))},
+                                {"before_mode", property_value<uint8_t>(movement, L"MovementMode")}};
+#endif
                 if (!kh02_current_story_world())
                 {
                     // Only the incoming owned pawn is changed, during the existing
@@ -1819,11 +1899,51 @@ namespace kh3ap
                 {
                     std::memcpy(speed->ContainerPtrToValuePtr<void>(movement), velocity.data(), sizeof(velocity));
                 }
-                character_camera::match_field_height(pawn);
-                restore_camera(pawn, control_rotation, rendered_view, rendered_timestamp, zoom, orbit);
-                transition_camera = make_uobject_weak(camera);
-                camera_transition_frames = 2;
                 restore_movement(pawn);
+                // The factory can leave the pooled pawn's old current state
+                // until its next queue tick. Consume that pending transition
+                // now, with restored movement/input and no parked-pose blend.
+                auto* component = object(pawn, L"MyStateComp");
+                if (!is_uobject_valid_fast(component) ||
+                    component->GetClassPrivate()->GetName() != L"TresStateQueueComponent")
+                {
+                    throw std::runtime_error("character_handoff_state_queue");
+                }
+                // Finish the parked state's exit first. Air attacks restore
+                // Falling during their exit, even after the factory selected
+                // Walking, so the grounded reset must follow that cleanup.
+                const bool pending_run_handoff = run_handoff;
+                reinterpret_cast<void (*)(UObject*, float)>(base + queue_update_rva)(component, 0.0f);
+                if (grounded && !floating_mode && property_value<uint8_t>(movement, L"MovementMode") != 1)
+                {
+                    run_handoff = pending_run_handoff;
+                    // A canceled airborne attack can leave Jump queued behind
+                    // it. Discard that old journey through the normal lifecycle
+                    // before entering the source's grounded locomotion.
+                    reinterpret_cast<void (*)(UObject*)>(base + queue_clear_rva)(component);
+                    Call mode(movement, L"SetMovementMode");
+                    mode.integer(L"NewMovementMode", 1);
+                    mode.integer(L"NewCustomMode", 0);
+                    mode.run();
+                    auto* idle = reinterpret_cast<UObject* (*)(UObject*, int)>(base + queue_push_rva)(
+                        component, player_state_ids::idle);
+                    if (!is_uobject_valid_fast(idle) || object(idle, L"MyCharPawn") != pawn)
+                    {
+                        throw std::runtime_error("character_handoff_idle_state_creation");
+                    }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                    pose_handoff["ground_mode"] = property_value<uint8_t>(movement, L"MovementMode");
+                    pose_handoff["ground_state"] = state_id(state(pawn));
+#endif
+                    reinterpret_cast<void (*)(UObject*, float)>(base + queue_update_rva)(component, 0.0f);
+                }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                pose_handoff["updated_mode"] = property_value<uint8_t>(movement, L"MovementMode");
+                pose_handoff["updated_state"] = state_id(state(pawn));
+#endif
+                // If cleanup already entered Run, finish its pose without
+                // clearing and reusing the same active state a second time.
+                run_pose_pending = pending_run_handoff && !run_handoff;
                 resume_swing(pawn);
                 first_movement_pending = run_handoff && run_loop && !falling &&
                                          stick_distance_squared(stick_input.processed, {}) > movement_intent_epsilon_squared &&
@@ -1840,7 +1960,23 @@ namespace kh3ap
             }
             if (input_seeded)
             {
-                resume_run(pawn);
+                pose_pending = resume_run(pawn) || pose_pending;
+            }
+            if (pose_pending)
+            {
+                refresh_handoff_pose(pawn);
+                // Measure the current pose, never a pooled pawn's parked pose.
+                character_camera::match_field_height(pawn);
+                pose_pending = false;
+            }
+            if (position_pending)
+            {
+                // A parked action's exit can reset camera interpolation. Seed
+                // the source view only after that cleanup and pose evaluation,
+                // so returning to a grounded hero cannot revive its old dive.
+                restore_camera(pawn, control_rotation, rendered_view, rendered_timestamp, zoom, orbit);
+                transition_camera = make_uobject_weak(object(camera_manager(pawn), L"m_CameraNormal1st"));
+                camera_transition_frames = 2;
             }
             if (!input_seeded || pawn != player() || !available(pawn))
             {
@@ -2741,6 +2877,7 @@ namespace kh3ap
                               {"swaps", impl->swaps},
                               {"camera_control_ready", impl->camera_control_ready},
                               {"camera_ui_current", impl->camera_ui_current},
+                              {"pose_handoff", impl->pose_handoff},
                               {"camera_deltas", impl->camera_deltas},
                               {"swing_resume", impl->swing_resume},
                               {"duplicate_hits_blocked", impl->duplicate_hits_blocked},

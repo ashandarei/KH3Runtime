@@ -4,6 +4,7 @@
 #include "kh3ap/features/enemies/experience_multiplier_service.h"
 
 #include "kh3ap/features/enemies/experience_multiplier_math.h"
+#include "kh3ap/core/events/character_level_events.h"
 #include "kh3ap/core/settings/goa_settings_service.h"
 
 #ifdef S
@@ -455,10 +456,15 @@ namespace kh3ap
 
             if (Kh02Story::award_shared_experience(save_owner, forwarded_experience, progression_lane))
             {
+                shared_experience_revision.fetch_add(1, std::memory_order_release);
                 return;
             }
             reinterpret_cast<ExperienceAwardFn>(original_address)(
                 save_owner, forwarded_experience, progression_lane, presentation_context);
+            if (progression_lane == 0 && forwarded_experience > 0)
+            {
+                shared_experience_revision.fetch_add(1, std::memory_order_release);
+            }
         }
 
         auto install_once() -> void

@@ -7,6 +7,7 @@
 #include "kh3ap/features/music/events/music_update_events.h"
 #include "kh3ap/features/player/context/context_helpers.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/grants/ap_ignored_map.h"
@@ -146,10 +147,50 @@ namespace kh3ap
         return snapshot;
     }
 
+    auto RuntimePlayerContextService::Impl::owned_pawn_world(UObject* pawn) const -> UObject*
+    {
+        if (!is_uobject_a_fast(pawn, AActor::StaticClass()))
+        {
+            return nullptr;
+        }
+        auto* controller = read_object_property_in_chain(pawn, STR("Controller"));
+        auto* player = read_object_property_in_chain(controller, STR("Player"));
+        if (!is_uobject_valid_fast(controller) || !is_uobject_valid_fast(player) ||
+            read_object_property_in_chain(controller, STR("Pawn")) != pawn ||
+            read_object_property_in_chain(player, STR("PlayerController")) != controller)
+        {
+            return nullptr;
+        }
+        auto* world = reinterpret_cast<UObject*>(static_cast<AActor*>(pawn)->GetWorld());
+        return is_uobject_valid_fast(world) ? world : nullptr;
+    }
+
+    auto RuntimePlayerContextService::Impl::map_ready_for_pawn(UObject* pawn) const -> bool
+    {
+        auto* world = observed_map_ready_world.Get();
+        return world && owned_pawn_world(pawn) == world;
+    }
+
     auto RuntimePlayerContextService::Impl::write_map_ready_marker(
         std::wstring_view source, UObject* context, UObject* frame_object,
         bool promote_trusted_playable_context) -> bool
     {
+        // The real map-name event may arrive while an alternate owns control
+        // and cached Sora has been destroyed. Retain its world proof without
+        // publishing the alternate into Sora's grant/lifecycle context.
+        auto* hero = character_swap::current_hero();
+        auto* ready_pawn = character_swap::owns_swap_pawn(hero)
+                               ? hero : trusted_current_playable_cached_sora_pawn();
+        if (auto* world = owned_pawn_world(ready_pawn))
+        {
+            if (observed_map_ready_world.Get() != world)
+            {
+                Output::send<LogLevel::Verbose>(
+                    STR("[KH3APProbeCpp] Map readiness world observed source={} owner={}\n"),
+                    source, format_object_debug_name(ready_pawn));
+            }
+            observed_map_ready_world = make_uobject_weak(world);
+        }
         auto snapshot = promote_trusted_playable_context
                             ? mark_trusted_current_playable_context_map_ready(source)
                             : std::optional<RuntimeContextSnapshot>{};

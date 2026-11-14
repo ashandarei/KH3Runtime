@@ -11,6 +11,20 @@ else()
 endif()
 add_test(NAME character_unlocks COMMAND character_unlocks_test)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(shared_progression_source "${CMAKE_CURRENT_BINARY_DIR}/shared_progression_under_test.h")
+add_custom_command(OUTPUT "${shared_progression_source}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_shared_progression_test.py" "${shared_progression_source}"
+    DEPENDS generate_shared_progression_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/state/shared_sora_progression.cpp"
+    VERBATIM)
+add_executable(shared_progression_test shared_progression_test.cpp "${shared_progression_source}")
+target_include_directories(shared_progression_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp")
+target_compile_features(shared_progression_test PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(shared_progression_test PRIVATE /UNDEBUG)
+else()
+    target_compile_options(shared_progression_test PRIVATE -UNDEBUG)
+endif()
+add_test(NAME shared_progression COMMAND shared_progression_test)
 
 set(space_idle_source "${CMAKE_CURRENT_BINARY_DIR}/space_idle_under_test.h")
 add_custom_command(OUTPUT "${space_idle_source}"

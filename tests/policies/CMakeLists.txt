@@ -35,6 +35,8 @@ set(KH3AP_PROBE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../KH3APProbeCpp)
 include("${KH3AP_PROBE_ROOT}/../cmake/kh3-json-dependency.cmake")
 
 set(_kh3_policy_tests
+    character_cinematic_policy
+    cutscene_skip_transaction
     chest_journal
     player_identity
     ui_input_event
@@ -297,6 +299,15 @@ endif()
 add_test(NAME test_kh3_rapunzel_swing_frame_rate COMMAND test_kh3_rapunzel_swing_frame_rate)
 
 add_executable(test_kh3_rapunzel_hair_approach test_rapunzel_hair_approach.cpp)
+add_executable(test_kh3_olympus_intro_camera test_olympus_intro_camera.cpp)
+target_compile_features(test_kh3_olympus_intro_camera PRIVATE cxx_std_17)
+add_test(NAME test_kh3_olympus_intro_camera COMMAND test_kh3_olympus_intro_camera)
+add_executable(test_kh3_olympus_collapse_camera test_olympus_collapse_camera.cpp)
+target_compile_features(test_kh3_olympus_collapse_camera PRIVATE cxx_std_17)
+add_test(NAME test_kh3_olympus_collapse_camera COMMAND test_kh3_olympus_collapse_camera)
+add_executable(test_kh3_olympus_collapse_movement test_olympus_collapse_movement.cpp)
+target_compile_features(test_kh3_olympus_collapse_movement PRIVATE cxx_std_17)
+add_test(NAME test_kh3_olympus_collapse_movement COMMAND test_kh3_olympus_collapse_movement)
 target_compile_features(test_kh3_rapunzel_hair_approach PRIVATE cxx_std_17)
 if(MSVC)
     target_compile_options(test_kh3_rapunzel_hair_approach PRIVATE /UNDEBUG)

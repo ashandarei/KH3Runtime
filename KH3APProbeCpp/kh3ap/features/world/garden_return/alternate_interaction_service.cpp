@@ -410,8 +410,10 @@ namespace kh3ap::garden_return_detail
             {
                 return false;
             }
+            // Twilight Town's Moogle and Gummi vendors derive directly from
+            // TresShopActor, without the TresShopActorMogli specialization.
             auto* shop_class = UObjectGlobals::StaticFindObject<UClass*>(
-                nullptr, nullptr, L"/Script/TresGame.TresShopActorMogli");
+                nullptr, nullptr, L"/Script/TresGame.TresShopActor");
             auto* owning_world = object_field(actor->GetOuterPrivate(), L"OwningWorld");
             auto* command = reactor->GetPropertyByNameInChain(L"m_Command");
             if (!is_uobject_valid_fast(shop_class) || !is_uobject_a_fast(actor, shop_class) ||
