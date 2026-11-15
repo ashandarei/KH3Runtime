@@ -176,6 +176,21 @@ namespace kh3ap
         character_swap::append_menu(page);
         add_deathlink_options(page, std::move(bridge_dir));
         page.toggle(
+            STR("auto_skip_cutscenes"), STR("Auto Skip Cutscenes"),
+            [&goa_settings]()
+            {
+                return goa_settings.auto_skip_cutscenes();
+            },
+            [&goa_settings](bool enabled)
+            {
+                (void)goa_settings.set_auto_skip_cutscenes(enabled);
+            },
+            {},
+            []()
+            {
+                return std::wstring{STR("Automatically skip cutscenes.")};
+            });
+        page.toggle(
             STR("auto_equip_essential_abilities"), STR("Auto Equip Essential Abilities"),
             [&goa_settings]()
             {

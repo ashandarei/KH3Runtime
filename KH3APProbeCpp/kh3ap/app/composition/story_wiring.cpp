@@ -143,9 +143,9 @@ namespace kh3ap
             {
                 return try_get_bridge_dir();
             },
-            []()
+            [this]()
             {
-                return auto_skip_cutscenes_enabled_from_seed();
+                return m_goa_settings.auto_skip_cutscenes();
             },
             s_build_stamp,
         }};

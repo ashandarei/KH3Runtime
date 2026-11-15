@@ -38,6 +38,7 @@ namespace kh3ap
         bool map_overlay_enabled{true};
         bool song_display{true};
         bool auto_equip_essential_abilities{true};
+        bool auto_skip_cutscenes{};
         uint32_t map_icon_options{map_icon_defaults};
         bool loaded_from_disk{};
         bool persistence_ready{};
@@ -76,6 +77,8 @@ namespace kh3ap
         [[nodiscard]] auto form_themes_enabled() const -> bool { return form_themes_enabled_.load(); }
         auto set_map_overlay_enabled(bool enabled) -> bool;
         [[nodiscard]] auto map_overlay_enabled() const -> bool { return map_overlay_enabled_.load(); }
+        auto set_auto_skip_cutscenes(bool enabled) -> bool;
+        [[nodiscard]] auto auto_skip_cutscenes() const -> bool { return auto_skip_cutscenes_.load(); }
         auto set_song_display(bool enabled) -> bool;
         [[nodiscard]] auto song_display() const -> bool { return song_display_.load(); }
         auto set_auto_equip_essential_abilities(bool enabled) -> bool;
@@ -111,6 +114,7 @@ namespace kh3ap
         std::atomic_bool form_themes_enabled_{};
         std::atomic_bool map_overlay_enabled_{true};
         std::atomic_bool song_display_{true};
+        std::atomic_bool auto_skip_cutscenes_{};
         std::atomic_bool auto_equip_essential_abilities_{true};
         std::atomic_uint32_t map_icon_options_{map_icon_defaults};
         std::atomic_bool loaded_from_disk_{};

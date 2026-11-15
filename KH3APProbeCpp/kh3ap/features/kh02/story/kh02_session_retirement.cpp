@@ -72,6 +72,7 @@ namespace kh3ap
             break;
         case Action::ClearForestHandoff:
             mirror.forest_handoff.clear();
+            mirror.clear_islands_battle_entry();
             break;
         case Action::ClearDarksideProjectiles:
             darkside_projectiles.reset();

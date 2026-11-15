@@ -1143,6 +1143,7 @@ namespace kh3ap
             result["postclear_treasure"] = postclear_treasure.snapshot();
             result["boss_rush_mirror"] = boss_rush_mirror.snapshot();
             result["entrance_view_cleanup"] = encounter_proof.value("entrance_view_cleanup", Json::object());
+            result["islands_battle_entry"] = encounter_proof.value("islands_battle_entry", Json::object());
             result["source_fade"] = intro_presentation.fade(pawn);
             return result;
         }
@@ -1608,7 +1609,7 @@ namespace kh3ap
         }
         auto* pawn = map_overlay_hero();
         if (!is_uobject_valid_fast(pawn) || (pawn->GetClassPrivate()->GetName() != L"p_ex002_Pawn_C" &&
-                                              pawn->GetClassPrivate()->GetName() != L"p_ex001_Pawn_C"))
+                                             pawn->GetClassPrivate()->GetName() != L"p_ex001_Pawn_C"))
         {
             return false;
         }
@@ -1622,7 +1623,8 @@ namespace kh3ap
                 throw std::runtime_error("kh02_aqua_experience_save_binding");
             }
             self->aqua_progression.bind(pawn, self->progress_session.revision(), self->source_flags);
-            const auto levels = self->enemy_stats.experience_levels(pawn, self->aqua_progression.sora_level(save_owner));
+            const auto levels =
+                self->enemy_stats.experience_levels(pawn, self->aqua_progression.sora_level(save_owner));
             self->aqua_progression.award(pawn, save_owner, amount, levels.first, levels.second, self->source_flags);
         }
         catch (const std::exception& error)

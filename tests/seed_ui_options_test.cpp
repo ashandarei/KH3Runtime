@@ -78,6 +78,16 @@ int main() {
     const auto defaults = read_runtime_ui_seed_defaults(JsonObject{"{}"});
     assert(defaults.map_icon_options == 63 && defaults.map_overlay_enabled);
     assert(defaults.song_display);
+    assert(!defaults.auto_skip_cutscenes);
+    for (const bool enabled : {false, true}) {
+        const auto seed_skip = read_runtime_ui_seed_defaults(
+            JsonObject{json::write(json::Value{{"auto_skip_cutscenes", enabled ? 1 : 0}})});
+        assert(seed_skip.auto_skip_cutscenes == enabled);
+        assert(apply_saved_map_ui_options(JsonObject{"{}"}, seed_skip).auto_skip_cutscenes == enabled);
+        const auto changed = apply_saved_map_ui_options(
+            JsonObject{json::write(json::Value{{"auto_skip_cutscenes", !enabled}})}, seed_skip);
+        assert(changed.auto_skip_cutscenes == !enabled);
+    }
     assert(defaults.auto_equip_essential_abilities);
     const auto essential_off = read_runtime_ui_seed_defaults(
         JsonObject{R"({"auto_equip_essential_abilities":0})"});
