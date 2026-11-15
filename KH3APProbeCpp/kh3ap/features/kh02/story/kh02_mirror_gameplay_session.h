@@ -38,8 +38,14 @@ namespace kh3ap
         void tick(RC::Unreal::UObject* pawn, RC::Unreal::UObject* current_world, Services services);
         void source_entrance_finished(RC::Unreal::UObject* source_script);
         void finish_entrance_view(RC::Unreal::UObject* pawn, bool scene_playing, Services services);
+        void begin_islands_battle(RC::Unreal::UObject* source_script);
+        void finish_islands_battle_entry(RC::Unreal::UObject* pawn, Services services);
+        void clear_islands_battle_entry();
         RC::Unreal::FWeakObjectPtr world, script, initializer;
         RC::Unreal::FWeakObjectPtr entrance_finish_script;
+        RC::Unreal::FWeakObjectPtr islands_battle_script;
+        bool islands_battle_entry_pending{};
+        std::chrono::steady_clock::time_point islands_battle_entry_requested{};
         bool entrance_reveal_requested{};
         std::chrono::steady_clock::time_point entrance_reveal_started{};
         bool initialized{}, intro_started{};

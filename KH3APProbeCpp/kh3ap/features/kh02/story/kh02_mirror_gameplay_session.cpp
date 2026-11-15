@@ -29,6 +29,7 @@ namespace kh3ap
     {
         world = make_uobject_weak(current_world);
         script = {};
+        clear_islands_battle_entry();
         entrance_finish_script = {};
         entrance_reveal_requested = false;
         horizon.reset();
@@ -51,6 +52,8 @@ namespace kh3ap
         initializer = make_uobject_weak(source_initializer);
         error.clear();
         forest_handoff.clear();
+        clear_islands_battle_entry();
+        services.encounter_proof.erase("islands_battle_entry");
         forest_story_proof = nlohmann::json::object();
         forest_visibility.clear_world();
         services.gameplay.world = make_uobject_weak(current_world);
@@ -79,6 +82,86 @@ namespace kh3ap
             entrance_finish_script = make_uobject_weak(source_script);
             entrance_reveal_requested = false;
         }
+    }
+
+    void Kh02MirrorGameplaySession::clear_islands_battle_entry()
+    {
+        islands_battle_script = {};
+        islands_battle_entry_pending = false;
+    }
+
+    void Kh02MirrorGameplaySession::begin_islands_battle(UObject* source_script)
+    {
+        if (islands_battle_script.Get() == source_script)
+        {
+            return;
+        }
+        islands_battle_script = make_uobject_weak(source_script);
+        islands_battle_entry_pending = true;
+        islands_battle_entry_requested = std::chrono::steady_clock::now();
+    }
+
+    void Kh02MirrorGameplaySession::finish_islands_battle_entry(UObject* pawn, Services services)
+    {
+        if (!islands_battle_entry_pending)
+        {
+            return;
+        }
+        auto* source_script = islands_battle_script.Get();
+        auto* current_world = world.Get();
+        if (!is_uobject_valid_fast(source_script) || !is_uobject_valid_fast(current_world) ||
+            kh02_actor_world(source_script) != current_world || kh02_actor_world(pawn) != current_world)
+        {
+            clear_islands_battle_entry();
+            return;
+        }
+        if (std::chrono::steady_clock::now() - islands_battle_entry_requested > std::chrono::seconds(30))
+        {
+            islands_battle_entry_pending = false;
+            services.compat_error = "kh02_islands_battle_entry_timeout";
+            return;
+        }
+        // The authored battle-start event wakes this handoff. Wait for its VM
+        // stack, opening camera and loading to release the possessed hero.
+        if (services.map_session.active() || !runtime_sora_control_ready(pawn))
+        {
+            return;
+        }
+        islands_battle_entry_pending = false;
+        ReflectedCall battle(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                             L"TresIsSpecialBattleMode");
+        battle.run();
+        if (!battle.boolean_result())
+        {
+            return;
+        }
+        ReflectedCall before(pawn, L"K2_GetActorLocation");
+        before.run();
+        // DW027's natural/Skip continuation jumps straight to checkpoint 520,
+        // bypassing the regular entry's sound-mode end and player placement.
+        // Its cinematic Aqua is separate from either playable hero in KH3.
+        ReflectedCall warp(pawn, L"WarpToTaggedPlayerStart");
+        warp.name(L"InTag", L"dw_10_Bt_Start_02");
+        warp.boolean(L"bResetCamera", true);
+        warp.boolean(L"bStateClear", true);
+        warp.run();
+        if (!warp.boolean_result())
+        {
+            services.compat_error = "kh02_islands_battle_start_missing";
+            return;
+        }
+        ReflectedCall sound(kh02_require_loaded_object(L"/Script/TresGame.Default__TresSoundStatics"),
+                            L"TresSoundMode_End");
+        sound.integer(L"mode", 0);
+        sound.run();
+        ReflectedCall after(pawn, L"K2_GetActorLocation");
+        after.run();
+        services.encounter_proof["islands_battle_entry"] = {{"source", to_utf8(source_script->GetPathName())},
+                                                            {"pawn", to_utf8(pawn->GetPathName())},
+                                                            {"tag", "dw_10_Bt_Start_02"},
+                                                            {"before", before.result_vector()},
+                                                            {"after", after.result_vector()},
+                                                            {"sound_mode_end_dispatched", true}};
     }
 
     void Kh02MirrorGameplaySession::finish_entrance_view(UObject* pawn, bool scene_playing, Services services)
@@ -156,6 +239,7 @@ namespace kh3ap
         }
         if (initialized)
         {
+            finish_islands_battle_entry(pawn, services);
             if (auto error = forest_visibility.tick(pawn, current_world, !services.map_session.active()))
             {
                 this->error = std::move(*error);

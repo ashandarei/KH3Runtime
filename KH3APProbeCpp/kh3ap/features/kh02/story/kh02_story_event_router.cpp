@@ -35,6 +35,7 @@ namespace kh3ap
         const FName begin{L"ReceiveBeginPlay", FNAME_Add};
         const FName corridor_execution{L"ExecuteUbergraph_dw_05_gameflow", FNAME_Add};
         const FName forest_resume_start{L"dw_08_Persistent_REvt_dw_08LevelStart_dw024", FNAME_Add};
+        const FName islands_battle_start{L"dw_10_gameflow_Msn_DEVILWAVE_Start", FNAME_Add};
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const FName hub_execution{L"ExecuteUbergraph_dw_03_gameflow", FNAME_Add};
         const std::array<FName, 8> hub_mirror_events{
@@ -77,8 +78,8 @@ namespace kh3ap
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             const bool hub_touch =
                 std::find(hub_mirror_events.begin(), hub_mirror_events.end(), event_name) != hub_mirror_events.end();
-            if ((event_name == hub_execution || hub_touch) &&
-                is_uobject_valid_fast(object) && kh02_actor_world(object) == mirror.world.Get() &&
+            if ((event_name == hub_execution || hub_touch) && is_uobject_valid_fast(object) &&
+                kh02_actor_world(object) == mirror.world.Get() &&
                 object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_03/umap/dw_03_gameflow."))
             {
                 if (hub_touch)
@@ -98,6 +99,7 @@ namespace kh3ap
             }
 #endif
             const bool begin_play = event_name == begin;
+            const bool islands_start = event_name == islands_battle_start;
             const bool corridor_resume = event_name == corridor_execution;
             const bool forest_resume = event_name == forest_resume_start;
             const bool overlap_changed =
@@ -112,9 +114,21 @@ namespace kh3ap
             // Reuse this listener for target notifications. Only mark
             // dirty here; inspect final state after the call returns.
             if ((!begin_play && !overlap_changed && !forest_end && !entrance_end && !target_changed &&
-                 !corridor_resume && !forest_resume) ||
+                 !corridor_resume && !forest_resume && !islands_start) ||
                 !is_uobject_valid_fast(object))
             {
+                return;
+            }
+            if (islands_start)
+            {
+                auto* world = kh02_actor_world(object);
+                if (is_uobject_valid_fast(world) && world == mirror.world.Get() &&
+                    world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02DestinyIslands.APKH02DestinyIslands" &&
+                    object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_10/umap/dw_10_enemy.") &&
+                    object->GetClassPrivate()->GetName() == L"dw_10_enemy_C")
+                {
+                    mirror.begin_islands_battle(object);
+                }
                 return;
             }
             if (begin_play || target_changed)
