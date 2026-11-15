@@ -9,6 +9,8 @@
 #include <polyhook2/Detour/x64Detour.hpp>
 
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_reaction_animations.h"
+#include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -337,6 +339,7 @@ namespace kh3ap::character_traversal
     void capture_sora(UObject *pawn)
     {
         tuning_captured = false;
+        character_reactions::capture_sora(pawn);
         capture(object(pawn, L"MyMovement"), movement_fields, sora_movement);
         capture(pawn, pawn_fields, sora_pawn);
         auto *default_speed = pawn->GetFunctionByNameInChain(L"GetDefaultMaxWalkSpeed");
@@ -599,6 +602,7 @@ namespace kh3ap::character_traversal
         {
             return true;
         }
+        character_reactions::prepare_pawn(pawn);
         auto *instance = object(object(pawn, L"MyMesh"), L"AnimScriptInstance");
         auto *source = find_loaded_runtime_asset(player_animation_support::sora_animation_set_path);
         auto *caribbean_source = find_loaded_runtime_asset(caribbean_animation_set_path);
@@ -610,6 +614,14 @@ namespace kh3ap::character_traversal
         {
             // Selection preloads general, underwater, Union Cross and Gigas motions.
             return false;
+        }
+        std::vector<UObject*> source_sets{source, caribbean_source, graveyard_source, gigas_source};
+        source_sets.reserve(source_sets.size() + character_reactions::animation_set_paths.size());
+        for (const auto* path : character_reactions::animation_set_paths)
+        {
+            auto* donor = find_loaded_runtime_asset(path);
+            if (!is_uobject_valid_fast(donor)) { return false; }
+            source_sets.push_back(donor);
         }
         if (!player_animation_support::supported_skeleton_layout())
         {
@@ -652,10 +664,15 @@ namespace kh3ap::character_traversal
             return indices;
         }();
         std::array<bool, animation_names.size()> authored{};
+        std::unordered_set<FName> available_names;
         for (auto *set : *sets)
         {
             for (const auto &entry : *animations(set))
             {
+                if (is_uobject_valid_fast(entry.asset))
+                {
+                    available_names.insert(entry.name);
+                }
                 const auto found = required_indices.find(entry.name);
                 if (found != required_indices.end() && is_uobject_valid_fast(entry.asset))
                 {
@@ -664,7 +681,7 @@ namespace kh3ap::character_traversal
             }
         }
         std::array<UObject *, animation_names.size()> borrowed{};
-        for (auto *source_set : {source, caribbean_source, graveyard_source, gigas_source})
+        for (auto *source_set : source_sets)
         {
             std::array<bool, animation_names.size()> seen{};
             for (const auto &entry : *animations(source_set))
@@ -701,6 +718,27 @@ namespace kh3ap::character_traversal
                 player_animation_support::allow_animation_skeleton(instance, asset);
             }
             missing.push_back({FName(animation_names[index], FNAME_Add), asset});
+            available_names.insert(FName(animation_names[index], FNAME_Add));
+        }
+        // Native world and team actions ask for more than the traversal subset:
+        // e.g. PuddingEat, shield/Goofy attacks, ship and Union Cross motions.
+        // Complete the fallback once at preparation, retaining every authored
+        // alternate entry and the donor order. Never replace attack/idle/style
+        // motions already supplied by the character, or mutate a shared asset.
+        for (auto* source_set : source_sets)
+        {
+            for (const auto& entry : *animations(source_set))
+            {
+                if (!is_uobject_valid_fast(entry.asset) || !available_names.insert(entry.name).second)
+                {
+                    continue;
+                }
+                if (adapted_skeletons.insert(object(entry.asset, L"Skeleton")).second)
+                {
+                    player_animation_support::allow_animation_skeleton(instance, entry.asset);
+                }
+                missing.push_back(entry);
+            }
         }
         if (!missing.empty())
         {

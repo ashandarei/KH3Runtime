@@ -8,7 +8,7 @@
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/characters/character_pose_handoff.h"
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/combat/character_shotlock.h"
 #include "kh3ap/diagnostics/profiling/engine_hitch_trace.h"
 #include "kh3ap/features/player/player_animation_support.h"
@@ -679,7 +679,7 @@ namespace kh3ap
             attempted = true;
             // Reuse the existing shared animation-play hook for every hero's
             // first pose; do not stack a second detour on the same entry.
-            if (!kairi_idle::initialize())
+            if (!character_idle::initialize())
             {
                 error = "character_swap_animation_hook";
                 return false;

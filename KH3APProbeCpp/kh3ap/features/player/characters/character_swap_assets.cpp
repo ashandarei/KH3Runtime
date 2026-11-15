@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_swap_assets.h"
+#include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/combat/character_magic.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
 #include "kh3ap/features/player/combat/character_shotlock.h"
@@ -7,7 +8,7 @@
 #include "kh3ap/features/player/combat/character_underwater_combat.h"
 #include "kh3ap/features/player/combat/character_union_cross.h"
 #include "kh3ap/features/player/combat/kairi_ground_slam.h"
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -187,7 +188,7 @@ namespace kh3ap::character_swap_assets
                     // Detour construction belongs to selection-time setup,
                     // not Kairi's first possessed frame. Pawn preparation
                     // retains its existing native fallback if setup fails.
-                    kairi_idle::initialize();
+                    character_idle::initialize();
                     kairi_ground_slam::initialize();
                 }
                 loading = false;
@@ -320,6 +321,10 @@ namespace kh3ap::character_swap_assets
             assets.push_back({character_underwater_combat::animation_set_path, false});
             assets.push_back({character_union_cross::animation_set_path, false});
             assets.push_back({character_traversal::gigas_animation_set_path, false});
+            for (const auto* path : character_reactions::animation_set_paths)
+            {
+                assets.push_back({path, false});
+            }
             assets.push_back({L"/Game/Blueprints/Player/AthleticFlowRootEffect.AthleticFlowRootEffect_C", true});
             assets.push_back({L"/Game/Effects/PC/Free_f/par/vp_ffa_arv0.vp_ffa_arv0", false});
             assets.push_back({character_underwater_combat::vertical_projectile_path, true});

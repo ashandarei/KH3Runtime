@@ -27,7 +27,7 @@
 #include <nlohmann/json.hpp>
 #include "kh3ap/diagnostics/character_swap_trace.h"
 #endif
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <polyhook2/Detour/x64Detour.hpp>

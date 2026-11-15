@@ -28,7 +28,7 @@
 #include <nlohmann/json.hpp>
 #include "kh3ap/diagnostics/character_swap_trace.h"
 #endif
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <polyhook2/Detour/x64Detour.hpp>
@@ -221,9 +221,9 @@ namespace kh3ap
     RuntimeGardenReturnService::Impl::diagnostic_experimental_idle_battle(
         DiagnosticCommand& request)
     {
-        if (!kairi_idle::diagnostic_battle(request.action == L"experimental_idle_battle"))
+        if (!character_idle::diagnostic_battle(request.action == L"experimental_idle_battle"))
         {
-            request.reason = L"ready_experimental_kairi_required";
+            request.reason = L"ready_experimental_kairi_or_roxas_required";
         }
 
         return DiagnosticProgress::Finished;

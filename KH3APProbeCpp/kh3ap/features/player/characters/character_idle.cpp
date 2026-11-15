@@ -1,6 +1,6 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/characters/character_pose_handoff.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/performance_build.h"
@@ -11,6 +11,8 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/player/player_ids.h"
+#include "kh3ap/features/player/player_state_ids.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/UObject.hpp>
@@ -27,19 +29,19 @@
 #include <memory>
 #include <stdexcept>
 
-namespace kh3ap::kairi_idle
+namespace kh3ap::character_idle
 {
     using namespace RC::Unreal;
 
     namespace
     {
-        constexpr auto max_kairi_animation_parameter_bytes = 256;
+        constexpr auto max_animation_parameter_bytes = 256;
 
         constexpr auto kairi_idle_animset_load_uuid = 0x4b48338a;
         constexpr auto kairi_idle_animset_load_timeout = std::chrono::seconds(3);
-        constexpr auto kairi_idle_blend_in_seconds = 0.2f;
+        constexpr auto idle_blend_in_seconds = 0.2f;
         constexpr auto kairi_weapon_visible_vtable_offset = 0x1330;
-        constexpr auto kairi_idle_animation_loop_mask = 2u;
+        constexpr auto battle_mode_mask = 2u;
         constexpr size_t pawn_battle_mode_flags_offset = 0x630;
         constexpr size_t state_owner_pawn_offset = 0x68;
 
@@ -63,12 +65,16 @@ namespace kh3ap::kairi_idle
             original_weapon{}, original_idle_update{};
         std::unique_ptr<PLH::x64Detour> resolve_hook, battle_hook, play_hook, dismiss_hook,
             weapon_hook, idle_update_hook;
-        FWeakObjectPtr owner, instance, requested_owner;
-        FName battle_idle, relaxed_idle;
+        FWeakObjectPtr kairi_owner, kairi_instance, kairi_requested_owner;
+        FWeakObjectPtr roxas_owner, roxas_instance, roxas_queue;
+        int roxas_current_state_offset{}, roxas_state_id_offset{};
+        FName roxas_battle_idle, roxas_relaxed_idle, roxas_weapon_break, roxas_relaxed_break;
+        bool roxas_last_battle{};
+        FName kairi_battle_idle, kairi_relaxed_idle;
         bool disabled{};
-        bool relaxed{};
-        float remaining_idle_seconds{};
-        std::chrono::steady_clock::time_point load_deadline{};
+        bool kairi_relaxed{};
+        float kairi_remaining_idle_seconds{};
+        std::chrono::steady_clock::time_point kairi_load_deadline{};
 
         UObject* object(UObject* value, const wchar_t* field)
         {
@@ -84,7 +90,17 @@ namespace kh3ap::kairi_idle
             uint32_t flags{};
             std::memcpy(&flags, reinterpret_cast<std::byte*>(pawn) + pawn_battle_mode_flags_offset,
                         sizeof(flags));
-            return (flags & kairi_idle_animation_loop_mask) != 0;
+            return (flags & battle_mode_mask) != 0;
+        }
+
+        bool roxas_is_idle()
+        {
+            auto* queue = roxas_queue.Get();
+            if (!queue) { return false; }
+            UObject* state{};
+            std::memcpy(&state, reinterpret_cast<std::byte*>(queue) + roxas_current_state_offset, sizeof(state));
+            return is_uobject_valid_fast(state) &&
+                *(reinterpret_cast<uint8_t*>(state) + roxas_state_id_offset) == player_state_ids::idle;
         }
 
         void* resolve(UObject* anim, FName name)
@@ -110,10 +126,19 @@ namespace kh3ap::kairi_idle
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             const character_swap_trace::NativeScope trace{"animation_play"};
 #endif
-            if (name == battle_idle && anim == instance.Get())
+            if (anim == roxas_instance.Get())
             {
-                auto* pawn = owner.Get();
-                if (pawn && relaxed && !in_battle(pawn))
+                const auto selected = effective_animation_name(anim, name);
+                if (selected != name)
+                {
+                    name = selected;
+                    blend = std::max(blend, relaxed_blend_seconds);
+                }
+            }
+            if (name == kairi_battle_idle && anim == kairi_instance.Get())
+            {
+                auto* pawn = kairi_owner.Get();
+                if (pawn && kairi_relaxed && !in_battle(pawn))
                 {
                     // Native idle entry can request an immediate pose change.
                     // Blend from the current pose; leave outgoing attacks and
@@ -140,11 +165,11 @@ namespace kh3ap::kairi_idle
             {
                 return;
             }
-            Kh02ReflectedCall play(pawn, L"BP_AnimPlayAnimset", "Kairi exploration idle",
-                                   max_kairi_animation_parameter_bytes);
+            Kh02ReflectedCall play(pawn, L"BP_AnimPlayAnimset", "Character exploration idle",
+                                   max_animation_parameter_bytes);
             play.name(L"InAnimName", L"IdleB");
             play.name(L"InSlotNodeName", L"FullBody");
-            play.number(L"InBlendInTime", kairi_idle_blend_in_seconds);
+            play.number(L"InBlendInTime", idle_blend_in_seconds);
             play.boolean(L"InLoop", true);
             play.number(L"InPlayRate", 1.0f);
             play.boolean(L"InRootTrans", false);
@@ -158,12 +183,12 @@ namespace kh3ap::kairi_idle
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             const character_swap_trace::NativeScope trace{"weapon_visibility"};
 #endif
-            if (pawn == owner.Get() && instance.Get())
+            if (pawn == kairi_owner.Get() && kairi_instance.Get())
             {
                 // Attacks and idle entry draw the weapon through this native
                 // event. Keep the combat idle until the native dismissal event.
-                relaxed = !visible && !in_battle(pawn);
-                remaining_idle_seconds = visible ? native_idle_delay_seconds : 0.0f;
+                kairi_relaxed = !visible && !in_battle(pawn);
+                kairi_remaining_idle_seconds = visible ? native_idle_delay_seconds : 0.0f;
             }
             reinterpret_cast<SetWeapon>(original_weapon)(pawn, visible, effect, rate);
         }
@@ -173,13 +198,22 @@ namespace kh3ap::kairi_idle
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             const character_swap_trace::NativeScope trace{"weapon_dismiss"};
 #endif
-            if (pawn == owner.Get() && instance.Get() && !in_battle(pawn))
+            if (pawn == roxas_owner.Get() && roxas_instance.Get() &&
+                character_swap::owns_swap_pawn(pawn) && roxas_is_idle() && !in_battle(pawn))
+            {
+                // His dual-weapon type is excluded by the shared dismissal
+                // filter. Complete the ordinary visibility event so Idle does
+                // not repeat BattleEnd and return to a drawn combat pose.
+                reinterpret_cast<SetWeapon>(original_weapon)(pawn, false, effect, rate);
+                return;
+            }
+            if (pawn == kairi_owner.Get() && kairi_instance.Get() && !in_battle(pawn))
             {
                 // TresPlayerState_Idle owns Sora's three-second countdown and
                 // calls this event when it expires. Alternate weapons can be
                 // excluded by the native weapon-type filter; use its ordinary
                 // visibility setter directly for this prepared Kairi only.
-                if (remaining_idle_seconds <= 0.0f)
+                if (kairi_remaining_idle_seconds <= 0.0f)
                 {
                     set_weapon(pawn, false, effect, rate);
                 }
@@ -194,29 +228,51 @@ namespace kh3ap::kairi_idle
             const character_swap_trace::NativeScope trace{"idle_update"};
 #endif
             reinterpret_cast<IdleUpdate>(original_idle_update)(state, delta_seconds);
-            if (relaxed || remaining_idle_seconds <= 0.0f)
+            if (auto* pawn = roxas_owner.Get(); pawn && roxas_instance.Get())
+            {
+                UObject* state_pawn{};
+                std::memcpy(&state_pawn, reinterpret_cast<std::byte*>(state) + state_owner_pawn_offset,
+                            sizeof(state_pawn));
+                if (state_pawn == pawn)
+                {
+                    const bool battle = in_battle(pawn);
+                    if (battle != roxas_last_battle)
+                    {
+                        // Native idle can clear battle mode directly, without
+                        // SetBattleMode. Observe that one flag in its existing
+                        // active update; refresh once per transition only.
+                        roxas_last_battle = battle;
+                        if (character_swap::owns_swap_pawn(pawn))
+                        {
+                            try { refresh_idle(pawn); }
+                            catch (...) {}
+                        }
+                    }
+                }
+            }
+            if (kairi_relaxed || kairi_remaining_idle_seconds <= 0.0f)
             {
                 return;
             }
-            auto* pawn = owner.Get();
+            auto* pawn = kairi_owner.Get();
             UObject* state_pawn{};
             std::memcpy(&state_pawn, reinterpret_cast<std::byte*>(state) + state_owner_pawn_offset,
                         sizeof(state_pawn));
-            if (!pawn || state_pawn != pawn || !instance.Get())
+            if (!pawn || state_pawn != pawn || !kairi_instance.Get())
             {
                 return;
             }
             if (in_battle(pawn))
             {
-                remaining_idle_seconds = native_idle_delay_seconds;
+                kairi_remaining_idle_seconds = native_idle_delay_seconds;
                 return;
             }
             // Kairi can report no equipped weapon, bypassing Sora's native
             // dismissal callback. Count only her existing active idle updates,
             // using Sora's verified three-second delay, and stop at completion.
-            remaining_idle_seconds =
-                std::max(0.0f, remaining_idle_seconds - std::max(0.0f, delta_seconds));
-            if (remaining_idle_seconds == 0.0f)
+            kairi_remaining_idle_seconds =
+                std::max(0.0f, kairi_remaining_idle_seconds - std::max(0.0f, delta_seconds));
+            if (kairi_remaining_idle_seconds == 0.0f)
             {
                 set_weapon(pawn, false, true, 1.0f);
                 try
@@ -234,15 +290,19 @@ namespace kh3ap::kairi_idle
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             const character_swap_trace::NativeScope trace{"battle_mode"};
 #endif
-            const bool owned = pawn == owner.Get() && instance.Get();
+            const bool owned = pawn == kairi_owner.Get() && kairi_instance.Get();
+            const bool roxas_owned = pawn == roxas_owner.Get() && roxas_instance.Get();
+            const bool roxas_was_battle = roxas_owned && in_battle(pawn);
             const bool was_battle = owned && in_battle(pawn);
             reinterpret_cast<SetBattle>(original_battle)(pawn, enabled);
+            if (roxas_owned) { roxas_last_battle = in_battle(pawn); }
             if (owned && enabled)
             {
-                relaxed = false;
-                remaining_idle_seconds = native_idle_delay_seconds;
+                kairi_relaxed = false;
+                kairi_remaining_idle_seconds = native_idle_delay_seconds;
             }
-            if (owned && was_battle != in_battle(pawn))
+            if ((owned && was_battle != in_battle(pawn)) ||
+                (roxas_owned && roxas_was_battle != in_battle(pawn)))
             {
                 // A battle-mode transition can happen while already standing.
                 // Refresh only that idle; never interrupt movement or an attack.
@@ -304,12 +364,26 @@ namespace kh3ap::kairi_idle
 
     FName effective_animation_name(UObject* anim, FName name)
     {
-        if (name == battle_idle && anim == instance.Get())
+        if (anim == roxas_instance.Get() &&
+            (name == roxas_battle_idle || name == roxas_relaxed_idle || name == roxas_weapon_break))
         {
-            auto* pawn = owner.Get();
-            if (pawn && relaxed && !in_battle(pawn))
+            auto* pawn = roxas_owner.Get();
+            // Only native Idle may select the relaxed pose. Attacks, shotlocks,
+            // movement and scripted states retain their original animations.
+            // Resolve current state only for an idle animation request, using
+            // the prepared queue; there is no timer or idle-state discovery.
+            if (pawn && character_swap::owns_swap_pawn(pawn) && roxas_is_idle())
             {
-                return relaxed_idle;
+                if (in_battle(pawn)) { return roxas_battle_idle; }
+                return name == roxas_weapon_break ? roxas_relaxed_break : roxas_relaxed_idle;
+            }
+        }
+        if (name == kairi_battle_idle && anim == kairi_instance.Get())
+        {
+            auto* pawn = kairi_owner.Get();
+            if (pawn && kairi_relaxed && !in_battle(pawn))
+            {
+                return kairi_relaxed_idle;
             }
         }
         return name;
@@ -320,7 +394,48 @@ namespace kh3ap::kairi_idle
         return !disabled && install();
     }
 
-    bool prepare(UObject* pawn)
+    bool prepare_roxas(UObject* pawn)
+    {
+        auto* id = is_uobject_valid_fast(pawn) ? pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID") : nullptr;
+        if (!id || id->GetElementSize() != 1 ||
+            *id->ContainerPtrToValuePtr<uint8_t>(pawn) != player_id_value(PlayerId::Roxas)) { return true; }
+        auto* anim = object(object(pawn, L"MyMesh"), L"AnimScriptInstance");
+        if (roxas_owner.Get() == pawn && roxas_instance.Get() == anim) { return true; }
+        auto* queue = object(pawn, L"MyStateComp");
+        auto* state = object(queue, L"m_pCurrentState");
+        auto* current = queue ? queue->GetPropertyByNameInChain(L"m_pCurrentState") : nullptr;
+        auto* state_id = state ? state->GetPropertyByNameInChain(L"MyStateID") : nullptr;
+        if (!character_swap::owns_swap_pawn(pawn) || !anim || !current || !state_id ||
+            current->GetElementSize() != sizeof(UObject*) || state_id->GetElementSize() != 1 || !initialize())
+        {
+            return false;
+        }
+        roxas_battle_idle = FName(L"IdleB", FNAME_Add);
+        roxas_relaxed_idle = FName(L"IdleN", FNAME_Add);
+        roxas_weapon_break = FName(L"IdleBreakW", FNAME_Add);
+        roxas_relaxed_break = FName(L"IdleBreakN", FNAME_Add);
+        for (auto name : {roxas_battle_idle, roxas_relaxed_idle, roxas_relaxed_break})
+        {
+            if (!reinterpret_cast<Resolve>(original_resolve)(anim, name))
+            {
+                throw std::runtime_error("roxas_idle_animation_missing");
+            }
+        }
+        roxas_current_state_offset = current->GetOffset_Internal();
+        roxas_state_id_offset = state_id->GetOffset_Internal();
+        roxas_owner = make_uobject_weak(pawn);
+        roxas_instance = make_uobject_weak(anim);
+        roxas_queue = make_uobject_weak(queue);
+        roxas_last_battle = in_battle(pawn);
+        if (roxas_is_idle() && !in_battle(pawn))
+        {
+            reinterpret_cast<SetWeapon>(original_weapon)(pawn, false, false, 1.0f);
+        }
+        refresh_idle(pawn);
+        return true;
+    }
+
+    bool prepare_kairi(UObject* pawn)
     {
         if (disabled || !is_uobject_valid_fast(pawn))
         {
@@ -337,24 +452,24 @@ namespace kh3ap::kairi_idle
         {
             return false;
         }
-        if (owner.Get() == pawn && instance.Get() == anim)
+        if (kairi_owner.Get() == pawn && kairi_instance.Get() == anim)
         {
             return true;
         }
         auto* set = find_loaded_runtime_asset(set_path);
         if (!is_uobject_valid_fast(set))
         {
-            if (requested_owner.Get() != pawn)
+            if (kairi_requested_owner.Get() != pawn)
             {
                 if (!request_runtime_asset_load(pawn, set_path, nullptr,
                                                 kairi_idle_animset_load_uuid))
                 {
                     return true;
                 }
-                requested_owner = make_uobject_weak(pawn);
-                load_deadline = std::chrono::steady_clock::now() + kairi_idle_animset_load_timeout;
+                kairi_requested_owner = make_uobject_weak(pawn);
+                kairi_load_deadline = std::chrono::steady_clock::now() + kairi_idle_animset_load_timeout;
             }
-            if (std::chrono::steady_clock::now() >= load_deadline)
+            if (std::chrono::steady_clock::now() >= kairi_load_deadline)
             {
                 RC::Output::send<RC::LogLevel::Warning>(
                     STR("[KH3APProbeCpp] Kairi idle load timed out; preserving native idle\n"));
@@ -373,8 +488,8 @@ namespace kh3ap::kairi_idle
                 STR("[KH3APProbeCpp] Kairi idle injection unavailable; preserving native idle\n"));
             return true;
         }
-        battle_idle = FName(L"IdleB", FNAME_Add);
-        relaxed_idle = FName(L"Idle_GM", FNAME_Add);
+        kairi_battle_idle = FName(L"IdleB", FNAME_Add);
+        kairi_relaxed_idle = FName(L"Idle_GM", FNAME_Add);
         auto* sets = sets_property->ContainerPtrToValuePtr<TArray<UObject*>>(anim);
         bool present = false;
         for (auto* existing : *sets)
@@ -387,19 +502,19 @@ namespace kh3ap::kairi_idle
         }
         // MyAnimSets is a reflected strong reference. The installed animation
         // stays alive with this ABP; no global asset or NPC table is modified.
-        if (!reinterpret_cast<Resolve>(original_resolve)(anim, relaxed_idle))
+        if (!reinterpret_cast<Resolve>(original_resolve)(anim, kairi_relaxed_idle))
         {
             throw std::runtime_error("kairi_idle_animation_missing");
         }
-        owner = make_uobject_weak(pawn);
-        instance = make_uobject_weak(anim);
+        kairi_owner = make_uobject_weak(pawn);
+        kairi_instance = make_uobject_weak(anim);
         // Preparation can finish after native idle entry has already hidden
         // the weapon, so seed the state from the native getter once.
         const auto vtable = *reinterpret_cast<uintptr_t**>(pawn);
         const auto weapon_visible = reinterpret_cast<bool (*)(UObject*)>(
             vtable[kairi_weapon_visible_vtable_offset / sizeof(uintptr_t)]);
-        relaxed = !in_battle(pawn) && !weapon_visible(pawn);
-        remaining_idle_seconds = relaxed ? 0.0f : native_idle_delay_seconds;
+        kairi_relaxed = !in_battle(pawn) && !weapon_visible(pawn);
+        kairi_remaining_idle_seconds = kairi_relaxed ? 0.0f : native_idle_delay_seconds;
         refresh_idle(pawn);
         RC::Output::send<RC::LogLevel::Normal>(
             STR("[KH3APProbeCpp] Kairi ABP exploration idle ready: Idle_GM\n"));
@@ -408,18 +523,20 @@ namespace kh3ap::kairi_idle
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
     bool diagnostic_battle(bool enabled)
     {
-        auto* pawn = owner.Get();
+        auto* pawn = character_swap::current_hero();
+        const bool prepared = (pawn == kairi_owner.Get() && kairi_instance.Get()) ||
+            (pawn == roxas_owner.Get() && roxas_instance.Get());
         auto* controller = object(pawn, L"Controller");
-        if (!pawn || !instance.Get() || object(controller, L"Pawn") != pawn ||
+        if (!pawn || !prepared || object(controller, L"Pawn") != pawn ||
             kh02_actor_world(pawn) != kh02_current_world())
         {
             return false;
         }
-        Kh02ReflectedCall change(pawn, L"SetBattleMode", "Kairi idle battle validation",
-                                 max_kairi_animation_parameter_bytes);
+        Kh02ReflectedCall change(pawn, L"SetBattleMode", "Character idle battle validation",
+                                 max_animation_parameter_bytes);
         change.boolean(L"InEnable", enabled);
         change.run();
         return in_battle(pawn) == enabled;
     }
 #endif
-} // namespace kh3ap::kairi_idle
+} // namespace kh3ap::character_idle
