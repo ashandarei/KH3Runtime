@@ -20,6 +20,8 @@
 #include <Unreal/FProperty.hpp>
 #include <Unreal/NameTypes.hpp>
 #include <Unreal/TArray.hpp>
+#include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/UObjectGlobals.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
@@ -81,6 +83,58 @@ namespace kh3ap::character_idle
             return is_uobject_valid_fast(value)
                        ? try_read_reflected_object_property_value(value, field)
                        : nullptr;
+        }
+
+        void prepare_roxas_face(UObject* anim)
+        {
+            using player_animation_support::AnimationEntry;
+            auto* field = anim->GetPropertyByNameInChain(L"m_SubAnimSets");
+            if (!field || !field->IsA<FArrayProperty>() ||
+                static_cast<FArrayProperty*>(field)->GetInner()->GetElementSize() != sizeof(UObject*))
+            {
+                throw std::runtime_error("roxas_face_sets_layout");
+            }
+            const FName neutral(L"NO_1_EL", FNAME_Add);
+            const FName open(L"BA_0_EL", FNAME_Add);
+            auto* sets = field->ContainerPtrToValuePtr<TArray<UObject*>>(anim);
+            for (auto& set : *sets)
+            {
+                auto* entries = is_uobject_valid_fast(set) ? set->GetPropertyByNameInChain(L"Anims") : nullptr;
+                if (!entries || !entries->IsA<FArrayProperty>() ||
+                    static_cast<FArrayProperty*>(entries)->GetInner()->GetElementSize() != sizeof(AnimationEntry))
+                {
+                    throw std::runtime_error("roxas_face_entries_layout");
+                }
+                auto* authored = entries->ContainerPtrToValuePtr<TArray<AnimationEntry>>(set);
+                UObject* neutral_asset{};
+                UObject* open_asset{};
+                for (const auto& entry : *authored)
+                {
+                    if (entry.name == neutral) { neutral_asset = entry.asset; }
+                    if (entry.name == open) { open_asset = entry.asset; }
+                }
+                if (!is_uobject_valid_fast(neutral_asset) || !is_uobject_valid_fast(open_asset)) { continue; }
+                // NO_1_EL is Roxas's two-frame closed-eye pose (0001EM).
+                // Use his own animated open-eye loop (0100EM) for the neutral
+                // request. Clone the set so NPC Roxas and other instances keep
+                // their authored assets; retain every other facial expression.
+                if (neutral_asset == open_asset) { return; }
+                FStaticConstructObjectParameters parameters(set->GetClassPrivate(), anim);
+                parameters.SetFlags = RF_Transient;
+                auto* replacement = UObjectGlobals::StaticConstructObject(parameters);
+                if (!is_uobject_valid_fast(replacement))
+                {
+                    throw std::runtime_error("roxas_face_set_create");
+                }
+                auto* copied = entries->ContainerPtrToValuePtr<TArray<AnimationEntry>>(replacement);
+                for (const auto& entry : *authored)
+                {
+                    copied->Add({entry.name, entry.name == neutral ? open_asset : entry.asset});
+                }
+                set = replacement; // Reflected strong reference owned by this anim instance.
+                return;
+            }
+            throw std::runtime_error("roxas_face_animation_missing");
         }
 
         bool in_battle(UObject* pawn)
@@ -421,6 +475,7 @@ namespace kh3ap::character_idle
                 throw std::runtime_error("roxas_idle_animation_missing");
             }
         }
+        prepare_roxas_face(anim);
         roxas_current_state_offset = current->GetOffset_Internal();
         roxas_state_id_offset = state_id->GetOffset_Internal();
         roxas_owner = make_uobject_weak(pawn);
@@ -432,6 +487,18 @@ namespace kh3ap::character_idle
             reinterpret_cast<SetWeapon>(original_weapon)(pawn, false, false, 1.0f);
         }
         refresh_idle(pawn);
+        // The native pawn may have started NO_1_EL before our ownership was
+        // bound. Restart that baseline once; later native requests resolve
+        // through the private facial set, without a face-update timer.
+        Kh02ReflectedCall face(anim, L"SQEX_FaceAnimPlay", "Roxas default face", 256);
+        face.name(L"InAnimName", L"NO_1_EL");
+        face.number(L"InBlendInTime", 0.1f);
+        face.boolean(L"InLoop", true);
+        face.number(L"InPlayRate", 1.0f);
+        face.vector(L"InBlendParam", 0, 0, 0);
+        face.boolean(L"InSameCheck", false);
+        face.integer(L"InPlayPriority", 0);
+        face.run();
         return true;
     }
 
