@@ -7,6 +7,7 @@
 // PolyHook must precede Unreal headers to avoid their assembler macro names.
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/combat/character_shotlock.h"
+#include "kh3ap/features/player/combat/character_attack_completion.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/core/input/runtime_player_control.h"
@@ -21,6 +22,7 @@
 #include "kh3ap/features/player/player_animation_support.h"
 #include <Unreal/FMemory.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
@@ -425,6 +427,46 @@ namespace kh3ap::character_shotlock
                     FMemory::Free(copy);
                     throw std::runtime_error("character_shotlock_damage_insert");
                 }
+            }
+            return true;
+        }
+
+        bool prepare_riku_damage(UObject* pawn)
+        {
+            if (!character_attack_completion::prepare(pawn)) { return false; }
+            auto* source = find_loaded_runtime_asset(player_animation_support::sora_attack_data_path);
+            auto* set = object(object(pawn, L"MyAtkColl"), L"m_pOwnerDataTableSet");
+            auto* destination = object(set, L"m_AttackData");
+            if (!source || !destination) { return false; }
+            if (set->GetOuterPrivate() != pawn || destination->GetOuterPrivate() != set)
+            {
+                throw std::runtime_error("riku_shotlock_private_damage_required");
+            }
+            constexpr auto schema = L"/Script/TresGame.TresAttackDataTable";
+            Kh02DataTableView sora(source, schema, "riku_shotlock_source_layout");
+            Kh02DataTableView riku(destination, schema, "riku_shotlock_destination_layout");
+            auto* power = sora.schema->GetPropertyByNameInChain(L"m_Power");
+            auto* magic = sora.schema->GetPropertyByNameInChain(L"m_bIsMagicAttack");
+            if (sora.schema != riku.schema || !power || power->GetClass().GetName() != L"FloatProperty" ||
+                power->GetElementSize() != sizeof(float) || !magic || !magic->IsA<FBoolProperty>())
+            {
+                throw std::runtime_error("riku_shotlock_scaling_layout");
+            }
+            // Retain Dark Divide's motion, projectiles and hit reactions. Its
+            // main projectile uses Sora's standard Dark Firaga Burst power;
+            // repeated hits use his Dark Divide (max-lock) power. Both scale
+            // through the same native Magic stat/defense calculation as Sora.
+            constexpr std::array rows{
+                std::pair{L"SF_DARKDIVIDE", L"SF_DFBURST"},
+                std::pair{L"SF_DARKDIVIDE_EX", L"SF_LIGHTINCEPTION"}};
+            for (const auto& [target_name, source_name] : rows)
+            {
+                auto* target = riku.find(target_name);
+                auto* original = sora.find(source_name);
+                if (!target || !original) { throw std::runtime_error("riku_shotlock_scaling_row_missing"); }
+                *power->ContainerPtrToValuePtr<float>(target) = *power->ContainerPtrToValuePtr<float>(original);
+                auto* flag = static_cast<FBoolProperty*>(magic);
+                flag->SetPropertyValueInContainer(target, flag->GetPropertyValueInContainer(original));
             }
             return true;
         }
@@ -933,6 +975,7 @@ namespace kh3ap::character_shotlock
         }
         if (kind == riku_player_id)
         {
+            if (!prepare_riku_damage(pawn)) { return false; }
             Kh02ReflectedCall enable(pawn, L"BP_SetEnableShootLockModeForRIKU",
                                      "character_shotlock", max_shotlock_pause_parameter_bytes);
             enable.boolean(L"IsOn", true);

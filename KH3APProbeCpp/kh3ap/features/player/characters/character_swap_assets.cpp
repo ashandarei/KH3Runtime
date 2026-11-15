@@ -329,7 +329,8 @@ namespace kh3ap::character_swap_assets
             assets.push_back({L"/Game/Effects/PC/Free_f/par/vp_ffa_arv0.vp_ffa_arv0", false});
             assets.push_back({character_underwater_combat::vertical_projectile_path, true});
             assets.push_back({character_underwater_combat::pulse_projectile_path, true});
-            if (character.id == PlayerId::Aqua || character.id == PlayerId::Kairi || character.id == PlayerId::Roxas)
+            if (character.id == PlayerId::Aqua || character.id == PlayerId::Riku ||
+                character.id == PlayerId::Kairi || character.id == PlayerId::Roxas)
             {
                 assets.push_back({character_rails::shot_projectile_path, true});
             }

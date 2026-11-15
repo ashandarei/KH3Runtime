@@ -81,7 +81,7 @@ namespace kh3ap::character_rails
             }
             const auto player =
                 static_cast<PlayerId>(*field->ContainerPtrToValuePtr<uint8_t>(pawn));
-            return player == PlayerId::Aqua || player == PlayerId::Kairi ||
+            return player == PlayerId::Aqua || player == PlayerId::Riku || player == PlayerId::Kairi ||
                    player == PlayerId::Roxas;
         }
 

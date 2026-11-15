@@ -118,7 +118,7 @@ namespace kh3ap
             if (!enabled) { if (!originals.empty()) restore(); return; }
             const auto snapshot=titan_objects::snapshot();
 
-            std::array<UObject*,2> tracked_entities{}, pawns{};
+            std::array<UObject*,2> tracked_entities{};
             std::array<UObject*,3> obstacles{};
             for (auto* actor : snapshot.objects)
             {
@@ -144,6 +144,9 @@ namespace kh3ap
                 unfinished |= same_level && !bound;
             }
             work.finish(now,!unfinished,titan_obstacle_readiness_retry);
+            bool replacement_bound = false;
+            bool awaiting_binding = false;
+            bool unexpected_binding = false;
             {
                 std::lock_guard lock{entity_mutex};
                 for (size_t i=0;i<tracked_entities.size();++i)
@@ -151,16 +154,27 @@ namespace kh3ap
                     auto* entity=tracked_entities[i];
                     if (!entity || targets[i].empty()) continue;
                     auto* pawn=try_read_reflected_object_property_value(entity,L"m_EntityActor");
-                    if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(pawn->GetClassPrivate())) continue;
-                    const auto actual=pawn->GetClassPrivate()->GetPathName();
-                    if (actual!=targets[i] || actual.starts_with(L"/Game/Blueprints/Enemy/e_he90"))
-                    { if (!originals.empty()) restore(); return; }
-                    pawns[i]=pawn;
+                    if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(pawn->GetClassPrivate()))
+                    {
+                        awaiting_binding = true;
+                        continue;
+                    }
+                    const auto actual = pawn->GetClassPrivate()->GetPathName();
+                    if (actual == targets[i] && !actual.starts_with(L"/Game/Blueprints/Enemy/e_he90"))
+                    {
+                        replacement_bound = true;
+                        break;
+                    }
+                    unexpected_binding = true;
                 }
             }
             // Keep removal during Retry's no-pawn interval. The ownership-bind
             // event wakes us when its replacement pawns have been assigned.
-            if (!pawns[0] || !pawns[1] || pawns[0]->GetOuterPrivate()!=pawns[1]->GetOuterPrivate()) return;
+            if (!replacement_bound)
+            {
+                if (unexpected_binding && !awaiting_binding && !originals.empty()) restore();
+                return;
+            }
             // Wait for all three streamed actors before changing any geometry.
             for (auto* actor : obstacles) if (!actor) return;
             // Retry may replace the level actors. Never use the previous
@@ -202,7 +216,7 @@ namespace kh3ap
                 const bool collision = bool_call(actor, L"GetActorEnableCollision", L"ReturnValue", true);
                 complete &= changed && !collision && hidden;
                 if (before || (i==2 && !was_hidden))
-                    Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Titan arena obstacle actor={} collision_enabled={} hidden_verified={} both_titans_replaced=true\n"),
+                    Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Titan arena obstacle actor={} collision_enabled={} hidden_verified={} titan_replacement_bound=true\n"),
                         actor->GetPathName(), collision, hidden);
             }
             if (!complete) throw std::runtime_error("titan_arena_readback");
