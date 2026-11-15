@@ -24,7 +24,7 @@ namespace kh3ap::party_native
     auto read_object_like_property(RC::Unreal::UObject* object, std::wstring_view property_name)
         -> RC::Unreal::UObject*;
     auto write_object_like_property(RC::Unreal::UObject* object, std::wstring_view property_name,
-                                    RC::Unreal::UObject* value) -> bool;
+                                    RC::Unreal::UObject* value, bool allow_null = false) -> bool;
     auto run_behavior_tree(RC::Unreal::UObject* controller, RC::Unreal::UObject* behavior_tree)
         -> bool;
     auto persistent_level_for(RC::Unreal::UObject* object) -> RC::Unreal::UObject*;
@@ -37,6 +37,7 @@ namespace kh3ap::party_native
     // retains its existing ReturnValue-based contract; these are distinct APIs.
     auto invoke_named_bool_getter(RC::Unreal::UObject* object, std::wstring_view function_name)
         -> std::optional<bool>;
+    auto friend_underwater(RC::Unreal::UObject* pawn) -> std::optional<bool>;
     auto invoke_named_single_bool_function(RC::Unreal::UObject* object,
                                            std::wstring_view function_name, bool value) -> bool;
     auto invoke_bool_getter(RC::Unreal::UObject* object, std::wstring_view function_path)

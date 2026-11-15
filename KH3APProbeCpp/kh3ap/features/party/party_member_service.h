@@ -75,6 +75,8 @@ namespace kh3ap
         std::array<std::wstring, runtime_party_member_slot_count> vanilla_npc_ids{};
         std::array<std::wstring, runtime_party_member_slot_count> active_npc_ids{};
         std::array<std::wstring, runtime_party_member_slot_count> navigation{};
+        std::array<std::optional<std::array<float, 3>>, runtime_party_member_slot_count> positions{};
+        std::optional<std::array<float, 3>> player_position{};
         std::wstring manager{};
         std::wstring level{};
         std::wstring map_policy{};
@@ -102,6 +104,7 @@ namespace kh3ap
         auto observe_goa_map_ready() -> void;
         auto observe_sora_context_ready() -> void;
         auto observe_sora_state(RC::Unreal::UObject* sora_pawn) -> void;
+        auto observe_friend_state(uintptr_t state_component) -> void;
 
         [[nodiscard]] auto status() const -> RuntimePartyMemberStatus;
         [[nodiscard]] auto choice_count() const -> std::size_t;
@@ -175,6 +178,10 @@ namespace kh3ap
         auto tick_maintenance(std::chrono::steady_clock::time_point now) -> void;
         auto maintain_party_navigation() -> bool;
         auto initialize_party_knockout() -> void;
+        auto initialize_party_swimming() -> bool;
+        auto maintain_party_swim_combat() -> void;
+        auto update_swimming_party_ai(RC::Unreal::UObject* pawn, bool underwater) -> bool;
+        auto restore_party_swim_combat() -> void;
         auto maintain_party_placement() -> bool;
         auto apply_custom_party_ai_for_possession(RC::Unreal::UObject* controller,
                                                   RC::Unreal::UObject* pawn) -> bool;
@@ -207,7 +214,9 @@ namespace kh3ap
         std::array<std::optional<bool>, runtime_party_member_slot_count>
             party_presentation_modes_{};
         std::array<std::size_t, runtime_party_member_slot_count> pending_choices_{};
-        std::array<std::wstring, runtime_party_member_slot_count> pending_pawn_class_paths_{};
+        std::array<std::wstring, runtime_party_member_slot_count + 1> pending_pawn_class_paths_{};
+        std::array<std::wstring, 2> pending_swim_asset_paths_{};
+        std::chrono::steady_clock::time_point swimming_deadline_{};
         std::chrono::steady_clock::time_point party_asset_deadline_{};
         std::chrono::steady_clock::time_point next_party_asset_request_{};
         uint32_t party_asset_request_sequence_{};
@@ -221,6 +230,28 @@ namespace kh3ap
         std::unique_ptr<RuntimeNativeRevisionHooks> navigation_hooks_;
         uint64_t navigation_revision_{};
         RC::Unreal::FWeakObjectPtr placement_sora_{};
+        std::array<RC::Unreal::FWeakObjectPtr, runtime_party_member_slot_count> placement_friends_{};
+        std::array<std::optional<bool>, runtime_party_member_slot_count> placement_battle_modes_{};
+        std::array<RC::Unreal::FWeakObjectPtr, runtime_party_member_slot_count> swimming_pawns_{};
+        struct SwimAttackPatch
+        {
+            RC::Unreal::FWeakObjectPtr definition;
+            RC::Unreal::FWeakObjectPtr query;
+            bool swimming{};
+            bool added_state{};
+            std::optional<bool> swimming_magic;
+        };
+        struct SwimCombatState
+        {
+            RC::Unreal::FWeakObjectPtr pawn;
+            RC::Unreal::FWeakObjectPtr state_component;
+            std::vector<RC::Unreal::FWeakObjectPtr> live_roots;
+            std::vector<SwimAttackPatch> actions;
+            std::vector<RC::Unreal::FWeakObjectPtr> land_gates;
+            bool underwater{};
+            bool disabled{};
+        };
+        std::array<SwimCombatState, runtime_party_member_slot_count> swim_combat_{};
         std::array<float, 3> placement_sora_position_{};
         bool placement_pending_{};
         std::chrono::steady_clock::time_point next_reconcile_attempt_{};

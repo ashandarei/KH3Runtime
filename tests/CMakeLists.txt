@@ -11,6 +11,20 @@ else()
 endif()
 add_test(NAME character_unlocks COMMAND character_unlocks_test)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(party_placement_source "${CMAKE_CURRENT_BINARY_DIR}/party_placement_under_test.h")
+add_custom_command(OUTPUT "${party_placement_source}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_party_placement_test.py" "${party_placement_source}"
+    DEPENDS generate_party_placement_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/party/party_ai.cpp"
+    VERBATIM)
+add_executable(party_placement_test party_placement_test.cpp "${party_placement_source}")
+target_include_directories(party_placement_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp")
+target_compile_features(party_placement_test PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(party_placement_test PRIVATE /UNDEBUG)
+else()
+    target_compile_options(party_placement_test PRIVATE -UNDEBUG)
+endif()
+add_test(NAME party_placement COMMAND party_placement_test)
 set(shared_progression_source "${CMAKE_CURRENT_BINARY_DIR}/shared_progression_under_test.h")
 add_custom_command(OUTPUT "${shared_progression_source}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_shared_progression_test.py" "${shared_progression_source}"
@@ -632,5 +646,30 @@ add_executable(manual_grant_file_reader_test manual_grant_file_reader_test.cpp)
 target_include_directories(manual_grant_file_reader_test PRIVATE "${KH3AP_PROBE_ROOT}")
 add_test(NAME manual_grant_file_reader COMMAND manual_grant_file_reader_test)
 set_tests_properties(manual_grant_file_reader PROPERTIES TIMEOUT 15)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/party_swim_mutations_under_test.h"
+           "${CMAKE_CURRENT_BINARY_DIR}/party_swim_events_under_test.h"
+           "${CMAKE_CURRENT_BINARY_DIR}/party_swim_ai_under_test.h"
+           "${CMAKE_CURRENT_BINARY_DIR}/party_water_state_under_test.h"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_party_swim_combat_test.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/party_swim_mutations_under_test.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/party_swim_events_under_test.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/party_swim_ai_under_test.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/party_water_state_under_test.h"
+    DEPENDS generate_party_swim_combat_test.py
+        "${KH3AP_ROOT}/features/party/party_ai.cpp"
+        "${KH3AP_ROOT}/features/party/party_helpers.cpp"
+        "${KH3AP_ROOT}/features/party/party_swim_combat.cpp")
+add_executable(party_swim_combat_test party_swim_combat_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/party_swim_mutations_under_test.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/party_swim_events_under_test.h")
+target_include_directories(party_swim_combat_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME party_swim_combat COMMAND party_swim_combat_test)
+add_executable(party_swim_ai_test party_swim_ai_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/party_water_state_under_test.h"
+    "${CMAKE_CURRENT_BINARY_DIR}/party_swim_ai_under_test.h")
+target_include_directories(party_swim_ai_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+add_test(NAME party_swim_ai COMMAND party_swim_ai_test)
 
 include("${CMAKE_CURRENT_LIST_DIR}/../cmake/kh3-test-assertions.cmake")

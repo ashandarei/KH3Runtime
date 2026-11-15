@@ -167,6 +167,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/party/party_member_service.cpp
     kh3ap/features/party/party_reconciliation.cpp
     kh3ap/features/party/party_ai.cpp
+    kh3ap/features/party/party_swimming.cpp
+    kh3ap/features/party/party_swim_combat.cpp
     kh3ap/features/party/party_roster.cpp
     kh3ap/features/party/party_world_context.cpp
     kh3ap/features/party/party_settings.cpp

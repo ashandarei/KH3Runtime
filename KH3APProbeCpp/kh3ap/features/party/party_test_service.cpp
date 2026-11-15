@@ -107,6 +107,24 @@ namespace kh3ap
                 << ",\"failures\":" << s.failures << ",\"deletes\":" << s.deletes
                 << ",\"spawns\":" << s.spawns << ",\"last_reconcile_ms\":" << s.last_reconcile_ms
                 << ",\"last_native_work_ms\":" << s.last_native_work_ms;
+            const auto write_position = [&out](const auto& position)
+            {
+                if (position)
+                {
+                    out << '[' << (*position)[0] << ',' << (*position)[1] << ',' << (*position)[2] << ']';
+                }
+                else
+                {
+                    out << "null";
+                }
+            };
+            out << ",\"player_position\":";
+            write_position(s.player_position);
+            out << ",\"positions\":[";
+            write_position(s.positions[0]);
+            out << ',';
+            write_position(s.positions[1]);
+            out << ']';
             if (command == L"inspect" || command == L"begin")
             {
                 out << ",\"choices\":[";

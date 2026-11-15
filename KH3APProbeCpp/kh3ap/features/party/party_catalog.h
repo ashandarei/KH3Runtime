@@ -18,10 +18,12 @@ namespace kh3ap
 
     namespace party_catalog
     {
+        inline constexpr std::size_t aqua_choice = 14;
         inline constexpr std::size_t ventus_choice = 15;
         inline constexpr std::size_t lea_choice = 16;
         inline constexpr std::size_t kairi_choice = 17;
         inline constexpr std::size_t roxas_choice = 18;
+        inline constexpr std::size_t xion_choice = 19;
         struct CustomPartyAiDefinition
         {
             std::size_t choice{};
@@ -30,7 +32,13 @@ namespace kh3ap
             std::wstring_view tree_path{};
             std::wstring_view follow_query_path{};
         };
-        inline constexpr std::array<CustomPartyAiDefinition, 4> custom_party_ai_definitions{{
+        inline constexpr std::array<CustomPartyAiDefinition, 6> custom_party_ai_definitions{{
+            {
+                aqua_choice,
+                L"Aqua",
+                L"n_ex011_Pawn_C",
+                L"/Game/Blueprints/GoA/PartyAI/BT_GoA_AquaParty.BT_GoA_AquaParty",
+            },
             {
                 ventus_choice,
                 L"Ventus",
@@ -59,14 +67,24 @@ namespace kh3ap
                 L"n_ex009_Pawn_C",
                 L"/Game/Blueprints/GoA/PartyAI/BT_GoA_RoxasParty.BT_GoA_RoxasParty",
             },
+            {
+                xion_choice,
+                L"Xion",
+                L"n_ex033_Pawn_C",
+                L"/Game/Blueprints/GoA/PartyAI/BT_GoA_XionParty.BT_GoA_XionParty",
+            },
         }};
         struct ActionViableStateDefinition
         {
             std::size_t choice{};
             std::wstring_view class_path{};
         };
-        inline constexpr std::array<ActionViableStateDefinition, 13>
+        inline constexpr std::array<ActionViableStateDefinition, 15>
             action_viable_state_definitions{{
+                {xion_choice, L"/Game/Blueprints/Npc/n_ex033/BT/"
+                              L"n_ex033_Attack1_LandCombo.n_ex033_Attack1_LandCombo_C"},
+                {xion_choice, L"/Game/Blueprints/Npc/n_ex033/BT/"
+                              L"n_ex033_Attack2_LaserRain.n_ex033_Attack2_LaserRain_C"},
                 {ventus_choice, L"/Game/Blueprints/Npc/n_ex006/BT/"
                                 L"n_ex006_Attack10_LandCombo.n_ex006_Attack10_LandCombo_C"},
                 {ventus_choice, L"/Game/Blueprints/Npc/n_ex006/BT/"

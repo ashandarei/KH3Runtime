@@ -387,6 +387,10 @@ namespace kh3ap
             for (size_t index = 0; index < event_count; ++index)
             {
                 const auto& event = events[index];
+                if (config.observe_friend_state)
+                {
+                    config.observe_friend_state(event.state_comp);
+                }
                 character_swap::observe_game_over_state_write(event.state_comp,
                         event.replaced && event.replacement_state ? event.replacement_state : event.new_state);
                 character_rails::observe_state_write(event.state_comp,

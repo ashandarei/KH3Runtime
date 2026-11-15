@@ -202,6 +202,10 @@ namespace kh3ap
                         RuntimeControllerAbilityEvent::ControllerChanged);
                 }
             },
+            [this](uintptr_t state_component)
+            {
+                if (m_service_graph_ready) { m_party_members.observe_friend_state(state_component); }
+            },
         }};
     }
 
