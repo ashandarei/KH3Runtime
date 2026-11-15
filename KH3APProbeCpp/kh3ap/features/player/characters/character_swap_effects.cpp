@@ -1,6 +1,6 @@
 #include "kh3ap/features/player/characters/character_swap_effects.h"
 #include "kh3ap/features/player/player_animation_support.h"
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -296,7 +296,7 @@ namespace kh3ap::character_swap_effects
             {
                 throw std::runtime_error("effect_animation_name_layout");
             }
-            const auto motion = kairi_idle::effective_animation_name(
+            const auto motion = character_idle::effective_animation_name(
                 instance, *result->ContainerPtrToValuePtr<FName>(name.parameters.data()));
             for (auto* set : objects(instance, L"MyAnimSets"))
             {

@@ -368,6 +368,37 @@ namespace kh3ap
                std::equal(signature.begin(), signature.end(), code.begin());
     }
 
+    // Retail GetMaxHitPoint: EGS 0x744960, Steam 0x5ab200. The two
+    // implementations differ in the relative branch to the stats getter.
+    // SetHitPoint is byte-identical (EGS 0x744ad0, Steam 0x5b9700).
+    inline constexpr std::array<uint8_t, 38> egs_tide_max_hp_getter{
+        0x80,0xb9,0x5d,0x08,0x00,0x00,0x12,0x75,0x0a,0x8b,0x81,0x1c,0x06,0x00,0x00,
+        0x85,0xc0,0x7f,0x12,0x48,0x8b,0x89,0xd0,0x04,0x00,0x00,0x48,0x85,0xc9,0x0f,
+        0x85,0x7d,0xfb,0xfb,0xff,0x33,0xc0,0xc3};
+    inline constexpr std::array<uint8_t, 38> steam_tide_max_hp_getter{
+        0x80,0xb9,0x5d,0x08,0x00,0x00,0x12,0x75,0x0a,0x8b,0x81,0x1c,0x06,0x00,0x00,
+        0x85,0xc0,0x7f,0x12,0x48,0x8b,0x89,0xd0,0x04,0x00,0x00,0x48,0x85,0xc9,0x0f,
+        0x85,0x6d,0x87,0xfd,0xff,0x33,0xc0,0xc3};
+
+    [[nodiscard]] inline auto identify_tide_hp_functions(std::span<const uint8_t> setter,
+                                                        std::span<const uint8_t> getter)
+        -> std::optional<BossHpLimitBuild>
+    {
+        if (!matches_hp_limit_signature(setter, base_hp_setter))
+        {
+            return std::nullopt;
+        }
+        if (matches_hp_limit_signature(getter, egs_tide_max_hp_getter))
+        {
+            return BossHpLimitBuild::egs;
+        }
+        if (matches_hp_limit_signature(getter, steam_tide_max_hp_getter))
+        {
+            return BossHpLimitBuild::steam;
+        }
+        return std::nullopt;
+    }
+
     [[nodiscard]] inline auto is_egs_boss_hp_limit_getter(BossHpLimitKind kind,
                                                           std::span<const uint8_t> code,
                                                           int32_t reflected_hp_limit_offset) -> bool

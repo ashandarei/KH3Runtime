@@ -65,6 +65,30 @@ int main()
     assert(tide_scripted_finish_hp(3000, 3000, 4000, 85) == 3000);
     assert(tide_scripted_finish_hp(4000, 3000, 0, 85) == 3000);
     assert(tide_scripted_finish_hp(4000, 3000, 4000, 100) == 3000);
+    // Both retail function pairs install the cutoff repair. Reject altered
+    // native branches/setters rather than accepting a partially matching ABI.
+    for (const auto& getter : {egs_tide_max_hp_getter, steam_tide_max_hp_getter})
+    {
+        const auto expected = getter == steam_tide_max_hp_getter
+                ? BossHpLimitBuild::steam : BossHpLimitBuild::egs;
+        assert(identify_tide_hp_functions(base_hp_setter, getter) == expected);
+        assert(!identify_tide_hp_functions(std::span{base_hp_setter}.first(94), getter));
+        assert(!identify_tide_hp_functions(base_hp_setter, std::span{getter}.first(37)));
+        assert(!identify_tide_hp_functions(xion_hp_setter, getter));
+        for (size_t index = 0; index < getter.size(); ++index)
+        {
+            auto changed = getter;
+            changed[index] ^= 1;
+            assert(!identify_tide_hp_functions(base_hp_setter, changed));
+        }
+        for (size_t index = 0; index < base_hp_setter.size(); ++index)
+        {
+            auto changed = base_hp_setter;
+            changed[index] ^= 1;
+            assert(!identify_tide_hp_functions(changed, getter));
+        }
+    }
+    assert(!identify_tide_hp_functions({}, {}));
     // Xigbar/Dark Riku's live one-HP lock reads bit 5 directly; do not confuse it with
     // bit 6, which preserves the requirement for a player finishing blow.
     assert(!preserves_explicit_boss_hp_limit(BossHpLimitKind::explicit_lock));

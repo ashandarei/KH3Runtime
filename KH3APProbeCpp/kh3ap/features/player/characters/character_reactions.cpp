@@ -5,16 +5,37 @@
 #include "kh3ap/features/player/movement/character_barrel_spin.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
+#include <Unreal/UScriptStruct.hpp>
+#include <Unreal/FString.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
+#include <stdexcept>
 
 namespace kh3ap::character_reactions
 {
     using namespace RC::Unreal;
     namespace
     {
+        FWeakObjectPtr sora_defaults;
+
+        template<class T>
+        void fill_tuning(UObject* pawn, UObject* source, const wchar_t* name, const wchar_t* kind)
+        {
+            auto* field = source->GetPropertyByNameInChain(name);
+            if (!field || field != pawn->GetPropertyByNameInChain(name) ||
+                field->GetClass().GetName() != kind || field->GetArrayDim() != 1 ||
+                field->GetElementSize() != sizeof(T))
+            {
+                throw std::runtime_error("character_reaction_tuning_layout");
+            }
+            auto& destination = *field->ContainerPtrToValuePtr<T>(pawn);
+            if (destination == T{}) { destination = *field->ContainerPtrToValuePtr<T>(source); }
+        }
+
         UObject* object(UObject* owner, const wchar_t* name)
         {
             return is_uobject_valid_fast(owner) ? try_read_reflected_object_property_value(owner, name) : nullptr;
@@ -28,8 +49,66 @@ namespace kh3ap::character_reactions
         }
     }
 
+    void capture_sora(UObject* pawn)
+    {
+        sora_defaults = make_uobject_weak(is_uobject_valid_fast(pawn)
+            ? pawn->GetClassPrivate()->GetClassDefaultObject() : nullptr);
+    }
+
+    void prepare_pawn(UObject* pawn)
+    {
+        auto* source = sora_defaults.Get();
+        if (!source || !character_swap::owns_swap_pawn(pawn))
+        {
+            throw std::runtime_error("character_reaction_defaults_missing");
+        }
+        // Populate absent ride references only. Native drawing, availability,
+        // async loading and command consumption remain responsible for activation.
+        // Link slots and authored alternate ride references are left alone.
+        auto* field = source->GetPropertyByNameInChain(L"m_AttractionFlowAssetInfo");
+        if (!field || field != pawn->GetPropertyByNameInChain(L"m_AttractionFlowAssetInfo") ||
+            !field->IsA<FStructProperty>() || field->GetArrayDim() != 16)
+        {
+            throw std::runtime_error("character_attraction_info_layout");
+        }
+        auto* schema = static_cast<FStructProperty*>(field)->GetStruct();
+        auto* asset = schema->GetPropertyByNameInChain(L"m_AssetPtr");
+        // KH3's UE4.17 asset-class reference stores its owned FString after
+        // the weak-object/cache fields. This is the same legacy layout used
+        // by the runtime's latent asset loader; never shallow-copy its string.
+        if (!asset || asset->GetClass().GetName() != L"AssetClassProperty" ||
+            asset->GetOffset_Internal() != 0 || asset->GetElementSize() != 0x10 + sizeof(FString) ||
+            schema->GetStructureSize() != field->GetElementSize())
+        {
+            throw std::runtime_error("character_attraction_reference_layout");
+        }
+        for (int index : {0, 1, 2, 4, 5, 8})
+        {
+            auto* destination = field->ContainerPtrToValuePtr<std::byte>(pawn, index);
+            const auto& path = *reinterpret_cast<FString*>(destination + 0x10);
+            if (!path.GetCharArray() || !*path.GetCharArray())
+            {
+                schema->CopyScriptStruct(destination, field->ContainerPtrToValuePtr<void>(source, index));
+            }
+        }
+        for (const auto* name : {L"MyFriendComboFinishRange", L"MyFriendComboFinishRangeHalf",
+                                  L"MyFriendComboFinishRangeNear"})
+        {
+            fill_tuning<float>(pawn, source, name, L"FloatProperty");
+        }
+        for (const auto* name : {L"MyFriendComboFinishAddRate", L"MyFriendComboFinishAddRateRange",
+                                  L"MyFriendComboFinishAddRateRangeHalf", L"MyFriendComboFinishAddRateRangeNear"})
+        {
+            fill_tuning<int32_t>(pawn, source, name, L"IntProperty");
+        }
+    }
+
     bool owns_command(UObject* controller, int command)
     {
+        auto* pawn = object(controller, L"Pawn");
+        auto* player_field = pawn ? pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID") : nullptr;
+        const bool situation = player_field && player_field->GetElementSize() == sizeof(uint8_t) &&
+            shared_situation(command, static_cast<PlayerId>(*player_field->ContainerPtrToValuePtr<uint8_t>(pawn)));
         switch (static_cast<PlayerActionCommand>(command))
         {
         case PlayerActionCommand::TALK:
@@ -37,19 +116,44 @@ namespace kh3ap::character_reactions
         case PlayerActionCommand::CHECK:
         case PlayerActionCommand::RESCUE:
         case PlayerActionCommand::VEHICLE:
+        case PlayerActionCommand::PLANE:
+        case PlayerActionCommand::PLANEBOSS:
+        case PlayerActionCommand::ENEMYSHIP:
         case PlayerActionCommand::TRICK:
+        case PlayerActionCommand::WATERPLAY:
+        case PlayerActionCommand::EXTENDHAND:
+        case PlayerActionCommand::SWING:
+        case PlayerActionCommand::PUDDING:
+        case PlayerActionCommand::POSTCARD:
+        case PlayerActionCommand::CARDDRAW:
         case PlayerActionCommand::COVERSLIDE:
         case PlayerActionCommand::DISPEL:
+        case PlayerActionCommand::QUICKBATTLE:
             break;
         default:
-            return false;
+            if (!situation) { return false; }
+            break;
         }
-        auto* pawn = object(controller, L"Pawn");
         if (!pawn || character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn) ||
             !character_traversal::ready(pawn) || object(pawn, L"Controller") != controller ||
-            object(object(controller, L"Player"), L"PlayerController") != controller)
+            object(object(controller, L"Player"), L"PlayerController") != controller ||
+            kh02_actor_world(pawn) != kh02_current_world())
         {
             return false;
+        }
+        if (situation)
+        {
+            // Native dispatch checks the selected command, availability, meter,
+            // teammate/ride and state eligibility. Do not synthesize command-info
+            // actors or grant attraction/team availability here.
+            return true;
+        }
+        if (command == player_action_command_value(PlayerActionCommand::QUICKBATTLE))
+        {
+            // Sora's dispatcher calls the shared pawn's native eligibility and
+            // QuickBattle request. The encounter still owns the offered command;
+            // forwarding does not manufacture a prompt or complete the duel.
+            return true;
         }
         if (command == player_action_command_value(PlayerActionCommand::DISPEL))
         {

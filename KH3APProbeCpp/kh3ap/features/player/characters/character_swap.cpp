@@ -31,7 +31,7 @@
 #include "kh3ap/features/player/characters/character_party.h"
 #include "kh3ap/features/player/characters/character_swap_timing.h"
 #include "kh3ap/features/player/player_animation_support.h"
-#include "kh3ap/features/player/characters/kairi_idle.h"
+#include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/combat/kairi_ground_slam.h"
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
@@ -1441,7 +1441,7 @@ namespace kh3ap::character_swap
                 const CharacterSwapOperationTimer timer{stage, session.target_id};
                 return action(pawn);
             };
-            if (!session.cinematic_return_pending && !prepare(L"kairi_idle", kairi_idle::prepare))
+            if (!session.cinematic_return_pending && !prepare(L"kairi_idle", character_idle::prepare_kairi))
             {
                 return false;
             }
@@ -1459,6 +1459,7 @@ namespace kh3ap::character_swap
                 session.target_id != king_mickey_id &&
                 (!prepare(L"exploration", character_exploration::prepare_pawn) ||
                  !prepare(L"traversal", character_traversal::prepare) ||
+                 !prepare(L"roxas_idle", character_idle::prepare_roxas) ||
                  !prepare(L"underwater_combat", character_underwater_combat::prepare) ||
                  !prepare(L"camera", character_camera::prepare) ||
                  !prepare(L"shotlock", character_shotlock::prepare) ||

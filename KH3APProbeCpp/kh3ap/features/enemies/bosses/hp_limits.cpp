@@ -453,19 +453,17 @@ namespace kh3ap::enemy_remap_detail
         state.override = std::move(override);
         if constexpr (policy.class_name == L"e_dw401_Pawn_s1_C")
         {
-            // The EGS native setter and max-HP getter are shared by the two
-            // Tide Blueprints. Scope the cutoff to tracked TT replacements.
+            // Both storefronts share the setter, but their max-HP getters
+            // have different relative branches. Do not use getter_build here:
+            // the explicit HP-floor getter is byte-identical on both stores.
+            // Scope the cutoff to tracked TT replacements.
             constexpr size_t setter_slot = 0x1840 / sizeof(void*);
             constexpr size_t max_hp_slot = 0x1820 / sizeof(void*);
-            constexpr std::array<uint8_t, 38> max_hp_signature{
-                0x80,0xb9,0x5d,0x08,0x00,0x00,0x12,0x75,0x0a,0x8b,0x81,0x1c,0x06,0x00,0x00,
-                0x85,0xc0,0x7f,0x12,0x48,0x8b,0x89,0xd0,0x04,0x00,0x00,0x48,0x85,0xc9,0x0f,
-                0x85,0x7d,0xfb,0xfb,0xff,0x33,0xc0,0xc3};
             const auto* setter = static_cast<const uint8_t*>(vtable[setter_slot]);
             const auto* getter = static_cast<const uint8_t*>(vtable[max_hp_slot]);
-            if (*getter_build == BossHpLimitBuild::egs &&
-                matches_hp_limit_signature({setter, base_hp_setter.size()}, base_hp_setter) &&
-                matches_hp_limit_signature({getter, max_hp_signature.size()}, max_hp_signature))
+            const auto tide_build = identify_tide_hp_functions(
+                    {setter, base_hp_setter.size()}, {getter, egs_tide_max_hp_getter.size()});
+            if (tide_build)
             {
                 auto setter_override = std::make_unique<RuntimeBossHpLimitOverride>();
                 setter_override->slot = &vtable[setter_slot];
@@ -481,8 +479,11 @@ namespace kh3ap::enemy_remap_detail
                     auto* const replacement = setter_override->replacement;
                     state.setter_override = std::move(setter_override);
                     *slot_address = replacement;
-                    Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] TT Demon Tide scripted cutoff hook installed scope=tracked_replacement\n"));
+                    Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] TT Demon Tide scripted cutoff hook installed build={} scope=tracked_replacement\n"),
+                            *tide_build == BossHpLimitBuild::steam ? STR("Steam") : STR("EGS"));
                 }
+                else
+                    Output::send<LogLevel::Error>(STR("[KH3APProbeCpp] TT Demon Tide cutoff hook unavailable reason=vtable_write_protection\n"));
             }
             else
                 Output::send<LogLevel::Error>(STR("[KH3APProbeCpp] TT Demon Tide cutoff hook unavailable reason=unrecognized_native_functions\n"));
@@ -529,10 +530,11 @@ namespace kh3ap::enemy_remap_detail
 
         Output::send<LogLevel::Warning>(
                 STR("[KH3APProbeCpp] Boss runtime HP limit hook installed boss={} "
-                    "build={} "
+                    "getter_signature={} "
                     "scope=tracked_replacement explicit_hp_limit={} "
                     "native_damage_and_death=true route=class_vtable polling=false\n"), policy.name,
-                *getter_build == BossHpLimitBuild::steam ? STR("Steam") : STR("EGS"),
+                policy.kind == BossHpLimitKind::explicit_lock ? STR("shared_EGS_Steam") :
+                        *getter_build == BossHpLimitBuild::steam ? STR("Steam") : STR("EGS"),
                 preserves_explicit_boss_hp_limit(policy.kind)
                         ? STR("preserved") : STR("bypassed_for_tracked_replacement"));
     }

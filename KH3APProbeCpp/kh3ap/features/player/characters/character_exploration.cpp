@@ -54,6 +54,38 @@ namespace kh3ap::character_exploration
             bool needs_traversal{};
         };
         std::array shared_states{
+            SharedState{player_state_ids::af_roller_coaster, L"/Script/TresGame.TresPlayerState_AFRollerCoaster", {}, true},
+            SharedState{player_state_ids::af_viking_ship, L"/Script/TresGame.TresPlayerState_AFVikingShip", {}, true},
+            SharedState{player_state_ids::fr_shield_guardian, L"/Script/TresGame.TresPlayerState_FRShieldGuardian", {}, true},
+            SharedState{player_state_ids::af_tea_cup, L"/Script/TresGame.TresPlayerState_AFTeaCup", {}, true},
+            SharedState{player_state_ids::fr_mount_curling, L"/Script/TresGame.TresPlayerState_FRMountCurling", {}, true},
+            SharedState{player_state_ids::af_shooting_ride, L"/Script/TresGame.TresPlayerState_AFShootingRide", {}, true},
+            SharedState{player_state_ids::fr_goofy_shoot, L"/Script/TresGame.TresPlayerState_FRGoofyShoot", {}, true},
+            SharedState{player_state_ids::af_merry_go_round, L"/Script/TresGame.TresPlayerState_AFMerryGoRound", {}, true},
+            SharedState{player_state_ids::fr_mickey_chain, L"/Script/TresGame.TresPlayerState_FRMickeyChain", {}, true},
+            SharedState{player_state_ids::fr_snow_curling, L"/Script/TresGame.TresPlayerState_FRSnowCurling", {}, true},
+            SharedState{player_state_ids::fr_snow_chase, L"/Script/TresGame.TresPlayerState_FRSnowChase", {}, true},
+            SharedState{player_state_ids::fr_ice_rail_slide, L"/Script/TresGame.TresPlayerState_FRIceRailSlide", {}, true},
+            SharedState{player_state_ids::small_airplane, L"/Script/TresGame.TresPlayerState_SmallAirplane", {}, true},
+            SharedState{player_state_ids::af_water_ride, L"/Script/TresGame.TresPlayerState_AFWaterRide", {}, true},
+            SharedState{player_state_ids::fr_mike_bowling, L"/Script/TresGame.TresPlayerState_FRMikeBowling", {}, true},
+            SharedState{player_state_ids::fr_jack_spin, L"/Script/TresGame.TresPlayerState_FRJackSpin", {}, true},
+            SharedState{player_state_ids::fr_power_strike, L"/Script/TresGame.TresPlayerState_FRPowerStrike", {}, true},
+            SharedState{player_state_ids::fr_giant_soldier, L"/Script/TresGame.TresPlayerState_FRGiantSoldier", {}, true},
+            SharedState{player_state_ids::fr_rocket_laser, L"/Script/TresGame.TresPlayerState_FRWoodyBuzzRocket", {}, true},
+            SharedState{player_state_ids::fr_spinning_hold, L"/Script/TresGame.TresPlayerState_FRSpinningHold", {}, true},
+            SharedState{player_state_ids::fr_snow_cover_swing, L"/Script/TresGame.TresPlayerState_FRSnowCoverSwing", {}, true},
+            SharedState{player_state_ids::fr_call_meteor, L"/Script/TresGame.TresPlayerState_FRCallMeteor", {}, true},
+            SharedState{player_state_ids::fr_flare_force, L"/Script/TresGame.TresPlayerState_FRFlareForce", {}, true},
+            SharedState{player_state_ids::fr_baymax_ride, L"/Script/TresGame.TresPlayerState_FRBaymaxRide", {}, true},
+            SharedState{player_state_ids::plane_boss, L"/Script/TresGame.TresPlayerState_PlaneBoss", {}, true},
+            SharedState{player_state_ids::water_play, L"/Script/TresGame.TresPlayerState_WaterPlay", {}, true},
+            SharedState{player_state_ids::fr_popping_holy, L"/Script/TresGame.TresPlayerState_FRPoppingHoly", {}, true},
+            SharedState{player_state_ids::fr_blizzaga_board, L"/Script/TresGame.TresPlayerState_FRBlizzagaBoard", {}, true},
+            SharedState{player_state_ids::fr_think_of_you, L"/Script/TresGame.TresPlayerState_FRThinkOfYou", {}, true},
+            SharedState{player_state_ids::fr_ultimate_end, L"/Script/TresGame.TresPlayerState_FRUltimateEnd", {}, true},
+            SharedState{player_state_ids::fr_promise_wings, L"/Script/TresGame.TresPlayerState_FRPromiseWings", {}, true},
+            SharedState{player_state_ids::quick_battle, L"/Script/TresGame.TresPlayerState_QuickBattle", {}, true},
             SharedState{player_state_ids::glide, L"/Script/TresGame.TresPlayerState_Glide", {}, true},
             SharedState{player_state_ids::floating, L"/Script/TresGame.TresPlayerState_Floating", {}, true},
             SharedState{player_state_ids::athletic_flow, L"/Script/TresGame.TresPlayerState_AthleticFlow", {}, true},
@@ -168,9 +200,9 @@ namespace kh3ap::character_exploration
             if (state_id == character_barrel_spin::one_action_state && queue == state_queue.Get())
             {
                 RC::Output::send<RC::LogLevel::Normal>(
-                    STR("[KH3APProbeCpp] Character barrel state lookup authored={} allowed={}\n"),
+                    STR("[KH3APProbeCpp] Character OneAction state lookup authored={} prepared={}\n"),
                     result && *result ? (*result)->GetName() : L"",
-                    character_barrel_spin::allows_state(state_owner.Get()));
+                    character_traversal::ready(state_owner.Get()));
             }
             static FWeakObjectPtr observed_hopping_queue;
             if (state_id == character_traversal::hopping_state && queue == state_queue.Get() &&
@@ -204,11 +236,10 @@ namespace kh3ap::character_exploration
                     {
                         return nullptr;
                     }
-                    if (state_id == character_barrel_spin::one_action_state &&
-                        !character_barrel_spin::allows_state(state_owner.Get()))
-                    {
-                        return nullptr;
-                    }
+                    // OneAction is also used by world-reactor callbacks, which
+                    // can clear the UI selection before requesting their motion.
+                    // The native caller owns eligibility; supplying its missing
+                    // state does not activate a reactor or start an action.
                     if ((state_id == alternate_wall_run::state_id ||
                          state_id == player_state_ids::dangle || state_id == player_state_ids::climbing) &&
                         !alternate_wall_run::ready(state_owner.Get()))
