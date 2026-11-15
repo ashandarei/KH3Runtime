@@ -71,6 +71,7 @@ namespace kh3ap
             bool map_overlay_enabled{true};
             bool song_display{true};
             bool auto_equip_essential_abilities{true};
+            bool auto_skip_cutscenes{};
             uint32_t map_icon_options{map_icon_defaults};
             bool loaded{};
             bool needs_migration{};
@@ -125,6 +126,7 @@ namespace kh3ap
             result.battle_level_offset = seed_ui.battle_level_offset;
             result.map_overlay_enabled = seed_ui.map_overlay_enabled;
             result.song_display = seed_ui.song_display;
+            result.auto_skip_cutscenes = seed_ui.auto_skip_cutscenes;
             result.auto_equip_essential_abilities = seed_ui.auto_equip_essential_abilities;
             result.map_icon_options = seed_ui.map_icon_options;
             const auto defaults = result;
@@ -173,6 +175,7 @@ namespace kh3ap
             const auto saved_ui = apply_saved_map_ui_options(JsonObject{*text}, seed_ui);
             result.map_overlay_enabled = saved_ui.map_overlay_enabled;
             result.song_display = saved_ui.song_display;
+            result.auto_skip_cutscenes = saved_ui.auto_skip_cutscenes;
             result.auto_equip_essential_abilities = saved_ui.auto_equip_essential_abilities;
             result.map_icon_options = saved_ui.map_icon_options;
             // Read-only compatibility with the retired seed-scoped preference.
@@ -374,6 +377,7 @@ namespace kh3ap
         form_themes_enabled_.store(persisted.form_themes_enabled);
         map_overlay_enabled_.store(persisted.map_overlay_enabled);
         song_display_.store(persisted.song_display);
+        auto_skip_cutscenes_.store(persisted.auto_skip_cutscenes);
         auto_equip_essential_abilities_.store(persisted.auto_equip_essential_abilities);
         map_icon_options_.store(persisted.map_icon_options);
         loaded_from_disk_.store(persisted.loaded);
@@ -430,6 +434,7 @@ namespace kh3ap
             .map_overlay_enabled = map_overlay_enabled(),
             .song_display = song_display(),
             .auto_equip_essential_abilities = auto_equip_essential_abilities(),
+            .auto_skip_cutscenes = auto_skip_cutscenes(),
             .map_icon_options = map_icon_options(),
             .loaded_from_disk = loaded_from_disk_.load(),
             .persistence_ready =
@@ -529,6 +534,12 @@ namespace kh3ap
         return persist_settings();
     }
 
+    auto RuntimeGoaSettingsService::set_auto_skip_cutscenes(bool enabled) -> bool
+    {
+        auto_skip_cutscenes_.store(enabled);
+        return persist_settings();
+    }
+
     auto RuntimeGoaSettingsService::set_song_display(bool enabled) -> bool
     {
         song_display_.store(enabled);
@@ -612,6 +623,7 @@ namespace kh3ap
              << ",\n"
              << "  \"map_overlay_enabled\": " << (snapshot.map_overlay_enabled ? "true" : "false")
              << ",\n"
+             << "  \"auto_skip_cutscenes\": " << (snapshot.auto_skip_cutscenes ? "true" : "false") << ",\n"
              << "  \"song_display\": " << (snapshot.song_display ? "true" : "false") << ",\n"
              << "  \"auto_equip_essential_abilities\": "
              << (snapshot.auto_equip_essential_abilities ? "true" : "false") << ",\n"

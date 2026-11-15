@@ -48,7 +48,6 @@ namespace kh3ap::composition_detail
 
     auto try_get_bridge_dir() -> std::optional<std::filesystem::path>;
 
-    auto auto_skip_cutscenes_enabled_from_seed() -> bool;
 
     auto style_change_mode_from_seed() -> kh3ap::RuntimeStyleChangeMode;
 

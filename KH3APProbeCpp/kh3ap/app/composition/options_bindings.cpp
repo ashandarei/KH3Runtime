@@ -43,11 +43,6 @@ namespace kh3ap::composition_detail
         return bridge_path_resolver().try_get_bridge_dir();
     }
 
-    auto auto_skip_cutscenes_enabled_from_seed() -> bool
-    {
-        return seed_bool_option(installed_seed_slot_data(), "auto_skip_cutscenes");
-    }
-
     auto style_change_mode_from_seed() -> kh3ap::RuntimeStyleChangeMode
     {
         return resolve_runtime_style_change_mode(installed_seed_slot_data().int64_field("stylesanity"));

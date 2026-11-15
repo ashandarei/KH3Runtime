@@ -186,11 +186,12 @@ namespace kh3ap
             const bool custom =
                 config.settings.set_include_custom_music(original.include_custom_music);
             const bool song = config.settings.set_song_display(original.song_display);
-            if (music && color && form && custom && song)
+            const bool skip = config.settings.set_auto_skip_cutscenes(original.auto_skip_cutscenes);
+            if (music && color && form && custom && song && skip)
             {
                 session.clear();
             }
-            return music && color && form && custom && song;
+            return music && color && form && custom && song && skip;
         }
 
         void report(std::wstring_view status, std::wstring_view reason)
@@ -223,6 +224,7 @@ namespace kh3ap
                 << ",\"forms\":" << settings.form_themes_enabled
                 << ",\"include_custom_music\":" << settings.include_custom_music
                 << ",\"song_display\":" << settings.song_display
+                << ",\"auto_skip_cutscenes\":" << settings.auto_skip_cutscenes
                 << "},\"music\":" << config.music.test_snapshot()
                 << ",\"now_playing\":" << (config.now_playing ? config.now_playing() : "{}")
                 << ",\"materials\":" << material_snapshot(material_pawn)
@@ -239,6 +241,7 @@ namespace kh3ap
             const auto forms = JsonFieldReader::bool_field(text, "forms");
             const auto custom = JsonFieldReader::bool_field(text, "include_custom_music");
             const auto song = JsonFieldReader::bool_field(text, "song_display");
+            const auto skip = JsonFieldReader::bool_field(text, "auto_skip_cutscenes");
             if (!config.gameplay() ||
                 (music && (*music < 0 || *music > max_seed_music_shuffle_mode)) ||
                 (color && !color_mode))
@@ -249,7 +252,8 @@ namespace kh3ap
                 (color_mode && !config.settings.set_color_randomization_mode(*color_mode)) ||
                 (forms && !config.settings.set_form_themes_enabled(*forms)) ||
                 (custom && !config.settings.set_include_custom_music(*custom)) ||
-                (song && !config.settings.set_song_display(*song)))
+                (song && !config.settings.set_song_display(*song)) ||
+                (skip && !config.settings.set_auto_skip_cutscenes(*skip)))
             {
                 throw std::runtime_error("settings_set_failed");
             }
