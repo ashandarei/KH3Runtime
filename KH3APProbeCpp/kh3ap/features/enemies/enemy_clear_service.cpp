@@ -94,7 +94,7 @@ namespace kh3ap
         // existing Sora-only context rules.
         if (command == L"inspect" || command == L"damage_pulse" || command == L"sora_protection" ||
             command == L"press_action" || command == L"attack_combo" || command == L"union_cross_input" ||
-            command == L"defeat_all")
+            command == L"defeat_all" || command == L"olympus_statue_scene")
         {
             return controlled_combat_pawn();
         }

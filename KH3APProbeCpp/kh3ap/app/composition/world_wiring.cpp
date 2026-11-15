@@ -158,6 +158,10 @@ namespace kh3ap
             },
             [this]()
             {
+                if (auto* hero = persistent_player_reward_context())
+                {
+                    return hero;
+                }
                 return m_player_context.trusted_current_playable_cached_sora_pawn();
             },
         };

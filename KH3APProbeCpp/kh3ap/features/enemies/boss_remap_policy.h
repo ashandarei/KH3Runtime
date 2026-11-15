@@ -2,12 +2,24 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
 namespace kh3ap
 {
+    // Ice/Lava Titan finish through AI_ACTION, not TSID_STATE_DIE.
+    // AI_ACTION also runs while alive; native entity kill counts must confirm
+    // defeat before this candidate can hand completion to the source arena.
+    [[nodiscard]] inline auto is_titan_completion_action(std::wstring_view replacement,
+                                                         uint64_t state) -> bool
+    {
+        return state == 99 &&
+               (replacement == L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C" ||
+                replacement == L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C");
+    }
+
     inline constexpr float boss_encounter_min_progress_seconds = 20.0f;
     inline constexpr auto boss_encounter_damaged_hp_percent = 90;
 
@@ -187,6 +199,23 @@ namespace kh3ap
         L"/Game/Blueprints/Enemy/e_dw401_s1/e_dw401_Pawn_s1.e_dw401_Pawn_s1_C";
     inline constexpr std::wstring_view kg_demon_tide_transition_event =
         L"program_e_dw401_s1_REvt_Unioncross_Start";
+
+    inline constexpr std::wstring_view remind_armored_xehanort_class =
+        L"/Game/Blueprints/Enemy/e_ex773/e_ex773_Pawn.e_ex773_Pawn_C";
+    // EventNameForFinish on the cooked e_ex773 pawn; the arena owns the
+    // final command/cinematic sequence after this notification.
+    inline constexpr std::wstring_view remind_armored_xehanort_finish_event =
+        L"program_e_ex774_REvt_Phase2_End";
+
+    [[nodiscard]] inline auto is_remind_armored_xehanort_finish(std::wstring_view entity,
+                                                               std::wstring_view source,
+                                                               std::wstring_view group) -> bool
+    {
+        return source == remind_armored_xehanort_class &&
+               entity == L"/Game/Levels/kg_DLC/kg_06/umap/"
+                         L"kg_06_enemy_03.kg_06_enemy_03:PersistentLevel.e_ex773_Pawn" &&
+               group == L"kg_06_03_en_Group_01";
+    }
 
     [[nodiscard]] inline auto is_kg_demon_tide_transition(std::wstring_view entity,
                                                           std::wstring_view source,

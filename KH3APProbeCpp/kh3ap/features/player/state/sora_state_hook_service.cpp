@@ -5,6 +5,8 @@
 
 #include "kh3ap/features/player/state/sora_state_hook_service.h"
 #include "kh3ap/bridge/checks/level_checks.h"
+#include "kh3ap/core/events/character_level_events.h"
+#include "kh3ap/features/player/state/shared_sora_progression.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 
 #include "kh3ap/hooks/memory/kh3_memory_hooks.h"
@@ -271,6 +273,34 @@ namespace kh3ap
             }
 
             const auto batch = config.memory_hooks.drain_vanilla_level_write_events();
+            const auto experience_revision = shared_experience_revision.load(std::memory_order_acquire);
+            const auto level_revision = character_level_revision.load(std::memory_order_acquire);
+            if (experience_revision != observed_experience_revision || level_revision != observed_level_revision)
+            {
+                observed_experience_revision = experience_revision;
+                observed_level_revision = level_revision;
+                // An alternate may accumulate shared EXP without updating any
+                // Sora pawn. Read shared progression on native events only;
+                // alternate stats never become Sora's grant/battle context.
+                auto* hero = character_swap::current_hero();
+                if (!hero) hero = trusted_current_playable_cached_sora_pawn();
+                if (const auto progression = read_shared_sora_progression(hero))
+                {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+                    if (last_shared_level != progression->level)
+                    {
+                        Output::send<LogLevel::Normal>(
+                            STR("[KH3APProbeCpp] Shared progression observed level={} exp={} player={}\n"),
+                            progression->level, progression->experience, hero->GetName());
+                        last_shared_level = progression->level;
+                    }
+#endif
+                    if (const auto directory = bridge_dir())
+                    {
+                        level_checks::observe(*directory, progression->level);
+                    }
+                }
+            }
             const auto& events = batch.events;
             const size_t event_count = batch.event_count;
             if (event_count == 0 && batch.dropped_count == 0)
@@ -339,6 +369,7 @@ namespace kh3ap
 
         auto flush_current_state_events() -> void
         {
+            flush_native_alternate_bad_status(config.runtime_state);
             if constexpr (!s_enable_current_state_write_polyhook)
             {
                 return;
@@ -356,6 +387,10 @@ namespace kh3ap
             for (size_t index = 0; index < event_count; ++index)
             {
                 const auto& event = events[index];
+                if (config.observe_friend_state)
+                {
+                    config.observe_friend_state(event.state_comp);
+                }
                 character_swap::observe_game_over_state_write(event.state_comp,
                         event.replaced && event.replacement_state ? event.replacement_state : event.new_state);
                 character_rails::observe_state_write(event.state_comp,
@@ -1055,6 +1090,11 @@ namespace kh3ap
         }
 
         RuntimeSoraStateHookConfig config;
+        uint64_t observed_experience_revision{};
+        uint64_t observed_level_revision{};
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+        int last_shared_level{};
+#endif
         bool sidecar_update_pending{true};
         std::chrono::steady_clock::time_point last_state_revalidation_poll{};
         std::chrono::steady_clock::time_point last_sidecar_poll{};

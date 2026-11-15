@@ -66,13 +66,17 @@ int wmain(int argc, wchar_t** argv)
                 const auto records = kh3ap::JsonFieldReader::object_array_field(*message, "records");
                 if (channel && !records.empty())
                 {
-                    if (*channel == L"manual_player")
+                    if (*channel == L"alternate_player")
                     {
                         const auto key = kh3ap::json::Value::parse(records[0]).value("player_key", std::string{});
-                        kh3ap::deathlink::observe_manual_player(
+                        kh3ap::deathlink::observe_alternate_player(
                             key,
                             kh3ap::JsonFieldReader::bool_field(records[0], "dead").value_or(false),
                             kh3ap::JsonFieldReader::bool_field(records[0], "ready").value_or(false));
+                    }
+                    else if (*channel == L"release_alternate_player")
+                    {
+                        kh3ap::deathlink::release_alternate_player();
                     }
                     else { kh3ap::pipe::write(root / *channel, records[0]); }
                 }

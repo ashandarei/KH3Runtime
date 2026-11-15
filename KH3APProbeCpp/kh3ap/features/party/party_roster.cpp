@@ -124,6 +124,7 @@ namespace kh3ap
         snapshot.spawns = test_spawns_;
         snapshot.last_reconcile_ms = test_last_reconcile_ms_;
         snapshot.last_native_work_ms = test_native_work_ms_;
+        snapshot.player_position = party_native::actor_position(resolve_party_player());
         UObject* const manager = resolve_friend_manager();
         if (!manager)
         {
@@ -151,6 +152,7 @@ namespace kh3ap
             UObject* const pawn = slots[slot];
             if (pawn)
             {
+                snapshot.positions[slot] = party_native::actor_position(pawn);
                 snapshot.pawns[slot] = pawn->GetFullName();
                 UClass* const klass = pawn->GetClassPrivate();
                 if (klass && is_uobject_valid_fast(klass))

@@ -1,8 +1,11 @@
+#include <polyhook2/Detour/x64Detour.hpp>
 #include "bad_status_helpers.h"
 #include "bad_status_runtime.h"
 #include "trap_catalog.h"
 #include "grant_safety.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
@@ -14,6 +17,9 @@
 #include <Unreal/UObjectGlobals.hpp>
 #include <format>
 #include <utility>
+#include <chrono>
+#define NOMINMAX
+#include <Windows.h>
 
 namespace kh3ap
 {
@@ -27,6 +33,54 @@ namespace kh3ap
         BadStatusStateQueue state_queue;
         BadStatusParticles particles;
         PendingDirectPlayerBadStatus s_pending_direct_player_bad_status;
+        uint64_t native_bad_status_original{};
+        std::unique_ptr<PLH::x64Detour> native_bad_status_hook;
+        FWeakObjectPtr native_burn_pawn;
+        std::chrono::steady_clock::time_point native_burn_deadline;
+        bool native_burn_failure_logged{};
+        constexpr uint8_t burn_kind = 17;
+        constexpr size_t native_bad_status_kind_offset = 0x85d;
+
+        void apply_native_bad_status(UObject* pawn, uint8_t kind, float seconds,
+                                     void* damage, void* attack)
+        {
+            using Apply = void (*)(UObject*, uint8_t, float, void*, void*);
+            reinterpret_cast<Apply>(native_bad_status_original)(pawn, kind, seconds, damage, attack);
+            if (kind != burn_kind || RuntimeGrantInternalCallDepth::is_active() ||
+                !is_uobject_valid_fast(pawn) || character_swap::current_hero() != pawn ||
+                !character_swap::owns_swap_pawn(pawn))
+            {
+                return;
+            }
+            auto* id = pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID");
+            if (!id || id->GetElementSize() != sizeof(uint8_t) ||
+                *id->ContainerPtrToValuePtr<uint8_t>(pawn) != static_cast<uint8_t>(PlayerId::Kairi) ||
+                *(reinterpret_cast<const uint8_t*>(pawn) + native_bad_status_kind_offset) != burn_kind)
+            {
+                return;
+            }
+            // The shipping hit accepted Burn, but Kairi does not enter Sora's
+            // Burn reaction. Defer queue construction until the damage stack exits.
+            native_burn_pawn = make_uobject_weak(pawn);
+            native_burn_deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
+            native_burn_failure_logged = false;
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn accepted pawn={}\n"), pawn->GetName());
+#endif
+        }
+
+        void install_native_bad_status_hook()
+        {
+            static bool attempted{};
+            if (attempted) { return; }
+            attempted = true;
+            if (!character_native::verify_sites({character_native::Site::apply_bad_status})) { return; }
+            const auto address = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)) +
+                                 character_native::rva(character_native::Site::apply_bad_status);
+            auto hook = std::make_unique<PLH::x64Detour>(address,
+                reinterpret_cast<uint64_t>(&apply_native_bad_status), &native_bad_status_original);
+            if (hook->hook()) { native_bad_status_hook = std::move(hook); }
+        }
 
         auto read_bad_status_state_id(UObject* state) -> std::optional<uint8_t>
         {
@@ -121,6 +175,7 @@ namespace kh3ap
     auto prewarm_direct_player_bad_status_runtime_cache(UObject* pawn, UObject* component,
                                                         UObject* current) -> void
     {
+        install_native_bad_status_hook();
         particles.prewarm();
         const auto context = discovery.prewarm_context(pawn, component, current);
         if (!context.state_component)
@@ -137,8 +192,9 @@ namespace kh3ap
         }
     }
 
-    auto try_apply_direct_player_bad_status(std::wstring_view runtime_token, UObject* sora_pawn,
+    static auto queue_player_bad_status(std::wstring_view runtime_token, UObject* sora_pawn,
                                             RuntimeState& runtime_state,
+                                            bool accepted_native_burn,
                                             std::wstring* failure_details) -> bool
     {
         if (failure_details)
@@ -164,8 +220,14 @@ namespace kh3ap
             return fail(STR("direct_player_bad_status_context_is_not_sora_pawn"));
         }
         auto& pawn_state = runtime_state.grant_state().pawn_state();
-        const bool owned_alternate = supports_alternate_bad_status(runtime_token, L"direct_player_bad_status") &&
-                runtime_alternate_bad_status_safety_status(runtime_state, sora_pawn).ready;
+        // An accepted native environmental hit is already in its damage reaction,
+        // where the AP trap delivery gate deliberately disallows new traps.
+        const bool owned_alternate = accepted_native_burn
+                ? runtime_token == L"TRES_BADSTAT_BURN" &&
+                      character_swap::current_hero() == sora_pawn &&
+                      character_swap::owns_swap_pawn(sora_pawn)
+                : supports_alternate_bad_status(runtime_token, L"direct_player_bad_status") &&
+                      runtime_alternate_bad_status_safety_status(runtime_state, sora_pawn).ready;
         if (!owned_alternate && (pawn_state.object() != sora_pawn || !pawn_state.candidate_trusted()))
         {
             return fail(STR("direct_player_bad_status_context_does_not_match_cached_sora_pawn"));
@@ -242,6 +304,13 @@ namespace kh3ap
         return true;
     }
 
+    auto try_apply_direct_player_bad_status(std::wstring_view runtime_token, UObject* pawn,
+                                            RuntimeState& runtime_state,
+                                            std::wstring* failure_details) -> bool
+    {
+        return queue_player_bad_status(runtime_token, pawn, runtime_state, false, failure_details);
+    }
+
     auto handle_direct_player_bad_status_state_transition(UObject* sora_pawn,
                                                           UObject* sora_state_component,
                                                           UObject* sora_current_state,
@@ -303,6 +372,38 @@ namespace kh3ap
 
         particles.clean(sora_pawn, *pending.spec, pending.bad_status_state.Get());
         clear_pending();
+    }
+
+    auto flush_native_alternate_bad_status(RuntimeState& runtime_state) -> void
+    {
+        auto* pawn = native_burn_pawn.Get();
+        if (!pawn) { return; }
+        if (std::chrono::steady_clock::now() >= native_burn_deadline ||
+            character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn))
+        {
+            native_burn_pawn = {};
+            return;
+        }
+        if (s_pending_direct_player_bad_status.sora_pawn.Get() == pawn)
+        {
+            native_burn_pawn = {};
+            return;
+        }
+        std::wstring failure;
+        if (queue_player_bad_status(L"TRES_BADSTAT_BURN", pawn, runtime_state, true, &failure))
+        {
+            native_burn_pawn = {};
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn reaction queued pawn={}\n"), pawn->GetName());
+#endif
+        }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+        else if (!native_burn_failure_logged)
+        {
+            native_burn_failure_logged = true;
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn waiting reason={}\n"), failure);
+        }
+#endif
     }
 
     auto handle_alternate_bad_status_state_write(uintptr_t component, uintptr_t state,

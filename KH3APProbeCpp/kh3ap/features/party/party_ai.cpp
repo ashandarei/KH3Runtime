@@ -61,6 +61,23 @@ namespace kh3ap
             return;
         }
 
+        // Stock-tree choices also need the same battle-entry
+        // catch-up as our replacement-tree choices. Only wake on an edge;
+        // CanBattle is queried repeatedly by native AI while idle.
+        for (size_t slot = 0; slot < placement_friends_.size(); ++slot)
+        {
+            if (placement_friends_[slot].Get() == pawn &&
+                placement_battle_modes_[slot] != can_battle)
+            {
+                placement_battle_modes_[slot] = can_battle;
+                if (can_battle)
+                {
+                    placement_pending_ = true;
+                    maintenance_.request();
+                }
+            }
+        }
+
         size_t definition_index = custom_party_ai_definitions.size();
         for (size_t index = 0; index < custom_party_assigned_pawns_.size(); ++index)
         {
@@ -473,11 +490,6 @@ namespace kh3ap
         }
         placement_sora_ = sora;
         placement_sora_position_ = *position;
-        if (!placement_pending_)
-        {
-            return true;
-        }
-
         UObject* const manager = resolve_friend_manager();
         if (read_object_like_property(sora, STR("MyFrdMgr")) != manager)
         {
@@ -488,31 +500,57 @@ namespace kh3ap
         {
             return false;
         }
-        bool distant_custom_friend = false;
-        for (UObject* const friend_pawn : slots)
+        bool distant_selected_friend = false;
+        bool complete = true;
+        for (size_t slot = 0; slot < slots.size(); ++slot)
         {
-            if (!friend_pawn || !is_uobject_valid_fast(friend_pawn) ||
-                persistent_level_for(friend_pawn) != level)
+            UObject* const friend_pawn = slots[slot];
+            const auto choice = active_choices_[slot];
+            // Ownership comes from the reconciled physical slots, not the
+            // replacement-AI catalog. Xion and other stock-tree choices must
+            // participate too. Preserve Vanilla and additional story allies.
+            if (choice == 0 || choice == party_catalog::vanilla_choice ||
+                choice >= party_catalog::party_choices.size())
             {
+                placement_friends_[slot] = {};
+                placement_battle_modes_[slot] = {};
                 continue;
             }
-            // Only the instances assigned our custom AI, never story actors
-            // or the native world allies in the additional four slots.
-            if (std::none_of(custom_party_assigned_pawns_.begin(),
-                             custom_party_assigned_pawns_.end(),
-                             [friend_pawn](const auto& assigned)
-                             {
-                                 return assigned.Get() == friend_pawn;
-                             }))
+            if (!is_uobject_valid_fast(friend_pawn) ||
+                persistent_level_for(friend_pawn) != level ||
+                friend_pawn->GetClassPrivate()->GetName() != active_npc_ids_[slot] + L"_Pawn_C")
+            {
+                placement_friends_[slot] = {};
+                placement_battle_modes_[slot] = {};
+                complete = false;
+                continue;
+            }
+            if (placement_friends_[slot].Get() != friend_pawn)
+            {
+                if (!invoke_named_single_bool_function(friend_pawn, STR("SetEnableWarp"), true))
+                {
+                    complete = false;
+                    continue;
+                }
+                placement_friends_[slot] = friend_pawn;
+                placement_battle_modes_[slot] = {};
+                placement_pending_ = true;
+            }
+            if (!placement_pending_)
             {
                 continue;
             }
             const auto friend_position = actor_position(friend_pawn);
-            distant_custom_friend =
-                distant_custom_friend ||
+            complete = complete && friend_position.has_value();
+            distant_selected_friend =
+                distant_selected_friend ||
                 (friend_position && outside_native_follow_distance(*position, *friend_position));
         }
-        if (!distant_custom_friend)
+        if (!complete)
+        {
+            return false;
+        }
+        if (!distant_selected_friend)
         {
             placement_pending_ = false;
             return true;
@@ -524,7 +562,7 @@ namespace kh3ap
         }
         // A cutscene can relocate Sora while the battle tree keeps pathing
         // from the previous area. Ask the native party warp system once per
-        // entry/large relocation. It chooses valid warp points and retains
+        // entry/large relocation/battle edge. It chooses valid warp points and retains
         // native allies; no direct actor teleport, respawn or AI restart.
         if (invoke_named_single_bool_function(sora, STR("BP_ReqFriendWarpHomeAll"), false))
         {
@@ -617,6 +655,37 @@ namespace kh3ap
         }
     }
 
+    auto RuntimePartyMemberService::update_swimming_party_ai(UObject* pawn, bool underwater) -> bool
+    {
+        if (!is_uobject_valid_fast(pawn) || pawn->GetClassPrivate()->GetName() != L"n_ex011_Pawn_C")
+        {
+            return true;
+        }
+        auto* controller = read_object_like_property(pawn, L"Controller");
+        if (!is_uobject_valid_fast(controller)) { return false; }
+        for (size_t index = 0; index < custom_party_ai_definitions.size(); ++index)
+        {
+            if (custom_party_ai_definitions[index].choice != party_catalog::aqua_choice) { continue; }
+            if (underwater)
+            {
+                if (custom_party_assigned_pawns_[index].Get() == pawn) { return true; }
+                return apply_custom_party_ai_for_possession(controller, pawn);
+            }
+            if (custom_party_assigned_pawns_[index].Get() != pawn) { return true; }
+            auto* stock_tree = read_object_like_property(pawn->GetClassPrivate()->GetClassDefaultObject(), L"MyAIBehavior");
+            if (!is_uobject_valid_fast(stock_tree) || stock_tree->GetPathName() !=
+                L"/Game/Blueprints/Npc/n_ex011/BT/n_ex011_BT.n_ex011_BT") { return false; }
+            if (!write_object_like_property(pawn, L"MyAIBehavior", stock_tree) ||
+                !run_behavior_tree(controller, stock_tree)) { return false; }
+            custom_party_assigned_pawns_[index] = {};
+            Output::send<LogLevel::Normal>(
+                STR("[KH3APProbeCpp] Restored native land party AI pawn={} tree={}\n"),
+                pawn->GetFullName(), stock_tree->GetFullName());
+            return true;
+        }
+        return false;
+    }
+
     auto RuntimePartyMemberService::apply_custom_party_ai_for_possession(UObject* controller,
                                                                          UObject* pawn) -> bool
     {
@@ -680,6 +749,17 @@ namespace kh3ap
                 custom_party_trees_[index] = behavior_tree;
             }
 
+            // Aqua keeps her original top-level tree on land. Nesting that tree
+            // under RunBehavior left native auxiliary nodes dangling during idle.
+            // Retain the event-loaded asset above even on land, before the
+            // streamable handle is released and a subsequent map can collect it.
+            // Water state events request maintenance and perform the switch here.
+            if (definition.choice == party_catalog::aqua_choice &&
+                party_native::friend_underwater(pawn) != true)
+            {
+                return true;
+            }
+
             // Loading the tree resolves its stock action-class imports. Patch
             // their CDOs only after that event-owned load has completed.
             reconcile_action_viable_state_patches(sora_level);
@@ -706,10 +786,7 @@ namespace kh3ap
                                                follow_query->GetFullName());
             }
             custom_party_assigned_pawns_[index] = pawn;
-            // Managed companions may need native catch-up after a cutscene
-            // relocates Sora. This applies only to our owned custom-AI pawn.
             if (!invoke_set_disable_battle_mode_ai(pawn, false) ||
-                !invoke_named_single_bool_function(pawn, STR("SetEnableWarp"), true) ||
                 !write_object_like_property(pawn, STR("MyAIBehavior"), behavior_tree) ||
                 !run_behavior_tree(controller, behavior_tree))
             {

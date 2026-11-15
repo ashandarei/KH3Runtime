@@ -526,6 +526,13 @@ namespace kh3ap
                                        : (!gameplay(pawn) || held_camera(pawn) != nullptr));
         if (done)
         {
+            move_interact_pending = false;
+            if (input_dispatched && !input_released && is_uobject_valid_fast(controller))
+            {
+                runtime_controller_action_input(controller, input_action, false);
+                input_released = true;
+                input_controller = nullptr;
+            }
             camera_look = false;
             look_controller = nullptr;
             if (is_uobject_valid_fast(controller))
@@ -551,6 +558,19 @@ namespace kh3ap
         if (command == L"move_gameplay")
         {
             runtime_controller_stick_input(controller, look_x, look_y);
+            if (move_interact_pending && now >= move_interact_at)
+            {
+                move_interact_pending = false;
+                position_immediate = position(pawn);
+                press_action(controller, L"interact");
+                report(L"accepted", L"moving_interaction_pressed");
+            }
+            if (input_dispatched && !input_released && now >= release_at)
+            {
+                runtime_controller_action_input(controller, input_action, false);
+                input_released = true;
+                input_controller = nullptr;
+            }
         }
         else
         {
@@ -719,6 +739,14 @@ namespace kh3ap
         }
         look_x = static_cast<float>(*x);
         look_y = static_cast<float>(*y);
+        const auto interact_after = JsonFieldReader::int64_field(text, "interact_after_ms");
+        if (interact_after && (command != L"move_gameplay" || *interact_after < 100 ||
+                               *interact_after + 200 > *ms || (*x == 0 && *y == 0)))
+        {
+            throw std::runtime_error("moving_interaction_delay_invalid");
+        }
+        move_interact_pending = interact_after.has_value();
+        move_interact_at = Clock::now() + std::chrono::milliseconds(interact_after.value_or(0));
         look_controller = try_read_reflected_object_property_value(pawn, L"Controller");
         look_until = Clock::now() + std::chrono::milliseconds(static_cast<int>(*ms));
         camera_look = true;

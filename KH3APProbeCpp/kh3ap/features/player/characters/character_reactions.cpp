@@ -33,11 +33,13 @@ namespace kh3ap::character_reactions
         switch (static_cast<PlayerActionCommand>(command))
         {
         case PlayerActionCommand::TALK:
+        case PlayerActionCommand::OPEN:
         case PlayerActionCommand::CHECK:
         case PlayerActionCommand::RESCUE:
         case PlayerActionCommand::VEHICLE:
         case PlayerActionCommand::TRICK:
         case PlayerActionCommand::COVERSLIDE:
+        case PlayerActionCommand::DISPEL:
             break;
         default:
             return false;
@@ -48,6 +50,13 @@ namespace kh3ap::character_reactions
             object(object(controller, L"Player"), L"PlayerController") != controller)
         {
             return false;
+        }
+        if (command == player_action_command_value(PlayerActionCommand::DISPEL))
+        {
+            // Dispel is a Death Sentence command, not a TresReactorComponent.
+            // Sora's dispatcher queries the shared pawn interface before clearing
+            // the countdown and notifying its original owning encounter.
+            return object(pawn, L"m_pDeathSentenceCountEffect") != nullptr;
         }
         if (command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
         {
@@ -82,6 +91,13 @@ namespace kh3ap::character_reactions
         if (command == player_action_command_value(PlayerActionCommand::TRICK))
         {
             return character_barrel_spin::selected_barrel(actor, reactor, pawn);
+        }
+        if (command == player_action_command_value(PlayerActionCommand::OPEN))
+        {
+            auto* chest = UObjectGlobals::StaticFindObject<UClass*>(
+                nullptr, nullptr, L"/Script/TresGame.TresTreasureBox");
+            return is_uobject_valid_fast(chest) && is_uobject_a_fast(actor, chest) &&
+                   object(actor, L"MyReactor") == reactor;
         }
         if (command == player_action_command_value(PlayerActionCommand::VEHICLE))
         {

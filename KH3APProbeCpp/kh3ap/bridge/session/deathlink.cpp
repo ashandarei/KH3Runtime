@@ -189,9 +189,10 @@ namespace kh3ap::deathlink
             std::string reconciled_context;
             bool release_sent{};
             bool station_of_awakening{};
-            std::string manual_dead_player;
-            int64_t manual_death_order{};
-            bool manual_player_recovered{};
+            std::string alternate_dead_player;
+            int64_t alternate_death_order{};
+            bool alternate_player_recovered{};
+            bool alternate_player_active{};
             std::deque<std::string> accepted;
             Json::array_t outgoing;
             DWORD recovered_process{};
@@ -262,10 +263,10 @@ namespace kh3ap::deathlink
                 {
                     return;
                 }
-                const bool manual_recovered = flag(field(request, "manual")) && received_seen &&
-                                              manual_player_recovered &&
+                const bool alternate_recovered = received_seen &&
+                                              alternate_player_recovered &&
                                               recovered_process == GetCurrentProcessId();
-                if (!manual_recovered && (!state_known || dead || !safe || !ready_context() ||
+                if (!alternate_recovered && (!state_known || dead || !safe || !ready_context() ||
                                           reconciled_context != encode(context)))
                 {
                     return;
@@ -273,7 +274,7 @@ namespace kh3ap::deathlink
                 // In-process recovery needs an owned Game Over and a newer
                 // playable context. A cold process also needs native load /
                 // receipt recovery before its safe Sora context can release it.
-                if (!manual_recovered && recovered_process == GetCurrentProcessId() &&
+                if (!alternate_recovered && recovered_process == GetCurrentProcessId() &&
                     (!received_seen || context_order <= death_order))
                 {
                     return;
@@ -449,17 +450,16 @@ namespace kh3ap::deathlink
                                 recovered_process = GetCurrentProcessId();
                                 received_seen = release_sent = false;
                                 dispatched_epoch = -1;
-                                manual_dead_player.clear();
-                                manual_player_recovered = false;
-                                manual_death_order = 0;
+                                alternate_dead_player.clear();
+                                alternate_player_recovered = false;
+                                alternate_death_order = 0;
                             }
                         });
                 }
             }
-            auto manual_player(const Json& j) -> void
+            auto alternate_player(const Json& j) -> void
             {
-                if (!flag(field(request, "manual")) || (!pending() && !recovering()) ||
-                    integer(field(j, "process_id")) != GetCurrentProcessId())
+                if (integer(field(j, "process_id")) != GetCurrentProcessId())
                 {
                     return;
                 }
@@ -468,28 +468,42 @@ namespace kh3ap::deathlink
                 {
                     return;
                 }
+                if (!alternate_player_active)
+                {
+                    alternate_player_active = true;
+                    state_known = false;
+                    dead = false;
+                }
+                // Share episode/amnesty/echo handling with Sora, but take state
+                // only from the currently possessed, owned alternate pawn.
+                player_state(flag(field(j, "dead")), flag(field(j, "ready")),
+                             "The player hit Game Over.");
                 if (flag(field(j, "dead")))
                 {
-                    manual_dead_player = key;
-                    manual_player_recovered = false;
+                    alternate_dead_player = key;
+                    alternate_player_recovered = false;
                     dead = true;
                     death_order = order;
-                    manual_death_order = order;
+                    alternate_death_order = order;
                     if (recovering())
                     {
                         received_seen = true;
                     }
                 }
-                else if (flag(field(j, "ready")) && !manual_dead_player.empty() &&
-                         key != manual_dead_player)
+                else if (flag(field(j, "ready")) && !alternate_dead_player.empty() &&
+                         key != alternate_dead_player)
                 {
-                    manual_player_recovered = true;
+                    alternate_player_recovered = true;
                     dead = false;
                     maybe_recover();
                 }
             }
             auto sora(const Json& j) -> void
             {
+                if (alternate_player_active)
+                {
+                    return;
+                }
                 if (field(j, "runtime_context").is_string())
                 {
                     station_of_awakening = is_station_of_awakening(
@@ -499,17 +513,21 @@ namespace kh3ap::deathlink
                 {
                     return;
                 }
-                const bool first = !state_known;
-                state_known = true;
                 const auto klass = text(field(j, "state_class"));
                 const bool next_dead =
                     (field(j, "current_state_id").is_number() &&
                      integer(field(j, "current_state_id")) == player_state_ids::game_over) ||
                     klass == "TresPlayerState_GameOver" ||
                     klass.ends_with(".TresPlayerState_GameOver");
+                player_state(next_dead, text(field(j, "safety")) == "ok", "Sora hit Game Over.");
+            }
+            auto player_state(bool next_dead, bool next_safe, const char* cause) -> void
+            {
+                const bool first = !state_known;
+                state_known = true;
                 // Special battles allow Game Over and Retry. Their mode flag
                 // must not keep an observed death fenced after playable Sora returns.
-                safe = text(field(j, "safety")) == "ok";
+                safe = next_safe;
                 if (!next_dead)
                 {
                     dead = false;
@@ -550,7 +568,7 @@ namespace kh3ap::deathlink
                             }
                             outgoing.emplace_back(
                                 Json{{"id", "deathlink-local-" + std::to_string(episode)},
-                                     {"cause", "Sora hit Game Over."}});
+                                     {"cause", cause}});
                             forgiven = 0;
                         }
                     });
@@ -647,7 +665,7 @@ namespace kh3ap::deathlink
                 next->ready = error.empty() && !seed.empty() && slot > 0;
                 next->awaiting_apply = pending();
                 next->recovery_pending = recovering();
-                next->manual_active = flag(field(request, "manual")) && (pending() || recovering());
+                next->observe_alternates = enabled || pending() || recovering();
                 next->fenced = !error.empty() || next->awaiting_apply || next->recovery_pending;
                 next->error = error;
                 snapshot.store(next, std::memory_order_release);
@@ -681,6 +699,15 @@ namespace kh3ap::deathlink
                     connected = online = false;
                     return;
                 }
+                if (job.channel == "release_alternate_player")
+                {
+                    if (alternate_player_active)
+                    {
+                        alternate_player_active = false;
+                        state_known = dead = safe = false;
+                    }
+                    return;
+                }
                 if (!error.empty())
                 {
                     return;
@@ -690,9 +717,9 @@ namespace kh3ap::deathlink
                 {
                     control(j);
                 }
-                else if (job.channel == "manual_player")
+                else if (job.channel == "alternate_player")
                 {
-                    manual_player(j);
+                    alternate_player(j);
                 }
                 else if (job.channel == channels::runtime_sora_state)
                 {
@@ -730,7 +757,7 @@ namespace kh3ap::deathlink
                         // sidecar must not erase the owned alternate's evidence.
                         received_seen =
                             (dead && death_order > dispatch_order) ||
-                            (flag(field(request, "manual")) && manual_death_order > dispatch_order);
+                            (alternate_death_order > dispatch_order);
                         maybe_recover();
                     }
                 }
@@ -849,16 +876,20 @@ namespace kh3ap::deathlink
     {
         enqueue({"disconnect", ""});
     }
-    auto observe_manual_player(std::string player_key, bool dead, bool ready) -> void
+    auto observe_alternate_player(std::string player_key, bool dead, bool ready) -> void
     {
-        if (!view()->manual_active)
+        if (!view()->observe_alternates)
         {
             return;
         }
-        enqueue({"manual_player", encode(Json{{"process_id", GetCurrentProcessId()},
+        enqueue({"alternate_player", encode(Json{{"process_id", GetCurrentProcessId()},
                                               {"player_key", std::move(player_key)},
                                               {"dead", dead},
                                               {"ready", ready}})});
+    }
+    auto release_alternate_player() -> void
+    {
+        enqueue({"release_alternate_player", ""});
     }
     auto view() -> std::shared_ptr<const View>
     {

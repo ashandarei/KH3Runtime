@@ -107,6 +107,29 @@ namespace kh3ap
 
     void RuntimeEnemyClearService::Impl::finish(std::wstring_view status, std::wstring_view reason)
     {
+        if (camera_look)
+        {
+            if (auto* controller = look_controller.Get(); is_uobject_valid_fast(controller))
+            {
+                if (command == L"move_gameplay")
+                {
+                    runtime_controller_stick_input(controller, 0, 0);
+                }
+                else
+                {
+                    runtime_controller_look_input(controller, 0, 0);
+                }
+                if (input_dispatched && !input_released)
+                {
+                    runtime_controller_action_input(controller, input_action, false);
+                    input_released = true;
+                    input_controller = nullptr;
+                }
+            }
+            camera_look = false;
+            move_interact_pending = false;
+            look_controller = nullptr;
+        }
         if(combo_held) {
             if(auto* c=combo_controller.Get();is_uobject_valid_fast(c)) {
                 runtime_controller_action_input(c,input_action,false);++combo_released;

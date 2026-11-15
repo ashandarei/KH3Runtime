@@ -259,7 +259,7 @@ int main()
          {L"Level /Game/Levels/bt/bt_03/bt_03.bt_03:PersistentLevel",
           L"Level /Game/Levels/bt/bt_03/umap/bt_03_gameflow.bt_03_gameflow:PersistentLevel"})
     {
-        assert(runtime_party_map_policy(level) == RuntimePartyMapPolicy::vanilla);
+        assert(runtime_party_map_policy(level) == RuntimePartyMapPolicy::managed);
         assert(!runtime_party_requires_context_reconcile(level));
         assert(runtime_party_navigation_fallback(L"RecastNavMesh-Group2", level).mesh_name.empty());
     }

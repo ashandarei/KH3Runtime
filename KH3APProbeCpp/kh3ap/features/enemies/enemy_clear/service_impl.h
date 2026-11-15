@@ -61,6 +61,8 @@ namespace kh3ap
         float look_x{}, look_y{};
         FWeakObjectPtr look_controller{};
         Clock::time_point look_until{};
+        Clock::time_point move_interact_at{};
+        bool move_interact_pending{};
         FWeakObjectPtr photo_movement{}, photo_pawn{}, photo_attachment{};
         FWeakObjectPtr photo_fov_component{};
         float photo_original_fov{};
@@ -232,6 +234,7 @@ namespace kh3ap
         };
         static const RequestCommand* find_request_command(std::wstring_view name) noexcept;
         void accept_cactuar_spawn(UObject* pawn, const std::string& text);
+        void accept_olympus_statue_scene(UObject* pawn, const std::string& text);
         void accept();
         bool update_camera_input(Clock::time_point now);
         bool update_combo_input(Clock::time_point now);

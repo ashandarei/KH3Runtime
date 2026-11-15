@@ -200,6 +200,19 @@ namespace kh3ap::character_pawn_pool
         void park(Pair& pair)
         {
             runtime_controller_clear_parked_input(pair.controller.Get());
+            // Pausing the manager would freeze action-owned effects such as
+            // dive-fall's BP_div_cam0 shake until this hero is reused. Finish
+            // those effects now, before disabling its ticks; the next active
+            // state can start its own effects normally.
+            auto* camera = object(pair.controller.Get(), L"PlayerCameraManager");
+            if (is_uobject_valid_fast(camera))
+            {
+                Call shakes(camera, L"StopAllCameraShakes");
+                shakes.boolean(L"bImmediately", true);
+                shakes.number(L"ShakeFadeTime", 0.0f);
+                shakes.run();
+                boolean(camera, L"StopAllCameraAnims", L"bImmediate", true);
+            }
             for (const auto& entry : pair.actors)
             {
                 if (auto* actor = entry.actor.Get())

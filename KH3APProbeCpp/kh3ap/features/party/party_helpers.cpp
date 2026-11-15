@@ -61,9 +61,9 @@ namespace kh3ap::party_native
     }
 
     auto write_object_like_property(UObject* object, std::wstring_view property_name,
-                                    UObject* value) -> bool
+                                    UObject* value, bool allow_null) -> bool
     {
-        if (!object || !is_uobject_valid_fast(object) || !value || !is_uobject_valid_fast(value))
+        if (!is_uobject_valid_fast(object) || (value ? !is_uobject_valid_fast(value) : !allow_null))
         {
             return false;
         }
@@ -79,6 +79,27 @@ namespace kh3ap::party_native
         }
         std::memcpy(value_ptr, &value, sizeof(value));
         return true;
+    }
+
+    auto friend_underwater(UObject* pawn) -> std::optional<bool>
+    {
+        auto* movement = read_object_like_property(pawn, L"MyMovement");
+        auto* mode = movement ? movement->GetPropertyByNameInChain(L"MovementMode") : nullptr;
+        if (!mode || mode->GetClass().GetName() != L"ByteProperty" || mode->GetElementSize() != 1)
+        { return std::nullopt; }
+        // Both native underwater getters become false when an attack temporarily
+        // selects Flying. That is not an exit from water. Preserve the established
+        // context until swimming/surface or ground locomotion confirms an edge.
+        switch (*mode->ContainerPtrToValuePtr<uint8_t>(movement))
+        {
+        case 1: // Walking
+        case 2: // NavWalking
+            return false;
+        case 4: // Swimming; the native getter also distinguishes surface swimming.
+            return invoke_named_bool_getter(movement, L"IsUnderWater");
+        default:
+            return std::nullopt;
+        }
     }
 
     auto run_behavior_tree(UObject* controller, UObject* behavior_tree) -> bool

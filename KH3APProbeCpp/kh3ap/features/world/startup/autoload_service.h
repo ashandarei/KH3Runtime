@@ -16,7 +16,7 @@ namespace kh3ap
     {
         std::function<std::optional<std::filesystem::path>()> bridge_dir;
         std::function<RC::Unreal::UObject*()> playable_sora;
-        std::function<std::wstring_view()> map_ready_context;
+        std::function<bool(RC::Unreal::UObject*)> map_ready_for_pawn;
         std::function<bool()> blocking_ui_active;
         std::function<bool()> sora_idle;
         std::function<bool()> space_blocking_ui_active;

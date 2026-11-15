@@ -100,8 +100,7 @@ int main()
             return kh02rewards::supports_persistent_grant(g.grant_method);
         });
     };
-    for (const auto* deferred : {L"keyblade_style", L"progressive_keyblade_level",
-                                 L"king_mickey_trap", L"betrayal_trap", L"unknown_future_method"})
+    for (const auto* deferred : {L"king_mickey_trap", L"betrayal_trap", L"unknown_future_method"})
     {
         queue.clear();
         request.action_kind = L"runtime_item_grant_batch";
@@ -125,7 +124,7 @@ int main()
         assert(!sora.grants.empty() && sora.grants.front().index == 0);
     }
     queue.clear();
-    request.grants = {grant(0), grant(0, L"STYLE", L"keyblade_style"), grant(1)};
+    request.grants = {grant(0), grant(0, L"UNSUPPORTED", L"unknown_future_method"), grant(1)};
     assert(queue.replace(request));
     batch = queue.select(true, aqua_allowed);
     assert(batch.grants.size() == 1 && batch.grants[0].index == 1);

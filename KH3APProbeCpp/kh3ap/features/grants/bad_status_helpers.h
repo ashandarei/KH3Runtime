@@ -34,4 +34,7 @@ namespace kh3ap
     auto handle_alternate_bad_status_state_write(uintptr_t component, uintptr_t state,
                                                  RuntimeState& runtime_state) -> void;
 
+    // Drain only native damage notifications; no pawn discovery while idle.
+    auto flush_native_alternate_bad_status(RuntimeState& runtime_state) -> void;
+
 } // namespace kh3ap

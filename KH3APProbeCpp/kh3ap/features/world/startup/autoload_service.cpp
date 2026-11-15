@@ -631,8 +631,13 @@ namespace kh3ap
                 }
                 const bool local_story_ready =
                     control_ready && Kh02Story::native_save_ready(context.pawn);
-                if ((!map_ready && !local_story_ready) || context.is_title || context.ignored_map ||
-                    blocking_ui || !idle || !input_enabled)
+                if (!map_ready && !local_story_ready)
+                {
+                    report(L"error", L"save_requires_map_ready_world", true);
+                    return;
+                }
+                if (context.is_title || context.ignored_map ||
+                    blocking_ui || !idle || !input_enabled || !control_ready)
                 {
                     report(L"error", L"save_requires_playable_idle_sora", true);
                     return;
@@ -1042,7 +1047,7 @@ namespace kh3ap
             auto& pawn_name = observed_pawn_name;
             map_ready = is_uobject_valid_fast(pawn) &&
                         try_get_uobject_full_name_fast(pawn, pawn_name) && !pawn_name.empty() &&
-                        config.map_ready_context().find(pawn_name) != std::wstring_view::npos;
+                        config.map_ready_for_pawn(pawn);
             station_ready = false;
             if (command == L"new_game")
             {

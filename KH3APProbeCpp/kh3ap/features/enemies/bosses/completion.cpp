@@ -230,13 +230,15 @@ namespace kh3ap::enemy_remap_detail
             std::wstring_view source_class_path)
             -> std::wstring_view
     {
-        // The Toy Box Demon Tide owns an additional death broadcast in its
+        // The Twilight Town Demon Tide owns an additional death broadcast in its
         // pawn Blueprint. A substituted class cannot emit that source-only
         // event, but both stock level scripts still listen for it.
         if (source_class_path == scala_first_xehanort_class)
             return scala_transition_event;
         if (source_class_path == kg_demon_tide_class)
             return kg_demon_tide_transition_event;
+        if (source_class_path == remind_armored_xehanort_class)
+            return remind_armored_xehanort_finish_event;
         return source_class_path == demon_tide_tt_source_class_path
                 ? demon_tide_tt_completion_event_name
                 : std::wstring_view{};
@@ -461,7 +463,10 @@ namespace kh3ap::enemy_remap_detail
         const bool kg_tide_transition = all_groups.size() == 1 &&
                 is_kg_demon_tide_transition(binding.level_entity_path,
                         transition_source, all_groups.front());
-        if (all_groups.size() == 1 && (kg_tide_transition || is_scala_final_transition(
+        const bool remind_finish = all_groups.size() == 1 &&
+                is_remind_armored_xehanort_finish(binding.level_entity_path,
+                        transition_source, all_groups.front());
+        if (all_groups.size() == 1 && (kg_tide_transition || remind_finish || is_scala_final_transition(
                     binding.level_entity_path, transition_source, all_groups.front())))
         {
             if (completion_counts.spawn_count <= 0 ||
@@ -478,7 +483,8 @@ namespace kh3ap::enemy_remap_detail
                     STR("[KH3APProbeCpp] Boss runtime {} transition event={} "
                         "available={} dispatched={} succeeded={} "
                         "route=level_script.RemoteEvent verified_defeat=true polling=false\n"),
-                    kg_tide_transition ? STR("KG Demon Tide") : STR("Scala"),
+                    kg_tide_transition ? STR("KG Demon Tide") :
+                            remind_finish ? STR("Re Mind Armored Xehanort") : STR("Scala"),
                     completion.event_name, completion.available,
                     completion.dispatched, completion.succeeded);
             return;
@@ -795,10 +801,12 @@ namespace kh3ap::enemy_remap_detail
                 function,
                 params,
                 STR("inStateID"));
+        const bool titan_action = state_id == 99 &&
+                is_titan_completion_action(pawn->GetClassPrivate()->GetPathName(), *state_id);
         if (!state_id.has_value() ||
             (*state_id != tres_state_appear &&
              *state_id != tres_state_die &&
-             *state_id != tres_state_vanish_die))
+             *state_id != tres_state_vanish_die && !titan_action))
         {
             return;
         }
@@ -835,10 +843,12 @@ namespace kh3ap::enemy_remap_detail
                 function,
                 params,
                 STR("inStateID"));
+        const bool titan_action = state_id == 99 &&
+                is_titan_completion_action(pawn->GetClassPrivate()->GetPathName(), *state_id);
         if (!state_id.has_value() ||
             (*state_id != tres_state_appear &&
              *state_id != tres_state_die &&
-             *state_id != tres_state_vanish_die))
+             *state_id != tres_state_vanish_die && !titan_action))
         {
             return;
         }
@@ -872,7 +882,16 @@ namespace kh3ap::enemy_remap_detail
         if (*state_id != tres_state_die &&
             *state_id != tres_state_vanish_die)
         {
-            return;
+            if (!titan_action)
+            {
+                return;
+            }
+            const auto counts = read_runtime_boss_completion_counts(binding);
+            if (!counts.synchronized || counts.spawn_count <= 0 ||
+                counts.kill_count_after < counts.spawn_count)
+            {
+                return;
+            }
         }
         retire_runtime_xemnas_center(pawn);
         dispatch_runtime_boss_wipe_out(pawn, binding);

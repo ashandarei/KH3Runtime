@@ -416,8 +416,13 @@ namespace kh3ap
                     progressive_result.expected_flag_count, progressive_result.already_set_count,
                     progressive_result.newly_set_count,
                     progressive_result.item_manager_refreshed ? STR("true") : STR("false"));
-                maybe_show_progressive_keyblade_level_information(request, progressive_result,
-                                                                  deps);
+                // Alternates use the post-apply persistent reward notice. The
+                // normal Sora message would otherwise duplicate that receipt.
+                if (world_context_object != persistent_player_reward_context())
+                {
+                    maybe_show_progressive_keyblade_level_information(request, progressive_result,
+                                                                      deps);
+                }
                 if (progressive_result.newly_set_count > 0 &&
                     deps.progressive_keyblade_level_applied)
                 {

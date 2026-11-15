@@ -236,5 +236,20 @@ int main()
     assert(!is_kg_demon_tide_transition(kg_tide_entity, scala_first_xehanort_class, L"kg_01_02_en_Group_01"));
     assert(!is_kg_demon_tide_transition(scala_entity, kg_demon_tide_class, L"kg_01_02_en_Group_01"));
     assert(!is_kg_demon_tide_transition(kg_tide_entity, kg_demon_tide_class, L"kg_01_02_en_Group_02"));
-    std::cout << "Lich source/replacement exclusion and existing-seed preservation passed\n";
+    const auto remind_entity = L"/Game/Levels/kg_DLC/kg_06/umap/kg_06_enemy_03.kg_06_enemy_03:PersistentLevel.e_ex773_Pawn";
+    assert(is_remind_armored_xehanort_finish(remind_entity, remind_armored_xehanort_class, L"kg_06_03_en_Group_01"));
+    assert(!is_remind_armored_xehanort_finish(scala_entity, remind_armored_xehanort_class, L"kg_06_03_en_Group_01"));
+    assert(!is_remind_armored_xehanort_finish(remind_entity, final_xehanort_class, L"kg_06_03_en_Group_01"));
+    assert(!is_remind_armored_xehanort_finish(remind_entity, remind_armored_xehanort_class, L"kg_06_03_en_Group_02"));
+    for (const auto titan_class : {
+                 L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C",
+                 L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C"})
+    {
+        assert(is_titan_completion_action(titan_class, 99));
+        assert(!is_titan_completion_action(titan_class, 1));
+        assert(!is_titan_completion_action(titan_class, 100));
+    }
+    assert(!is_titan_completion_action(final_xehanort_class, 99));
+    assert(!is_titan_completion_action(L"", 99));
+    std::cout << "Boss remap policies passed\n";
 }

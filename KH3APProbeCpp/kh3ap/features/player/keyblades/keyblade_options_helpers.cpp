@@ -52,6 +52,9 @@ namespace kh3ap
         }
 
         const auto ability_value = keyblade_style_ability_value(keyblade_name);
+        // The ability bank resolver accepts a verified alternate reward owner
+        // and writes Sora's persistent records, never the alternate's equipment.
+        // Live Sora weapon refresh remains gated by process_runtime_keyblade_style_sanity.
         RuntimeSoraAbilityEntryState ability_state{};
         bool newly_granted = false;
         std::wstring ability_failure{};

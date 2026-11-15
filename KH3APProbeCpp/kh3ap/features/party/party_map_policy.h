@@ -243,10 +243,9 @@ namespace kh3ap
 
     // These maps own their encounter roster on entry and Retry. Saved manual
     // choices resume after leaving; removing story actors can stall native tasks.
-    inline constexpr std::array<std::wstring_view, 8> runtime_party_vanilla_level_fragments{
+    inline constexpr std::array<std::wstring_view, 7> runtime_party_vanilla_level_fragments{
         L"/Game/Levels/he/he_04/",     // Cherry Flan needs Donald/Goofy before shield-ride setup.
         L"/Game/Levels/fz/fz_03/",     // Frozen Slider needs the native pair before its countdown.
-        L"/Game/Levels/bt/bt_03/",     // Underwater Armored Xehanort needs swimming companions.
         L"/Game/Levels/bx/bx_03/",     // Hiro's Garage scenes own their story party.
         L"/Game/Levels/kg_DLC/kg_06/", // Guardians/final Xehanort own Kairi and character
                                        // selection.

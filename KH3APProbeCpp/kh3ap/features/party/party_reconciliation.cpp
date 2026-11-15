@@ -108,6 +108,7 @@ namespace kh3ap
             test_reconcile_started_ = std::chrono::steady_clock::now();
             test_native_work_ms_ = 0;
         }
+        restore_party_swim_combat();
         restore_action_viable_state_patches();
         custom_party_assigned_pawns_ = {};
         custom_party_trees_ = {};
@@ -213,6 +214,7 @@ namespace kh3ap
         // Cancel the transaction without spawning or replacing story allies.
         // This covers initial loads, every native party event, and menu edits.
         // Discard a delayed replacement too if the map changed while settling.
+        restore_party_swim_combat();
         restore_action_viable_state_patches();
         custom_party_assigned_pawns_ = {};
         custom_party_trees_ = {};
@@ -352,6 +354,7 @@ namespace kh3ap
         // Load their dependencies through the latent loader before SetFriend,
         // which otherwise loads them synchronously on the game thread.
         pending_pawn_class_paths_ = {};
+        pending_swim_asset_paths_ = {};
         party_asset_deadline_ = std::chrono::steady_clock::now() + party_preload_timeout;
         next_party_asset_request_ = std::chrono::steady_clock::now() + party_asset_request_interval;
         for (size_t slot = 0; slot < pending_choices_.size(); ++slot)
@@ -381,8 +384,40 @@ namespace kh3ap
                 reconcile_pending_ = false;
                 return false;
             }
+
         }
         uint32_t requested_asset_settle_ticks = friend_settle_ticks;
+        // The stock Goofy pawn owns the shared swim query and navigation
+        // component template. Load them before creating a land-only selection.
+        if (std::any_of(pending_choices_.begin(), pending_choices_.end(), [](size_t choice)
+                        { return choice != 0 && choice != party_catalog::vanilla_choice; }))
+        {
+            auto& path = pending_pawn_class_paths_.back();
+            path = L"/Game/Blueprints/Npc/n_ex002/n_ex002_Pawn.n_ex002_Pawn_C";
+            std::wstring resolution;
+            if (!request_runtime_asset_class_load(
+                    friend_manager, path, &resolution,
+                    static_cast<int32_t>(pawn_class_load_uuid_prefix |
+                                         (++party_asset_request_sequence_ & pawn_class_load_sequence_mask))))
+            {
+                reconcile_pending_ = false;
+                return false;
+            }
+            pending_swim_asset_paths_ = {
+                L"/Game/Character/pc/p_ex001/anm/p_ex001_AnimSet.p_ex001_AnimSet",
+                L"/Game/Character/pc/p_ex001/anm/AnimSet/world/p_ex001_AnimSet_CA.p_ex001_AnimSet_CA"};
+            for (const auto& asset_path : pending_swim_asset_paths_)
+            {
+                if (!request_runtime_asset_load(
+                        friend_manager, asset_path, &resolution,
+                        static_cast<int32_t>(pawn_class_load_uuid_prefix |
+                                             (++party_asset_request_sequence_ & pawn_class_load_sequence_mask))))
+                {
+                    reconcile_pending_ = false;
+                    return false;
+                }
+            }
+        }
         for (size_t index = 0; index < custom_party_ai_definitions.size(); ++index)
         {
             const CustomPartyAiDefinition& definition = custom_party_ai_definitions[index];
@@ -494,6 +529,12 @@ namespace kh3ap
             }
             // Recheck every selected class until the actual spawn tick. A class
             // ready earlier may be collected during a retry or the delete delay.
+            if (callable && &path == &pending_pawn_class_paths_.back())
+            {
+                // The donor is not spawned. Retain its bounded dependency set
+                // through the later controller/animation readiness callbacks.
+                klass->SetRootSet();
+            }
             if (!callable)
             {
                 ready = false;
@@ -521,6 +562,27 @@ namespace kh3ap
                         klass && is_uobject_valid_fast(klass) && klass->HasAnyFlags(pending_flags),
                         blocked_event);
                 }
+            }
+        }
+        for (const auto& path : pending_swim_asset_paths_)
+        {
+            if (path.empty()) { continue; }
+            auto* asset = find_loaded_runtime_asset(path);
+            if (!is_uobject_valid_fast(asset) || asset->HasAnyFlags(pending_flags))
+            {
+                ready = false;
+                if (request_again)
+                {
+                    std::wstring resolution;
+                    request_runtime_asset_load(
+                        reconcile_friend_manager_.Get(), path, &resolution,
+                        static_cast<int32_t>(pawn_class_load_uuid_prefix |
+                                             (++party_asset_request_sequence_ & pawn_class_load_sequence_mask)));
+                }
+            }
+            else
+            {
+                asset->SetRootSet();
             }
         }
         if (!ready && std::chrono::steady_clock::now() >= party_asset_deadline_)
@@ -649,7 +711,12 @@ namespace kh3ap
         }
         active_choices_ = pending_choices_;
         active_npc_ids_ = pending_npc_ids_;
+        placement_friends_ = {};
+        placement_battle_modes_ = {};
+        placement_pending_ = true;
+        maintenance_.request();
         initialize_party_knockout();
+        swimming_deadline_ = std::chrono::steady_clock::now() + std::chrono::seconds{10};
         Output::send<LogLevel::Normal>(
             STR("[KH3APProbeCpp] Runtime party reconciled reason={} "
                 "friend_1={} friend_2={} randomized={} unlocked={}\n"),
@@ -672,8 +739,10 @@ namespace kh3ap
         {
             const RuntimeHotPathProfileScope profile{L"party:maintenance"};
             const bool navigated = maintain_party_navigation();
+            const bool swimming = initialize_party_swimming();
+            if (swimming) { maintain_party_swim_combat(); }
             const bool placed = maintain_party_placement();
-            maintenance_.finish(now, navigated && placed);
+            maintenance_.finish(now, navigated && swimming && placed);
         }
     }
 

@@ -65,6 +65,7 @@
 #include <Unreal/UClass.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/Hooks.hpp>
 #include <Unreal/UObjectGlobals.hpp>
@@ -540,7 +541,8 @@ namespace kh3ap::character_swap
                 alternate_wall_run::capture_sora(pawn);
                 character_traversal::capture_sora(pawn);
                 character_camera::capture_sora(
-                    pawn, target == static_cast<int>(player_animation_support::PlayerId::Roxas));
+                    pawn, target == static_cast<int>(player_animation_support::PlayerId::Roxas) ||
+                              target == static_cast<int>(player_animation_support::PlayerId::Kairi));
                 character_swap_assets::retain_return_class(pawn);
                 character_underwater_combat::capture_sora(pawn);
             }
@@ -707,6 +709,32 @@ namespace kh3ap::character_swap
             }
         }
 
+        bool inactive_collapse_sora_role(UObject* matinee, UObject* group)
+        {
+            auto* world = kh02_actor_world(matinee);
+            if (!is_uobject_valid_fast(world)) return false;
+            const auto world_path = world->GetPathName();
+            const auto scene_path = matinee->GetPathName();
+            if (!is_olympus_collapse_scenery(world_path, scene_path)) return false;
+            auto* field = group->GetPropertyByNameInChain(L"InterpTracks");
+            if (!field || !field->IsA<FArrayProperty>()) return false;
+            auto* inner = static_cast<FArrayProperty*>(field)->GetInner();
+            if (!inner || inner->GetClass().GetName() != L"ObjectProperty" ||
+                inner->GetElementSize() != sizeof(UObject*)) return false;
+            const auto* tracks = field->ContainerPtrToValuePtr<TArray<UObject*>>(group);
+            if (tracks->Num() < 1 || tracks->Num() > maximum_cinematic_groups) return false;
+            size_t disabled_count = 0;
+            for (auto* track : *tracks)
+            {
+                if (!is_uobject_valid_fast(track)) return false;
+                auto* disabled = track->GetPropertyByNameInChain(L"bDisableTrack");
+                if (!disabled || !disabled->IsA<FBoolProperty>()) return false;
+                if (static_cast<FBoolProperty*>(disabled)->GetPropertyValueInContainer(track))
+                    ++disabled_count;
+            }
+            return collapse_sora_role_is_inactive(world_path, scene_path, tracks->Num(), disabled_count);
+        }
+
         bool cinematic_uses_sora(UObject* matinee)
         {
             if (!is_uobject_valid_fast(matinee) ||
@@ -753,6 +781,9 @@ namespace kh3ap::character_swap
                 if (mesh &&
                     std::find(sora_meshes.begin(), sora_meshes.end(), *mesh) != sora_meshes.end())
                 {
+                    // Inspect every authored role: another active Sora group
+                    // must still take the normal binding/handoff path.
+                    if (inactive_collapse_sora_role(matinee, group)) continue;
                     return true;
                 }
             }
@@ -775,6 +806,16 @@ namespace kh3ap::character_swap
                 !is_uobject_valid_fast(controller))
             {
                 return false;
+            }
+            // A scenery Matinee can query cinematic ownership during glide.
+            // Re-adopting this same controlled pawn queues full preparation and
+            // overwrites its active movement settings with the ground snapshot.
+            // Only a new pawn, world or character needs travel adoption.
+            if (travel_adoption_is_current(session.owned_hero.Get() == pawn,
+                    session.swap_world.Get() == kh02_actor_world(pawn),
+                    session.active_character_id, session.travel_character_id))
+            {
+                return true;
             }
             // Travel can recreate the alternate before cinematic input unlocks.
             // Retain the departure's stat snapshot; only adopt verified local possession.
@@ -1040,12 +1081,34 @@ namespace kh3ap::character_swap
                 return false;
             }
             auto* pawn = player();
-            // Player-start and movie-finished notifications can arrive under
-            // the loading cover, before the ship has placed/attached Sora.
-            // Retain the bounded request until normal control is available.
+            auto* world = kh02_current_world();
+            bool covered_arrival = false;
             if (!ready(pawn))
             {
-                return false;
+                // An ordinary map arrival used to wait until the loading
+                // cover was gone, briefly displaying Sora before restoring the
+                // selected hero. Reuse the cinematic factory path under that
+                // cover, but only for a new, locally possessed ground-map pawn.
+                if (!is_uobject_valid_fast(world) || !sora_variant(pawn) ||
+                    !can_prepare_arrival_under_cover(world->GetPathName(),
+                        session.swap_world.Get() != world, true))
+                {
+                    return false;
+                }
+                auto* controller = object(pawn, L"Controller");
+                auto* local = object(controller, L"Player");
+                if (!is_uobject_valid_fast(controller) ||
+                    object(local, L"PlayerController") != controller)
+                {
+                    return false;
+                }
+                Call loading(library, L"TresUI_IsClosedLoadingScreen");
+                loading.run();
+                covered_arrival = !loading.boolean_result();
+                if (!covered_arrival)
+                {
+                    return false;
+                }
             }
             if (session.travel_character_id >= 0 && sora_variant(pawn) &&
                 session.native_cinematic_world.Get() != kh02_current_world() &&
@@ -1053,6 +1116,13 @@ namespace kh3ap::character_swap
                 character_unlocks::available(session.travel_character_id) &&
                 begin(pawn, session.travel_character_id, true))
             {
+                if (covered_arrival)
+                {
+                    RC::Output::send<RC::LogLevel::Normal>(
+                        STR("[KH3APProbeCpp] CharacterTravel prepared_under_loading_cover "
+                            "character={} world={}\n"), session.travel_character_id,
+                        world->GetPathName());
+                }
                 ascension.clear();
                 session.rebind_pending = false;
                 return false;
@@ -1784,11 +1854,14 @@ namespace kh3ap::character_swap
     void notify_cinematic_finished(UObject* source)
     {
         if (!is_uobject_valid_fast(source) ||
-            !source->GetClassPrivate()->GetPathName().starts_with(L"/Game/Cutscene/") ||
             kh02_actor_world(source) != kh02_current_world())
         {
             return;
         }
+        // The native pause-type hook also reports level camera scenes such
+        // as Olympus's statue break (he_03_camera_ms027). Those scenes can
+        // require a temporary Sora handoff just like movie assets. Type 0
+        // releases that hold regardless of the source's asset directory.
         session.native_cinematic_world = {};
         if (ascension_locked())
         {
@@ -1806,7 +1879,6 @@ namespace kh3ap::character_swap
     {
         betrayal_trap::cancel();
         if (is_uobject_valid_fast(source) &&
-            source->GetClassPrivate()->GetPathName().starts_with(L"/Game/Cutscene/") &&
             kh02_actor_world(source) == kh02_current_world())
         {
             if (session.pending && session.target_id == session.travel_character_id)
@@ -1968,12 +2040,18 @@ namespace kh3ap::character_swap
     void observe_game_over_state_write(uintptr_t component, uintptr_t state)
     {
         betrayal_trap::observe_state(component, state);
-        if (!deathlink::view()->manual_active)
+        if (!deathlink::view()->observe_alternates)
         {
             return;
         }
-        auto* pawn = current_hero();
+        auto* pawn = player();
         auto* current = reinterpret_cast<UObject*>(state);
+        if (is_uobject_valid_fast(pawn) && is_standard_sora_player_id(id(pawn)) &&
+            object(pawn, L"MyStateComp") == reinterpret_cast<UObject*>(component))
+        {
+            deathlink::release_alternate_player();
+            return;
+        }
         if (!owns_swap_pawn(pawn) ||
             object(pawn, L"MyStateComp") != reinterpret_cast<UObject*>(component) ||
             !is_uobject_valid_fast(current) || object(current, L"MyCharPawn") != pawn)
@@ -1995,7 +2073,7 @@ namespace kh3ap::character_swap
         static_assert(sizeof(weak) == sizeof(uint64_t));
         uint64_t key{};
         std::memcpy(&key, &weak, sizeof(key));
-        deathlink::observe_manual_player(std::to_string(key), dead,
+        deathlink::observe_alternate_player(std::to_string(key), dead,
                                          !dead && !session.pending && ready(pawn) &&
                                              current_runtime_trap_live_state_status(pawn).ready);
     }

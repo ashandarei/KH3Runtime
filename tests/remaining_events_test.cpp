@@ -43,6 +43,10 @@ struct Party {
     uint64_t navigation_revision_{};int nav_reads{},placement_reads{};bool placed=true;
     bool maintain_party_navigation(){++nav_reads;return true;}
     bool maintain_party_placement(){++placement_reads;return placed;}
+    int swim_reads{};bool swimming_ready=true;
+    bool initialize_party_swimming(){++swim_reads;return swimming_ready;}
+    int swim_combat_reads{};
+    void maintain_party_swim_combat(){++swim_combat_reads;}
 #include "party_remaining_under_test.h"
 };
 struct UObject {UObject* outer{};bool live=true;std::array<float,3> location{};std::wstring path;std::wstring GetPathName(){return path;}UObject* GetOuterPrivate(){return outer;}};
@@ -109,6 +113,17 @@ int main(){using namespace kh3ap;
     p.tick_maintenance(TestClock::now());assert(p.nav_reads==2);
     TestClock::time+=250ms;p.placed=true;p.tick_maintenance(TestClock::now());assert(p.nav_reads==3);
     for(int i=0;i<1000;++i){TestClock::time+=1s;p.tick_maintenance(TestClock::now());}assert(p.nav_reads==3);
+    assert(p.swim_reads==3); // swimming also stays idle after setup
+    assert(p.swim_combat_reads==3);
+    p.swimming_ready=false;p.maintenance_.request();p.tick_maintenance(TestClock::now());
+    const auto swimming_attempts=p.swim_reads;
+    assert(p.swim_combat_reads==3); // no combat adaptation before swim readiness
+    p.tick_maintenance(TestClock::now());assert(p.swim_reads==swimming_attempts);
+    TestClock::time+=250ms;p.swimming_ready=true;p.tick_maintenance(TestClock::now());
+    assert(p.swim_reads==swimming_attempts+1);
+    assert(p.swim_combat_reads==4);
+    for(int i=0;i<1000;++i){TestClock::time+=1s;p.tick_maintenance(TestClock::now());}
+    assert(p.swim_reads==swimming_attempts+1);
     UObject level,other_level,sora{&level},friend_pawn{&level},other{&other_level};
     Colors colors;color_objects::current={{&friend_pawn,&other},1,true};colors.discover_pawns(&sora,TestClock::now());assert(colors.queued.size()==1);
     for(int i=0;i<1000;++i)colors.discover_pawns(&sora,TestClock::now());assert(color_objects::snapshots==1);

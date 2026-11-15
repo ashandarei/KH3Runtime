@@ -2,6 +2,7 @@
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
@@ -53,6 +54,7 @@ namespace kh3ap
             {L"inspect_transform", &Impl::accept_inspect_transform, false, true},
             {L"open_chest", &Impl::accept_open_chest, true, false},
             {L"cactuar_spawn", &Impl::accept_cactuar_spawn, true, false},
+            {L"olympus_statue_scene", &Impl::accept_olympus_statue_scene, true, false},
             {L"defeat_all", &Impl::accept_damage, true, false},
             {L"damage_pulse", &Impl::accept_damage, true, false},
             {L"kh02_boss_hp_setup", &Impl::accept_boss_hp_setup, true, false},
@@ -114,6 +116,54 @@ namespace kh3ap
         finish(L"completed", L"appearance_event_dispatched_inspect_spawn_readback");
         return;
     }
+    void RuntimeEnemyClearService::Impl::accept_olympus_statue_scene(UObject* pawn, const std::string&)
+    {
+        // Diagnostic replay of the real camera Blueprint entry, including its
+        // statue animation and normal completion/skip callbacks. No guessed
+        // graph offsets or synthetic scene completion.
+        if (world_name != L"/Game/Levels/he/he_03/he_03.he_03")
+        {
+            finish(L"error", L"olympus_thebes_required");
+            return;
+        }
+        if (!config.special_battle_mode_active || config.special_battle_mode_active())
+        {
+            finish(L"error", L"inactive_battle_required");
+            return;
+        }
+        enumerate(pawn);
+        if (!targets.empty())
+        {
+            finish(L"error", L"clear_existing_enemies_first");
+            return;
+        }
+        // Enumerate from the permanent native base: StaticFindObject caches a
+        // streamed Blueprint class by path and can return its old pointer after
+        // this camera level has unloaded/reloaded for another replay.
+        auto* script_class = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr,
+            L"/Script/Engine.LevelScriptActor");
+        if (!is_uobject_valid_fast(script_class))
+        {
+            finish(L"error", L"statue_camera_level_not_loaded");
+            return;
+        }
+        auto scripts = actors_of_class(pawn, script_class);
+        std::erase_if(scripts, [this](auto* script)
+            {
+                return !is_uobject_valid_fast(script) || kh02_actor_world(script) != world.Get() ||
+                    script->GetClassPrivate()->GetPathName() !=
+                        L"/Game/Levels/he/he_03/umap/he_03_camera_ms027.he_03_camera_ms027_C";
+            });
+        if (scripts.size() != 1)
+        {
+            finish(L"error", L"statue_script_identity_ambiguous");
+            return;
+        }
+        Call scene(scripts.front(), L"he_03_gameflow_REvt_Achilles_Start");
+        scene.invoke();
+        finish(L"completed", L"statue_scene_dispatched_observe_completion");
+    }
+
     void RuntimeEnemyClearService::Impl::accept()
     {
         dir = config.bridge_dir();

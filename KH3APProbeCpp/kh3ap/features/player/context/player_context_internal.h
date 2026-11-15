@@ -21,6 +21,8 @@ namespace kh3ap
         auto runtime_context() const -> std::wstring;
 
         auto reset_playable_context() -> void;
+        auto owned_pawn_world(UObject* pawn) const -> UObject*;
+        auto map_ready_for_pawn(UObject* pawn) const -> bool;
 
         auto read_object_property_in_chain(UObject* object, const wchar_t* property_name) const
             -> UObject*;
@@ -134,6 +136,7 @@ namespace kh3ap
         RC::Unreal::FWeakObjectPtr local_player{};
         std::wstring map_ready_context_key{};
         FWeakObjectPtr map_ready_pawn{}, map_ready_world{};
+        FWeakObjectPtr observed_map_ready_world{};
         bool special_battle_game_over_recovery_pending{false};
         bool final_world_capture_armed{false};
         bool final_world_capture_closed{false};

@@ -40,6 +40,7 @@ namespace kh3ap
         std::function<void()> observe_weapon_change{};
         std::function<void(bool)> observe_cinematic_transition{};
         std::function<void(RC::Unreal::UObject*)> observe_sora_state{};
+        std::function<void(uintptr_t)> observe_friend_state{};
     };
 
     class RuntimeSoraStateHookService

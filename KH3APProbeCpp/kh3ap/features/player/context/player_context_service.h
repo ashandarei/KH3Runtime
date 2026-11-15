@@ -59,6 +59,9 @@ namespace kh3ap
 
         auto reset_playable_context() -> void;
         auto map_ready_context_key() const -> std::wstring_view;
+        // World readiness survives same-world character replacement. Possession
+        // is checked separately from the pawn used by the original UI event.
+        auto map_ready_for_pawn(RC::Unreal::UObject* pawn) const -> bool;
         auto final_world_capture_armed() const -> bool;
         auto arm_final_world_capture() -> void;
         auto clear_special_battle_recovery_pending() -> void;
