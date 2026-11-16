@@ -13,4 +13,5 @@ namespace kh3ap::kairi_ground_slam
     bool initialize();
     // Retries are owned by the unfinished swap/rebind, never an idle timer.
     bool prepare(RC::Unreal::UObject* pawn);
+    bool ready(RC::Unreal::UObject* pawn);
 } // namespace kh3ap::kairi_ground_slam

@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/world/portals/portal_auto_spawn_state.h"
 #include "kh3ap/app/config.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -37,7 +38,6 @@ namespace kh3ap
         using ::kh3ap::settings::s_death_mirror_blueprint_path;
         using ::kh3ap::settings::s_death_mirror_class_path;
         using ::kh3ap::settings::s_debug_logging;
-        using ::kh3ap::settings::s_enable_runtime_bx02_portal_auto_spawn;
         using ::kh3ap::settings::s_enable_runtime_fz02_save_point_auto_spawn;
         using ::kh3ap::settings::s_enable_runtime_he02_death_mirror_auto_spawn;
         using ::kh3ap::settings::s_enable_runtime_he02_save_point_auto_spawn;
@@ -49,13 +49,6 @@ namespace kh3ap
         using ::kh3ap::settings::s_goa_save_point_data_blueprint_path;
         using ::kh3ap::settings::s_goa_save_point_data_class_path;
         using ::kh3ap::settings::s_load_game_from_slot_path;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_map_path;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_retry_interval;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_stable_delay;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_verification_delay;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_x;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_y;
-        using ::kh3ap::settings::s_runtime_bx02_portal_auto_spawn_z;
         using ::kh3ap::settings::s_runtime_fz02_save_point_auto_spawn_disp_map_name;
         using ::kh3ap::settings::s_runtime_fz02_save_point_auto_spawn_level_path_property;
         using ::kh3ap::settings::s_runtime_fz02_save_point_auto_spawn_map_path;
@@ -204,7 +197,7 @@ namespace kh3ap
 
             if (newly_retained)
             {
-                pending = true;
+                arm();
                 RC::Output::send<RC::LogLevel::Verbose>(
                         STR("[KH3APProbeCpp] RuntimePortalClassCache source={} status=rooted class={}\n"),
                         source_name,
@@ -215,12 +208,10 @@ namespace kh3ap
 
         auto cache_bx_portal_class(RC::Unreal::UObject* object) -> bool
         {
-            return cache_portal_class_object(
-                    bx02_portal_class_cache,
-                    bx02_portal_state,
-                    object,
-                    s_bx_portal_class_path,
-                    STR("BX_Portal_C"));
+            if constexpr (!s_enable_runtime_portal_spawn_request) { return false; }
+            if (!is_uobject_a_fast(object, RC::Unreal::UClass::StaticClass()) ||
+                object->GetPathName() != s_bx_portal_class_path) { return false; }
+            return bx02_portal_class_cache.retain(static_cast<RC::Unreal::UClass*>(object));
         }
 
         auto cache_he02_death_mirror_class(RC::Unreal::UObject* object) -> bool
@@ -233,13 +224,18 @@ namespace kh3ap
                     STR("A_GoA_DeathMirror_C"));
         }
 
-        auto reset() -> void
+        auto arm() -> void
         {
             pending = true;
+            deadline = std::chrono::steady_clock::now() + std::chrono::seconds{30};
+        }
+
+        auto reset() -> void
+        {
+            arm();
             he02_save_point_state = {};
             he02_save_point_story_skip_logged = false;
             fz02_save_point_state = {};
-            bx02_portal_state = {};
             he02_death_mirror_state = {};
             he02_death_mirror_entry_context_key.clear();
             he02_death_mirror_entry_spawn_allowed.reset();
@@ -274,6 +270,7 @@ namespace kh3ap
                 std::chrono::steady_clock::time_point now,
                 const PhaseMarker& mark_phase) -> void
         {
+            if (now >= deadline) { pending = false; return; }
             if constexpr (s_enable_runtime_he02_save_point_auto_spawn)
             {
                 RuntimeConditionalProfileScope<s_enable_runtime_hot_path_profiling> profile{
@@ -336,32 +333,6 @@ namespace kh3ap
                         bx02_portal_class_cache));
             }
             mark_phase(STR("runtime_file_poll_portal_request"));
-
-            if constexpr (s_enable_runtime_bx02_portal_auto_spawn)
-            {
-                RuntimeConditionalProfileScope<s_enable_runtime_hot_path_profiling> profile{
-                        STR("on_update:runtime_bx02_portal_auto_spawn")};
-                process_runtime_map_portal_auto_spawn(
-                        bx02_portal_state,
-                        make_portal_deps(
-                                config.runtime_state,
-                                bridge_dir,
-                                s_bx_portal_class_path,
-                                s_bx_portal_blueprint_path,
-                                bx02_portal_class_cache),
-                        now,
-                        STR("auto_bx02_portal"),
-                        STR("auto-bx02-portal"),
-                        s_runtime_bx02_portal_auto_spawn_map_path,
-                        s_runtime_bx02_portal_auto_spawn_x,
-                        s_runtime_bx02_portal_auto_spawn_y,
-                        s_runtime_bx02_portal_auto_spawn_z,
-                        s_runtime_bx02_portal_auto_spawn_stable_delay,
-                        s_runtime_bx02_portal_auto_spawn_retry_interval,
-                        s_runtime_bx02_portal_auto_spawn_verification_delay,
-                        config.player_context.map_ready_context_key());
-            }
-            mark_phase(STR("runtime_file_poll_bx02_auto_spawn"));
 
             if constexpr (s_enable_runtime_he02_death_mirror_auto_spawn)
             {
@@ -444,31 +415,30 @@ namespace kh3ap
                         ineligibility_reason);
             }
             mark_phase(STR("runtime_file_poll_he02_death_mirror_auto_spawn"));
-            const auto snapshot = config.runtime_state.context_subsystem_state().context_state().current_snapshot();
+            auto* player = runtime_current_player_pawn();
             // Lifecycle reset arms startup work. Only unfinished work in the
             // current target map keeps a timer after a playable context arrives.
-            if (snapshot && !snapshot->world.empty()) {
-                const auto map = snapshot->world + STR(" ") + snapshot->outer;
+            if (player) {
+                const auto map = player->GetFullName();
                 pending =
                     (map.find(s_runtime_he02_save_point_auto_spawn_map_path)!=std::wstring::npos &&
                      ((s_enable_runtime_he02_save_point_auto_spawn && !he02_save_point_story_skip_logged && !he02_save_point_state.spawn_attempted && !he02_save_point_state.terminal_failure) ||
                       (s_enable_runtime_he02_death_mirror_auto_spawn && !he02_death_mirror_state.verification_complete && !he02_death_mirror_state.class_load_failed_closed &&
                        he02_death_mirror_entry_spawn_allowed!=false))) ||
                     (map.find(s_runtime_fz02_save_point_auto_spawn_map_path)!=std::wstring::npos &&
-                     s_enable_runtime_fz02_save_point_auto_spawn && !fz02_save_point_state.spawn_attempted && !fz02_save_point_state.terminal_failure) ||
-                    (map.find(s_runtime_bx02_portal_auto_spawn_map_path)!=std::wstring::npos &&
-                     s_enable_runtime_bx02_portal_auto_spawn && !bx02_portal_state.verification_complete && !bx02_portal_state.class_load_failed_closed);
+                     s_enable_runtime_fz02_save_point_auto_spawn && !fz02_save_point_state.spawn_attempted && !fz02_save_point_state.terminal_failure);
             }
         }
 
         RuntimeMapActorLifecycleConfig config;
         bool pending{true};
+        std::chrono::steady_clock::time_point deadline{
+            std::chrono::steady_clock::now() + std::chrono::seconds{30}};
         RuntimeAutoSavePointSpawnState he02_save_point_state{};
         bool he02_save_point_story_skip_logged{};
         RuntimeAutoSavePointSpawnState fz02_save_point_state{};
         RuntimePortalClassCache bx02_portal_class_cache{};
         RuntimePortalClassCache he02_death_mirror_class_cache{};
-        RuntimeAutoPortalSpawnState bx02_portal_state{};
         RuntimeAutoPortalSpawnState he02_death_mirror_state{};
         std::wstring he02_death_mirror_entry_context_key{};
         std::optional<bool> he02_death_mirror_entry_spawn_allowed{};
@@ -499,7 +469,7 @@ namespace kh3ap
 
     auto RuntimeMapActorLifecycleService::notify_context_ready() -> void
     {
-        impl_->pending = true;
+        impl_->arm();
     }
 
     auto RuntimeMapActorLifecycleService::cache_bx_portal_class(

@@ -1,5 +1,12 @@
 #include "kh3ap/features/player/characters/character_swap_stats.h"
 #include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/app/config.h"
+#include "kh3ap/core/objects/asset_load_helpers.h"
+#include "kh3ap/core/settings/pak_seed_settings.h"
+#include "kh3ap/core/settings/seed_slot_options.h"
+#include "kh3ap/features/grants/keyblades/progressive_keyblade_level_helpers.h"
+#include "kh3ap/features/kh02/core/kh02_data_table.h"
+#include "kh3ap/features/player/state/shared_sora_progression.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/performance_build.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
@@ -29,6 +36,8 @@ namespace kh3ap::character_swap
         constexpr int maximum_stat_sync_attempts = 3;
 
         constexpr int alternate_max_ap = 100;
+        constexpr size_t base_strength_index = 3;
+        constexpr size_t base_magic_index = 4;
         constexpr size_t base_ability_point_index = 6;
         constexpr uint8_t hp_break_kind = 18;
         constexpr size_t bad_status_kind_offset = 0x85d;
@@ -59,6 +68,55 @@ namespace kh3ap::character_swap
                 throw std::runtime_error("character_stat_layout_unsupported");
             }
             return parameter;
+        }
+
+        int32_t read_stat(const Kh02DataTableView& table, void* row, const wchar_t* field)
+        {
+            auto* property = table.schema->GetPropertyByNameInChain(field);
+            if (!row || !property || property->GetClass().GetName() != L"IntProperty" ||
+                property->GetElementSize() != sizeof(int32_t) || property->GetArrayDim() != 1)
+            {
+                throw std::runtime_error("character_shared_stat_row_layout");
+            }
+            return *property->ContainerPtrToValuePtr<int32_t>(row);
+        }
+
+        std::array<int32_t, 4> level_stats(int level)
+        {
+            auto* asset = find_loaded_runtime_asset(
+                L"/Game/DataTable/Player/LevelUp/p_ex001_LevelUpData.p_ex001_LevelUpData");
+            const Kh02DataTableView table(asset, L"/Script/TresGame.TresChrLevelUpDataTable",
+                                         "character_shared_level_table");
+            auto* row = table.find(std::to_wstring(level).c_str());
+            return {read_stat(table, row, L"m_AttackPower"), read_stat(table, row, L"m_MagicPower"),
+                    read_stat(table, row, L"m_DefensePower"), read_stat(table, row, L"m_AbilityPoint")};
+        }
+
+        std::array<int32_t, 2> pandora_bonuses()
+        {
+            KeybladeLevelQueryResult level{};
+            const bool maxed = seed_keyblade_levels_start_at_max(installed_seed_slot_data());
+            if (!try_query_keyblade_level(L"Pandora's Power", maxed, &level, nullptr) ||
+                level.current_level == 0)
+            {
+                return {};
+            }
+            auto* asset = find_loaded_runtime_asset(settings::s_tres_item_weapon_enhance_data_path);
+            const Kh02DataTableView table(asset, L"/Script/TresGame.TresItemWeaponEnhanceDataTable",
+                                         "character_pandora_level_table");
+            std::array<int32_t, 2> bonuses{};
+            for (int offset = 0; offset < level.current_level; ++offset)
+            {
+                const int flag = pandoras_power_first_enhancement_flag + offset;
+                auto* row = table.find((L"IW_" + std::to_wstring(flag)).c_str());
+                if (read_stat(table, row, L"m_FlagIndex") != flag)
+                {
+                    throw std::runtime_error("character_pandora_flag_mismatch");
+                }
+                bonuses[0] += read_stat(table, row, L"m_AttackPlus");
+                bonuses[1] += read_stat(table, row, L"m_MagicPlus");
+            }
+            return bonuses;
         }
 
     } // namespace
@@ -215,6 +273,32 @@ namespace kh3ap::character_swap
         auto* base_stats =
             reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(parameter) + base_stats_offset);
         base_stats[base_ability_point_index] = alternate_max_ap;
+    }
+
+    void CharacterSwapStats::apply_shared_progression(UObject* pawn)
+    {
+        // Keep the outgoing Sora base cache, including permanent bonuses, and
+        // advance it by the seed's authored level-row difference.
+        auto* parameter = parameters(pawn);
+        const auto bonuses = pandora_bonuses();
+        if (const auto progression = read_shared_sora_progression(pawn);
+            progression && progression->level != sora_level)
+        {
+            const auto before = level_stats(sora_level);
+            const auto after = level_stats(progression->level);
+            for (size_t i = 0; i < before.size(); ++i)
+            {
+                sora_stats[base_strength_index + i] += after[i] - before[i];
+            }
+            sora_level = progression->level;
+        }
+
+        auto stats = sora_stats;
+        stats[base_strength_index] += bonuses[0];
+        stats[base_magic_index] += bonuses[1];
+        pawn_field<int32_t>(parameter, base_level_offset) = sora_level;
+        std::memcpy(reinterpret_cast<std::byte*>(parameter) + base_stats_offset, stats.data(),
+                    sizeof(stats));
     }
 
     auto CharacterSwapStats::synchronize_totals(UObject* pawn) const -> void

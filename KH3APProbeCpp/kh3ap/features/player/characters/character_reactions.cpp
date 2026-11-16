@@ -106,6 +106,7 @@ namespace kh3ap::character_reactions
 
     bool owns_command(UObject* controller, int command)
     {
+        const bool ship_command = special_ship_command(command);
         auto* pawn = object(controller, L"Pawn");
         auto* player_field = pawn ? pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID") : nullptr;
         const bool situation = player_field && player_field->GetElementSize() == sizeof(uint8_t) &&
@@ -133,7 +134,7 @@ namespace kh3ap::character_reactions
         case PlayerActionCommand::QUICKBATTLE:
             break;
         default:
-            if (!situation) { return false; }
+            if (!situation && !ship_command) { return false; }
             break;
         }
         if (!pawn || character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn) ||
@@ -142,6 +143,23 @@ namespace kh3ap::character_reactions
             kh02_actor_world(pawn) != kh02_current_world())
         {
             return false;
+        }
+        if (ship_command)
+        {
+            // The alternate dispatchers omit all four ship specials. Sora's
+            // branches use the shared pawn interface and the ship's normal
+            // eligibility/activation path; these commands have no reactor.
+            auto* state = object(object(pawn, L"MyStateComp"), L"m_pCurrentState");
+            auto* ship = object(state, L"m_pObj");
+            auto* ship_class = UObjectGlobals::StaticFindObject<UClass*>(
+                nullptr, nullptr, L"/Script/TresGame.TresVehiclePawnSpecialShip");
+            return is_uobject_valid_fast(state) &&
+                   state->GetClassPrivate()->GetPathName() == L"/Script/TresGame.TresPlayerState_SpecialShip" &&
+                   object(state, L"MyCharPawn") == pawn &&
+                   is_uobject_valid_fast(ship) && is_uobject_valid_fast(ship_class) &&
+                   is_uobject_a_fast(ship, ship_class) &&
+                   kh02_actor_world(ship) == kh02_current_world() &&
+                   object(ship, L"m_PlayerController") == controller;
         }
         if (situation)
         {

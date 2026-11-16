@@ -1,5 +1,6 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
 #include "kh3ap/features/player/controller_abilities/host.h"
 
 #include "kh3ap/app/state.h"
@@ -42,7 +43,7 @@ namespace kh3ap
             sora_pawn && ((RuntimeSpaceService::is_space_active() &&
                            RuntimeSpaceService::item_delivery_context() == sora_pawn) ||
                           persistent_player_reward_context() == sora_pawn);
-        if (runtime_token == aqua_style_unlock::token)
+        if (runtime_token == aqua_style_unlock::token || runtime_token == kairi_style_unlock::token)
         {
             // Permanent AP ownership is rebuilt from receipt history. It is
             // independent of Sora's ability records and equipped styles.
@@ -160,6 +161,11 @@ namespace kh3ap
             return false;
         }
 
+        if (key == L"seven_wishes")
+        {
+            *owned = kairi_style_unlock::owned();
+            return true;
+        }
         if (key == L"spellweaver")
         {
             *owned = aqua_style_unlock::owned();

@@ -4,6 +4,7 @@
 #include <polyhook2/Detour/x64Detour.hpp>
 
 #include "kh3ap/features/player/state/sora_state_hook_service.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/bridge/checks/level_checks.h"
 #include "kh3ap/core/events/character_level_events.h"
 #include "kh3ap/features/player/state/shared_sora_progression.h"
@@ -294,6 +295,7 @@ namespace kh3ap
                         last_shared_level = progression->level;
                         if (alternate)
                         {
+                            character_swap::refresh_alternate_stats();
                             config.battle_level_sync.sync_observed(STR("shared_player_level_changed"));
                         }
                     }
@@ -389,9 +391,14 @@ namespace kh3ap
             for (size_t index = 0; index < event_count; ++index)
             {
                 const auto& event = events[index];
-                if (config.observe_friend_state)
+                auto* component = reinterpret_cast<UObject*>(event.state_comp);
+                if (is_uobject_valid_fast(component))
                 {
-                    config.observe_friend_state(event.state_comp);
+                    runtime_observe_current_player(component->GetOuterPrivate());
+                }
+                if (config.observe_party_state)
+                {
+                    config.observe_party_state(event.state_comp);
                 }
                 character_swap::observe_game_over_state_write(event.state_comp,
                         event.replaced && event.replacement_state ? event.replacement_state : event.new_state);

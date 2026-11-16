@@ -31,6 +31,7 @@ namespace kh3ap::character_swap
         static auto totals(RC::Unreal::UObject* pawn) -> std::array<int32_t, 5>;
         auto capture(RC::Unreal::UObject* pawn) -> bool;
         auto apply_base(RC::Unreal::UObject* pawn) const -> void;
+        void apply_shared_progression(RC::Unreal::UObject* pawn);
         auto synchronize_totals(RC::Unreal::UObject* pawn) const -> void;
         auto add_bonus(RC::Unreal::UObject* pawn, int hp_amount, int mp_amount) -> void;
         auto level() const -> int32_t

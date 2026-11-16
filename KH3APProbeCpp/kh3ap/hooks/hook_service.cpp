@@ -1,6 +1,7 @@
 #include <chrono>
 #include <memory>
 #include "kh3ap/app/config.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/music/events/music_update_events.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -455,6 +456,7 @@ namespace kh3ap
             if (phase == HookPhase::Pre)
             {
                 character_swap::notify_map_jump(prepared->context, prepared->frame_name);
+                runtime_clear_current_player();
                 try_redirect_remind_scala_portal(callback_context.TheStack,
                                                  prepared->target_function, prepared->frame_name);
                 try_redirect_yozora_return(callback_context.TheStack,
@@ -501,6 +503,7 @@ namespace kh3ap
             bool cached = false;
             if (new_player && kh3ap::is_uobject_valid_fast(new_player))
             {
+                runtime_observe_current_player(try_read_reflected_object_property_value(new_player, L"Pawn"));
                 new_player_name = format_object_debug_name(new_player);
                 if (is_runtime_ap_ignored_map_context(new_player_name))
                 {
@@ -633,6 +636,10 @@ namespace kh3ap
                         cached && !pawn_name.empty() ? pawn_name : new_player_name;
                     config.player_context.maybe_clear_special_battle_from_map_root_change(
                         map_source, STR("HandleStartingNewPlayer:NewPlayer:map_root_changed"));
+                    if (cached)
+                    {
+                        config.battle_level_sync.sync_observed(STR("HandleStartingNewPlayer:NewPlayer"), true);
+                    }
                 }
                 config.player_context.clear_blocking_ui_from_starting_player(new_player_name);
             }

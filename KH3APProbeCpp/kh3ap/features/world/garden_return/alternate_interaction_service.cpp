@@ -49,8 +49,6 @@ namespace kh3ap::garden_return_detail
         constexpr auto aqua_save_timeout = std::chrono::seconds(8);
         constexpr auto aqua_interaction_radius = 350.0f;
         constexpr int32_t save_point_action_command = player_action_command_value(PlayerActionCommand::SAVE);
-        constexpr uint8_t idle_player_state = player_state_ids::idle;
-        constexpr uint8_t running_player_state = player_state_ids::run;
         constexpr uint8_t check_reactor_command = 4;
         constexpr int32_t ship_action_command = player_action_command_value(PlayerActionCommand::SHIP);
         constexpr uint8_t ship_reactor_command = 8;
@@ -919,7 +917,11 @@ namespace kh3ap::garden_return_detail
                 }
                 uint8_t state_id{};
                 pawn->ProcessEvent(state, &state_id);
-                if ((state_id != idle_player_state && state_id != running_player_state) ||
+                // Underwater savepoints keep the player in Swim, just like
+                // underwater chests and ingredients. Reuse their state gate
+                // while retaining the native overlap and command checks.
+                const bool swimming_target = alternate && !camp_is_kh02_world(world());
+                if (!alternate_interaction::accepts_player_state(state_id, swimming_target) ||
                     !bind_save_command(pawn, aqua_save_point.Get()) ||
                     !dispatch_aqua_interaction(pawn, save_point_action_command, aqua_save_point.Get()))
                 {

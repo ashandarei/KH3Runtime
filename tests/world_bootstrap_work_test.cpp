@@ -90,13 +90,15 @@ struct ProofUiLifecycle {
     UObject* widget() { return impl_->proof_ui.Get(); }
 #include "proof_ui_facade_under_test.h"
 };
-class RuntimePlayerContextService {
+class FakeCurrentPlayer {
 public:
     AActor* pawn{};int resolves{};
-    UObject* trusted_current_playable_cached_sora_pawn(){++resolves;return pawn;}
+    UObject* resolve(){++resolves;return pawn;}
 };
+FakeCurrentPlayer* observed_player{};
+UObject* runtime_current_player_pawn(){return observed_player->resolve();}
 struct Bootstrap {
-    explicit Bootstrap(RuntimePlayerContextService& player):config{player,{}}{}
+    explicit Bootstrap(FakeCurrentPlayer& player){observed_player=&player;}
     RuntimeWorldBootstrapConfig config;
     FWeakObjectPtr world,ready_pawn,ready_world,ready_controller;
     ProofUiLifecycle proof_ui{config.asset_load_retry_interval};
@@ -124,7 +126,7 @@ int main(){
     auto now=std::chrono::steady_clock::time_point{}+1s;
     UObject level,other_level,unrelated;
     AActor pawn;pawn.level=&level;
-    RuntimePlayerContextService player;
+    FakeCurrentPlayer player;
     Bootstrap service(player);
     service.tick(now); // Initial readiness unavailable: pending work only.
     const auto first=service.attempts;

@@ -6,6 +6,13 @@
 int main()
 {
     using namespace kh3ap;
+    // Only the four offered ship specials use the ship-state route. Boarding,
+    // enemy-ship reactors and adjacent commands retain their own dispatch.
+    for (int command = -1; command <= 255; ++command)
+    {
+        assert(character_reactions::special_ship_command(command) ==
+               (command == 95 || command == 96 || command == 97 || command == 98));
+    }
     using character_reactions::matches_reactor;
     // Prevent confusing UI reactor IDs with the unrelated player-action enum.
     assert(matches_reactor(player_action_command_value(PlayerActionCommand::TALK), 2));

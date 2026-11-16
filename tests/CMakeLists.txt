@@ -1,6 +1,16 @@
 cmake_minimum_required(VERSION 3.20)
 project(kh3_randomizer_regressions LANGUAGES CXX)
 enable_testing()
+set(tornado_freefall_source "${CMAKE_CURRENT_BINARY_DIR}/tornado_freefall_under_test.h")
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_custom_command(OUTPUT "${tornado_freefall_source}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_tornado_freefall_test.py" "${tornado_freefall_source}"
+    DEPENDS generate_tornado_freefall_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp"
+    VERBATIM)
+add_executable(tornado_freefall_test tornado_freefall_test.cpp "${tornado_freefall_source}")
+target_include_directories(tornado_freefall_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_features(tornado_freefall_test PRIVATE cxx_std_20)
+add_test(NAME tornado_freefall COMMAND tornado_freefall_test)
 add_executable(character_unlocks_test character_unlocks_test.cpp)
 target_include_directories(character_unlocks_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp")
 target_compile_features(character_unlocks_test PRIVATE cxx_std_20)
@@ -11,6 +21,34 @@ else()
 endif()
 add_test(NAME character_unlocks COMMAND character_unlocks_test)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
+set(party_vanilla_source "${CMAKE_CURRENT_BINARY_DIR}/party_vanilla_under_test.h")
+add_custom_command(OUTPUT "${party_vanilla_source}"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_party_vanilla_test.py" "${party_vanilla_source}"
+    DEPENDS generate_party_vanilla_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/party/party_roster.cpp"
+    VERBATIM)
+add_executable(party_vanilla_test party_vanilla_test.cpp "${party_vanilla_source}")
+target_include_directories(party_vanilla_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
+target_compile_features(party_vanilla_test PRIVATE cxx_std_20)
+if(MSVC)
+    target_compile_options(party_vanilla_test PRIVATE /UNDEBUG)
+else()
+    target_compile_options(party_vanilla_test PRIVATE -UNDEBUG)
+endif()
+add_test(NAME party_vanilla COMMAND party_vanilla_test)
+set(current_player_source "${CMAKE_CURRENT_BINARY_DIR}/current_player_under_test.h")
+add_custom_command(OUTPUT "${current_player_source}" "${CMAKE_CURRENT_BINARY_DIR}/party_entry_under_test.h" "${CMAKE_CURRENT_BINARY_DIR}/goa_autosave_under_test.h" "${CMAKE_CURRENT_BINARY_DIR}/recovery_player_gate_under_test.h"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_current_player_test.py" "${current_player_source}"
+    DEPENDS generate_current_player_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/context/current_player.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/party/party_reconciliation.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/party/party_world_context.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/story/save_points/goa_autosave_service.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/story/save_points/save_menu_command_helpers.cpp"
+    VERBATIM)
+add_executable(current_player_test current_player_test.cpp "${current_player_source}")
+target_include_directories(current_player_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp")
+target_compile_features(current_player_test PRIVATE cxx_std_20)
+add_test(NAME current_player COMMAND current_player_test)
+
 set(party_placement_source "${CMAKE_CURRENT_BINARY_DIR}/party_placement_under_test.h")
 add_custom_command(OUTPUT "${party_placement_source}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_party_placement_test.py" "${party_placement_source}"
@@ -671,5 +709,38 @@ add_executable(party_swim_ai_test party_swim_ai_test.cpp
     "${CMAKE_CURRENT_BINARY_DIR}/party_swim_ai_under_test.h")
 target_include_directories(party_swim_ai_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 add_test(NAME party_swim_ai COMMAND party_swim_ai_test)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/options_dispatch_under_test.h"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_options_dispatch_test.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/options_dispatch_under_test.h"
+    DEPENDS generate_options_dispatch_test.py
+        "${KH3AP_ROOT}/features/ui/options_menu/viewport.cpp")
+add_executable(options_dispatch_test options_dispatch_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/options_dispatch_under_test.h")
+target_include_directories(options_dispatch_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${KH3AP_PROBE_ROOT}")
+add_test(NAME options_dispatch COMMAND options_dispatch_test)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/swim_input_under_test.h"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_swim_input_test.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/swim_input_under_test.h"
+    DEPENDS generate_swim_input_test.py
+        "${KH3AP_ROOT}/features/player/movement/character_traversal.cpp")
+add_executable(swim_input_test swim_input_test.cpp "${CMAKE_CURRENT_BINARY_DIR}/swim_input_under_test.h")
+target_include_directories(swim_input_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${KH3AP_PROBE_ROOT}")
+add_test(NAME swim_input COMMAND swim_input_test)
+
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/party_ship_events_under_test.h"
+    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_party_ship_events_test.py"
+        "${CMAKE_CURRENT_BINARY_DIR}/party_ship_events_under_test.h"
+    DEPENDS generate_party_ship_events_test.py
+        "${KH3AP_ROOT}/features/party/party_world_context.cpp"
+    VERBATIM)
+add_executable(party_ship_events_test party_ship_events_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/party_ship_events_under_test.h")
+target_include_directories(party_ship_events_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}" "${KH3AP_PROBE_ROOT}")
+add_test(NAME party_ship_events COMMAND party_ship_events_test)
 
 include("${CMAKE_CURRENT_LIST_DIR}/../cmake/kh3-test-assertions.cmake")

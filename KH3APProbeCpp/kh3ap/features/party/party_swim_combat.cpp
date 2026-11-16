@@ -20,6 +20,7 @@
 #include <Unreal/UObject.hpp>
 #include <algorithm>
 #include <stdexcept>
+#include <string_view>
 #include <unordered_set>
 
 namespace kh3ap
@@ -31,6 +32,20 @@ namespace kh3ap
         constexpr uint8_t swimming_state = 143;
         constexpr auto attack_query_path =
             L"/Game/AI/EQS/Queries/Default_FindAttackLocation3D.Default_FindAttackLocation3D";
+
+        auto inherited_action_prefix(std::wstring_view npc) -> std::wstring_view
+        {
+            // KH3 Mickey's authored tree uses the native Dark World Mickey
+            // definitions. They still belong to this character's moveset.
+            return npc == L"n_ex003" ? L"/Game/Blueprints/Npc/n_dw003/" : L"";
+        }
+
+        auto owns_action_asset(std::wstring_view path, std::wstring_view prefix,
+                               std::wstring_view inherited) -> bool
+        {
+            return (!prefix.empty() && path.starts_with(prefix)) ||
+                   (!inherited.empty() && path.starts_with(inherited));
+        }
 
         auto swim_field(UObject* object) -> FBoolProperty*
         {
@@ -71,6 +86,12 @@ namespace kh3ap
             std::unordered_set<UObject*> visited;
             std::unordered_set<UObject*> actions;
             std::wstring action_prefix;
+            std::wstring_view inherited_prefix;
+
+            bool owns(std::wstring_view path) const
+            {
+                return owns_action_asset(path, action_prefix, inherited_prefix);
+            }
 
             void object(UObject* value)
             {
@@ -97,11 +118,15 @@ namespace kh3ap
                         auto* value = *field->ContainerPtrToValuePtr<UObject*>(container);
                         if (!is_uobject_valid_fast(value)) { continue; }
                         if (link) { object(value); }
-                        else if (kind == L"ClassProperty" && value->GetPathName().starts_with(action_prefix))
+                        else if (kind == L"ClassProperty" && owns(value->GetPathName()))
                         {
                             // These reflected fields are native action-class properties.
                             auto* definition = static_cast<UClass*>(value)->GetClassDefaultObject();
-                            if (swim_field(definition)) { actions.insert(definition); }
+                            // Marshmallow's older animation actions expose the
+                            // shared attack query/state schema, but no swim flag.
+                            if (is_uobject_valid_fast(definition) &&
+                                definition->GetPropertyByNameInChain(L"m_ActionEQSQuery"))
+                            { actions.insert(definition); }
                         }
                     }
                     if (!list || !field->IsA<FArrayProperty>()) { continue; }
@@ -127,6 +152,33 @@ namespace kh3ap
                 }
             }
         };
+
+        template <typename State> bool remember_actions(State& state, const ActionGraph& graph)
+        {
+            bool added = false;
+            for (auto* definition : graph.actions)
+            {
+                if (std::any_of(state.actions.begin(), state.actions.end(),
+                                [definition](const auto& patch) { return patch.definition.Get() == definition; }))
+                {
+                    continue;
+                }
+                auto* flag = swim_field(definition);
+                auto* states = array<uint8_t>(definition, L"m_ViableStates");
+                if (!states || (flag && flag->GetPropertyValueInContainer(definition))) { continue; }
+                auto* query = read_object_like_property(definition, L"m_ActionEQSQuery");
+                // Null is an authored ground setting (including Lea's attacks).
+                if (query) { query->SetRootSet(); }
+                const bool add_state = states->Num() > 0 &&
+                    std::find(states->begin(), states->end(), swimming_state) == states->end();
+                auto* magic = swim_magic_field(definition);
+                const auto swimming_magic = magic
+                    ? std::optional<bool>{magic->GetPropertyValueInContainer(definition)} : std::nullopt;
+                state.actions.push_back({make_uobject_weak(definition), make_uobject_weak(query), false, add_state, swimming_magic});
+                added = true;
+            }
+            return added;
+        }
 
         auto active_roots(UObject* pawn, UObject* manager) -> std::vector<UObject*>
         {
@@ -219,11 +271,11 @@ namespace kh3ap
         {
             auto* flag = swim_field(action);
             auto* states = array<uint8_t>(action, L"m_ViableStates");
-            if (!flag || !states || !write_object_like_property(action, L"m_ActionEQSQuery", query, restore))
+            if (!states || !write_object_like_property(action, L"m_ActionEQSQuery", query, restore))
             {
                 throw std::runtime_error("party_swim_combat_action_layout");
             }
-            flag->SetPropertyValueInContainer(action, swimming);
+            if (flag) { flag->SetPropertyValueInContainer(action, swimming); }
             if (swimming_magic)
             {
                 auto* magic = swim_magic_field(action);
@@ -320,8 +372,12 @@ namespace kh3ap
                 state = {};
                 continue;
             }
-            // A native swim moveset belongs to the game and is not adapted.
-            if (read_object_like_property(pawn->GetClassPrivate()->GetClassDefaultObject(), L"m_Swimming"))
+            // Preserve a complete authored swim moveset. Surface-only friends
+            // receive our generic diving state during swimming initialization;
+            // their original non-null CDO state must not suppress combat setup.
+            auto* authored_swimming = read_object_like_property(
+                pawn->GetClassPrivate()->GetClassDefaultObject(), L"m_Swimming");
+            if (authored_swimming && read_object_like_property(pawn, L"m_Swimming") == authored_swimming)
             {
                 restore_state(state);
                 state = {};
@@ -339,40 +395,33 @@ namespace kh3ap
                     state.state_component = make_uobject_weak(read_object_like_property(pawn, L"MyStateComp"));
                     ActionGraph graph;
                     graph.action_prefix = L"/Game/Blueprints/Npc/" + active_npc_ids_[slot] + L"/";
+                    graph.inherited_prefix = inherited_action_prefix(active_npc_ids_[slot]);
                     graph.object(read_object_like_property(pawn, L"MyAIBehavior"));
                     RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Party swim graph nodes={} attacks={} pawn={}\n"),
                         graph.visited.size(), graph.actions.size(), pawn->GetFullName());
-                    for (auto* definition : graph.actions)
-                    {
-                        auto* flag = swim_field(definition);
-                        auto* states = array<uint8_t>(definition, L"m_ViableStates");
-                        auto* query = read_object_like_property(definition, L"m_ActionEQSQuery");
-                        if (!flag || !states || flag->GetPropertyValueInContainer(definition)) { continue; }
-                        // Lea's authored attacks have no ground query. Null is a
-                        // valid original setting and must be restored after swimming.
-                        if (query) { query->SetRootSet(); } // Preserve fixed authored assets during replacement.
-                        const bool add_state = states->Num() > 0 &&
-                            std::find(states->begin(), states->end(), swimming_state) == states->end();
-                        auto* magic = swim_magic_field(definition);
-                        const auto swimming_magic = magic
-                            ? std::optional<bool>{magic->GetPropertyValueInContainer(definition)} : std::nullopt;
-                        state.actions.push_back({make_uobject_weak(definition), make_uobject_weak(query), false, add_state, swimming_magic});
-                    }
+                    remember_actions(state, graph);
                 }
                 auto* world = level->GetOuterPrivate();
                 auto* ai = read_object_like_property(world, L"AISystem");
                 auto* trees = read_object_like_property(ai, L"BehaviorTreeManager");
                 bool new_gates = false;
+                bool new_actions = false;
                 const auto prefix = L"/Game/Blueprints/Npc/" + active_npc_ids_[slot] + L"/";
                 for (auto* root : active_roots(pawn, trees))
                 {
                     auto* asset = read_object_like_property(root, L"TreeAsset");
-                    if (!asset->GetPathName().starts_with(prefix) ||
-                        std::any_of(state.live_roots.begin(), state.live_roots.end(),
-                                    [root](const auto& weak) { return weak.Get() == root; })) { continue; }
                     ActionGraph graph;
                     graph.action_prefix = prefix;
+                    graph.inherited_prefix = inherited_action_prefix(active_npc_ids_[slot]);
+                    if (!graph.owns(asset->GetPathName()) ||
+                        std::any_of(state.live_roots.begin(), state.live_roots.end(),
+                                    [root](const auto& weak) { return weak.Get() == root; })) { continue; }
                     graph.object(root);
+                    // Most world friends inject their battle flow dynamically.
+                    // Their top-level authored tree contains no attack references.
+                    // Capture newly active definitions before marking this root seen,
+                    // including their original land settings for exact restoration.
+                    new_actions = remember_actions(state, graph) || new_actions;
                     for (auto* node : graph.visited)
                     {
                         if (node->GetOuterPrivate() == trees && land_gate(node) &&
@@ -387,7 +436,7 @@ namespace kh3ap
                 }
                 const auto underwater = friend_underwater(pawn);
                 if (!underwater) { continue; }
-                if (*underwater == state.underwater && !(new_gates && *underwater))
+                if (*underwater == state.underwater && !((new_gates || new_actions) && *underwater))
                 {
                     if (!update_swimming_party_ai(pawn, *underwater))
                     { throw std::runtime_error("party_swim_ai_switch"); }

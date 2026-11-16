@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/app/config.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/features/grants/battle_level/battle_level_sync_service.h"
@@ -141,40 +142,17 @@ namespace kh3ap
                            force);
         }
 
-        auto trusted_current_playable_sora_pawn() const -> UObject*
-        {
-            auto& pawn_state = config_.runtime_state.grant_state().pawn_state();
-            UObject* const cached_pawn = pawn_state.object();
-            if (!cached_pawn || !pawn_state.candidate_trusted())
-            {
-                return nullptr;
-            }
-            return cached_pawn;
-        }
-
         auto current_alternate() const -> UObject*
         {
             auto* pawn = character_swap::current_hero();
             return pawn && character_swap::owns_swap_pawn(pawn) ? pawn : nullptr;
         }
 
-        auto current_battle_level_pawn() const -> UObject*
+        auto observed_player_level(UObject* pawn) const -> std::optional<uint64_t>
         {
-            if (auto* alternate = current_alternate())
+            if (const auto progression = read_shared_sora_progression(pawn))
             {
-                return alternate;
-            }
-            return trusted_current_playable_sora_pawn();
-        }
-
-        auto observed_player_level(UObject* alternate) const -> std::optional<uint64_t>
-        {
-            if (alternate)
-            {
-                if (const auto progression = read_shared_sora_progression(alternate))
-                {
-                    return progression->level;
-                }
+                return progression->level;
             }
             return config_.sora_level_monitor.last_observed_runtime_sora_level;
         }
@@ -194,12 +172,9 @@ namespace kh3ap
 
         auto sync_after_controller_reacquire(std::wstring_view source) -> bool
         {
-            const auto fixed_map_level = current_fixed_battle_level();
-            if (!fixed_map_level && !config_.runtime_state.grant_state().special_battle_mode_active())
-            {
-                return false;
-            }
-            return try_sync_battle_level_to_observed_player_level(source, true, true);
+            const bool scripted = current_fixed_battle_level().has_value() ||
+                                  config_.runtime_state.grant_state().special_battle_mode_active();
+            return try_sync_battle_level_to_observed_player_level(source, scripted, scripted);
         }
 
         [[nodiscard]] auto status() const -> RuntimeBattleLevelSyncStatus
@@ -218,7 +193,7 @@ namespace kh3ap
             bool applied = false;
             if (!enabled && previous.enabled && m_native_battle_level.has_value())
             {
-                UObject* const pawn = current_battle_level_pawn();
+                UObject* const pawn = runtime_current_player_pawn();
                 applied = pawn && try_apply_battle_level(
                         *m_native_battle_level,
                         STR("goa_options_battle_level_sync_restore_native"),
@@ -317,7 +292,7 @@ namespace kh3ap
 
     auto current_fixed_battle_level(UObject* pawn_override = nullptr) const -> std::optional<uint64_t>
     {
-        UObject* const pawn = pawn_override ? pawn_override : current_battle_level_pawn();
+        UObject* const pawn = pawn_override ? pawn_override : runtime_current_player_pawn();
         if (!is_uobject_valid_fast(pawn) || !is_uobject_a_fast(pawn, AActor::StaticClass()))
         {
             return std::nullopt;
@@ -554,7 +529,7 @@ namespace kh3ap
         }
         const auto setting_check_completed_at = battle_level_profile_now();
 
-        UObject* const pawn = pawn_override ? pawn_override : current_battle_level_pawn();
+        UObject* const pawn = pawn_override ? pawn_override : runtime_current_player_pawn();
         if (!is_uobject_valid_fast(pawn) ||
             (!pawn_already_classified && !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn) &&
              pawn != current_alternate()))
@@ -752,9 +727,8 @@ namespace kh3ap
         {
             return false;
         }
-        auto* alternate = current_alternate();
-        auto* pawn = alternate ? alternate : trusted_current_playable_sora_pawn();
-        const auto observed = observed_player_level(alternate);
+        auto* pawn = runtime_current_player_pawn();
+        const auto observed = observed_player_level(pawn);
         if (!current_fixed_battle_level(pawn).has_value() && !observed.has_value())
         {
             Output::send<LogLevel::Verbose>(

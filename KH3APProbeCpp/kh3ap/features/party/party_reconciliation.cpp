@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/core/events/revision_hooks.h"
 #include "kh3ap/features/party/party_member_service.h"
 #include "kh3ap/features/party/party_helpers.h"
@@ -128,9 +129,10 @@ namespace kh3ap
         // Party follow/ownership is independent of the Sora-only AP grant gate.
         // Keep KH0.2's solo/scripted-companion policy outside this service.
         if (kh02_current_story_world()) { return nullptr; }
-        if (auto* pawn = character_swap::party_owner()) { return pawn; }
-        auto& pawn_state = config_.runtime_state.grant_state().pawn_state();
-        return pawn_state.candidate_trusted() ? pawn_state.object() : nullptr;
+        // The factory moves companions synchronously before a swap is ready.
+        // This narrow handoff owner is not a general gameplay context.
+        if (character_swap::handoff_pending()) { return character_swap::party_owner(); }
+        return runtime_current_player_pawn();
     }
 
     auto RuntimePartyMemberService::resolve_friend_manager() -> UObject*
@@ -158,8 +160,7 @@ namespace kh3ap
         {
             return;
         }
-        auto& pawn_state = config_.runtime_state.grant_state().pawn_state();
-        UObject* const pawn = pawn_state.candidate_trusted() ? pawn_state.object() : nullptr;
+        UObject* const pawn = resolve_party_player();
         if (!pawn || !is_uobject_valid_fast(pawn))
         {
             goa_entry_pawn_ = {};
@@ -181,8 +182,7 @@ namespace kh3ap
         // This deadline belongs to one queued event. Idle tick never inspects
         // Sora or a map, and duplicate map-name callbacks do not restart it.
         next_reconcile_attempt_ =
-            std::max(std::chrono::steady_clock::now(),
-                     pawn_state.first_seen_at() + RuntimeGrantPawnState::stability_delay);
+            std::chrono::steady_clock::now() + RuntimeGrantPawnState::stability_delay;
         Output::send<LogLevel::Normal>(
             STR("[KH3APProbeCpp] GoA party entry requested source=map_ready_event pawn={}\n"),
             pawn->GetFullName());
@@ -248,7 +248,7 @@ namespace kh3ap
         {
             UObject* const pawn = context_entry_pawn_.Get();
             if (!pawn || !is_uobject_valid_fast(pawn) ||
-                pawn != config_.runtime_state.grant_state().pawn_state().object())
+                pawn != resolve_party_player())
             {
                 awaiting_entry_control_ = false;
                 reconcile_pending_ = false;
@@ -764,7 +764,7 @@ namespace kh3ap
         {
             return;
         }
-        // Only inspect at a queued transaction boundary. Native Sora state
+        // Only inspect at a queued transaction boundary. Native player state
         // events drive entry/exit while idle; no new per-frame state polling.
         // Revalidate before deleting or finishing a delayed replacement.
         refresh_ship_control();

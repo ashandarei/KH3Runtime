@@ -1,10 +1,10 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include <memory>
 #include "kh3ap/features/story/save_points/goa_autosave_service.h"
 
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
-#include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/app/state.h"
+#include "kh3ap/core/objects/uobject_validity.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UFunction.hpp>
@@ -13,7 +13,6 @@
 
 #include <chrono>
 #include <string>
-#include <utility>
 
 using namespace RC;
 using namespace RC::Unreal;
@@ -30,26 +29,15 @@ namespace kh3ap
 
     struct RuntimeGoaAutosaveService::Impl
     {
-        explicit Impl(RuntimeGoaAutosaveConfig value) : config(std::move(value))
-        {
-        }
-
         [[nodiscard]] auto is_goa_01_context_active() const -> bool
         {
-            const auto snapshot =
-                config.runtime_state.context_subsystem_state().context_state().current_snapshot();
-            const auto is_goa_01_context = [](std::wstring_view value)
-            {
-                return value.find(goa_01_map_path) != std::wstring_view::npos;
-            };
-            return snapshot.has_value() &&
-                   (is_goa_01_context(snapshot->world) || is_goa_01_context(snapshot->outer) ||
-                    is_goa_01_context(snapshot->object));
+            auto* pawn = runtime_current_player_pawn();
+            return pawn && pawn->GetFullName().find(goa_01_map_path) != std::wstring::npos;
         }
 
         auto queue_after_manual_save(std::wstring_view save_file_path, int32_t slot_number) -> void
         {
-            if (slot_number <= 0 || !is_goa_01_context_active())
+            if (slot_number <= 0)
             {
                 return;
             }
@@ -105,14 +93,12 @@ namespace kh3ap
                 return;
             }
 
-            UObject* const cached_sora_pawn =
-                config.runtime_state.grant_state().pawn_state().object();
+            UObject* const player_pawn = runtime_current_player_pawn();
             UObject* persistent_level = nullptr;
-            if (cached_sora_pawn && kh3ap::is_uobject_valid_fast(cached_sora_pawn) &&
-                RuntimeObjectResolver::is_sora_ability_pawn_candidate(cached_sora_pawn))
+            if (player_pawn)
             {
                 int outer_depth = 0;
-                for (UObject* outer = cached_sora_pawn->GetOuterPrivate();
+                for (UObject* outer = player_pawn->GetOuterPrivate();
                      outer && kh3ap::is_uobject_valid_fast(outer) &&
                      outer_depth < max_autosave_outer_depth;
                      outer = outer->GetOuterPrivate(), ++outer_depth)
@@ -139,9 +125,9 @@ namespace kh3ap
             {
                 Output::send<LogLevel::Warning>(
                     STR("[KH3APProbeCpp] GoAManualSaveAutosave skipped slot={} "
-                        "reason=blueprint_wrapper_unavailable sora={} level={} level_script={} "
+                        "reason=blueprint_wrapper_unavailable player={} level={} level_script={} "
                         "function={} path={}\n"),
-                    slot_number, format_object_debug_name(cached_sora_pawn),
+                    slot_number, format_object_debug_name(player_pawn),
                     format_object_debug_name(persistent_level),
                     format_object_debug_name(level_script_actor),
                     format_object_debug_name(function_object), save_file_path);
@@ -173,7 +159,6 @@ namespace kh3ap
                                             slot_number, save_file_path);
         }
 
-        RuntimeGoaAutosaveConfig config;
         bool pending{false};
         int32_t pending_slot{-1};
         std::wstring pending_path{};
@@ -182,8 +167,8 @@ namespace kh3ap
         int32_t last_autosave_slot{-1};
     };
 
-    RuntimeGoaAutosaveService::RuntimeGoaAutosaveService(RuntimeGoaAutosaveConfig config)
-        : impl_(std::make_unique<Impl>(std::move(config)))
+    RuntimeGoaAutosaveService::RuntimeGoaAutosaveService()
+        : impl_(std::make_unique<Impl>())
     {
     }
 

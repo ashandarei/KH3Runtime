@@ -18,5 +18,5 @@ namespace kh3ap::enemy_remap_detail
             bool enabled) -> RuntimeLevelEntityReconcileResult;
 
     auto install_level_entity_serialize_detour(UObject* exemplar) -> bool;
-    void install_cactuar_replacement_reveal_guard();
+    void install_cinematic_replacement_reveal_guard();
 }

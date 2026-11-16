@@ -15,11 +15,8 @@ namespace RC::Unreal
 
 namespace kh3ap
 {
-    class RuntimePlayerContextService;
-
     struct RuntimeWorldBootstrapConfig
     {
-        RuntimePlayerContextService& player_context;
         std::function<std::optional<std::filesystem::path>()> bridge_dir_resolver;
         bool enabled{true};
         bool debug_logging{false};

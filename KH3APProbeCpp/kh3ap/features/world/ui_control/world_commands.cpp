@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "service_impl.h"
 #include "helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -38,11 +39,7 @@ namespace kh3ap
     {
         if (texture_action == L"overlay_inspect" || texture_action == L"overlay_toggle")
         {
-            auto* hero = Kh02Story::current_hero();
-            if (!is_uobject_valid_fast(hero))
-            {
-                hero = config.sora();
-            }
+            auto* hero = runtime_current_player_pawn();
             if (!is_uobject_valid_fast(hero) || hero->GetFullName() != expected_pawn ||
                 !config.map_overlay_probe)
             {

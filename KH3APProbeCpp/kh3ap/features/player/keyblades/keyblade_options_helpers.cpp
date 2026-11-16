@@ -5,6 +5,11 @@
 #include "keyblade_style_controller.h"
 #include "keyblade_ascension_sync.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
+#include "kh3ap/features/player/combat/character_style_unlock_policy.h"
+#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/settings/pak_seed_settings.h"
+#include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/grants/grant_pawn_state.h"
@@ -155,11 +160,23 @@ namespace kh3ap
         }
         if (!weapon_name.has_value())
         {
-            // Aqua owns Spellweaver independently of Sora's per-keyblade styles.
-            // Other unmapped story weapons keep their normal style behavior.
-            const bool style_enabled = sora->GetClassPrivate()->GetName() != L"p_ex002_Pawn_C" ||
-                                       aqua_style_unlock::owned();
+            const auto name = sora->GetClassPrivate()->GetName();
+            const auto owner = name == L"p_ex002_Pawn_C" ? CharacterStyleOwner::Aqua
+                             : name == L"p_ex006_Pawn_C" ? CharacterStyleOwner::Kairi
+                                                        : CharacterStyleOwner::Other;
+            const auto mode = resolve_runtime_style_change_mode(
+                installed_seed_slot_data().int64_field("stylesanity"));
+            RuntimeSoraAbilityEntryState shared{};
             std::wstring call_failure{};
+            if (mode == RuntimeStyleChangeMode::Shared &&
+                !try_read_runtime_sora_ability_entry_state(s_style_id, sora, &shared, &call_failure))
+            {
+                state.force_apply = true;
+                return;
+            }
+            const bool style_enabled = character_style_enabled(
+                owner, kh02_current_story_world(), mode, shared.owned && shared.equipped,
+                aqua_style_unlock::owned(), kairi_style_unlock::owned());
             const bool style_applied =
                 try_call_controller_bool(controller, deps.bp_set_ability_style_change_path,
                                          STR("InEnable"), style_enabled, &call_failure);

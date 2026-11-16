@@ -12,6 +12,7 @@ struct RuntimeWorkshopConfig {
     std::function<std::optional<std::filesystem::path>()> bridge_dir;
     std::function<bool()> gameplay_ready;
     std::function<bool(std::wstring_view)> owns_item;
+    std::function<void()> levels_changed;
 };
 class RuntimeWorkshopService {
 public:

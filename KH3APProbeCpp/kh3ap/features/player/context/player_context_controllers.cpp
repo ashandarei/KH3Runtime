@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/context/player_context_internal.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -27,6 +28,7 @@ namespace kh3ap
         std::wstring_view source, bool trust_controller_pawn, bool allow_during_special_battle)
         -> bool
     {
+        runtime_observe_current_player(pawn);
         if (!pawn || (!trust_controller_pawn && !kh3ap::is_uobject_valid_fast(pawn)))
         {
             return false;

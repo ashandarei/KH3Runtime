@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -62,6 +63,9 @@ namespace kh3ap
     }
     UObject* RuntimeEnemyClearService::Impl::controlled_combat_pawn()
     {
+        if (!character_swap::handoff_pending()) { return runtime_current_player_pawn(); }
+        // Protection must transfer to the incoming pawn inside the synchronous
+        // factory. Ordinary gameplay readers never use this unfinished owner.
         const auto object = [](UObject* value, const wchar_t* field) -> UObject*
         {
             return is_uobject_valid_fast(value) ? try_read_reflected_object_property_value(value, field) : nullptr;

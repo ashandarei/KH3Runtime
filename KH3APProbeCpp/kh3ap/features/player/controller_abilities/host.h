@@ -99,6 +99,7 @@ namespace kh3ap
         std::vector<std::pair<std::wstring, std::pair<int, int>>> event_hooks_{};
         bool ability_enum_augmentation_done_{};
         uint64_t aqua_style_revision_{};
+        uint64_t kairi_style_revision_{};
         std::wstring last_query_failure_{};
         std::wstring last_setter_failure_{};
     };

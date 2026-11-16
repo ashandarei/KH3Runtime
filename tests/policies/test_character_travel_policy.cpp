@@ -6,6 +6,15 @@
 
 int main()
 {
+    using kh3ap::character_swap::is_tornado_freefall_cinematic;
+    constexpr auto tornado = L"/Game/Levels/he/he_06/he_06.HE_06";
+    constexpr auto dive_movie = L"/Game/Levels/he/he_06/umap/he_06_camera_ms130."
+                                L"he_06_camera_ms130:PersistentLevel.ms130m";
+    assert(is_tornado_freefall_cinematic(tornado, dive_movie));
+    assert(!is_tornado_freefall_cinematic(tornado, L"ms130"));
+    assert(!is_tornado_freefall_cinematic(tornado,
+        L"/Game/Levels/he/he_06/umap/he_06_camera_ms130.he_06_camera_ms130:PersistentLevel.ms130s"));
+    assert(!is_tornado_freefall_cinematic(L"/Game/Levels/he/he_03/he_03.he_03", dive_movie));
     using kh3ap::character_swap::can_prepare_arrival_under_cover;
     constexpr auto outside = L"/Game/Levels/he/he_02/he_02.he_02";
     assert(can_prepare_arrival_under_cover(outside, true, true));
@@ -16,7 +25,12 @@ int main()
     assert(can_prepare_arrival_under_cover(L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01", true, true));
     assert(!can_prepare_arrival_under_cover(outside, false, true));
     assert(!can_prepare_arrival_under_cover(outside, true, false));
-    assert(!can_prepare_arrival_under_cover(L"/Game/Levels/ca/ca_01/ca_01.ca_01", true, true));
+    constexpr auto caribbean = L"/Game/Levels/ca/ca_01/ca_01.ca_01";
+    assert(can_prepare_arrival_under_cover(caribbean, true, true));
+    assert(can_prepare_arrival_under_cover(L"/Game/Levels/ca/ca_02/ca_02.ca_02", true, true));
+    assert(can_prepare_arrival_under_cover(L"/Game/Levels/ca/ca_03/ca_03.ca_03", true, true));
+    assert(!can_prepare_arrival_under_cover(caribbean, false, true));
+    assert(!can_prepare_arrival_under_cover(caribbean, true, false));
     assert(!can_prepare_arrival_under_cover(L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05", true, true));
     assert(!can_prepare_arrival_under_cover(L"/Game/Levels/wm/wm_01/wm_01.wm_01", true, true));
     assert(!can_prepare_arrival_under_cover(L"/Game/Levels/gm/gm_01/gm_01.gm_01", true, true));
@@ -30,12 +44,6 @@ int main()
     assert(!travel_adoption_is_current(true, true, 0, 16));
     assert(!travel_adoption_is_current(true, true, -1, -1));
     using kh3ap::character_swap::travel_target_after_swap;
-    using kh3ap::character_swap::cinematic_requires_native_sora;
-    assert(cinematic_requires_native_sora(L"/Game/Levels/ca/ca_01/ca_01.ca_01"));
-    assert(cinematic_requires_native_sora(L"World /Game/Levels/ca/ca_02/ca_02.ca_02"));
-    assert(!cinematic_requires_native_sora(L"/Game/Levels/ra/ra_02/ra_02.ra_02"));
-    assert(!cinematic_requires_native_sora(L"/Game/Levels/kg_DLC/kg_06/kg_06.kg_06"));
-    assert(!cinematic_requires_native_sora(L""));
     using kh3ap::character_swap::is_remind_area_c_exit_cinematic;
     constexpr auto remind_skein = L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05";
     constexpr auto area_d_exit =

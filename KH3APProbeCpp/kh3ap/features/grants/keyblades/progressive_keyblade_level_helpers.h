@@ -9,6 +9,8 @@
 
 namespace kh3ap
 {
+    inline constexpr int pandoras_power_first_enhancement_flag = 150;
+
     struct NativeWorkshopSnapshot
     {
         uint64_t save_data{};

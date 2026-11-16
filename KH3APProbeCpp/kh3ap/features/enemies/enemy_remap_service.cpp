@@ -189,7 +189,7 @@ namespace kh3ap
 
         if (!s_runtime_enemy_remap.enemy_replacements.empty())
         {
-            install_cactuar_replacement_reveal_guard();
+            install_cinematic_replacement_reveal_guard();
         }
 
         if (!s_runtime_enemy_remap.boss.boss_class_replacements.empty())

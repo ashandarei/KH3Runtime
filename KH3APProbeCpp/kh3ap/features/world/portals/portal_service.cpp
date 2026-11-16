@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include <utility>
 #include <optional>
 #include <memory>
@@ -12,7 +13,6 @@
 #include "kh3ap/features/world/portals/portal_policy.h"
 #include "kh3ap/features/world/portals/final_door_policy.h"
 #include "kh3ap/features/story/progression/game_flag_events.h"
-#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/world/space/space_access.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -1627,8 +1627,7 @@ namespace kh3ap
             }
             // Portal materials belong to the current Garden world. An owned
             // ally can provide that context while Sora is parked or absent.
-            auto* hero = character_swap::current_hero();
-            auto* context = hero && character_swap::owns_swap_pawn(hero) ? hero : pawn();
+            auto* context = runtime_current_player_pawn();
             if (!is_uobject_valid_fast(context) || !is_uobject_valid_fast(world) ||
                 (world->GetFullName().find(L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.") ==
                      std::wstring::npos &&

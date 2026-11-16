@@ -6,17 +6,10 @@
 
 namespace kh3ap
 {
-    class RuntimeState;
-
-    struct RuntimeGoaAutosaveConfig
-    {
-        RuntimeState& runtime_state;
-    };
-
     class RuntimeGoaAutosaveService
     {
     public:
-        explicit RuntimeGoaAutosaveService(RuntimeGoaAutosaveConfig config);
+        RuntimeGoaAutosaveService();
         ~RuntimeGoaAutosaveService();
 
         RuntimeGoaAutosaveService(const RuntimeGoaAutosaveService&) = delete;

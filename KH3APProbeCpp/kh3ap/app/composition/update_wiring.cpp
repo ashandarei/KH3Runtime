@@ -1,5 +1,7 @@
+#include "kh3ap/features/music/events/music_update_events.h"
 #include "kh3ap/features/party/betrayal_trap.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/world/portals/portal_service.h"
 #include "kh3ap/app/composition/service_graph.h"
 #include "kh3ap/app/composition/bindings.h"
@@ -7,7 +9,6 @@
 #include "kh3ap/app/composition/update_trace.h"
 #include "kh3ap/features/tutorials/tutorial_suppression.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
-#include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
 #include "kh3ap/bridge/transport/pipe_transport.h"
 #include "kh3ap/hooks/memory/kh3_memory_hooks.h"
@@ -183,16 +184,29 @@ namespace kh3ap
             if (auto* pawn = character_swap::tick(now))
             {
                 constexpr auto source = STR("CharacterSwap:possession_ready");
-                if (m_player_context.cache_pawn_candidate(pawn, source))
+                const bool cached_sora = m_player_context.cache_pawn_candidate(pawn, source);
+                if (cached_sora)
                 {
                     m_player_context.refresh_controller_from_sora_event(pawn);
                 }
-                if (s_runtime_state.grant_state().special_battle_mode_active() &&
-                    character_swap::current_hero() == pawn)
-                {
-                    m_battle_level_sync.sync_observed(source);
-                }
                 s_runtime_state.grant_state().item_grant_poll_state().delivery_wake_schedule().request();
+            }
+            // One shared identity revision drives gameplay consumers. This is
+            // a cheap idle check, with live resolution only after an observation.
+            if (m_current_player_revision != runtime_current_player_revision() &&
+                !character_swap::handoff_pending())
+            {
+                auto* pawn = runtime_current_player_pawn();
+                m_current_player_revision = runtime_current_player_revision();
+                if (pawn)
+                {
+                    m_battle_level_sync.sync_observed(STR("CurrentPlayer:identity_changed"));
+                    m_world_bootstrap.world_ready();
+                    m_party_members.observe_sora_context_ready();
+                    m_party_members.observe_goa_map_ready();
+                    m_map_actor_lifecycle.notify_context_ready();
+                    request_music_update(MusicUpdate::Context);
+                }
                 m_colors.on_character_swap();
                 s_runtime_controller_abilities.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
                 m_music_chests.notify_player_changed();

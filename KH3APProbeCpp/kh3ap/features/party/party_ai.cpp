@@ -594,10 +594,10 @@ namespace kh3ap
             return;
         }
 
-        auto& sora_state = config_.runtime_state.grant_state().pawn_state();
-        UObject* const sora_pawn = sora_state.candidate_trusted() ? sora_state.object() : nullptr;
-        UObject* const sora_level = persistent_level_for(sora_pawn);
-        if (!sora_level || is_party_presentation_story_level(sora_level))
+        // Companion AI belongs to the controlled party, including Combat Allies.
+        // The Sora-only AP grant context is intentionally unavailable after an ally map entry.
+        UObject* const party_level = persistent_level_for(resolve_party_player());
+        if (!party_level || is_party_presentation_story_level(party_level))
         {
             return;
         }
@@ -613,7 +613,7 @@ namespace kh3ap
         for (UObject* const candidate : candidates)
         {
             if (!candidate || !is_uobject_valid_fast(candidate) ||
-                persistent_level_for(candidate) != sora_level)
+                persistent_level_for(candidate) != party_level)
             {
                 continue;
             }
@@ -641,7 +641,7 @@ namespace kh3ap
                                                 "custom party pawn character={} matches={} "
                                                 "candidates={} level={}\n"),
                                             definition_it->display_name, possessed_match_count,
-                                            candidates.size(), sora_level->GetFullName());
+                                            candidates.size(), party_level->GetFullName());
             return;
         }
 
@@ -699,11 +699,11 @@ namespace kh3ap
             return false;
         }
 
-        auto& sora_state = config_.runtime_state.grant_state().pawn_state();
-        UObject* const sora_pawn = sora_state.candidate_trusted() ? sora_state.object() : nullptr;
-        UObject* const sora_level = persistent_level_for(sora_pawn);
-        if (!sora_level || persistent_level_for(pawn) != sora_level ||
-            is_party_presentation_story_level(sora_level))
+        // Companion AI belongs to the controlled party, including Combat Allies.
+        // The Sora-only AP grant context is intentionally unavailable after an ally map entry.
+        UObject* const party_level = persistent_level_for(resolve_party_player());
+        if (!party_level || persistent_level_for(pawn) != party_level ||
+            is_party_presentation_story_level(party_level))
         {
             return false;
         }
@@ -762,7 +762,7 @@ namespace kh3ap
 
             // Loading the tree resolves its stock action-class imports. Patch
             // their CDOs only after that event-owned load has completed.
-            reconcile_action_viable_state_patches(sora_level);
+            reconcile_action_viable_state_patches(party_level);
 
             if (!definition.follow_query_path.empty())
             {

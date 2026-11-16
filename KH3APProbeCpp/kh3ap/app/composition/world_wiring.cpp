@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/app/composition/service_graph.h"
 #include "kh3ap/app/composition/bindings.h"
 #include "kh3ap/app/composition/settings.h"
@@ -42,7 +43,7 @@ namespace kh3ap
             [this]()
             {
                 return m_service_graph_ready
-                           ? m_player_context.trusted_current_playable_cached_sora_pawn()
+                           ? runtime_current_player_pawn()
                            : nullptr;
             }};
     }
@@ -111,11 +112,11 @@ namespace kh3ap
             {
                 return !m_native_hook_service.title_or_ui_controller_active() &&
                        !m_player_reacquire.ignored_map_active() &&
-                       m_player_context.trusted_current_playable_cached_sora_pawn() != nullptr;
+                       runtime_current_player_pawn() != nullptr;
             },
             [this](std::wstring_view token)
             {
-                auto* sora = m_player_context.trusted_current_playable_cached_sora_pawn();
+                auto* sora = runtime_current_player_pawn();
                 bool owned = false;
                 return sora &&
                        try_call_bp_tres_have_item(
@@ -123,6 +124,7 @@ namespace kh3ap
                            s_tres_game_blueprint_library_default_object_path, false, nullptr) &&
                        owned;
             },
+            character_swap::refresh_alternate_stats,
         }};
     }
 
@@ -137,14 +139,7 @@ namespace kh3ap
             .inventory_context =
                 []()
             {
-                // Ingredient event snapshots only read shared inventory. Keep
-                // their owned alternate context separate from Sora's AP grants.
-                if (auto* hero = character_swap::current_hero();
-                    hero && character_swap::owns_swap_pawn(hero))
-                {
-                    return hero;
-                }
-                return s_runtime_state.grant_state().pawn_state().object();
+                return runtime_current_player_pawn();
             },
         }};
     }

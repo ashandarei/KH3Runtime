@@ -1,6 +1,7 @@
 #include "kh3ap/app/config.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
 #include "kh3ap/features/player/controller_abilities/host.h"
 
 #include "kh3ap/bridge/transport/bridge_channels.h"
@@ -52,6 +53,12 @@ namespace kh3ap
         if (style_revision != aqua_style_revision_)
         {
             aqua_style_revision_ = style_revision;
+            request_refresh(RuntimeControllerAbilityEvent::Grant);
+        }
+        const auto kairi_revision = kairi_style_unlock::revision.load(std::memory_order_acquire);
+        if (kairi_revision != kairi_style_revision_)
+        {
+            kairi_style_revision_ = kairi_revision;
             request_refresh(RuntimeControllerAbilityEvent::Grant);
         }
         const uint32_t events = pending_events_.exchange(0);

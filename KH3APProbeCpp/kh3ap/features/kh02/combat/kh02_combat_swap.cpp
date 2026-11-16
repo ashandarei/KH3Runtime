@@ -5,6 +5,7 @@
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
+#include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/characters/character_pose_handoff.h"
@@ -532,6 +533,7 @@ namespace kh3ap
             // Carry the same-world source view's time too, so the first input
             // pass uses this view instead of the new controller's default yaw.
             *camera_timestamp(manager) = rendered_timestamp;
+            character_floating::restore_camera_view(pawn);
         }
     } // namespace
 

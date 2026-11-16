@@ -418,6 +418,10 @@ namespace kh3ap
             const auto revision = mutations.revision();
             const auto inputs = pipe::input_generation();
             const auto objects = workshop_update_revision.load(std::memory_order_acquire);
+            if ((revision != observed_revision || objects != object_revision) && config.levels_changed)
+            {
+                config.levels_changed();
+            }
             if (revision != observed_revision || inputs != input_generation ||
                 objects != object_revision)
             {

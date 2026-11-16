@@ -181,6 +181,7 @@ namespace kh3ap
         // Declaration order is construction order. Forward callbacks stay
         // guarded until the constructor marks the complete graph ready.
         bool m_service_graph_ready{false};
+        uint64_t m_current_player_revision{};
 
         RuntimeSteamPlatformRecoveryService m_steam_platform_recovery{
             make_steam_platform_recovery()};

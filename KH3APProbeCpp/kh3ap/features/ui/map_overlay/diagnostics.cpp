@@ -29,6 +29,9 @@ namespace kh3ap
         auto* overlay = object(player, L"Root");
         const auto visible =
             overlay ? try_gfx_get_member_value(impl_->config.gfx_paths, overlay, L"visible") : L"";
+        auto* hints = gfx_object(impl_->config.gfx_paths, impl_->chest_root(), L"keybindHints");
+        const auto hints_visible =
+            hints ? try_gfx_get_member_value(impl_->config.gfx_paths, hints, L"visible") : L"";
         auto chests = nlohmann::json::array();
         for (const auto& chest : impl_->chests)
         {
@@ -45,6 +48,9 @@ namespace kh3ap
                               {"presented", impl_->presented},
                               {"pending", impl_->pending_toggle},
                               {"visible", to_utf8(visible)},
+                              {"keybind_hints_visible", to_utf8(hints_visible)},
+                              {"keybind_hint_lines", impl_->keybind_hint_lines},
+                              {"battle_level_presented", impl_->battle_level_presented},
                               {"movie", to_utf8(impl_->movie_path)},
                               {"chests", std::move(chests)},
                               {"area_chests", impl_->displayed_icons},

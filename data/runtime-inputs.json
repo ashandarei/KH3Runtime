@@ -2645,6 +2645,10 @@
       "1263022661": {
         "name": "Stun Trap",
         "token": "ETresBadStatusType::TRES_BADSTAT_STUN"
+      },
+      "1263022662": {
+        "name": "Style Change: Seven Wishes",
+        "token": "KH3AP_CONTROLLER_UNLOCK::seven_wishes"
       }
     },
     "tokens": {
@@ -6744,6 +6748,11 @@
       },
       "ETresBadStatusType::TRES_BADSTAT_STUN": {
         "name": "Stun Trap",
+        "flags": [],
+        "munny": 0
+      },
+      "KH3AP_CONTROLLER_UNLOCK::seven_wishes": {
+        "name": "Style Change: Seven Wishes",
         "flags": [],
         "munny": 0
       }

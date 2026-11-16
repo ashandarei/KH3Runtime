@@ -16,6 +16,7 @@
 #include "kh3ap/features/player/combat/character_shotlock.h"
 #include "kh3ap/features/player/combat/character_style.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
 #include "kh3ap/features/player/characters/character_pawn_pool.h"
 #include "kh3ap/features/player/characters/character_swap_assets.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
@@ -189,7 +190,8 @@ namespace kh3ap
         const auto choice = JsonFieldReader::int64_field(request.text, "player_id");
         if (!choice || !character_swap::diagnostic_select(
                            static_cast<int>(*choice),
-                           JsonFieldReader::bool_field(request.text, "preload").value_or(true)))
+                           JsonFieldReader::bool_field(request.text, "preload").value_or(true),
+                           JsonFieldReader::bool_field(request.text, "persist").value_or(false)))
         {
             request.reason = L"experimental_selection_rejected";
         }
@@ -1122,6 +1124,7 @@ namespace kh3ap
                << ",\"mirror_interaction_rejection\":\""
                << json_escape(interaction_snapshot.mirror_rejection) << "\""
                << ",\"spellweaver_owned\":" << (aqua_style_unlock::owned() ? "true" : "false")
+               << ",\"seven_wishes_owned\":" << (kairi_style_unlock::owned() ? "true" : "false")
                << ",\"aqua_collectible_pending\":"
                << (interaction_snapshot.collectible_pending ? "true" : "false")
                << ",\"aqua_collectibles_collected\":" << interaction_snapshot.collectibles_collected

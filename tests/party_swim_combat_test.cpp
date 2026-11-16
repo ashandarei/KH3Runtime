@@ -5,6 +5,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #define STR(value) L##value
@@ -19,11 +20,14 @@ struct Bytes : std::vector<uint8_t>
 struct UObject
 {
     bool live = true;
+    bool has_swim = true;
     bool swimming{};
     bool bad_layout{};
     bool has_magic{}, swimming_magic{};
     UObject* type = this;
     UObject* query{};
+    bool rooted{};
+    void SetRootSet() { rooted = true; }
     Bytes states{98};
     std::vector<UObject*> cached;
     UObject* GetClassPrivate() { return type; }
@@ -37,6 +41,10 @@ struct Weak
 struct BoolProperty
 {
     bool magic{};
+    bool GetPropertyValueInContainer(UObject* object) const
+    {
+        return magic ? object->swimming_magic : object->swimming;
+    }
     void SetPropertyValueInContainer(UObject* object, bool value)
     {
         if (magic) { object->swimming_magic = value; }
@@ -45,7 +53,7 @@ struct BoolProperty
 };
 BoolProperty flag;
 BoolProperty magic_flag{true};
-BoolProperty* swim_field(UObject* object) { return is_uobject_valid_fast(object) ? &flag : nullptr; }
+BoolProperty* swim_field(UObject* object) { return is_uobject_valid_fast(object) && object->has_swim ? &flag : nullptr; }
 BoolProperty* swim_magic_field(UObject* object) { return is_uobject_valid_fast(object) && object->has_magic ? &magic_flag : nullptr; }
 template <typename T> Bytes* array(UObject* object, const wchar_t*)
 {
@@ -79,6 +87,9 @@ struct State
     std::vector<AttackPatch> actions;
     bool underwater{}, disabled{};
 };
+struct ActionGraph { std::vector<UObject*> actions; };
+Weak make_uobject_weak(UObject* object) { return {object}; }
+UObject* read_object_like_property(UObject* object, const wchar_t*) { return object->query; }
 #include "party_swim_mutations_under_test.h"
 struct Service
 {
@@ -90,7 +101,58 @@ struct Service
 
 int main()
 {
+    const auto mickey = inherited_action_prefix(L"n_ex003");
+    assert(owns_action_asset(L"/Game/Blueprints/Npc/n_dw003/BT/Holy", L"/Game/Blueprints/Npc/n_ex003/", mickey));
+    assert(owns_action_asset(L"/Game/Blueprints/Npc/n_ex003/BT/Battle", L"/Game/Blueprints/Npc/n_ex003/", mickey));
+    assert(!owns_action_asset(L"/Game/Blueprints/Npc/n_dw003_other/BT/Holy", L"/Game/Blueprints/Npc/n_ex003/", mickey));
+    assert(!owns_action_asset(L"/Game/Blueprints/Npc/n_ex005/BT/Attack", L"/Game/Blueprints/Npc/n_ex003/", mickey));
+    assert(!owns_action_asset(L"/Game/Blueprints/Npc/n_dw003/BT/Holy", L"/Game/Blueprints/Npc/n_he201/", inherited_action_prefix(L"n_he201")));
+    // Dynamically injected battle trees must contribute actions even when the
+    // top-level tree contains none. Repeated roots must not snapshot wet values.
+    {
+        State dynamic;
+        UObject punch, magic, land_query, swim_query, pawn;
+        punch.query = &land_query;
+        magic.has_magic = true;
+        dynamic.pawn = {&pawn};
+        assert(!remember_actions(dynamic, ActionGraph{}));
+        assert(remember_actions(dynamic, ActionGraph{{&punch}}));
+        assert(land_query.rooted && dynamic.actions.size() == 1);
+        adapt(&punch, &swim_query, true, true, false);
+        dynamic.underwater = true;
+        assert(remember_actions(dynamic, ActionGraph{{&punch, &magic}}));
+        assert(!remember_actions(dynamic, ActionGraph{{&punch, &magic}}));
+        assert(dynamic.actions.size() == 2);
+        assert(dynamic.actions[0].query.Get() == &land_query);
+        assert(!dynamic.actions[0].swimming && dynamic.actions[0].added_state);
+        assert(dynamic.actions[1].swimming_magic == false);
+        adapt(&magic, &swim_query, true, true, false, true);
+        restore_state(dynamic);
+        assert(!punch.swimming && punch.query == &land_query && punch.states == Bytes{98});
+        assert(!magic.swimming && !magic.swimming_magic && !magic.query && magic.states == Bytes{98});
+    }
     UObject land_query, swim_query, definition, gate, pawn, component;
+    // Marshmallow's animation actions have no swim flag. Their shared attack
+    // query and state eligibility still adapt, including recycled instances.
+    {
+        UObject legacy, legacy_pawn;
+        legacy.has_swim = false;
+        legacy.query = &land_query;
+        State legacy_state;
+        legacy_state.pawn = {&legacy_pawn};
+        assert(remember_actions(legacy_state, ActionGraph{{&legacy}}));
+        adapt(&legacy, &swim_query, true, true, false);
+        assert(!legacy.swimming && legacy.query == &swim_query && legacy.states == (Bytes{98, 143}));
+        UObject cached = legacy;
+        cached.type = legacy.GetClassPrivate();
+        legacy_pawn.cached = {&cached};
+        legacy_state.underwater = true;
+        restore_state(legacy_state);
+        for (auto* action : {&legacy, &cached})
+        {
+            assert(!action->swimming && action->query == &land_query && action->states == Bytes{98});
+        }
+    }
     definition.query = &land_query;
     definition.states = Bytes{1, 44, 98};
     State state;

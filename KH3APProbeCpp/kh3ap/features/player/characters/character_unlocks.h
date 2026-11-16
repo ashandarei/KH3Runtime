@@ -53,10 +53,17 @@ namespace kh3ap::character_unlocks
     // Rebuilt by the existing seed-bound receipt catalog event. The UI never
     // reads files, and ownership survives save reloads through AP receipt history.
     inline std::atomic<uint32_t> received_mask{};
+    inline std::atomic<uint32_t> enabled_mask{};
+
+    inline auto enabled(int player_id) -> bool
+    {
+        return player_id == -1 ||
+               (enabled_mask.load(std::memory_order_acquire) & bit(player_id)) != 0;
+    }
 
     inline auto available(int player_id) -> bool
     {
-        return player_id == -1 ||
-               (received_mask.load(std::memory_order_acquire) & bit(player_id)) != 0;
+        return player_id == -1 || (enabled(player_id) &&
+               (received_mask.load(std::memory_order_acquire) & bit(player_id)) != 0);
     }
 } // namespace kh3ap::character_unlocks

@@ -27,6 +27,7 @@ namespace kh3ap
         static bool request_experimental_swap(RC::Unreal::UObject* pawn);
         static bool request_character_trap_swap(RC::Unreal::UObject* pawn);
         static bool character_trap_swap_pending();
+        static bool camp_menu_open();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         void set_gummiphone_diagnostic(std::function<std::string(int)>);
 #endif

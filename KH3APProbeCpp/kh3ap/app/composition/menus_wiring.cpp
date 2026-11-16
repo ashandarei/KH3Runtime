@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/core/settings/pak_seed_settings.h"
 #include "kh3ap/core/settings/seed_slot_options.h"
 #include "kh3ap/features/player/characters/character_swap.h"
@@ -40,7 +41,7 @@ namespace kh3ap
     using namespace RC::Unreal;
     auto RuntimeComposition::Impl::make_goa_autosave() -> RuntimeGoaAutosaveService
     {
-        return RuntimeGoaAutosaveService{RuntimeGoaAutosaveConfig{s_runtime_state}};
+        return RuntimeGoaAutosaveService{};
     }
 
     auto RuntimeComposition::Impl::make_minimap_context() -> RuntimeMinimapContextService
@@ -48,15 +49,7 @@ namespace kh3ap
         return RuntimeMinimapContextService{RuntimeMinimapContextConfig{
             [this]() -> UObject*
             {
-                if (auto* hero = Kh02Story::map_overlay_hero())
-                {
-                    return hero;
-                }
-                if (auto* hero = character_swap::reward_context())
-                {
-                    return hero;
-                }
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                return runtime_current_player_pawn();
             },
             [this]()
             {
@@ -78,15 +71,7 @@ namespace kh3ap
              s_gfx_object_set_member_value_path},
             [this]() -> UObject*
             {
-                if (auto* hero = Kh02Story::map_overlay_hero())
-                {
-                    return hero;
-                }
-                if (auto* hero = character_swap::reward_context())
-                {
-                    return hero;
-                }
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                return runtime_current_player_pawn();
             },
             [this]()
             {
@@ -243,7 +228,7 @@ namespace kh3ap
         return RuntimeShopMovieService{
             [this]()
             {
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                return runtime_current_player_pawn();
             }};
     }
 
@@ -254,7 +239,7 @@ namespace kh3ap
              s_gfx_object_set_member_value_path},
             [this]()
             {
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                return runtime_current_player_pawn();
             },
             [this]()
             {

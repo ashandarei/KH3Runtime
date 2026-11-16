@@ -1,6 +1,9 @@
 #include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
+#include "kh3ap/features/player/combat/character_style_unlock_policy.h"
+#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/player/movement/kairi_glide.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
@@ -191,11 +194,17 @@ namespace kh3ap
             return states[index].owned && states[index].equipped;
         };
         const bool is_aqua = aqua->GetClassPrivate()->GetName() == L"p_ex002_Pawn_C";
-        const bool style_owned = is_aqua ? aqua_style_unlock::owned() : equipped(1);
+        const bool is_kairi = aqua->GetClassPrivate()->GetName() == L"p_ex006_Pawn_C";
+        const auto mode = config_.style_change_mode ? config_.style_change_mode()
+                                                   : RuntimeStyleChangeMode::Shared;
+        const bool style_owned = character_style_enabled(
+            is_aqua ? CharacterStyleOwner::Aqua : is_kairi ? CharacterStyleOwner::Kairi
+                                                         : CharacterStyleOwner::Other,
+            kh02_current_story_world(), mode, equipped(1), aqua_style_unlock::owned(),
+            kairi_style_unlock::owned());
         const kh02rewards::SharedUnlockOwnership owned{equipped(0), style_owned, equipped(2),
                                                        links.owned && links.equipped, equipped(3)};
-        const bool shared_style = is_aqua || !config_.style_change_mode ||
-                                  config_.style_change_mode() == RuntimeStyleChangeMode::Shared;
+        const bool shared_style = is_aqua || is_kairi || mode == RuntimeStyleChangeMode::Shared;
         const auto plan = kh02rewards::shared_unlock_plan(owned, shared_style);
         const auto before = kh02rewards::read_shared_unlock_flags(aqua);
         uint32_t restrictions_before{};

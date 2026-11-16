@@ -60,7 +60,7 @@ namespace kh3ap
                 KeybladeEnhancementGroup{STR("Classic Tone"), 100},
                 KeybladeEnhancementGroup{STR("Grand Chef"), 110},
                 KeybladeEnhancementGroup{STR("Ultima Weapon"), 120},
-                KeybladeEnhancementGroup{STR("Pandora's Power"), 150},
+                KeybladeEnhancementGroup{STR("Pandora's Power"), pandoras_power_first_enhancement_flag},
                 KeybladeEnhancementGroup{STR("Starlight"), 160},
                 KeybladeEnhancementGroup{STR("Oathkeeper"), 170},
                 KeybladeEnhancementGroup{STR("Oblivion"), 180}};

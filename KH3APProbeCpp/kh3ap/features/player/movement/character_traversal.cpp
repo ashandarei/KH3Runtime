@@ -11,6 +11,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/characters/character_reactions.h"
+#include "kh3ap/features/world/garden_return/garden_return_service.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -452,6 +453,13 @@ namespace kh3ap::character_traversal
             {
                 held = false;
                 return true;
+            }
+            // Camp preserves Swim underneath its menu. Let its Back button
+            // reach native UI instead of claiming it as underwater dash.
+            // Existing gameplay presses still clear held state on release.
+            if (RuntimeGardenReturnService::camp_menu_open())
+            {
+                return false;
             }
             auto *pawn = character_swap::current_hero();
             if (!ready(pawn) || !character_swap::owns_swap_pawn(pawn))
