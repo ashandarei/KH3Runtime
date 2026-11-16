@@ -333,6 +333,7 @@ namespace kh3ap::character_swap_assets
                 character.id == PlayerId::Kairi || character.id == PlayerId::Roxas)
             {
                 assets.push_back({character_rails::shot_projectile_path, true});
+                assets.push_back({character_rails::cover_shot_projectile_path, true});
             }
             if (character.id == PlayerId::Roxas)
             {

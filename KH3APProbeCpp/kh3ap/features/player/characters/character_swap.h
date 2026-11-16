@@ -18,8 +18,8 @@ namespace kh3ap
     {
         void append_menu(RuntimeOptionsPageBuilder& page);
         bool route(int controller, std::wstring_view key, int event, bool gamepad);
-        // Returns true once a newly possessed alternate is ready for shared unlock refresh.
-        bool tick(std::chrono::steady_clock::time_point now);
+        // Returns the newly possessed pawn on the frame a handoff completes.
+        RC::Unreal::UObject* tick(std::chrono::steady_clock::time_point now);
         RC::Unreal::UObject* current_hero();
         // Party ownership only, including the synchronous incoming factory pawn.
         RC::Unreal::UObject* party_owner();

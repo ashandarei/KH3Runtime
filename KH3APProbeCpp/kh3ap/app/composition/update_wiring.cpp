@@ -180,8 +180,19 @@ namespace kh3ap
             // Finish the combat handoff before retiring experimental ownership,
             // including a settings change that returns to Sora and selects Off.
             m_garden_return.tick(now);
-            if (character_swap::tick(now))
+            if (auto* pawn = character_swap::tick(now))
             {
+                constexpr auto source = STR("CharacterSwap:possession_ready");
+                if (m_player_context.cache_pawn_candidate(pawn, source))
+                {
+                    m_player_context.refresh_controller_from_sora_event(pawn);
+                }
+                if (s_runtime_state.grant_state().special_battle_mode_active() &&
+                    character_swap::current_hero() == pawn)
+                {
+                    m_battle_level_sync.sync_observed(source);
+                }
+                s_runtime_state.grant_state().item_grant_poll_state().delivery_wake_schedule().request();
                 m_colors.on_character_swap();
                 s_runtime_controller_abilities.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
                 m_music_chests.notify_player_changed();

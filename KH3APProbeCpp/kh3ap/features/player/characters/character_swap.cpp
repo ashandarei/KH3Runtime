@@ -82,7 +82,7 @@
 namespace kh3ap::character_swap
 {
     using namespace RC::Unreal;
-    static bool finish_pending_swap(std::chrono::steady_clock::time_point now);
+    static UObject* finish_pending_swap(std::chrono::steady_clock::time_point now);
 
     namespace
     {
@@ -1365,14 +1365,14 @@ namespace kh3ap::character_swap
             }
         }
     }
-    static bool finish_pending_swap(Clock::time_point now)
+    static UObject* finish_pending_swap(Clock::time_point now)
     {
         const CharacterSwapOperationTimer finish_timer{L"finish", session.target_id};
         try
         {
             if (session.rebind_pending && !rebind_after_travel(now))
             {
-                return false;
+                return nullptr;
             }
             if (session.return_requested && !session.pending)
             {
@@ -1380,17 +1380,18 @@ namespace kh3ap::character_swap
                 if (!pawn)
                 {
                     session.return_requested = false;
-                    return false;
+                    return nullptr;
                 }
                 if (!(trap.locked() ? RuntimeGardenReturnService::request_character_trap_swap(pawn)
                                     : RuntimeGardenReturnService::request_experimental_swap(pawn)))
                 {
-                    return false;
+                    return nullptr;
                 }
                 session.return_requested = false;
-                return false;
+                return nullptr;
             }
-            if (now > session.deadline || session.swap_world.Get() != kh02_current_world())
+            auto* world = kh02_current_world();
+            if (now > session.deadline || session.swap_world.Get() != world)
             {
                 session.party_handoff.reset();
                 combat_target_handoff::cancel();
@@ -1415,7 +1416,7 @@ namespace kh3ap::character_swap
                 {
                     session.owned_hero = {};
                 }
-                return false;
+                return nullptr;
             }
             auto* pawn = player();
             if (id(pawn) == session.target_id)
@@ -1434,7 +1435,7 @@ namespace kh3ap::character_swap
             if (id(pawn) != session.target_id ||
                 (session.cinematic_return_pending ? !owns_swap_pawn(pawn) : !ready(pawn)))
             {
-                return false;
+                return nullptr;
             }
             const auto prepare = [&](std::wstring_view stage, auto action)
             {
@@ -1443,37 +1444,48 @@ namespace kh3ap::character_swap
             };
             if (!session.cinematic_return_pending && !prepare(L"kairi_idle", character_idle::prepare_kairi))
             {
-                return false;
+                return nullptr;
             }
             if (!session.cinematic_return_pending &&
                 !prepare(L"ground_slam", kairi_ground_slam::prepare))
             {
-                return false;
+                return nullptr;
             }
             if (!session.cinematic_return_pending &&
                 !prepare(L"wall_run", alternate_wall_run::prepare))
             {
-                return false;
+                return nullptr;
             }
-            if (!session.cinematic_return_pending && session.target_id != session.sora_id &&
-                session.target_id != king_mickey_id &&
+            const bool alternate = session.target_id != session.sora_id &&
+                                   session.target_id != king_mickey_id;
+            // Galaxy Toys queues its scripted Gigas boarding while the intro
+            // still owns control. The native queue needs the alternate's
+            // shared Gigas state and animations before that request arrives.
+            const bool needs_traversal = !session.cinematic_return_pending ||
+                (is_uobject_valid_fast(world) &&
+                 world->GetPathName() == L"/Game/Levels/ts/ts_02/ts_02.ts_02");
+            if (alternate && needs_traversal &&
                 (!prepare(L"exploration", character_exploration::prepare_pawn) ||
-                 !prepare(L"traversal", character_traversal::prepare) ||
-                 !prepare(L"roxas_idle", character_idle::prepare_roxas) ||
+                 !prepare(L"traversal", character_traversal::prepare)))
+            {
+                return nullptr;
+            }
+            if (!session.cinematic_return_pending && alternate &&
+                (!prepare(L"roxas_idle", character_idle::prepare_roxas) ||
                  !prepare(L"underwater_combat", character_underwater_combat::prepare) ||
                  !prepare(L"camera", character_camera::prepare) ||
                  !prepare(L"shotlock", character_shotlock::prepare) ||
                  !prepare(L"magic", character_magic::refresh_spells) ||
                  !prepare(L"attack_completion", character_attack_completion::prepare)))
             {
-                return false;
+                return nullptr;
             }
             if (session.cinematic_return_pending)
             {
                 if (character_integer_value(pawn, L"GetMaxHitPoint") < 1 ||
                     character_integer_value(pawn, L"GetMaxMagicPoint") < 0)
                 {
-                    return false;
+                    return nullptr;
                 }
                 trace_cinematic(L"cinematic_ownership_ready", session.cinematic_actor.Get());
             }
@@ -1481,7 +1493,7 @@ namespace kh3ap::character_swap
             {
                 if (!restore_trap_hud())
                 {
-                    return false;
+                    return nullptr;
                 }
                 Kh02Story::refresh_sora_experience(pawn);
             }
@@ -1563,7 +1575,7 @@ namespace kh3ap::character_swap
                     "HP={} MP={} strength={} magic={} defense={}\n"),
                 session.target_id, session.stats.level(), actual[0], actual[1], actual[2],
                 actual[3], actual[4]);
-            return true;
+            return pawn;
         }
         catch (const std::exception& failure)
         {
@@ -1589,11 +1601,11 @@ namespace kh3ap::character_swap
             RC::Output::send<RC::LogLevel::Warning>(
                 STR("[KH3APProbeCpp] Experimental character failed: {}\n"),
                 std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
-            return false;
+            return nullptr;
         }
     }
 
-    bool tick(Clock::time_point now)
+    UObject* tick(Clock::time_point now)
     {
         if (ascension.active)
         {
@@ -1670,7 +1682,7 @@ namespace kh3ap::character_swap
         // No UObject discovery while idle. Retries exist only for a requested change.
         if (!session.has_pending_work())
         {
-            return false;
+            return nullptr;
         }
         return finish_pending_swap(now);
     }

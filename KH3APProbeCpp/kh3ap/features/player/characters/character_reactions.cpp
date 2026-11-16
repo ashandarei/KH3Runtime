@@ -101,6 +101,7 @@ namespace kh3ap::character_reactions
         {
             fill_tuning<int32_t>(pawn, source, name, L"IntProperty");
         }
+        fill_tuning<UObject*>(pawn, source, L"m_pCoverShotDestroyEffect", L"ObjectProperty");
     }
 
     bool owns_command(UObject* controller, int command)
@@ -126,6 +127,7 @@ namespace kh3ap::character_reactions
         case PlayerActionCommand::PUDDING:
         case PlayerActionCommand::POSTCARD:
         case PlayerActionCommand::CARDDRAW:
+        case PlayerActionCommand::SLIDESHOT:
         case PlayerActionCommand::COVERSLIDE:
         case PlayerActionCommand::DISPEL:
         case PlayerActionCommand::QUICKBATTLE:
@@ -162,17 +164,17 @@ namespace kh3ap::character_reactions
             // the countdown and notifying its original owning encounter.
             return object(pawn, L"m_pDeathSentenceCountEffect") != nullptr;
         }
-        if (command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
+        const bool cover_shot = command == player_action_command_value(PlayerActionCommand::SLIDESHOT);
+        if (cover_shot || command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
         {
-            // The native command is offered while approaching cover in Idle
-            // or Run, and queues Cover with the controller's selected destination.
-            // Sora's dispatcher retains native eligibility and direction checks.
+            // Cover Slide can start from Idle or Run. The native Cover state
+            // offers Slide Shot only after it selects a lock-on target.
             auto* state = object(object(pawn, L"MyStateComp"), L"m_pCurrentState");
             if (!is_uobject_valid_fast(state)) { return false; }
             const auto path = state->GetClassPrivate()->GetPathName();
-            return path == L"/Script/TresGame.TresPlayerState_Idle" ||
-                   path == L"/Script/TresGame.TresPlayerState_Run" ||
-                   path == L"/Script/TresGame.TresPlayerState_Cover";
+            return path == L"/Script/TresGame.TresPlayerState_Cover" ||
+                   (!cover_shot && (path == L"/Script/TresGame.TresPlayerState_Idle" ||
+                                   path == L"/Script/TresGame.TresPlayerState_Run"));
         }
         auto* info = object(controller, L"m_pUICommandInfo");
         auto* actor = object(info, L"m_Actor");

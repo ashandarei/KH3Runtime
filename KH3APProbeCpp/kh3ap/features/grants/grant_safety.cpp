@@ -320,19 +320,10 @@ namespace kh3ap
         };
     }
 
-    auto current_runtime_unsafe_map_status(RuntimeState& runtime_state, bool allow_excluded_map_game_over) -> RuntimeGrantSafetyStatus
+    static auto runtime_unsafe_map_status(
+            RuntimeState& runtime_state, std::wstring_view context_text,
+            bool allow_excluded_map_game_over = false) -> RuntimeGrantSafetyStatus
     {
-        const auto snapshot = runtime_state.context_subsystem_state().context_state().current_snapshot();
-        if (!snapshot.has_value())
-        {
-            return {
-                    .ready = true,
-                    .reason = std::wstring{STR("ready")},
-                    .details = std::wstring{},
-            };
-        }
-
-        const std::wstring context_text = snapshot->world + STR(" ") + snapshot->outer + STR(" ") + snapshot->object;
         if (is_runtime_ap_ignored_map_context(context_text))
         {
             return {
@@ -366,6 +357,18 @@ namespace kh3ap
                         rule->description,
                         context_text),
         };
+    }
+
+    auto current_runtime_unsafe_map_status(RuntimeState& runtime_state, bool allow_excluded_map_game_over) -> RuntimeGrantSafetyStatus
+    {
+        const auto snapshot = runtime_state.context_subsystem_state().context_state().current_snapshot();
+        if (!snapshot)
+        {
+            return {true, L"ready", {}};
+        }
+        return runtime_unsafe_map_status(runtime_state,
+                snapshot->world + STR(" ") + snapshot->outer + STR(" ") + snapshot->object,
+                allow_excluded_map_game_over);
     }
 
     auto current_runtime_sora_state_cache_status(
@@ -548,9 +551,12 @@ namespace kh3ap
         {
             return {false, L"persistent_reward_context_not_ready", {}};
         }
+        // Ownership, loading and control were checked on the live recipient.
+        // Use its map and state even when the last hook came from a camera level.
         const std::array gates{
-            runtime_grant_context_snapshot_safety_status(
-                    runtime_state, now, settings::s_runtime_item_grant_ready_context_debounce),
+            current_runtime_blocking_ui_status(runtime_state.ui_diagnostic_state().blocking_ui_state()),
+            current_runtime_special_battle_mode_status(runtime_state.grant_state(), now),
+            runtime_unsafe_map_status(runtime_state, pawn->GetFullName()),
             current_runtime_bistro_return_gate_status(runtime_state.grant_state(), now),
             current_runtime_classic_kingdom_transition_gate_status(runtime_state.grant_state(), now),
             current_runtime_olympus_coliseum_transition_gate_status(runtime_state.grant_state(), now)};

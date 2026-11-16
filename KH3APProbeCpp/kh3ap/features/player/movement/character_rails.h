@@ -8,6 +8,8 @@ namespace kh3ap::character_rails
 {
     inline constexpr auto shot_projectile_path =
         L"/Game/Blueprints/Projectile/TresProj_SlideShotMI.TresProj_SlideShotMI_C";
+    inline constexpr auto cover_shot_projectile_path =
+        L"/Game/Blueprints/Projectile/TresProj_CoverShot.TresProj_CoverShot_C";
     bool initialize();
     void prepare(RC::Unreal::UObject* pawn);
     bool route(int controller, std::wstring_view key, int event, bool gamepad);
