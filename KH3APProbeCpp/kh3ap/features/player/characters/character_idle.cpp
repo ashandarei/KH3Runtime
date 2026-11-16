@@ -21,12 +21,15 @@
 #include <Unreal/NameTypes.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
+#include <Unreal/UScriptStruct.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
 #include <cstring>
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <memory>
 #include <stdexcept>
@@ -68,21 +71,200 @@ namespace kh3ap::character_idle
         std::unique_ptr<PLH::x64Detour> resolve_hook, battle_hook, play_hook, dismiss_hook,
             weapon_hook, idle_update_hook;
         FWeakObjectPtr kairi_owner, kairi_instance, kairi_requested_owner;
+        FWeakObjectPtr kairi_queue, kairi_pose_notify, kairi_idle_asset;
+        size_t kairi_pose_notify_slot{};
+        int kairi_current_state_offset{}, kairi_state_id_offset{};
         FWeakObjectPtr roxas_owner, roxas_instance, roxas_queue;
         int roxas_current_state_offset{}, roxas_state_id_offset{};
         FName roxas_battle_idle, roxas_relaxed_idle, roxas_weapon_break, roxas_relaxed_break;
         bool roxas_last_battle{};
-        FName kairi_battle_idle, kairi_relaxed_idle;
+        FName kairi_battle_idle, kairi_relaxed_idle, kairi_battle_end;
+        FName kairi_idle_break, kairi_weapon_break, kairi_aqua_idle_break;
         bool disabled{};
         bool kairi_relaxed{};
         float kairi_remaining_idle_seconds{};
         std::chrono::steady_clock::time_point kairi_load_deadline{};
+
+        struct RelaxedMovement
+        {
+            const wchar_t* stem;
+            const wchar_t* donor;
+            const wchar_t* alias;
+            std::array<FName, 4> requests;
+            FName prepared;
+        };
+        // Aqua's neutral stopping motions have no stance suffix. Do not use
+        // her W/B entries, which still hold a weapon.
+        std::array kairi_movement{
+            RelaxedMovement{L"RunStart", L"RunStartN", L"AP_KairiRunStartN"},
+            RelaxedMovement{L"RunLoop", L"RunLoopN", L"AP_KairiRunLoopN"},
+            RelaxedMovement{L"RunEndL", L"RunEndL", L"AP_KairiRunEndLN"},
+            RelaxedMovement{L"RunEndR", L"RunEndR", L"AP_KairiRunEndRN"},
+            RelaxedMovement{L"WalkLoop", L"WalkLoopN", L"AP_KairiWalkLoopN"},
+            RelaxedMovement{L"WalkEndL", L"WalkEndL", L"AP_KairiWalkEndLN"},
+            RelaxedMovement{L"WalkEndR", L"WalkEndR", L"AP_KairiWalkEndRN"},
+            // Native Run requests this after a vault or landing changes the
+            // pose latch. Aqua's equivalent retains its completion notifies.
+            RelaxedMovement{L"RunBattleStart", L"RunBattleStart", L"AP_KairiRunBattleStart"}};
+
+        FName relaxed_movement(FName name)
+        {
+            for (const auto& motion : kairi_movement)
+            {
+                if (std::find(motion.requests.begin(), motion.requests.end(), name) != motion.requests.end())
+                {
+                    return motion.prepared;
+                }
+            }
+            return name;
+        }
+
+        void use_reference_translations(UObject* animation)
+        {
+            auto* skeleton = try_read_reflected_object_property_value(animation, L"Skeleton");
+            auto* bones = is_uobject_valid_fast(skeleton) ? skeleton->GetPropertyByNameInChain(L"BoneTree") : nullptr;
+            auto* inner = bones && bones->IsA<FArrayProperty>() ? static_cast<FArrayProperty*>(bones)->GetInner() : nullptr;
+            auto* schema = inner && inner->IsA<FStructProperty>() ? static_cast<FStructProperty*>(inner)->GetStruct() : nullptr;
+            auto* mode = is_uobject_valid_fast(schema) ? find_struct_field_by_name(schema, L"TranslationRetargetingMode") : nullptr;
+            struct BoneNode { FName name; int32_t parent; uint8_t translation_mode; uint8_t padding[3]; };
+            static_assert(sizeof(BoneNode) == 16);
+            if (!inner || inner->GetElementSize() != sizeof(BoneNode) || !mode ||
+                mode->GetElementSize() != 1 || mode->GetOffset_Internal() != offsetof(BoneNode, translation_mode))
+            {
+                throw std::runtime_error("kairi_movement_retarget_layout");
+            }
+            // Use the receiving mesh's reference translations, without dividing
+            // by source reference lengths. Keep root motion authored.
+            auto& tree = *bones->ContainerPtrToValuePtr<TArray<BoneNode>>(skeleton);
+            for (int index = 1; index < tree.Num(); ++index)
+            {
+                tree[index].translation_mode = 1; // EBoneTranslationRetargetingMode::Skeleton
+            }
+        }
+
+        void prepare_kairi_movement(UObject* anim, UObject* source, TArray<UObject*>& sets)
+        {
+            using player_animation_support::AnimationEntry;
+            auto* field = source->GetPropertyByNameInChain(L"Anims");
+            if (!field || !field->IsA<FArrayProperty>() ||
+                static_cast<FArrayProperty*>(field)->GetInner()->GetElementSize() != sizeof(AnimationEntry) ||
+                !player_animation_support::supported_skeleton_layout())
+            {
+                throw std::runtime_error("kairi_movement_animation_layout");
+            }
+            auto* entries = field->ContainerPtrToValuePtr<TArray<AnimationEntry>>(source);
+            std::array<AnimationEntry, std::tuple_size_v<decltype(kairi_movement)> + 1> borrowed{};
+            for (size_t index = 0; index < kairi_movement.size(); ++index)
+            {
+                auto& motion = kairi_movement[index];
+                motion.prepared = FName(motion.alias, FNAME_Add);
+                const std::array suffixes{L"", L"N", L"B", L"W"};
+                for (size_t stance = 0; stance < suffixes.size(); ++stance)
+                {
+                    motion.requests[stance] = FName((std::wstring(motion.stem) + suffixes[stance]).c_str(), FNAME_Add);
+                }
+                const FName donor(motion.donor, FNAME_Add);
+                for (const auto& entry : *entries)
+                {
+                    if (entry.name == donor) { borrowed[index] = {motion.prepared, entry.asset}; break; }
+                }
+                if (!is_uobject_valid_fast(borrowed[index].asset))
+                {
+                    throw std::runtime_error("kairi_movement_animation_missing");
+                }
+                player_animation_support::allow_animation_skeleton(anim, borrowed[index].asset);
+                use_reference_translations(borrowed[index].asset);
+            }
+            kairi_idle_break = FName(L"IdleBreakN", FNAME_Add);
+            kairi_weapon_break = FName(L"IdleBreakW", FNAME_Add);
+            kairi_aqua_idle_break = FName(L"AP_KairiIdleBreakN", FNAME_Add);
+            for (const auto& entry : *entries)
+            {
+                if (entry.name == kairi_idle_break)
+                {
+                    borrowed.back() = {kairi_aqua_idle_break, entry.asset};
+                    break;
+                }
+            }
+            if (!is_uobject_valid_fast(borrowed.back().asset))
+            {
+                throw std::runtime_error("kairi_idle_break_animation_missing");
+            }
+            player_animation_support::allow_animation_skeleton(anim, borrowed.back().asset);
+            use_reference_translations(borrowed.back().asset);
+            FStaticConstructObjectParameters parameters(source->GetClassPrivate(), anim);
+            parameters.SetFlags = RF_Transient;
+            auto* replacement = UObjectGlobals::StaticConstructObject(parameters);
+            if (!is_uobject_valid_fast(replacement))
+            {
+                throw std::runtime_error("kairi_movement_animset_create");
+            }
+            auto* copied = field->ContainerPtrToValuePtr<TArray<AnimationEntry>>(replacement);
+            for (const auto& entry : borrowed) { copied->Add(entry); }
+            // Unique aliases avoid replacing the native combat entries or
+            // traversal fallbacks. MyAnimSets keeps these assets alive.
+            sets.Add(replacement);
+        }
+
+        void set_weapon(UObject* pawn, bool visible, bool effect, float rate);
+
+        bool kairi_is_idle_or_running()
+        {
+            auto* queue = kairi_queue.Get();
+            if (!queue) { return false; }
+            UObject* state{};
+            std::memcpy(&state, reinterpret_cast<std::byte*>(queue) + kairi_current_state_offset, sizeof(state));
+            if (!is_uobject_valid_fast(state)) { return false; }
+            const auto id = *(reinterpret_cast<uint8_t*>(state) + kairi_state_id_offset);
+            return id == player_state_ids::idle || id == player_state_ids::run;
+        }
 
         UObject* object(UObject* value, const wchar_t* field)
         {
             return is_uobject_valid_fast(value)
                        ? try_read_reflected_object_property_value(value, field)
                        : nullptr;
+        }
+
+        void prepare_kairi_pose_completion(UObject* idle_set)
+        {
+            auto* notify = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_LastAnimPose");
+            auto* voice = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_PlayVoice");
+            auto* pose = is_uobject_valid_fast(notify) ? notify->GetPropertyByNameInChain(L"m_LastAnimPose") : nullptr;
+            if (!pose || pose->GetElementSize() != 1 || *pose->ContainerPtrToValuePtr<uint8_t>(notify) != 0 ||
+                !is_uobject_valid_fast(voice) ||
+                notify->GetClassPrivate()->GetName() != L"TresAnimNotify_LastAnimPose" ||
+                voice->GetClassPrivate()->GetName() != L"TresAnimNotify_PlayVoice")
+            {
+                throw std::runtime_error("kairi_idle_pose_notify_layout");
+            }
+            // Locate UAnimNotify::Notify through the already verified PlayVoice
+            // implementation. Both classes inherit the same virtual slot; do not
+            // assume a platform-specific slot or write private pawn pose flags.
+            const auto address = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)) +
+                character_native::rva(character_native::Site::voice_notify);
+            const auto table = *reinterpret_cast<uintptr_t**>(voice);
+            size_t matches{};
+            for (size_t index = 0; index < 128; ++index)
+            {
+                if (table[index] == address) { kairi_pose_notify_slot = index; ++matches; }
+            }
+            auto* field = idle_set->GetPropertyByNameInChain(L"Anims");
+            if (matches != 1 || !field || !field->IsA<FArrayProperty>() ||
+                static_cast<FArrayProperty*>(field)->GetInner()->GetElementSize() != sizeof(player_animation_support::AnimationEntry))
+            {
+                throw std::runtime_error("kairi_idle_pose_notify_unavailable");
+            }
+            for (const auto& entry : *field->ContainerPtrToValuePtr<TArray<player_animation_support::AnimationEntry>>(idle_set))
+            {
+                if (entry.name == kairi_relaxed_idle && is_uobject_valid_fast(entry.asset))
+                {
+                    kairi_pose_notify = make_uobject_weak(notify);
+                    kairi_idle_asset = make_uobject_weak(entry.asset);
+                    return;
+                }
+            }
+            throw std::runtime_error("kairi_idle_pose_asset_missing");
         }
 
         void prepare_roxas_face(UObject* anim)
@@ -189,7 +371,25 @@ namespace kh3ap::character_idle
                     blend = std::max(blend, relaxed_blend_seconds);
                 }
             }
-            if (name == kairi_battle_idle && anim == kairi_instance.Get())
+            if (anim == kairi_instance.Get() && relaxed_movement(name) != name)
+            {
+                auto* pawn = kairi_owner.Get();
+                if (pawn && character_swap::owns_swap_pawn(pawn) && !in_battle(pawn))
+                {
+                    // Kairi's native Run entry can retain a drawn weapon even
+                    // without battle mode. Dismiss on the movement event, not
+                    // every frame; attacks still use the native visibility path.
+                    if (!kairi_relaxed) { set_weapon(pawn, false, true, 1.0f); }
+                    // Preserve the native playback name. Run compares it on
+                    // subsequent updates; an alias here restarts the motion
+                    // every frame and leaves it stuck near its first pose.
+                    // Only resolve() substitutes the underlying animation.
+                }
+            }
+            rate *= movement_play_rate_scale(anim, name);
+            if ((name == kairi_battle_idle || name == kairi_battle_end ||
+                 name == kairi_idle_break || name == kairi_weapon_break) &&
+                anim == kairi_instance.Get())
             {
                 auto* pawn = kairi_owner.Get();
                 if (pawn && kairi_relaxed && !in_battle(pawn))
@@ -198,6 +398,21 @@ namespace kh3ap::character_idle
                     // Blend from the current pose; leave outgoing attacks and
                     // movement requests at their native timing.
                     blend = std::max(blend, relaxed_blend_seconds);
+                    if (name == kairi_battle_end && character_swap::owns_swap_pawn(pawn))
+                    {
+                        auto* notify = kairi_pose_notify.Get();
+                        auto* asset = kairi_idle_asset.Get();
+                        auto* mesh = object(pawn, L"MyMesh");
+                        if (notify && asset && mesh)
+                        {
+                            // The replaced BattleEnd contains LastAnimPose(Normal).
+                            // Deliver that native completion event without its
+                            // weapon gesture, or Idle requests dismissal forever.
+                            const auto table = *reinterpret_cast<uintptr_t**>(notify);
+                            reinterpret_cast<void (*)(UObject*, UObject*, UObject*)>(table[kairi_pose_notify_slot])(
+                                notify, mesh, asset);
+                        }
+                    }
                 }
             }
             // This hook already owns the shared animation-play entry. During
@@ -239,6 +454,16 @@ namespace kh3ap::character_idle
 #endif
             if (pawn == kairi_owner.Get() && kairi_instance.Get())
             {
+                if (visible && kairi_relaxed && !in_battle(pawn) &&
+                    character_swap::owns_swap_pawn(pawn) && kairi_is_idle_or_running())
+                {
+                    // Idle entry requests a drawn weapon even after relaxed
+                    // locomotion. Preserve that handoff instead of flashing
+                    // IdleB and restarting the three-second dismissal delay.
+                    // Attack states and battle entry still draw normally.
+                    visible = false;
+                    effect = false;
+                }
                 // Attacks and idle entry draw the weapon through this native
                 // event. Keep the combat idle until the native dismissal event.
                 kairi_relaxed = !visible && !in_battle(pawn);
@@ -416,8 +641,55 @@ namespace kh3ap::character_idle
         }
     } // namespace
 
+    float movement_play_rate_scale(UObject* anim, FName name)
+    {
+        if (anim == kairi_instance.Get())
+        {
+            auto* pawn = kairi_owner.Get();
+            if (pawn && character_swap::owns_swap_pawn(pawn) && !in_battle(pawn))
+            {
+                // Reference translations shorten Aqua's stride to Kairi's
+                // proportions. Correct only the relaxed loops, preserving
+                // authored start/stop timing and native combat locomotion.
+                const auto movement = relaxed_movement(name);
+                if (movement != name)
+                {
+                    if (movement == kairi_movement[1].prepared) { return 1.18f; }
+                    if (movement == kairi_movement[4].prepared) { return 1.15f; }
+                }
+            }
+        }
+        return 1.0f;
+    }
+
     FName effective_animation_name(UObject* anim, FName name)
     {
+        if (anim == kairi_instance.Get())
+        {
+            auto* pawn = kairi_owner.Get();
+            if (pawn && character_swap::owns_swap_pawn(pawn) && !in_battle(pawn))
+            {
+                const auto movement = relaxed_movement(name);
+                if (movement != name) { return movement; }
+                if (kairi_relaxed && name == kairi_battle_end)
+                {
+                    // Native Idle still requests BattleEnd after its three-second
+                    // timer, even when relaxed locomotion already hid the weapon.
+                    // Preserve the one-shot completion and native playback name
+                    // while holding Kairi's relaxed pose instead of borrowing
+                    // Sora's weapon-dismissal gesture. A drawn combat weapon keeps
+                    // the normal BattleEnd because kairi_relaxed is then false.
+                    return kairi_relaxed_idle;
+                }
+                if (kairi_relaxed && (name == kairi_idle_break || name == kairi_weapon_break))
+                {
+                    // Keep the native idle timer and playback name, but use
+                    // Aqua's full-body neutral variation rather than Sora's
+                    // fallback. The ordinary relaxed loop remains Idle_GM.
+                    return kairi_aqua_idle_break;
+                }
+            }
+        }
         if (anim == roxas_instance.Get() &&
             (name == roxas_battle_idle || name == roxas_relaxed_idle || name == roxas_weapon_break))
         {
@@ -545,6 +817,8 @@ namespace kh3ap::character_idle
             return false;
         }
         auto* sets_property = anim->GetPropertyByNameInChain(L"MyAnimSets");
+        auto* movement_source = find_loaded_runtime_asset(player_animation_support::aqua_animation_set_path);
+        if (!is_uobject_valid_fast(movement_source)) { return false; }
         if (anim->GetClassPrivate()->GetName() != L"p_ex006_Anim_C" ||
             set->GetClassPrivate()->GetName() != L"TresAnimSet" || !sets_property ||
             sets_property->GetClass().GetName() != L"ArrayProperty" ||
@@ -556,6 +830,7 @@ namespace kh3ap::character_idle
             return true;
         }
         kairi_battle_idle = FName(L"IdleB", FNAME_Add);
+        kairi_battle_end = FName(L"BattleEnd", FNAME_Add);
         kairi_relaxed_idle = FName(L"Idle_GM", FNAME_Add);
         auto* sets = sets_property->ContainerPtrToValuePtr<TArray<UObject*>>(anim);
         bool present = false;
@@ -573,6 +848,20 @@ namespace kh3ap::character_idle
         {
             throw std::runtime_error("kairi_idle_animation_missing");
         }
+        prepare_kairi_movement(anim, movement_source, *sets);
+        prepare_kairi_pose_completion(set);
+        auto* queue = object(pawn, L"MyStateComp");
+        auto* state = object(queue, L"m_pCurrentState");
+        auto* current = queue ? queue->GetPropertyByNameInChain(L"m_pCurrentState") : nullptr;
+        auto* state_id = state ? state->GetPropertyByNameInChain(L"MyStateID") : nullptr;
+        if (!current || !state_id || current->GetElementSize() != sizeof(UObject*) ||
+            state_id->GetElementSize() != 1)
+        {
+            throw std::runtime_error("kairi_movement_state_layout");
+        }
+        kairi_queue = make_uobject_weak(queue);
+        kairi_current_state_offset = current->GetOffset_Internal();
+        kairi_state_id_offset = state_id->GetOffset_Internal();
         kairi_owner = make_uobject_weak(pawn);
         kairi_instance = make_uobject_weak(anim);
         // Preparation can finish after native idle entry has already hidden
@@ -584,7 +873,7 @@ namespace kh3ap::character_idle
         kairi_remaining_idle_seconds = kairi_relaxed ? 0.0f : native_idle_delay_seconds;
         refresh_idle(pawn);
         RC::Output::send<RC::LogLevel::Normal>(
-            STR("[KH3APProbeCpp] Kairi ABP exploration idle ready: Idle_GM\n"));
+            STR("[KH3APProbeCpp] Kairi exploration ready: Idle_GM and Aqua neutral walk/run/idle break\n"));
         return true;
     }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS

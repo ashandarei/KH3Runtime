@@ -80,6 +80,7 @@ namespace kh3ap::ui_control_detail
         {L"dismiss_message", CommandKind::dismiss_message, false, true, true},
         {L"dismiss_key_item", CommandKind::dismiss_key_item, true, true, false},
         {L"retry", CommandKind::retry, true, true, false},
+        {L"prepare_retry", CommandKind::retry, true, true, false},
         {L"continue", CommandKind::retry, true, true, false},
         {L"space_retry", CommandKind::retry, false, true, false},
         {L"space_game_over", CommandKind::space_game_over, false, true, false},

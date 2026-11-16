@@ -251,7 +251,8 @@ namespace kh3ap
         // inspection reports, retaining the expected-pawn/message guards.
         const bool battle_command = command == L"command_step" || command == L"command_inspect";
         const bool death_command =
-            command == L"game_over" || command == L"retry" || command == L"continue";
+            command == L"game_over" || command == L"retry" || command == L"continue" ||
+            command == L"prepare_retry";
         auto* pawn = cutscene_command || notice_command || battle_command || death_command
                          ? cutscene_pawn()
                          : config.sora();

@@ -23,6 +23,7 @@
 #include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
+#include "kh3ap/core/input/runtime_controller_input_profile.h"
 #include <array>
 #include <algorithm>
 #include <cstring>
@@ -36,6 +37,7 @@ namespace kh3ap
     {
         using BuildRoster = void (*)(UObject*);
         using TickCamp = void (*)(UObject*);
+        using GameOverSelect = void (*)(UObject*, int32_t, int32_t);
         using ReadStatus = void (*)(UObject*, uint8_t, void*);
         using FindCharacter = void* (*)(void*, uint8_t, uint8_t, int32_t);
         inline static const uintptr_t character_record_lookup_rva =
@@ -56,6 +58,8 @@ namespace kh3ap
         uint64_t original{};
         uint64_t original_tick{};
         uint64_t original_record_lookup{};
+        uint64_t original_game_over_select{};
+        std::unique_ptr<PLH::x64Detour> game_over_select_hook;
         std::unique_ptr<PLH::x64Detour> hook;
         std::unique_ptr<PLH::x64Detour> tick_hook;
         std::unique_ptr<PLH::x64Detour> record_lookup_hook;
@@ -548,6 +552,45 @@ namespace kh3ap
             }
         }
 
+        static void game_over_select(UObject* menu, int32_t action, int32_t anchor)
+        {
+            auto& self = *active;
+            auto* hero = character_swap::current_hero();
+            // Retail alternate-character death menus (13-15) label action 12
+            // Prepare and Retry, but implement it as Premium Menu only. Our
+            // owned alternates support the full camp inventory. Reuse action 3
+            // and its original camp-close/retry delegates without swapping pawns.
+            if (action == 12 && is_uobject_valid_fast(menu) &&
+                field<uintptr_t>(menu, 0) == self.base + 0x7c633b8 &&
+                field<uint8_t>(menu, 0xe8) == 1 &&
+                field<int32_t>(menu, 0x2b0) >= 13 && field<int32_t>(menu, 0x2b0) <= 15 &&
+                is_uobject_valid_fast(hero) && character_swap::owns_swap_pawn(hero))
+            {
+                action = 3;
+                Output::send<LogLevel::Verbose>(
+                    STR("[KH3APProbeCpp] Alternate Prepare and Retry routed to native camp\n"));
+            }
+            reinterpret_cast<GameOverSelect>(self.original_game_over_select)(menu, action, anchor);
+        }
+
+        void install_game_over_select()
+        {
+            controller_input::DeathUiProfile profile;
+            constexpr uintptr_t select_rva = 0x1a7f170;
+            if (steam || !controller_input::supported(base, profile) ||
+                !controller_input::signature(base + select_rva,
+                    {0x48, 0x8b, 0xc4, 0x55, 0x57, 0x41, 0x54, 0x41, 0x56, 0x41, 0x57,
+                     0x48, 0x8d, 0x68, 0xa1, 0x48, 0x81, 0xec, 0xb0, 0x00, 0x00, 0x00}))
+            {
+                return;
+            }
+            game_over_select_hook = std::make_unique<PLH::x64Detour>(
+                base + select_rva, reinterpret_cast<uintptr_t>(&game_over_select), &original_game_over_select);
+            const bool installed = game_over_select_hook->hook() && original_game_over_select;
+            Output::send<LogLevel::Verbose>(
+                STR("[KH3APProbeCpp] Alternate Prepare and Retry camp routing installed={}\n"), installed);
+        }
+
         void install()
         {
             if (attempted)
@@ -618,10 +661,18 @@ namespace kh3ap
                 }
                 active = nullptr;
             }
+            if (active == this)
+            {
+                install_game_over_select();
+            }
         }
 
         ~Impl()
         {
+            if (game_over_select_hook && game_over_select_hook->isHooked())
+            {
+                game_over_select_hook->unHook();
+            }
             if (record_lookup_hook && record_lookup_hook->isHooked())
             {
                 record_lookup_hook->unHook();

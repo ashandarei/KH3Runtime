@@ -1124,6 +1124,8 @@ namespace kh3ap
                 test_result["run_resumes"].push_back({
                     {"player", player_id(pawn)},
                     {"source_phase", run_phase},
+                    {"requested_play_rate", run_play_rate},
+                    {"play_rate", animation_value(anim, L"SQEX_AnimGetCurrentPlayRate")},
                     {"time", animation_value(anim, L"SQEX_AnimGetCurrentTime")},
                     {"length", length},
                     {"motion", to_utf8(field<FName>(run, 0xa0).ToString())}});
@@ -1554,6 +1556,11 @@ namespace kh3ap
                 const float length = animation_value(anim, L"SQEX_AnimGetCurrentLength");
                 const float time = animation_value(anim, L"SQEX_AnimGetCurrentTime");
                 run_play_rate = animation_value(anim, L"SQEX_AnimGetCurrentPlayRate");
+                // The source rate already includes its character's stride
+                // correction. Transfer the underlying rate so the receiving
+                // play hook applies its own correction exactly once; otherwise
+                // Kairi's Aqua loop multiplier compounds on every round trip.
+                run_play_rate /= character_idle::movement_play_rate_scale(anim, run_animation);
                 Call loop(anim, L"SQEX_IsAnimLoop");
                 loop.name(L"InSlotName", L"FullBody");
                 loop.run();

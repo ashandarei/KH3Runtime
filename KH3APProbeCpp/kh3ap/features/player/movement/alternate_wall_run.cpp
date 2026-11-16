@@ -325,6 +325,21 @@ namespace kh3ap::alternate_wall_run
         {
             throw std::runtime_error("alternate_wall_run_animset_layout");
         }
+        TArray<AnimationEntry>* aqua_vaults{};
+        if (supported_players[index] == PlayerId::Kairi)
+        {
+            // Kairi selection preloads Aqua for exploration locomotion. Reuse
+            // her authored obstacle vaults where she has the same native name;
+            // keep the shared wall-run/hanging motions and unmatched variants.
+            auto* aqua = find_loaded_runtime_asset(player_animation_support::aqua_animation_set_path);
+            auto* aqua_entries = is_uobject_valid_fast(aqua) ? aqua->GetPropertyByNameInChain(L"Anims") : nullptr;
+            if (!aqua_entries || !aqua_entries->IsA<FArrayProperty>() ||
+                static_cast<FArrayProperty*>(aqua_entries)->GetInner()->GetElementSize() != sizeof(AnimationEntry))
+            {
+                throw std::runtime_error("kairi_vault_animation_layout");
+            }
+            aqua_vaults = aqua_entries->ContainerPtrToValuePtr<TArray<AnimationEntry>>(aqua);
+        }
         std::array<AnimationEntry, animation_names.size()> animations{};
         Prepared binding{make_uobject_weak(pawn),
                          make_uobject_weak(animation_instance),
@@ -342,14 +357,26 @@ namespace kh3ap::alternate_wall_run
                     break;
                 }
             }
+            if (aqua_vaults && std::wstring_view(animation_names[index]).starts_with(L"Climbing"))
+            {
+                for (const auto& entry : *aqua_vaults)
+                {
+                    if (entry.name == name)
+                    {
+                        animations[index] = entry;
+                        break;
+                    }
+                }
+            }
             if (!is_uobject_valid_fast(animations[index].asset))
             {
                 throw std::runtime_error("alternate_wall_run_animation_missing");
             }
             player_animation_support::allow_animation_skeleton(animation_instance,
                                                                animations[index].asset);
-            // Climbing* contains the obstacle vaults (including ClimbingH's
-            // embedded Sora grunt). Do not redirect wall-run, hang or attack cues.
+            // Climbing* contains the obstacle vaults. Register the actual
+            // donor so Kairi keeps her own voice with Aqua's clips as well.
+            // Do not redirect wall-run, hang or attack cues.
             if (std::wstring_view(animation_names[index]).starts_with(L"Climbing") &&
                 !std::ranges::any_of(binding.borrowed_movement_animations,
                                      [&](const auto& asset)
