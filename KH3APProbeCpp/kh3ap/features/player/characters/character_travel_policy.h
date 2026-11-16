@@ -8,11 +8,11 @@ namespace kh3ap::character_swap
             bool changed_world, bool loading_cover_open)
     {
         // Ordinary ground-map arrivals can restore the player before the reveal.
-        // Ships, space, Re Mind's scripted ownership and same-world handoffs
-        // still need their normal readiness gate. Live possession, KH0.2 and
-        // cinematic ownership checks are also required at the call site.
+        // Caribbean arrivals use this path too; scripted boarding prepares the
+        // retained hero before the vehicle captures its player. Space, Re Mind's
+        // scripted ownership and same-world handoffs retain their readiness gate.
+        // Live possession, KH0.2 and cinematic ownership checks remain at the call site.
         const bool ground_map = world.starts_with(L"/Game/Levels/") &&
-            !world.starts_with(L"/Game/Levels/ca/") &&
             !world.starts_with(L"/Game/Levels/wm/") &&
             !world.starts_with(L"/Game/Levels/gm/") &&
             !world.starts_with(L"/Game/Levels/kg_DLC/");
@@ -47,11 +47,11 @@ namespace kh3ap::character_swap
                is_olympus_collapse_scenery(world, matinee);
     }
 
-    constexpr bool cinematic_requires_native_sora(std::wstring_view world)
+    constexpr bool is_tornado_freefall_cinematic(std::wstring_view world, std::wstring_view matinee)
     {
-        // Caribbean movies also initialize the moving ship/deck gameplay state.
-        // Rebinding a Sora mesh role does not transfer that gameplay ownership.
-        return world.find(L"/Game/Levels/ca/") != world.npos;
+        return world.starts_with(L"/Game/Levels/he/he_06/he_06.") &&
+               matinee == L"/Game/Levels/he/he_06/umap/he_06_camera_ms130."
+                          L"he_06_camera_ms130:PersistentLevel.ms130m";
     }
 
     constexpr bool is_remind_area_c_exit_cinematic(std::wstring_view world, std::wstring_view matinee)

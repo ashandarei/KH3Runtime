@@ -9,7 +9,7 @@ else()
     set(options -E -P -x c++ -DKH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS=${MODE})
 endif()
 
-# The 0.2 story hero and its readiness checks also drive ordinary map UI.
+# Shared player identity and the 0.2 readiness policy also drive ordinary map UI.
 file(READ "${MAP_SOURCE}" source_text)
 string(REGEX REPLACE "#include[^\n]*" "" source_text "${source_text}")
 file(WRITE "${OUTPUT}.maps.cpp" "${source_text}")
@@ -20,9 +20,11 @@ if(NOT result EQUAL 0)
 endif()
 string(REGEX MATCHALL "Kh02Story::map_overlay_hero\\(\\)" heroes "${preprocessed}")
 list(LENGTH heroes hero_count)
+string(REGEX MATCHALL "runtime_current_player_pawn\\(\\)" players "${preprocessed}")
+list(LENGTH players player_count)
 string(FIND "${preprocessed}" "Kh02Story::map_overlay_ready(hero)" readiness)
-if(NOT hero_count EQUAL 3 OR readiness EQUAL -1)
-    message(FATAL_ERROR "0.2 minimap/overlay callbacks missing in mode ${MODE}")
+if(NOT hero_count EQUAL 1 OR player_count LESS 2 OR readiness EQUAL -1)
+    message(FATAL_ERROR "Shared player/0.2 minimap/overlay callbacks missing in mode ${MODE}")
 endif()
 execute_process(COMMAND "${COMPILER}" ${options} "${OUTPUT}"
     RESULT_VARIABLE result OUTPUT_VARIABLE preprocessed ERROR_VARIABLE errors)

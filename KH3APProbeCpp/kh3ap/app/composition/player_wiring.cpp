@@ -193,7 +193,6 @@ namespace kh3ap
                 {
                     return;
                 }
-                m_party_members.observe_sora_state(pawn);
                 m_colors.on_sora_state(pawn);
                 if (m_player_context.refresh_controller_from_sora_event(pawn))
                 {
@@ -204,7 +203,7 @@ namespace kh3ap
             },
             [this](uintptr_t state_component)
             {
-                if (m_service_graph_ready) { m_party_members.observe_friend_state(state_component); }
+                if (m_service_graph_ready) { m_party_members.observe_state_write(state_component); }
             },
         }};
     }
@@ -293,7 +292,6 @@ namespace kh3ap
     auto RuntimeComposition::Impl::make_world_bootstrap() -> RuntimeWorldBootstrapService
     {
         return RuntimeWorldBootstrapService{RuntimeWorldBootstrapConfig{
-            .player_context = m_player_context,
             .bridge_dir_resolver =
                 []
             {

@@ -585,7 +585,9 @@ namespace kh3ap
         const auto save_points_start = std::chrono::steady_clock::now();
 #endif
         draw_save_points(canvas, overlay, fit, sw, now);
-        draw_keybinds(p, sw, sh, relayout);
+        // The first layout runs while the movie is hidden. Apply the hints on
+        // presentation even when the new movie has the previous one's layout.
+        draw_keybinds(p, sw, sh, relayout || !presented);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         timing.save_points_ms = std::chrono::duration<double, std::milli>(
                                     std::chrono::steady_clock::now() - save_points_start)

@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/story/save_points/save_point_discovery_service.h"
 
 #include "kh3ap/features/story/save_points/save_point_spawn_helpers.h"
@@ -5,7 +6,6 @@
 #include "kh3ap/core/performance_build.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
-#include "kh3ap/app/state.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/bridge/utilities.h"
 
@@ -83,7 +83,7 @@ namespace kh3ap
         auto accessed(UObject* actor, UObject* pawn, std::wstring& status) -> bool
         {
             // The save actor's transient IsAccessed bit is not an arrival
-            // ledger. Use Sora's actual overlap with its active recovery volume.
+            // ledger. Use the current player's actual overlap with its active recovery volume.
             status = STR("savepoint_inactive");
             if (!bool_property(actor, STR("m_bIsActive"))) return false;
             auto* recovery = try_read_reflected_object_property_value(actor, STR("MyRecover"));
@@ -217,16 +217,15 @@ namespace kh3ap
                     continue;
                 }
                 if (!bridge || now < destination.retry_at) continue;
-                auto& candidate = deps.runtime_state.grant_state().pawn_state();
-                auto* pawn = candidate.object();
-                if (!candidate.candidate_trusted() || !is_uobject_valid_fast(pawn)) continue;
+                auto* pawn = runtime_current_player_pawn();
+                if (!pawn) continue;
                 destination.pending = false;
                 if (pawn->GetFullName().find(destination.map) == std::wstring::npos ||
                     destination.recorded_actor.Get() == actor) continue;
                 RuntimeConditionalProfileScope<KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS != 0> profile{STR("save_point_discovery:event")};
                 std::wstring status;
                 // An overlap event from a companion is not discovery. Validate
-                // Sora's actual overlap once, after the native event completes.
+                // the current player's actual overlap once, after the native event completes.
                 if (!accessed(actor, pawn, status))
                 {
                     Output::send<LogLevel::Verbose>(STR("[KH3APProbeCpp] SavePointDiscovery event tag={} arrival={}\n"), destination.tag, status);

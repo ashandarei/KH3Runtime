@@ -11,6 +11,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/characters/character_reactions.h"
+#include "kh3ap/features/world/garden_return/garden_return_service.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -406,7 +407,8 @@ namespace kh3ap::character_traversal
             return false;
         }
         const auto player = static_cast<PlayerId>(*field->ContainerPtrToValuePtr<uint8_t>(pawn));
-        return player == PlayerId::Aqua || player == PlayerId::Kairi || player == PlayerId::Roxas;
+        return player == PlayerId::Aqua || player == PlayerId::Riku ||
+               player == PlayerId::Kairi || player == PlayerId::Roxas;
     }
 
     bool barrel_spin_ready(UObject *pawn)
@@ -451,6 +453,13 @@ namespace kh3ap::character_traversal
             {
                 held = false;
                 return true;
+            }
+            // Camp preserves Swim underneath its menu. Let its Back button
+            // reach native UI instead of claiming it as underwater dash.
+            // Existing gameplay presses still clear held state on release.
+            if (RuntimeGardenReturnService::camp_menu_open())
+            {
+                return false;
             }
             auto *pawn = character_swap::current_hero();
             if (!ready(pawn) || !character_swap::owns_swap_pawn(pawn))
@@ -664,14 +673,16 @@ namespace kh3ap::character_traversal
             return indices;
         }();
         std::array<bool, animation_names.size()> authored{};
-        std::unordered_set<FName> available_names;
+        std::unordered_map<FName, UObject*> available_animations;
         for (auto *set : *sets)
         {
+            // Instance-owned sets may contain earlier shared fallbacks.
+            const bool authored_set = set->GetOuterPrivate() != instance;
             for (const auto &entry : *animations(set))
             {
                 if (is_uobject_valid_fast(entry.asset))
                 {
-                    available_names.insert(entry.name);
+                    available_animations.try_emplace(entry.name, authored_set ? entry.asset : nullptr);
                 }
                 const auto found = required_indices.find(entry.name);
                 if (found != required_indices.end() && is_uobject_valid_fast(entry.asset))
@@ -718,7 +729,48 @@ namespace kh3ap::character_traversal
                 player_animation_support::allow_animation_skeleton(instance, asset);
             }
             missing.push_back({FName(animation_names[index], FNAME_Add), asset});
-            available_names.insert(FName(animation_names[index], FNAME_Add));
+            available_animations.try_emplace(missing.back().name, nullptr);
+        }
+        // Supply missing stance names from this hero before adding donors.
+        // Both ordinary Run updates and moving swaps use these names.
+        static const auto locomotion_names = []
+        {
+            constexpr std::array stems{L"RunStart", L"RunLoop", L"RunEndL", L"RunEndR",
+                                       L"WalkStart", L"WalkLoop", L"WalkEndL", L"WalkEndR"};
+            constexpr std::array suffixes{L'N', L'B', L'W'};
+            std::array<std::array<FName, suffixes.size()>, stems.size()> names{};
+            for (size_t family = 0; family < stems.size(); ++family)
+            {
+                for (size_t stance = 0; stance < suffixes.size(); ++stance)
+                {
+                    auto name = std::wstring(stems[family]) + suffixes[stance];
+                    names[family][stance] = FName(name.c_str(), FNAME_Add);
+                }
+            }
+            return names;
+        }();
+        for (const auto& family : locomotion_names)
+        {
+            UObject* authored_asset{};
+            for (const auto& name : family)
+            {
+                const auto found = available_animations.find(name);
+                if (found != available_animations.end() && found->second)
+                {
+                    authored_asset = found->second;
+                    break;
+                }
+            }
+            if (authored_asset)
+            {
+                for (const auto& name : family)
+                {
+                    if (available_animations.try_emplace(name, nullptr).second)
+                    {
+                        missing.push_back({name, authored_asset});
+                    }
+                }
+            }
         }
         // Native world and team actions ask for more than the traversal subset:
         // e.g. PuddingEat, shield/Goofy attacks, ship and Union Cross motions.
@@ -729,7 +781,8 @@ namespace kh3ap::character_traversal
         {
             for (const auto& entry : *animations(source_set))
             {
-                if (!is_uobject_valid_fast(entry.asset) || !available_names.insert(entry.name).second)
+                if (!is_uobject_valid_fast(entry.asset) ||
+                    !available_animations.try_emplace(entry.name, nullptr).second)
                 {
                     continue;
                 }

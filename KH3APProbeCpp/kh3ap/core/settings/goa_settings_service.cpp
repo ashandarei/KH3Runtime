@@ -4,6 +4,7 @@
 #include "kh3ap/core/settings/seed_ui_options.h"
 #include "kh3ap/core/settings/seed_gameplay_options.h"
 #include "kh3ap/core/settings/goa_settings_service.h"
+#include "kh3ap/core/settings/combat_ally_settings.h"
 
 #include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/features/grants/battle_level/battle_level_progress.h"
@@ -72,6 +73,7 @@ namespace kh3ap
             bool song_display{true};
             bool auto_equip_essential_abilities{true};
             bool auto_skip_cutscenes{};
+            int32_t combat_ally_id{-1};
             uint32_t map_icon_options{map_icon_defaults};
             bool loaded{};
             bool needs_migration{};
@@ -172,6 +174,7 @@ namespace kh3ap
             result.enemy_randomization_enabled = *enemy_enabled;
             result.boss_randomization_enabled = *boss_enabled;
             result.loaded = true;
+            result.combat_ally_id = read_combat_ally_id(JsonObject{*text});
             const auto saved_ui = apply_saved_map_ui_options(JsonObject{*text}, seed_ui);
             result.map_overlay_enabled = saved_ui.map_overlay_enabled;
             result.song_display = saved_ui.song_display;
@@ -378,6 +381,7 @@ namespace kh3ap
         map_overlay_enabled_.store(persisted.map_overlay_enabled);
         song_display_.store(persisted.song_display);
         auto_skip_cutscenes_.store(persisted.auto_skip_cutscenes);
+        combat_ally_id_.store(persisted.combat_ally_id);
         auto_equip_essential_abilities_.store(persisted.auto_equip_essential_abilities);
         map_icon_options_.store(persisted.map_icon_options);
         loaded_from_disk_.store(persisted.loaded);
@@ -435,6 +439,7 @@ namespace kh3ap
             .song_display = song_display(),
             .auto_equip_essential_abilities = auto_equip_essential_abilities(),
             .auto_skip_cutscenes = auto_skip_cutscenes(),
+            .combat_ally_id = combat_ally_id(),
             .map_icon_options = map_icon_options(),
             .loaded_from_disk = loaded_from_disk_.load(),
             .persistence_ready =
@@ -540,6 +545,16 @@ namespace kh3ap
         return persist_settings();
     }
 
+    auto RuntimeGoaSettingsService::set_combat_ally_id(int32_t player_id) -> bool
+    {
+        if (!valid_combat_ally_id(player_id))
+        {
+            return false;
+        }
+        combat_ally_id_.store(player_id);
+        return persist_settings();
+    }
+
     auto RuntimeGoaSettingsService::set_song_display(bool enabled) -> bool
     {
         song_display_.store(enabled);
@@ -603,6 +618,7 @@ namespace kh3ap
              << "  \"protocol_version\": " << runtime_settings_protocol_version << ",\n"
              << "  \"seed_identity\": \"" << json_escape(seed_identity_) << "\",\n"
              << "  \"slot_name\": \"" << json_escape(slot_name_) << "\",\n"
+             << "  \"combat_ally_id\": " << snapshot.combat_ally_id << ",\n"
              << "  \"enemy_randomization_enabled\": "
              << (snapshot.enemy_randomization_enabled ? "true" : "false") << ",\n"
              << "  \"boss_randomization_enabled\": "

@@ -374,6 +374,7 @@ namespace kh3ap
         minimap_movie_path.clear();
         minimap_chests = minimap_emblems = minimap_ingredients = 0;
         chest_movie_path.clear();
+        keybind_hint_lines = -1;
         displayed_icons = 0;
         displayed_emblems = 0;
         displayed_ingredients = 0;

@@ -438,7 +438,8 @@ namespace kh3ap
             const bool party=item_token==L"KH3AP_PARTY_MEMBER_UNLOCK::PartyMember_003";
             const bool style=item_token==L"KH3AP_KEYBLADE_STYLE::WEP_KEYBLADE00";
             const bool unlock=item_token==L"KH3AP_CONTROLLER_UNLOCK::magic";
-            const bool level=item_token.starts_with(L"KH3AP_PROGRESSIVE_KEYBLADE_LEVEL::KEYBLADE::0::");
+            const bool pandora_level = item_token.starts_with(L"KH3AP_PROGRESSIVE_KEYBLADE_LEVEL::KEYBLADE::150::");
+            const bool level = pandora_level || item_token.starts_with(L"KH3AP_PROGRESSIVE_KEYBLADE_LEVEL::KEYBLADE::0::");
             if (!ability && !party && !style && !unlock && !level && !item_token.starts_with(L"ETresVictoryBonusKind::"))
                 throw std::runtime_error("character_reward_enum_required");
             auto* context=RuntimeSpaceService::is_space_active() ? RuntimeSpaceService::item_delivery_context() :
@@ -454,7 +455,7 @@ namespace kh3ap
                 if (count_after<0) throw std::runtime_error("party_roster_unavailable");
             } else if (level) {
                 KeybladeLevelQueryResult result{};
-                if (!try_query_keyblade_level(L"Kingdom Key",false,&result,nullptr))
+                if (!try_query_keyblade_level(pandora_level ? L"Pandora's Power" : L"Kingdom Key", false, &result, nullptr))
                     throw std::runtime_error("keyblade_level_unavailable");
                 count_after=staging_count=result.achieved_flag_count;
             } else {

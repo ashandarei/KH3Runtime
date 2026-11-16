@@ -103,10 +103,6 @@ namespace kh3ap::character_union_cross
 #endif
                 return accepted;
             }
-            if constexpr (Index == 3)
-            {
-                return reinterpret_cast<ActionCommand>(originals[Index])(controller);
-            }
             if (is_uobject_valid_fast(controller) && character_magic::owns_command(
                     controller, field<int>(controller, controller_selected_command_offset)))
             {
@@ -114,6 +110,10 @@ namespace kh3ap::character_union_cross
                 // omits Water). Reuse Sora's normal selection/MP/targeting path
                 // only for the prepared ally's mirrored unlocked commands.
                 return sora_action_command(controller);
+            }
+            if constexpr (Index == 3)
+            {
+                return reinterpret_cast<ActionCommand>(originals[Index])(controller);
             }
             if (owns_union_cross_command(controller))
             {

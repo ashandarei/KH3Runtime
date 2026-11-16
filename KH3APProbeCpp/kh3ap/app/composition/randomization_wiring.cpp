@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/app/composition/service_graph.h"
 #include "kh3ap/app/composition/bindings.h"
 #include "kh3ap/app/composition/settings.h"
@@ -15,7 +16,6 @@
 #include "kh3ap/features/colors/color_service.h"
 #include "kh3ap/features/party/party_member_service.h"
 #include "kh3ap/features/player/state/sora_state_catalog.h"
-#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/tutorials/tutorial_skip_service.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UFunction.hpp>
@@ -111,6 +111,7 @@ namespace kh3ap
             .on_pawn_possessed =
                 [this](UObject* pawn)
             {
+                runtime_observe_current_player(pawn);
                 m_colors.on_pawn_possessed(pawn);
             },
         }};
@@ -149,18 +150,8 @@ namespace kh3ap
             },
             [this]()
             {
-                // Use the verified possessed alternate, never a cached outgoing Sora.
-                if (character_swap::handoff_pending())
-                {
-                    return static_cast<UObject*>(nullptr);
-                }
-                if (auto* hero = character_swap::current_hero())
-                {
-                    // Melody owns a temporary game pause. Keep the possessed
-                    // pawn available so its pause can be released on return.
-                    return character_swap::owns_swap_pawn(hero) ? hero : nullptr;
-                }
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                // Melody temporarily pauses gameplay; identity stays available.
+                return runtime_current_player_pawn();
             },
             [this]()
             {
@@ -227,7 +218,7 @@ namespace kh3ap
             },
             [this]()
             {
-                return m_player_context.trusted_current_playable_cached_sora_pawn();
+                return runtime_current_player_pawn();
             },
             []()
             {

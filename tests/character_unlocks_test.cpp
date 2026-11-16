@@ -4,6 +4,7 @@
 int main()
 {
     using namespace kh3ap::character_unlocks;
+    enabled_mask.store(aqua_unlock_mask | kairi_unlock_mask | roxas_unlock_mask | riku_unlock_mask);
     received_mask.store(0);
     assert(available(-1));
     for (int player : {8, 10, 16, 17})
@@ -23,6 +24,9 @@ int main()
     assert(!available(8));
     received_mask.fetch_or(token_bit(L"KH3AP_CHARACTER_UNLOCK::8"));
     assert(available(8) && available(16) && available(17) && available(10));
+    enabled_mask.store(0);
+    assert(available(-1));
+    assert(!available(8) && !available(16) && !available(17) && !available(10));
     // A different seed starts locked, regardless of a previous seed's receipts.
     received_mask.store(0);
     assert(!available(8) && !available(16) && !available(17) && !available(10));

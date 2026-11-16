@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include <chrono>
 #include <memory>
 #include "kh3ap/features/story/bootstrap/world_bootstrap_calls.h"
@@ -13,7 +14,6 @@
 #include "kh3ap/core/reflection/owned_function_cache.h"
 #include "kh3ap/core/conditional_profile_scope.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
-#include "kh3ap/features/player/context/player_context_service.h"
 #include "kh3ap/features/world/portals/portal_spawn_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -385,7 +385,7 @@ namespace kh3ap
 
         auto perform_bootstrap(std::chrono::steady_clock::time_point now) -> bool
         {
-            UObject* const pawn = config.player_context.trusted_current_playable_cached_sora_pawn();
+            UObject* const pawn = runtime_current_player_pawn();
             if (!is_uobject_valid_fast(pawn) || !is_uobject_a_fast(pawn, AActor::StaticClass()))
             {
                 return false;
@@ -460,7 +460,7 @@ namespace kh3ap
 
         auto world_ready() -> void
         {
-            auto* const pawn = config.player_context.trusted_current_playable_cached_sora_pawn();
+            auto* const pawn = runtime_current_player_pawn();
             if (!is_uobject_a_fast(pawn, AActor::StaticClass()))
             {
                 return;
@@ -544,7 +544,7 @@ namespace kh3ap
                 throw std::runtime_error("bootstrap_shop_read_layout");
             }
             std::vector<std::byte> params(fn->GetParmsSize());
-            auto* pawn = config.player_context.trusted_current_playable_cached_sora_pawn();
+            auto* pawn = runtime_current_player_pawn();
             if (!write_object_function_param(fn, params.data(), L"WorldContextObject", pawn))
             {
                 throw std::runtime_error("bootstrap_shop_read_context");

@@ -101,10 +101,12 @@ namespace kh3ap::character_reactions
         {
             fill_tuning<int32_t>(pawn, source, name, L"IntProperty");
         }
+        fill_tuning<UObject*>(pawn, source, L"m_pCoverShotDestroyEffect", L"ObjectProperty");
     }
 
     bool owns_command(UObject* controller, int command)
     {
+        const bool ship_command = special_ship_command(command);
         auto* pawn = object(controller, L"Pawn");
         auto* player_field = pawn ? pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID") : nullptr;
         const bool situation = player_field && player_field->GetElementSize() == sizeof(uint8_t) &&
@@ -126,12 +128,13 @@ namespace kh3ap::character_reactions
         case PlayerActionCommand::PUDDING:
         case PlayerActionCommand::POSTCARD:
         case PlayerActionCommand::CARDDRAW:
+        case PlayerActionCommand::SLIDESHOT:
         case PlayerActionCommand::COVERSLIDE:
         case PlayerActionCommand::DISPEL:
         case PlayerActionCommand::QUICKBATTLE:
             break;
         default:
-            if (!situation) { return false; }
+            if (!situation && !ship_command) { return false; }
             break;
         }
         if (!pawn || character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn) ||
@@ -140,6 +143,23 @@ namespace kh3ap::character_reactions
             kh02_actor_world(pawn) != kh02_current_world())
         {
             return false;
+        }
+        if (ship_command)
+        {
+            // The alternate dispatchers omit all four ship specials. Sora's
+            // branches use the shared pawn interface and the ship's normal
+            // eligibility/activation path; these commands have no reactor.
+            auto* state = object(object(pawn, L"MyStateComp"), L"m_pCurrentState");
+            auto* ship = object(state, L"m_pObj");
+            auto* ship_class = UObjectGlobals::StaticFindObject<UClass*>(
+                nullptr, nullptr, L"/Script/TresGame.TresVehiclePawnSpecialShip");
+            return is_uobject_valid_fast(state) &&
+                   state->GetClassPrivate()->GetPathName() == L"/Script/TresGame.TresPlayerState_SpecialShip" &&
+                   object(state, L"MyCharPawn") == pawn &&
+                   is_uobject_valid_fast(ship) && is_uobject_valid_fast(ship_class) &&
+                   is_uobject_a_fast(ship, ship_class) &&
+                   kh02_actor_world(ship) == kh02_current_world() &&
+                   object(ship, L"m_PlayerController") == controller;
         }
         if (situation)
         {
@@ -162,17 +182,17 @@ namespace kh3ap::character_reactions
             // the countdown and notifying its original owning encounter.
             return object(pawn, L"m_pDeathSentenceCountEffect") != nullptr;
         }
-        if (command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
+        const bool cover_shot = command == player_action_command_value(PlayerActionCommand::SLIDESHOT);
+        if (cover_shot || command == player_action_command_value(PlayerActionCommand::COVERSLIDE))
         {
-            // The native command is offered while approaching cover in Idle
-            // or Run, and queues Cover with the controller's selected destination.
-            // Sora's dispatcher retains native eligibility and direction checks.
+            // Cover Slide can start from Idle or Run. The native Cover state
+            // offers Slide Shot only after it selects a lock-on target.
             auto* state = object(object(pawn, L"MyStateComp"), L"m_pCurrentState");
             if (!is_uobject_valid_fast(state)) { return false; }
             const auto path = state->GetClassPrivate()->GetPathName();
-            return path == L"/Script/TresGame.TresPlayerState_Idle" ||
-                   path == L"/Script/TresGame.TresPlayerState_Run" ||
-                   path == L"/Script/TresGame.TresPlayerState_Cover";
+            return path == L"/Script/TresGame.TresPlayerState_Cover" ||
+                   (!cover_shot && (path == L"/Script/TresGame.TresPlayerState_Idle" ||
+                                   path == L"/Script/TresGame.TresPlayerState_Run"));
         }
         auto* info = object(controller, L"m_pUICommandInfo");
         auto* actor = object(info, L"m_Actor");

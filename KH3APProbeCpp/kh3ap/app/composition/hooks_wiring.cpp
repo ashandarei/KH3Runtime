@@ -67,7 +67,7 @@ namespace kh3ap
             s_enable_link_tutorial_bypasses,
             s_enable_informational_help_bypasses,
             s_enable_lucky_emblem_tracker,
-            s_enable_runtime_portal_spawn_request || s_enable_runtime_bx02_portal_auto_spawn ||
+            s_enable_runtime_portal_spawn_request ||
                 s_enable_runtime_he02_death_mirror_auto_spawn,
             s_enable_runtime_world_bootstrap,
             s_runtime_state.treasure_state().class_cache(),

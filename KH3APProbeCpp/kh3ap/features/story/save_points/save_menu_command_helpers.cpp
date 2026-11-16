@@ -9,6 +9,7 @@
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/session/command_guard.h"
 #include "kh3ap/features/player/context/context_helpers.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
@@ -817,10 +818,20 @@ namespace kh3ap
         }
 
         auto& pawn_state = deps.runtime_state.grant_state().pawn_state();
-        UObject* const pawn = pawn_state.object();
-        if (!pawn || !kh3ap::is_uobject_valid_fast(pawn) || !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
+        // Story flags are shared across playable characters. Resolve the current
+        // possessed player for writes without broadening Sora's AP grant context.
+        const bool flag_write = is_world_map_progress_command(request.command) ||
+                                is_set_game_flag_command(request.command) ||
+                                is_set_game_flag_boolean_command(request.command) ||
+                                is_set_game_flag_label_command(request.command);
+        UObject* const pawn = flag_write ? runtime_ready_player_pawn()
+                                        : pawn_state.object();
+        if (!pawn || (!flag_write &&
+                      (!kh3ap::is_uobject_valid_fast(pawn) ||
+                       !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))))
         {
-            write_result(deps, request, STR("waiting"), STR("missing_safe_sora_pawn"), pawn,
+            write_result(deps, request, STR("waiting"),
+                         flag_write ? STR("missing_ready_player_pawn") : STR("missing_safe_sora_pawn"), pawn,
                          nullptr, false);
             return;
         }

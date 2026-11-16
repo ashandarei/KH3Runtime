@@ -128,6 +128,8 @@ namespace kh3ap::character_native
         party_spawn_default_roster,
         mickey_hud_close,
         mickey_hud_restore_mode,
+        tornado_vacuum_begin,
+        tornado_vacuum_end,
         count
     };
 
@@ -257,6 +259,8 @@ namespace kh3ap::character_native
         Entry{0x152fa10, 0x125b630, std::string_view{"\x4c\x8b\xdc\x56\x48\x81\xec\xc0\x00\x00\x00", 11}, std::string_view{"\x4c\x8b\xdc\x57\x48\x81\xec\xf0\x00\x00\x00", 11}}, // party_spawn_default_roster
         Entry{0x18e3a60, 0x1577bf0, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x99\x60\x01\x00\x00\x48\x8b\xf9\x48\x85\xdb\x0f", 24}, std::string_view{"\x40\x53\x48\x83\xec\x20\x48\x8b\xd9\x48\x8b\x89\x60\x01\x00\x00\x48\x85\xc9\x74\x25\x48\x8b\x01", 24}}, // mickey_hud_close
         Entry{0x18e3b74, 0x1577c20, std::string_view{"\xc7\x87\xbc\x01\x00\x00\x00\x00\x00\x00", 10}, std::string_view{"\xc7\x83\xbc\x01\x00\x00\x00\x00\x00\x00", 10}}, // mickey_hud_restore_mode
+        Entry{0x1026a40, 0xda83b0, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x79\x68\x48\x8b", 16}, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x79\x68\x48\x8b", 16}}, // tornado_vacuum_begin
+        Entry{0x1027330, 0xdadd90, std::string_view{"\x48\x89\x5c\x24\x10\x56\x48\x83\xec\x20\x48\x8b\x59\x68\x48\x8b", 16}, std::string_view{"\x48\x89\x5c\x24\x10\x56\x48\x83\xec\x20\x48\x8b\x59\x68\x48\x8b", 16}}, // tornado_vacuum_end
     };
     static_assert(entries.size() == static_cast<size_t>(Site::count));
 }

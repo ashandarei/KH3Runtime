@@ -253,7 +253,6 @@ namespace kh3ap::settings
     // save-point actor or the associated GoA save-point slot sync on arrival.
     inline constexpr bool s_enable_runtime_he02_save_point_auto_spawn = false;
     inline constexpr bool s_enable_runtime_fz02_save_point_auto_spawn = true;
-    inline constexpr bool s_enable_runtime_bx02_portal_auto_spawn = true;
     inline constexpr bool s_enable_runtime_he02_death_mirror_auto_spawn = true;
     // GoA already writes these flags before sending the player to the Caribbean,
     // but CA's first-visit initialization can run afterward and leave its chart
@@ -336,9 +335,6 @@ namespace kh3ap::settings
     inline constexpr auto s_runtime_he02_save_point_auto_spawn_retry_interval = std::chrono::seconds(5);
     inline constexpr auto s_runtime_fz02_save_point_auto_spawn_stable_delay = std::chrono::seconds(5);
     inline constexpr auto s_runtime_fz02_save_point_auto_spawn_retry_interval = std::chrono::seconds(5);
-    inline constexpr auto s_runtime_bx02_portal_auto_spawn_stable_delay = std::chrono::seconds(3);
-    inline constexpr auto s_runtime_bx02_portal_auto_spawn_retry_interval = std::chrono::seconds(3);
-    inline constexpr auto s_runtime_bx02_portal_auto_spawn_verification_delay = std::chrono::seconds(20);
     inline constexpr auto s_runtime_he02_death_mirror_auto_spawn_stable_delay = std::chrono::seconds(3);
     inline constexpr auto s_runtime_he02_death_mirror_auto_spawn_retry_interval = std::chrono::seconds(3);
     inline constexpr auto s_runtime_he02_death_mirror_auto_spawn_verification_delay = std::chrono::seconds(20);
@@ -384,10 +380,6 @@ namespace kh3ap::settings
             L"/Game/Maps/GardenOfAssemblage/uasset/Textures/Portals/BX_Portal.BX_Portal_C";
     inline constexpr std::wstring_view s_bx_portal_blueprint_path =
             L"/Game/Maps/GardenOfAssemblage/uasset/Textures/Portals/BX_Portal.BX_Portal";
-    inline constexpr std::wstring_view s_runtime_bx02_portal_auto_spawn_map_path = L"/Game/Levels/bx/bx_02/bx_02";
-    inline constexpr double s_runtime_bx02_portal_auto_spawn_x = -14412.544;
-    inline constexpr double s_runtime_bx02_portal_auto_spawn_y = -37426.406;
-    inline constexpr double s_runtime_bx02_portal_auto_spawn_z = 0.150;
     inline constexpr std::wstring_view s_death_mirror_class_path =
             L"/Game/Blueprints/GoA/Actors/DeathMirror/A_GoA_DeathMirror.A_GoA_DeathMirror_C";
     inline constexpr std::wstring_view s_death_mirror_blueprint_path =

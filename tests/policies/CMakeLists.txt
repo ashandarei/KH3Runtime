@@ -44,6 +44,7 @@ set(_kh3_policy_tests
     magic_command_policy
     master_xehanort_center
     character_style_state
+    character_style_unlock_policy
     character_ascension_state
     character_reaction_policy
     alternate_interaction_policy
@@ -1183,6 +1184,11 @@ if(WIN32)
     target_link_libraries(test_kh3_runtime_mom_window_observer PRIVATE user32)
     add_test(NAME test_kh3_runtime_mom_window_observer COMMAND test_kh3_runtime_mom_window_observer)
 endif()
+
+add_executable(test_kh3_cinematic_visibility test_cinematic_visibility.cpp)
+target_compile_features(test_kh3_cinematic_visibility PRIVATE cxx_std_20)
+target_include_directories(test_kh3_cinematic_visibility PRIVATE ../../KH3APProbeCpp)
+add_test(NAME test_kh3_cinematic_visibility COMMAND test_kh3_cinematic_visibility)
 
 add_executable(test_kh3_runtime_toy_box_cactuar_bypass test_toy_box_cactuar_bypass.cpp)
 target_compile_features(test_kh3_runtime_toy_box_cactuar_bypass PRIVATE cxx_std_17)

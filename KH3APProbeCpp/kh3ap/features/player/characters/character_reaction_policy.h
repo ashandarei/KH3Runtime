@@ -5,6 +5,20 @@
 
 namespace kh3ap::character_reactions
 {
+    constexpr bool special_ship_command(int command)
+    {
+        switch (static_cast<PlayerActionCommand>(command))
+        {
+        case PlayerActionCommand::SPECIALSHIP_RAGINGCANNON:
+        case PlayerActionCommand::SPECIALSHIP_WINDCHASER:
+        case PlayerActionCommand::SPECIALSHIP_TIDALWAVE:
+        case PlayerActionCommand::SPECIALSHIP_DASH:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     // Only Sora's audited shared situation branches. Preserve each alternate's
     // authored team dispatcher where it has a character-specific implementation.
     constexpr bool shared_situation(int command, PlayerId player)

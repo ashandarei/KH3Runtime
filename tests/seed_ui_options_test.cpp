@@ -1,9 +1,20 @@
 #include "kh3ap/core/settings/seed_ui_options.h"
+#include "kh3ap/core/settings/combat_ally_settings.h"
 #include "kh3ap/core/settings/seed_gameplay_options.h"
 #include "kh3ap/bridge/serialization/json.h"
 #include <cassert>
 using namespace kh3ap;
 int main() {
+    for (const int id : {-1, 8, 10, 16, 17}) {
+        const JsonObject saved{json::write(json::Value{{"combat_ally_id", id}})};
+        assert(read_combat_ally_id(saved) == id);
+    }
+    for (const auto value : {"0", "1", "9", "18", "true", "null", "\"16\"", "4294967312", "-2"}) {
+        const JsonObject saved{std::string{"{\"combat_ally_id\":"} + value + "}"};
+        assert(read_combat_ally_id(saved) == -1);
+    }
+    assert(read_combat_ally_id(JsonObject{"{}"}) == -1);
+    assert(read_combat_ally_id(JsonObject{"{\"other\":{\"combat_ally_id\":16}}"}) == -1);
     for (int mode = 0; mode <= 3; ++mode) {
         for (bool custom : {false, true}) {
             for (bool forms : {false, true}) {

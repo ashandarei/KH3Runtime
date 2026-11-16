@@ -215,6 +215,29 @@ namespace kh3ap
         observe_sora_state(pawn);
     }
 
+    auto RuntimePartyMemberService::observe_state_write(uintptr_t component) -> void
+    {
+        if (!installed_ || !active_ || !component)
+        {
+            return;
+        }
+        // This producer receives every native state write before the Sora-only
+        // grant cache gate. Follow the live party owner, including an alternate
+        // leaving the helm to board an enemy ship. No idle state polling.
+        auto* state_component = reinterpret_cast<UObject*>(component);
+        if (!is_uobject_valid_fast(state_component))
+        {
+            return;
+        }
+        auto* pawn = resolve_party_player();
+        if (pawn && state_component->GetOuterPrivate() == pawn &&
+            read_object_like_property(pawn, STR("MyStateComp")) == state_component)
+        {
+            observe_sora_state(pawn);
+        }
+        observe_friend_state(component);
+    }
+
     auto RuntimePartyMemberService::refresh_ship_control() -> void
     {
         observe_sora_state(resolve_party_player());
@@ -304,8 +327,7 @@ namespace kh3ap
         }
         maintenance_.request();
         refresh_ship_control();
-        auto& pawn_state = config_.runtime_state.grant_state().pawn_state();
-        UObject* const pawn = pawn_state.candidate_trusted() ? pawn_state.object() : nullptr;
+        UObject* const pawn = resolve_party_player();
         if (!pawn || !is_uobject_valid_fast(pawn) || context_entry_pawn_.Get() == pawn)
         {
             return;
@@ -324,13 +346,12 @@ namespace kh3ap
         }
         context_entry_pawn_ = pawn;
         // This arena can omit SetFriendAll and the map-name event. Queue
-        // one transaction for the new Sora, including checkpoint reloads.
+        // one transaction for the new player, including checkpoint reloads.
         // A subsequent native SetFriendAll supersedes this fallback normally.
-        request_reconcile(STR("new Sora party entry"),
+        request_reconcile(STR("new player party entry"),
                           settings.party_randomization_enabled && settings.party_reroll_every_room);
         awaiting_entry_control_ = true;
         next_reconcile_attempt_ =
-            std::max(std::chrono::steady_clock::now(),
-                     pawn_state.first_seen_at() + RuntimeGrantPawnState::stability_delay);
+            std::chrono::steady_clock::now() + RuntimeGrantPawnState::stability_delay;
     }
 } // namespace kh3ap

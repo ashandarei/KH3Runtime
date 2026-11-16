@@ -450,7 +450,7 @@ namespace kh3ap
     auto RuntimeBgmShuffleService::Impl::refresh_world_context() -> bool
     {
         const auto objects = music_objects::snapshot();
-        auto* pawn = config.sora_pawn ? config.sora_pawn() : nullptr;
+        auto* pawn = config.player_pawn ? config.player_pawn() : nullptr;
         const auto level = sead_bgm::current_level_name(pawn);
         UObject* selected = nullptr;
         if (level && !level->empty())

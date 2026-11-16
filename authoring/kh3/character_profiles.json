@@ -1941,6 +1941,36 @@
       "live_steam_validated": false,
       "live_egs_validated": true,
       "live_egs_evidence": "2026-11-12: APTestArena trap expiration restored shared cockpit mode 0 and Check completion on pooled Sora. Mickey retained mode 4 and could not activate Check during the trap. Sora subsequently opened the native save menu and small chest animations."
+    },
+    {
+      "id": "tornado_vacuum_begin",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp",
+      "egs": {
+        "rva": "0x1026a40",
+        "bytes": "48895c2408574883ec20488b7968488b"
+      },
+      "steam": {
+        "rva": "0xda83b0",
+        "bytes": "48895c2408574883ec20488b7968488b"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-16: EGS live Default__TresAction1_e_he903_Vacuum vtable 0x7826420 identifies begin +0x3c8 and end +0x3d8, void(action*) ABI; MyCharPawn at +0x68. Native update consumes boss m_Player at +0xc70 before the grab/movie. Steam table 0x64acd80 paired by unique begin setup block and matching virtual slots; both bodies match offline including state initialization and end cleanup. Runtime swaps unsupported allies before suction, with exact current-world/possession guards and action-end lock release.",
+      "live_steam_validated": false
+    },
+    {
+      "id": "tornado_vacuum_end",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp",
+      "egs": {
+        "rva": "0x1027330",
+        "bytes": "48895c2410564883ec20488b5968488b"
+      },
+      "steam": {
+        "rva": "0xdadd90",
+        "bytes": "48895c2410564883ec20488b5968488b"
+      },
+      "status": "matched_offline",
+      "evidence": "2026-11-16: EGS live Default__TresAction1_e_he903_Vacuum vtable 0x7826420 identifies begin +0x3c8 and end +0x3d8, void(action*) ABI; MyCharPawn at +0x68. Native update consumes boss m_Player at +0xc70 before the grab/movie. Steam table 0x64acd80 paired by unique begin setup block and matching virtual slots; both bodies match offline including state initialization and end cleanup. Runtime swaps unsupported allies before suction, with exact current-world/possession guards and action-end lock release.",
+      "live_steam_validated": false
     }
   ],
   "remaining_requirements": [

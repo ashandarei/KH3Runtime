@@ -104,6 +104,7 @@ namespace kh3ap
         auto observe_goa_map_ready() -> void;
         auto observe_sora_context_ready() -> void;
         auto observe_sora_state(RC::Unreal::UObject* sora_pawn) -> void;
+        auto observe_state_write(uintptr_t state_component) -> void;
         auto observe_friend_state(uintptr_t state_component) -> void;
 
         [[nodiscard]] auto status() const -> RuntimePartyMemberStatus;

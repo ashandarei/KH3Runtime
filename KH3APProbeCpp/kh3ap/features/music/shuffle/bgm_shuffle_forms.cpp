@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/features/music/shuffle/bgm_shuffle_service_impl.h"
 
 namespace kh3ap
@@ -67,8 +68,9 @@ namespace kh3ap
         if (form_observation_dirty)
         {
             form_observation_dirty = false;
-            UObject* const pawn = config.sora_pawn ? config.sora_pawn() : nullptr;
-            if ((form_themes_on() || any_form_custom_music()) && pawn && is_uobject_valid_fast(pawn))
+            UObject* const pawn = config.player_pawn ? config.player_pawn() : nullptr;
+            if ((form_themes_on() || any_form_custom_music()) &&
+                RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
             {
                 form_requested_track = form_tracker.update({
                     .state = read_character_state(pawn),

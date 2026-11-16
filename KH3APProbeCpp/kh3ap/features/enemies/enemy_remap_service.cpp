@@ -189,7 +189,7 @@ namespace kh3ap
 
         if (!s_runtime_enemy_remap.enemy_replacements.empty())
         {
-            install_cactuar_replacement_reveal_guard();
+            install_cinematic_replacement_reveal_guard();
         }
 
         if (!s_runtime_enemy_remap.boss.boss_class_replacements.empty())
@@ -203,6 +203,7 @@ namespace kh3ap
             install_opening_ansem_phase_driver();
             install_runtime_xigbar_field_support();
             install_kg_replacement_reveal_guard();
+            install_replacement_titan_attack_support();
             s_runtime_enemy_remap.boss.tracking.boss_state_hook_ids =
                     UObjectGlobals::RegisterHook(
                             std::wstring{ai_ctor_state_event_path},

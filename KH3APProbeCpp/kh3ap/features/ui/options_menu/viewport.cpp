@@ -124,11 +124,28 @@ namespace kh3ap
             (event == input_event_released || !block_background_controller_input() ||
              game_window_is_foreground()) &&
             settings_shortcut_.route(controller, key->key_name.ToString(), event);
+        const bool settings_active = menu_context_.Get() != nullptr;
         const bool menu_consumed = route_viewport_key(key->key_name, controller, event, gamepad);
-        // Finish gameplay-owned press cycles even if a menu opened before release.
-        const bool gameplay_consumed =
-            (!menu_consumed || event == input_event_released) && config_.gameplay_key &&
+        // The stock settings rows own input too: an unhandled Back must not
+        // become underwater dash. Preserve ownership across focus changes so
+        // an earlier gameplay press still releases, and a menu press cannot
+        // leak its release into gameplay after the menu closes.
+        // Downstream routes also record declined presses. Always deliver release
+        // for cleanup, even when this outer table assigned the press to native UI.
+        // Its return value must not steal that native owner's release.
+        const bool gameplay_release = event == input_event_released && config_.gameplay_key &&
             config_.gameplay_key(controller, key->key_name.ToString(), event, gamepad);
+        const bool gameplay_consumed = gameplay_input_ownership_.route(
+            controller, key->key_name.ToString(), event,
+            [&]
+            {
+                if (event == input_event_released)
+                {
+                    return gameplay_release;
+                }
+                return !settings_active && !menu_consumed && config_.gameplay_key &&
+                       config_.gameplay_key(controller, key->key_name.ToString(), event, gamepad);
+            });
         const bool consumed = menu_consumed || gameplay_consumed;
         if (consumed)
         {

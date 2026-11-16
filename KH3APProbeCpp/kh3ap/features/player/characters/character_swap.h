@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <string_view>
 #include "kh3ap/core/performance_build.h"
 
@@ -17,9 +18,10 @@ namespace kh3ap
     namespace character_swap
     {
         void append_menu(RuntimeOptionsPageBuilder& page);
+        void restore_selection(int player_id, std::function<bool(int)> persist);
         bool route(int controller, std::wstring_view key, int event, bool gamepad);
-        // Returns true once a newly possessed alternate is ready for shared unlock refresh.
-        bool tick(std::chrono::steady_clock::time_point now);
+        // Returns the newly possessed pawn on the frame a handoff completes.
+        RC::Unreal::UObject* tick(std::chrono::steady_clock::time_point now);
         RC::Unreal::UObject* current_hero();
         // Party ownership only, including the synchronous incoming factory pawn.
         RC::Unreal::UObject* party_owner();
@@ -35,6 +37,7 @@ namespace kh3ap
         void notify_cinematic_started(RC::Unreal::UObject* source);
         void notify_cinematic_finished(RC::Unreal::UObject* source);
         void apply_stat_bonus(int hp_amount, int mp_amount);
+        void refresh_alternate_stats();
         bool start_king_mickey_trap(RC::Unreal::UObject* pawn, int64_t receipt_index = -1);
         bool manual_swaps_blocked();
         bool handoff_pending();
@@ -45,7 +48,7 @@ namespace kh3ap
         bool dispatch_swap(RC::Unreal::UObject* pawn, int target);
         bool preparation_pending(int target);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-        bool diagnostic_select(int player_id, bool preload = true);
+        bool diagnostic_select(int player_id, bool preload = true, bool persist = false);
 #endif
     } // namespace character_swap
 

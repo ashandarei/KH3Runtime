@@ -288,6 +288,7 @@ namespace kh3ap
         int32_t navigation_direction_latched_{};
         std::wstring consumed_key_name_{};
         RuntimeOptionsInputOwnership input_ownership_{};
+        RuntimeOptionsInputOwnership gameplay_input_ownership_{};
         RuntimeControllerFocus controller_focus_{};
         RuntimeGameSettingsShortcut settings_shortcut_{};
         bool controller_focus_installed_{};

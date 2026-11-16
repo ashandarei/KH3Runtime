@@ -934,6 +934,13 @@ namespace kh3ap
         return Impl::active && Impl::active->combat_swap.busy();
     }
 
+    bool RuntimeGardenReturnService::camp_menu_open()
+    {
+        auto* menu = Impl::active ? Impl::active->camp() : nullptr;
+        // Includes camp submenus and transitions, not just the ready top page.
+        return menu && field<uint8_t>(menu, native_ui::panel_open_offset);
+    }
+
     bool RuntimeGardenReturnService::finish_kh02_arrival(UObject* pawn)
     {
         return !Impl::active || Impl::active->restoration.finish_arrival(pawn);

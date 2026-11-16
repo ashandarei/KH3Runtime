@@ -1,4 +1,7 @@
 #include "kh3ap/features/player/characters/character_controller_input_policy.h"
+#include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_unlocks.h"
+#include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/app/composition/service_graph.h"
 #include "kh3ap/core/settings/pak_seed_settings.h"
 #include "kh3ap/app/composition/bindings.h"
@@ -53,6 +56,16 @@ namespace kh3ap
         m_steam_platform_recovery.observe_unreal_startup_state();
         m_runtime_startup.initialize();
         m_goa_settings.install_once();
+        const auto& slot_data = installed_seed_slot_data();
+        uint32_t enabled_allies{};
+        if (slot_data.int64_field("ally_characters").value_or(0) != 0)
+        {
+            enabled_allies = character_unlocks::aqua_unlock_mask | character_unlocks::kairi_unlock_mask
+                | character_unlocks::roxas_unlock_mask | character_unlocks::riku_unlock_mask;
+        }
+        character_unlocks::enabled_mask.store(enabled_allies, std::memory_order_release);
+        character_swap::restore_selection(m_goa_settings.combat_ally_id(),
+            [this](int player_id) { return m_goa_settings.set_combat_ally_id(player_id); });
         m_controller_preferences.install_once(
             m_goa_settings.status().legacy_controller_focus_enabled);
         m_experience_multiplier.install_once();

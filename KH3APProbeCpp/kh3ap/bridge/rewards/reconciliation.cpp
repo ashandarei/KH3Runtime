@@ -10,6 +10,7 @@
 #include "kh3ap/bridge/rewards/reconciliation.h"
 #include "kh3ap/features/player/characters/character_unlocks.h"
 #include "kh3ap/features/player/combat/aqua_style_unlock.h"
+#include "kh3ap/features/player/combat/kairi_style_unlock.h"
 #include "kh3ap/features/kh02/rewards/kh02_reward_notice.h"
 #include "kh3ap/features/kh02/progress/kh02_progress_policy.h"
 #include "kh3ap/features/kh02/progress/kh02_check_policy.h"
@@ -1193,6 +1194,7 @@ namespace kh3ap::reconciliation
                 report_receipts.clear();
                 uint32_t character_mask{};
                 bool spellweaver_received = false;
+                bool seven_wishes_received = false;
                 for (const auto& [index, item] : delivery_catalog)
                 {
                     if (item.supported)
@@ -1201,10 +1203,13 @@ namespace kh3ap::reconciliation
                             character_unlocks::token_bit(item.primary.grant.runtime_token);
                         spellweaver_received |=
                             item.primary.grant.runtime_token == aqua_style_unlock::token;
+                        seven_wishes_received |=
+                            item.primary.grant.runtime_token == kairi_style_unlock::token;
                     }
                 }
                 character_unlocks::received_mask.store(character_mask, std::memory_order_release);
                 aqua_style_unlock::publish(spellweaver_received);
+                kairi_style_unlock::publish(seven_wishes_received);
                 ++receipt_catalog_revision;
                 for (const auto& [index, item] : delivery_catalog)
                 {
@@ -2583,6 +2588,7 @@ namespace kh3ap::reconciliation
         overflow.store(false);
         character_unlocks::received_mask.store(0, std::memory_order_release);
         aqua_style_unlock::publish(false);
+        kairi_style_unlock::publish(false);
         snapshot.store(std::make_shared<const View>());
         worker = std::thread(run);
     }
@@ -2602,6 +2608,7 @@ namespace kh3ap::reconciliation
         running = false;
         character_unlocks::received_mask.store(0, std::memory_order_release);
         aqua_style_unlock::publish(false);
+        kairi_style_unlock::publish(false);
     }
     auto view() -> std::shared_ptr<const View>
     {

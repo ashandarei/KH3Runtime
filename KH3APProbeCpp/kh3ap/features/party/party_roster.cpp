@@ -3,6 +3,7 @@
 #include "kh3ap/core/objects/uobject_validity.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
+#include <Unreal/FProperty.hpp>
 #include <UnrealDef.hpp>
 #include <algorithm>
 #include <utility>
@@ -287,20 +288,34 @@ namespace kh3ap
 
     auto RuntimePartyMemberService::capture_vanilla_party(UObject* friend_manager) -> bool
     {
-        std::array<UObject*, runtime_party_member_slot_count> slots{};
-        if (!read_friend_slots(friend_manager, slots))
+        if (!party_native::is_friend_component(friend_manager))
+        {
+            return false;
+        }
+        // SetFriend changes the live weak slots without changing this native
+        // roster. A repeated SetFriendAll or a character handoff can leave our
+        // replacements alive, so their pawn classes are not a vanilla baseline.
+        auto* property = friend_manager->GetPropertyByNameInChain(L"m_FriendPawnBP");
+        if (!property || property->GetClass().GetName() != L"ClassProperty" ||
+            property->GetElementSize() != sizeof(UObject*) ||
+            property->GetArrayDim() < runtime_party_member_slot_count)
+        {
+            return false;
+        }
+        auto** classes = property->ContainerPtrToValuePtr<UObject*>(friend_manager);
+        if (!classes)
         {
             return false;
         }
         std::array<std::wstring, runtime_party_member_slot_count> names{};
-        for (size_t slot = 0; slot < slots.size(); ++slot)
+        for (size_t slot = 0; slot < names.size(); ++slot)
         {
-            if (!slots[slot])
+            auto* klass = classes[slot];
+            if (!klass)
             {
                 continue;
             }
-            auto* klass = slots[slot]->GetClassPrivate();
-            if (!klass || !is_uobject_valid_fast(klass))
+            if (!is_uobject_valid_fast(klass))
             {
                 return false;
             }
@@ -312,8 +327,8 @@ namespace kh3ap
             }
             names[slot] = name.substr(0, name.size() - suffix.size());
         }
-        // Copy identities, never retain a native pawn across frames. Only real
-        // SetFriendAll callbacks refresh this after our first replacement.
+        // Copy identities, never retain a class pointer across frames. Real
+        // SetFriendAll callbacks refresh story changes and world costumes.
         vanilla_friend_manager_ = friend_manager;
         vanilla_npc_ids_ = std::move(names);
         return true;

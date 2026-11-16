@@ -77,7 +77,7 @@ namespace kh3ap::kairi_ground_slam
         FName slam_damage_row;
         FName slam_finisher_damage_row;
         FName sora_sphere_collision_group;
-        FName kairi_keyblade_collision_group;
+        FName kairi_sphere_collision_group;
         std::chrono::steady_clock::time_point deadline{};
         bool unavailable{};
 
@@ -134,7 +134,7 @@ namespace kh3ap::kairi_ground_slam
             const auto original_group = *group;
             if (redirect)
             {
-                *group = kairi_keyblade_collision_group;
+                *group = kairi_sphere_collision_group;
             }
             reinterpret_cast<AttackBegin>(original_attack_begin)(notify, mesh, animation, duration);
             if (redirect)
@@ -151,7 +151,7 @@ namespace kh3ap::kairi_ground_slam
             const auto original_group = *group;
             if (redirect)
             {
-                *group = kairi_keyblade_collision_group;
+                *group = kairi_sphere_collision_group;
             }
             reinterpret_cast<VoiceNotify>(original_attack_end)(notify, mesh, animation);
             if (redirect)
@@ -238,7 +238,10 @@ namespace kh3ap::kairi_ground_slam
             slam_damage_row = FName(slam_damage_row_name, FNAME_Add);
             slam_finisher_damage_row = FName(slam_finisher_damage_row_name, FNAME_Add);
             sora_sphere_collision_group = FName(L"SphereM", FNAME_Add);
-            kairi_keyblade_collision_group = FName(L"KB_StickM", FNAME_Add);
+            // Kairi's KB_SphereM is identical to Sora's SphereM apart from its
+            // group name. KB_StickM is only an 80-unit weapon capsule and loses
+            // the landing shockwave's 550-unit spherical reach.
+            kairi_sphere_collision_group = FName(L"KB_SphereM", FNAME_Add);
             return true;
         }
 
@@ -309,6 +312,15 @@ namespace kh3ap::kairi_ground_slam
     bool initialize()
     {
         return !unavailable && install();
+    }
+
+    bool ready(UObject* pawn)
+    {
+        auto* animation_instance = prepared_animation_instance.Get();
+        return !unavailable && is_uobject_valid_fast(pawn) && prepared_pawn.Get() == pawn &&
+               is_uobject_valid_fast(ground_slam_animation.Get()) &&
+               is_uobject_valid_fast(animation_instance) && animation_instance ==
+                   object_property(object_property(pawn, L"MyMesh"), L"AnimScriptInstance");
     }
 
     bool prepare(UObject* pawn)

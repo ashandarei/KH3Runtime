@@ -50,6 +50,7 @@ namespace kh3ap
     {
         std::wstring last_context_key{};
         std::chrono::steady_clock::time_point last_attempt_at{};
+        std::chrono::steady_clock::time_point ready_since{};
         uint32_t attempt_count{};
         bool asset_load_requested{};
         bool terminal_failure{};

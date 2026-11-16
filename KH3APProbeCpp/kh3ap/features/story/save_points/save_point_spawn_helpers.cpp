@@ -1,9 +1,9 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/story/save_points/internal.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/features/grants/grant_state.h"
-#include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include <UnrealDef.hpp>
@@ -133,11 +133,10 @@ namespace kh3ap
             return;
         }
 
-        UObject* const pawn = deps.runtime_state.grant_state().pawn_state().object();
-        if (!pawn || !kh3ap::is_uobject_valid_fast(pawn) ||
-            !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
+        UObject* const pawn = runtime_ready_player_pawn();
+        if (!pawn)
         {
-            write_result(deps, request, STR("waiting"), STR("missing_safe_sora_pawn"), pawn,
+            write_result(deps, request, STR("waiting"), STR("missing_safe_player_pawn"), pawn,
                          nullptr, std::nullopt, STR(""), STR(""), nullptr, nullptr, nullptr,
                          nullptr);
             return;
@@ -237,54 +236,29 @@ namespace kh3ap
             poll_save_point_spawn_watches(deps);
         }
 
-        auto& context_state = deps.runtime_state.context_subsystem_state().context_state();
-        const auto snapshot = context_state.current_snapshot();
-        if (!snapshot.has_value())
+        UObject* const pawn = runtime_ready_player_pawn();
+        if (!pawn)
         {
+            state.ready_since = {};
             return;
         }
-
-        auto& pawn_state = deps.runtime_state.grant_state().pawn_state();
-        UObject* const pawn = pawn_state.object();
-        const bool playable_context_matches_pawn = runtime_save_point_playable_context_matches_pawn(
-            snapshot->hook, context_state.last_playable_context_object(), pawn);
-
-        const std::wstring context_text =
-            snapshot->world + STR(" ") + snapshot->outer + STR(" ") + snapshot->object;
-        if (!runtime_context_matches_map(context_text, map_path))
+        if (!runtime_context_matches_map(pawn->GetFullName(), map_path))
         {
-            // Camera, UI, and streamed-sublevel callbacks can temporarily own
-            // the latest context while the same base map and pawn remain live.
-            // Clear only when a trusted playable-pawn context proves that a
-            // different map is current; hard map/player starts also reset the
-            // lifecycle explicitly.
-            if (pawn_state.candidate_trusted() && playable_context_matches_pawn)
-            {
-                state.reset();
-            }
-            return;
-        }
-
-        if (!pawn || !pawn_state.candidate_trusted() || !kh3ap::is_uobject_valid_fast(pawn) ||
-            !playable_context_matches_pawn)
-        {
+            state.reset();
             return;
         }
 
         const std::wstring context_key = auto_spawn_context_key(map_path);
 
-        // Candidate discovery validated this pawn before caching it, the fast
-        // object-array check above rejects teardown state in constant time,
-        // and the playable context carries the same stable UObject identity.
-        // Its diagnostic name may be refreshed independently by later hooks.
-        // Avoid the old full-array IsReal/GetFullName walk on this periodic
-        // path. A replacement pawn does not rearm spawning in the same visit.
+        // The resolver verifies local possession and the current world.
+        // A character swap does not rearm a completed spawn in the same visit.
         if (state.finished_for(context_key))
         {
             return;
         }
 
         state.begin_context(context_key);
+        if (state.ready_since.time_since_epoch().count() == 0) { state.ready_since = now; }
 
         if (retry_interval.count() > 0 && state.last_attempt_at.time_since_epoch().count() != 0 &&
             now - state.last_attempt_at < retry_interval)
@@ -296,7 +270,7 @@ namespace kh3ap
             return;
         }
 
-        const auto stable_for = pawn_state.stable_for(now);
+        const auto stable_for = now - state.ready_since;
         if (stable_delay.count() > 0 && stable_for < stable_delay)
         {
             return;
@@ -312,8 +286,9 @@ namespace kh3ap
 
         SavePointSpawnRequest request{};
         request.request_id = std::wstring{request_id_prefix};
-        const std::wstring request_suffix =
-            sanitize_name_token(snapshot->opened_at, runtime_name_suffix_limit);
+        const auto timestamp = now_iso8601_utc();
+        const std::wstring request_suffix = sanitize_name_token(
+            std::wstring{timestamp.begin(), timestamp.end()}, runtime_name_suffix_limit);
         if (!request_suffix.empty())
         {
             request.request_id += STR("-");

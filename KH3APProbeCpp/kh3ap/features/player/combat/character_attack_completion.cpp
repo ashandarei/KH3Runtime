@@ -63,7 +63,7 @@ namespace kh3ap::character_attack_completion
             // Sora's regular attacks carry this independently of the finisher
             // flag. Native story bosses (including TT's Demon Tide) require it
             // to accept a concluding hit and fire their own ending events.
-            copy.killer->SetPropertyValueInContainer(row, true);
+            if (copy.killer) { copy.killer->SetPropertyValueInContainer(row, true); }
             if (!copy.destination.insert(key, row))
             {
                 schema->DestroyStruct(row);
@@ -88,7 +88,8 @@ namespace kh3ap::character_attack_completion
         }
         using player_animation_support::PlayerId;
         const auto player = static_cast<PlayerId>(*id->ContainerPtrToValuePtr<uint8_t>(pawn));
-        if (player != PlayerId::Kairi && player != PlayerId::Aqua && player != PlayerId::Roxas)
+        if (player != PlayerId::Kairi && player != PlayerId::Aqua &&
+            player != PlayerId::Roxas && player != PlayerId::Riku)
         {
             return true;
         }
@@ -161,7 +162,9 @@ namespace kh3ap::character_attack_completion
         }
         *reference(private_table, L"RowStruct") = source.schema;
         Kh02DataTableView destination(private_table, schema_path, "character_attack_destination_layout");
-        CopyRows copy{destination, static_cast<FBoolProperty*>(field)};
+        // Riku needs private rows for shotlock tuning, but keeps his authored
+        // finishing-hit policy. The other alternates retain their completion fix.
+        CopyRows copy{destination, player == PlayerId::Riku ? nullptr : static_cast<FBoolProperty*>(field)};
         if (!source.visit(copy_row, &copy) || copy.failed || copy.count == 0)
         {
             throw std::runtime_error("character_attack_copy_rows");

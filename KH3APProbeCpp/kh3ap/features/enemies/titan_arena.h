@@ -8,6 +8,7 @@ namespace kh3ap
             std::wstring_view source, std::wstring_view target);
     void process_titan_arena_replacement(bool enabled);
     void notify_titan_arena_binding(std::wstring_view entity_path);
+    void install_replacement_titan_attack_support();
     // Exact cooked actors; the enclosing battle wall and floor are excluded.
     inline constexpr std::wstring_view titan_arena_obstacles[]{
         L"/Game/Levels/he/he_05/umap/he_05_gimmick_01.he_05_gimmick_01:PersistentLevel.he_05_invisiblewall_01",

@@ -81,7 +81,7 @@ namespace kh3ap::character_rails
             }
             const auto player =
                 static_cast<PlayerId>(*field->ContainerPtrToValuePtr<uint8_t>(pawn));
-            return player == PlayerId::Aqua || player == PlayerId::Kairi ||
+            return player == PlayerId::Aqua || player == PlayerId::Riku || player == PlayerId::Kairi ||
                    player == PlayerId::Roxas;
         }
 
@@ -133,28 +133,30 @@ namespace kh3ap::character_rails
             {
                 throw std::runtime_error("character_rail_damage_schema");
             }
-            constexpr auto name = L"FF_SLIDESHOT";
-            if (alternate.find(name))
+            for (const auto* name : {L"FF_SLIDESHOT", L"COVER_SLIDESHOT"})
             {
-                return;
-            }
-            auto* original = sora.find(name);
-            if (!original)
-            {
-                throw std::runtime_error("character_rail_damage_missing");
-            }
-            auto* copy = FMemory::Malloc(bytes);
-            if (!copy)
-            {
-                throw std::bad_alloc();
-            }
-            sora.schema->InitializeStruct(copy);
-            sora.schema->CopyScriptStruct(copy, original);
-            if (!alternate.insert(name, copy))
-            {
-                sora.schema->DestroyStruct(copy);
-                FMemory::Free(copy);
-                throw std::runtime_error("character_rail_damage_insert");
+                if (alternate.find(name))
+                {
+                    continue;
+                }
+                auto* original = sora.find(name);
+                if (!original)
+                {
+                    throw std::runtime_error("character_traversal_shot_damage_missing");
+                }
+                auto* copy = FMemory::Malloc(bytes);
+                if (!copy)
+                {
+                    throw std::bad_alloc();
+                }
+                sora.schema->InitializeStruct(copy);
+                sora.schema->CopyScriptStruct(copy, original);
+                if (!alternate.insert(name, copy))
+                {
+                    sora.schema->DestroyStruct(copy);
+                    FMemory::Free(copy);
+                    throw std::runtime_error("character_traversal_shot_damage_insert");
+                }
             }
         }
 
@@ -289,18 +291,31 @@ namespace kh3ap::character_rails
         prepare_damage(pawn);
         auto* equipment = properties.read_object(pawn, L"MyEquipment");
         auto* source = properties.read_object(equipment, L"m_ProjectileSet");
-        auto* shot = find_loaded_runtime_asset_class(shot_projectile_path);
-        const FName name(L"MI_SLIDESHOT", FNAME_Add);
         auto* source_entries = entries(source);
-        for (const auto& entry : *source_entries)
+        TArray<ProjectileEntry> missing;
+        for (const auto& [key, path] : {std::pair{L"MI_SLIDESHOT", shot_projectile_path},
+                                       std::pair{L"COVERSHOT", cover_shot_projectile_path}})
         {
-            if (entry.name == name && is_uobject_valid_fast(entry.type))
+            const FName name(key, FNAME_Add);
+            const bool present = source_entries->ContainsByPredicate([&](const auto& entry) {
+                return entry.name == name && is_uobject_valid_fast(entry.type);
+            });
+            if (!present)
             {
-                return;
+                auto* type = find_loaded_runtime_asset_class(path);
+                if (!type)
+                {
+                    throw std::runtime_error("character_traversal_shot_projectile_missing");
+                }
+                missing.Add({name, type});
             }
         }
+        if (missing.Num() == 0)
+        {
+            return;
+        }
         auto* field = properties.resolve(equipment, L"m_ProjectileSet");
-        if (!shot || !field || field->GetElementSize() != sizeof(UObject*))
+        if (!field || field->GetElementSize() != sizeof(UObject*))
         {
             throw std::runtime_error("character_rail_projectile_missing");
         }
@@ -314,9 +329,17 @@ namespace kh3ap::character_rails
         auto* private_entries = entries(private_set);
         for (const auto& entry : *source_entries)
         {
+            if (!missing.ContainsByPredicate([&](const auto& replacement) {
+                    return entry.name == replacement.name;
+                }))
+            {
+                private_entries->Add(entry);
+            }
+        }
+        for (const auto& entry : missing)
+        {
             private_entries->Add(entry);
         }
-        private_entries->Add({name, shot});
         *field->ContainerPtrToValuePtr<UObject*>(equipment) = private_set;
     }
 } // namespace kh3ap::character_rails

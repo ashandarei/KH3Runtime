@@ -129,8 +129,10 @@ namespace kh3ap
             current_friend_manager_ = manager;
             if (vanilla_friend_manager_.Get() == previous) { vanilla_friend_manager_ = manager; }
             // A controlled swap is neither a room reroll nor a new story entry.
-            goa_entry_pawn_ = pawn;
-            context_entry_pawn_ = pawn;
+            if (party_native::persistent_level_for(goa_entry_pawn_.Get()) ==
+                party_native::persistent_level_for(pawn)) { goa_entry_pawn_ = pawn; }
+            if (party_native::persistent_level_for(context_entry_pawn_.Get()) ==
+                party_native::persistent_level_for(pawn)) { context_entry_pawn_ = pawn; }
             ship_control_sora_ = pawn;
             maintenance_.request();
         });

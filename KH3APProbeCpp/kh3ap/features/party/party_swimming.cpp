@@ -17,6 +17,7 @@
 #include <Unreal/UObjectGlobals.hpp>
 #include <stdexcept>
 #include <algorithm>
+#include <limits>
 
 namespace kh3ap
 {
@@ -204,8 +205,11 @@ namespace kh3ap
             {
                 continue;
             }
-            // Preserve all authored swimming implementations.
-            if (read_object_like_property(pawn, L"m_Swimming"))
+            // Flynn and Jack have authored surface-only states without 3D
+            // navigation. They need the diving adapter too. Preserve complete
+            // native swim implementations, including Donald and Goofy.
+            if (read_object_like_property(pawn, L"m_Swimming") &&
+                read_object_like_property(pawn, L"m_Navigation3DComponent"))
             {
                 swimming_pawns_[slot] = pawn;
                 continue;
@@ -232,6 +236,20 @@ namespace kh3ap
                     throw std::runtime_error("party_swim_assets");
                 }
                 if (!board || !instance) { throw std::runtime_error("party_swim_pawn_readiness_deadline"); }
+                if (pawn->GetClassPrivate()->GetName() == L"n_ra201_Pawn_C")
+                {
+                    // Her native drowning rescue teleports to an authored Corona
+                    // location whenever immersion exceeds this threshold. This
+                    // selected, swim-enabled pawn can dive instead. Never change
+                    // the CDO or the world's native/story Rapunzel.
+                    auto* depth = pawn->GetPropertyByNameInChain(L"m_fInWaterWarpDepth");
+                    if (!depth || depth->GetClass().GetName() != L"FloatProperty" ||
+                        depth->GetElementSize() != sizeof(float))
+                    {
+                        throw std::runtime_error("party_swim_rescue_depth_layout");
+                    }
+                    *depth->ContainerPtrToValuePtr<float>(pawn) = std::numeric_limits<float>::max();
+                }
                 const auto borrowed = prepare_animations(instance);
                 auto* navigation = read_object_like_property(pawn, L"m_Navigation3DComponent");
                 if (!navigation) { navigation = add_navigation(pawn, donor); }

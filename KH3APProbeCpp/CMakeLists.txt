@@ -112,7 +112,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/remap_runtime.cpp
     kh3ap/features/enemies/remap_catalog.cpp
     kh3ap/features/enemies/level_entity_remap.cpp
-    kh3ap/features/enemies/cactuar_visibility.cpp
+    kh3ap/features/enemies/cinematic_visibility.cpp
     kh3ap/features/enemies/bosses/binding.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
@@ -315,6 +315,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/context/player_context_capture.cpp
     kh3ap/features/player/context/player_context_controllers.cpp
     kh3ap/features/player/context/player_context_readiness.cpp
+    kh3ap/features/player/context/current_player.cpp
     kh3ap/features/player/context/player_context_state.cpp
     kh3ap/features/player/context/player_context_recovery.cpp
     kh3ap/features/player/context/player_context_ui.cpp

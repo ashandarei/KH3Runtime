@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/bridge/session/command_sources.h"
 #include "kh3ap/features/world/portals/map_jump_command_helpers.h"
@@ -17,7 +18,6 @@
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/features/kh02/runtime/kh02_entry_service.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/input/runtime_player_control.h"
@@ -428,34 +428,7 @@ namespace kh3ap
             return;
         }
 
-        UObject* pawn = character_swap::controlled_travel_pawn();
-        auto* hero = kh02_story_player(nullptr);
-        auto* alternate = character_swap::current_hero();
-        if (character_swap::owns_swap_pawn(alternate))
-        {
-            pawn = runtime_sora_control_ready(alternate) ? alternate : nullptr;
-        }
-        else if (is_uobject_valid_fast(hero) &&
-                 hero->GetClassPrivate()->GetName() == L"p_ex002_Pawn_C")
-        {
-            // Travel follows the possessed KH0.2 hero independently of the AP
-            // grant cache, which must continue to require playable Sora.
-            auto* world = kh02_current_story_world();
-            if (is_uobject_valid_fast(world) && kh02_actor_world(hero) == world &&
-                runtime_sora_control_ready(hero))
-            {
-                pawn = hero;
-            }
-            else
-            {
-                pawn = nullptr;
-            }
-        }
-        else if (!is_uobject_valid_fast(pawn) ||
-                 !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
-        {
-            pawn = nullptr;
-        }
+        UObject* pawn = runtime_ready_player_pawn();
         if (!is_uobject_valid_fast(pawn))
         {
             write_result(deps, request, STR("waiting"), STR("missing_safe_player_pawn"), false);

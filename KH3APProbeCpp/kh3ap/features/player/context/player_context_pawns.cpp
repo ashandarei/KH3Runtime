@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/context/player_context_internal.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -42,6 +43,7 @@ namespace kh3ap
     auto RuntimePlayerContextService::Impl::cache_pawn_candidate(UObject* pawn,
                                                                  std::wstring_view source) -> bool
     {
+        runtime_observe_current_player(pawn);
         if (config.runtime_state.grant_state().special_battle_mode_active() ||
             !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
         {
@@ -102,6 +104,7 @@ namespace kh3ap
         UObject* pawn, std::wstring_view pawn_name, std::wstring_view source,
         bool allow_during_special_battle) -> bool
     {
+        runtime_observe_current_player(pawn);
         if (config.runtime_state.grant_state().special_battle_mode_active() &&
             !allow_during_special_battle)
         {

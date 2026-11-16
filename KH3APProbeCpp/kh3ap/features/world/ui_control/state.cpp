@@ -1,3 +1,4 @@
+#include "kh3ap/features/player/context/current_player.h"
 #include "service_impl.h"
 #include "helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -5,7 +6,6 @@
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/core/ui/ui_layout.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
-#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/world/space/space_service.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -36,11 +36,14 @@ namespace kh3ap
             return;
         }
         std::ostringstream out;
+        auto* current_player = runtime_current_player_pawn();
         out << std::boolalpha << "{\"schema\":\"kh3ap.ui_control.v1\",\"request_id\":\""
             << json_escape(id) << "\",\"command\":\"" << json_escape(command)
             << "\",\"process_id\":" << GetCurrentProcessId() << ",\"expires_unix_ms\":" << expires
             << ",\"status\":\"" << json_escape(status) << "\",\"reason\":\"" << json_escape(reason)
             << "\",\"at\":\"" << now_iso8601_utc() << "\",\"supported_build\":" << build_ok
+            << ",\"current_player\":\"" << json_escape(current_player ? current_player->GetFullName() : L"")
+            << "\",\"current_player_revision\":" << runtime_current_player_revision()
             << ",\"pawn\":\"" << json_escape(pawn_name) << "\",\"kh02_pawn\":\""
             << json_escape(is_uobject_valid_fast(Kh02Story::current_hero())
                                ? Kh02Story::current_hero()->GetFullName()
@@ -165,23 +168,7 @@ namespace kh3ap
 
     UObject* RuntimeUiControlService::Impl::cutscene_pawn()
     {
-        if (auto* hero = Kh02Story::current_hero(); is_uobject_valid_fast(hero))
-        {
-            return hero;
-        }
-        // The retained-pawn trial can leave a valid, unpossessed Sora in
-        // the cache. Prefer the owned, currently possessed alternate.
-        if (auto* hero = character_swap::current_hero(); character_swap::owns_swap_pawn(hero))
-        {
-            return hero;
-        }
-        auto* pawn = config.sora();
-        if (is_uobject_valid_fast(pawn))
-        {
-            return pawn;
-        }
-        auto* hero = character_swap::current_hero();
-        return character_swap::owns_swap_pawn(hero) ? hero : nullptr;
+        return runtime_current_player_pawn();
     }
 
     UObject* RuntimeUiControlService::Impl::sample_key_item(UObject* manager)

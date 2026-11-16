@@ -1,4 +1,5 @@
 #include "kh3ap/features/enemies/level_entity_remap.h"
+#include "kh3ap/features/enemies/cinematic_visibility_policy.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
@@ -13,19 +14,7 @@ namespace kh3ap::enemy_remap_detail
 {
     namespace
     {
-        constexpr std::wstring_view camera_class =
-                L"/Game/Levels/ts/ts_02/umap/ts_02_camera_ms141.ts_02_camera_ms141_C";
-        constexpr std::wstring_view enemy_level =
-                L"/Game/Levels/ts/ts_02/umap/ts_02_enemy_07.ts_02_enemy_07:PersistentLevel.";
         FName skip_event;
-
-        bool is_cactuar_intro_entity(std::wstring_view path)
-        {
-            if (!path.starts_with(enemy_level)) return false;
-            const auto name = path.substr(enemy_level.size());
-            return name == L"e_ex018_Pawn9_44" || name == L"e_ex033_Pawn7_48" ||
-                    name == L"e_ex032_Pawn_46";
-        }
 
         std::optional<int32_t> read_integer(UObject* pawn, const wchar_t* name)
         {
@@ -40,20 +29,21 @@ namespace kh3ap::enemy_remap_detail
             return value;
         }
 
-        void reveal_cactuar_replacements(UObject* context, std::wstring_view event)
+        void reveal_intro_replacements(UObject* context, std::wstring_view event)
         {
             auto& state = s_runtime_enemy_remap;
             if (!state.active || !state.enemy_enabled.load()) return;
             if (!is_uobject_valid_fast(context) || !is_uobject_valid_fast(context->GetClassPrivate()) ||
-                    context->GetClassPrivate()->GetPathName() != camera_class)
+                    !is_replacement_reveal_camera(context->GetClassPrivate()->GetPathName()))
                 return;
+            const auto camera_class = context->GetClassPrivate()->GetPathName();
             auto* level = context->GetOuterPrivate();
             if (!is_uobject_valid_fast(level) ||
                     try_read_reflected_object_property_value(level, L"LevelScriptActor") != context)
                 return;
 
             // The scene's mesh-specific tracks reveal original enemy types only.
-            // Once it returns control, reveal the three remapped intro entities.
+            // Once it returns control, reveal the scene's remapped intro entities.
             // Keep later waves and vanilla actors alone; never poll visibility in combat.
             std::vector<RuntimeLoadedLevelEntityRemap> candidates;
             {
@@ -62,12 +52,12 @@ namespace kh3ap::enemy_remap_detail
                 {
                     if (remap.kind == RuntimeLevelEntityRemapKind::enemy &&
                             remap.source_class_path != remap.replacement_class_path &&
-                            is_cactuar_intro_entity(remap.object_path))
+                            is_intro_reveal_entity(camera_class, remap.object_path))
                         candidates.push_back(remap);
                 }
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Cactuar reveal checkpoint context={} candidates={}\n"),
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Cinematic reveal checkpoint context={} candidates={}\n"),
                     context->GetPathName(), candidates.size());
 #endif
             for (const auto& remap : candidates)
@@ -95,7 +85,7 @@ namespace kh3ap::enemy_remap_detail
                     continue;
                 uint8_t hide = 0;
                 pawn->ProcessEvent(show, &hide);
-                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Cactuar replacement revealed entity={} pawn={} hidden_after={} event={}\n"),
+                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Cinematic replacement revealed entity={} pawn={} hidden_after={} event={}\n"),
                         remap.object_path, pawn->GetPathName(),
                         static_cast<FBoolProperty*>(hidden)->GetPropertyValueInContainer(pawn), event);
             }
@@ -104,25 +94,25 @@ namespace kh3ap::enemy_remap_detail
         void after_cinematic_end(UnrealScriptFunctionCallableContext& callback, void*)
         {
             if (!s_runtime_enemy_remap.enemy_enabled.load()) return;
-            // Blueprint-native calls keep the caller's frame. The audited ms141
-            // calls pass Self; direct ProcessEvent calls have an actual parameter buffer.
+            // Blueprint-native calls keep the caller's frame. These audited scenes
+            // pass Self; direct ProcessEvent calls have an actual parameter buffer.
             auto* context = get_frame_object(callback.TheStack);
             if (!is_uobject_valid_fast(context) || !is_uobject_valid_fast(context->GetClassPrivate()) ||
-                    context->GetClassPrivate()->GetPathName() != camera_class)
+                    !is_replacement_reveal_camera(context->GetClassPrivate()->GetPathName()))
                 context = try_read_function_object_param(get_frame_node(callback.TheStack),
                         get_frame_locals(callback.TheStack), L"WorldContextObject");
-            reveal_cactuar_replacements(context, L"TresEndCinematicMode");
+            reveal_intro_replacements(context, L"TresEndCinematicMode");
         }
 
         void after_scene_skip(UObject* context, UFunction* function, void*)
         {
             if (!s_runtime_enemy_remap.enemy_enabled.load() || !function ||
                     function->GetNamePrivate() != skip_event) return;
-            reveal_cactuar_replacements(context, L"OnEventSkip");
+            reveal_intro_replacements(context, L"OnEventSkip");
         }
     }
 
-    void install_cactuar_replacement_reveal_guard()
+    void install_cinematic_replacement_reveal_guard()
     {
         UObjectGlobals::RegisterHook(L"/Script/TresGame.TresGameBlueprintLibrary:TresEndCinematicMode",
                 [](UnrealScriptFunctionCallableContext&, void*) {},

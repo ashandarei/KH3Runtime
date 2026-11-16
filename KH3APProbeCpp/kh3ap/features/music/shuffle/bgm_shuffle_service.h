@@ -21,7 +21,7 @@ namespace kh3ap
         std::function<bool()> gameplay_ready;
         // Form themes (form_theme.h), from the AP Options menu.
         std::function<bool()> form_themes_enabled;
-        std::function<RC::Unreal::UObject*()> sora_pawn;
+        std::function<RC::Unreal::UObject*()> player_pawn;
         // A menu is open (the pause menu included), for custom music to
         // dip as the game's own does.
         std::function<bool()> menu_open{};

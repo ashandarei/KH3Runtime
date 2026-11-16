@@ -16,6 +16,7 @@
 #include "kh3ap/features/player/combat/character_union_cross.h"
 #include "kh3ap/features/player/characters/character_cinematic_binding.h"
 #include "kh3ap/features/player/characters/character_travel_policy.h"
+#include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/player/characters/character_ascension_state.h"
 #include "kh3ap/features/player/characters/character_unlocks.h"
 #include "kh3ap/features/player/characters/character_pawn_pool.h"
@@ -82,7 +83,7 @@
 namespace kh3ap::character_swap
 {
     using namespace RC::Unreal;
-    static bool finish_pending_swap(std::chrono::steady_clock::time_point now);
+    static UObject* finish_pending_swap(std::chrono::steady_clock::time_point now);
 
     namespace
     {
@@ -113,6 +114,8 @@ namespace kh3ap::character_swap
                                      Choice{L"Roxas", player_id_value(PlayerId::Roxas)},
                                      Choice{L"Riku", player_id_value(PlayerId::Riku)}};
         size_t selected{};
+        std::function<bool(int)> persist_selection;
+        bool restored_selection_preload_pending{};
         RuntimeOptionsInputOwnership input;
 
         struct SwapSession
@@ -856,8 +859,24 @@ namespace kh3ap::character_swap
                     }
                 }
             }
-            const bool native_sora = is_uobject_valid_fast(world) &&
-                                     cinematic_requires_native_sora(world->GetPathName());
+            const bool tornado_freefall = is_uobject_valid_fast(matinee) &&
+                is_uobject_valid_fast(world) && kh02_actor_world(matinee) == world &&
+                is_tornado_freefall_cinematic(world->GetPathName(), matinee->GetPathName());
+            const bool tornado_return = tornado_freefall && !kairi_ground_slam::ready(player());
+            if (tornado_freefall)
+            {
+                character_floating::prepare_freefall(world);
+                if (tornado_return)
+                {
+                    // Return under the lead-in movie, before the native dive
+                    // captures its player/controller. Keep the ally selected
+                    // for manual reuse after the slam, without auto-restoring it.
+                    session.travel_character_id = -1;
+                    session.rebind_pending = false;
+                    session.return_requested = false;
+                }
+            }
+            const bool native_sora = tornado_return;
             // These sequences move Sora across a labyrinth door. The
             // authored position must reach the native pawn before we restore
             // the combat ally at the end of cinematic mode.
@@ -1051,6 +1070,48 @@ namespace kh3ap::character_swap
             }
             cinematic_hooks_installed = true;
             UObjectGlobals::RegisterHook(
+                L"/Script/TresGame.TresGameBlueprintLibrary:TresDirectRideVehicle",
+                [](UnrealScriptFunctionCallableContext&, void*)
+                {
+                    auto* pawn = player();
+                    // Story movies can board a vehicle before gameplay resumes.
+                    // Restore the retained hero before the ride captures its
+                    // player; restoring afterward strands the hero on foot.
+                    try
+                    {
+                        if (!session.pending && session.travel_character_id >= 0 &&
+                            sora_variant(pawn) && !ascension_locked() &&
+                            character_unlocks::available(session.travel_character_id))
+                        {
+                            const auto local_player = make_uobject_weak(
+                                object(object(pawn, L"Controller"), L"Player"));
+                            if (begin(pawn, session.travel_character_id, true))
+                            {
+                                pawn = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
+                            }
+                        }
+                        if (!owns_swap_pawn(pawn) || sora_variant(pawn) || id(pawn) == king_mickey_id)
+                        {
+                            return;
+                        }
+                        // The native queue needs these states even while the
+                        // cinematic still owns input or the swap is pending.
+                        const bool prepared = character_exploration::prepare_pawn(pawn) &&
+                                              character_traversal::prepare(pawn);
+                        RC::Output::send<RC::LogLevel::Normal>(
+                            STR("[KH3APProbeCpp] Character scripted vehicle prepared={} pawn={}\n"),
+                            prepared, pawn->GetName());
+                    }
+                    catch (const std::exception& failure)
+                    {
+                        RC::Output::send<RC::LogLevel::Warning>(
+                            STR("[KH3APProbeCpp] Character scripted vehicle preparation failed: {}\n"),
+                            std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
+                    }
+                },
+                [](UnrealScriptFunctionCallableContext&, void*) {},
+                nullptr);
+            UObjectGlobals::RegisterHook(
                 L"/Script/Engine.MatineeActor:Stop",
                 [](UnrealScriptFunctionCallableContext&, void*)
                 {
@@ -1160,6 +1221,25 @@ namespace kh3ap::character_swap
 
     } // namespace
 
+    void restore_selection(int player_id, std::function<bool(int)> persist)
+    {
+        persist_selection = std::move(persist);
+        selected = 0;
+        for (size_t index = 0; index < choices.size(); ++index)
+        {
+            if (choices[index].id == player_id && character_unlocks::enabled(player_id))
+            {
+                selected = index;
+                break;
+            }
+        }
+        // Start the bounded preload on the existing player-start event, not
+        // while the user may spend an arbitrary time at the title screen.
+        restored_selection_preload_pending = selected != 0;
+        RC::Output::send<RC::LogLevel::Normal>(
+            STR("[KH3APProbeCpp] Combat ally restored id={}\n"), choices[selected].id);
+    }
+
     void append_menu(RuntimeOptionsPageBuilder& page)
     {
         std::vector<RuntimeOptionsChoice> entries;
@@ -1189,6 +1269,11 @@ namespace kh3ap::character_swap
                     session.return_requested = true;
                 }
                 selected = choice;
+                if (persist_selection && !persist_selection(choices[selected].id))
+                {
+                    RC::Output::send<RC::LogLevel::Warning>(
+                        STR("[KH3APProbeCpp] Combat ally selection could not be saved\n"));
+                }
                 ascension.clear();
                 session.travel_character_id = -1;
                 request_asset_preload(choices[selected].id);
@@ -1365,14 +1450,14 @@ namespace kh3ap::character_swap
             }
         }
     }
-    static bool finish_pending_swap(Clock::time_point now)
+    static UObject* finish_pending_swap(Clock::time_point now)
     {
         const CharacterSwapOperationTimer finish_timer{L"finish", session.target_id};
         try
         {
             if (session.rebind_pending && !rebind_after_travel(now))
             {
-                return false;
+                return nullptr;
             }
             if (session.return_requested && !session.pending)
             {
@@ -1380,17 +1465,18 @@ namespace kh3ap::character_swap
                 if (!pawn)
                 {
                     session.return_requested = false;
-                    return false;
+                    return nullptr;
                 }
                 if (!(trap.locked() ? RuntimeGardenReturnService::request_character_trap_swap(pawn)
                                     : RuntimeGardenReturnService::request_experimental_swap(pawn)))
                 {
-                    return false;
+                    return nullptr;
                 }
                 session.return_requested = false;
-                return false;
+                return nullptr;
             }
-            if (now > session.deadline || session.swap_world.Get() != kh02_current_world())
+            auto* world = kh02_current_world();
+            if (now > session.deadline || session.swap_world.Get() != world)
             {
                 session.party_handoff.reset();
                 combat_target_handoff::cancel();
@@ -1415,7 +1501,7 @@ namespace kh3ap::character_swap
                 {
                     session.owned_hero = {};
                 }
-                return false;
+                return nullptr;
             }
             auto* pawn = player();
             if (id(pawn) == session.target_id)
@@ -1434,7 +1520,7 @@ namespace kh3ap::character_swap
             if (id(pawn) != session.target_id ||
                 (session.cinematic_return_pending ? !owns_swap_pawn(pawn) : !ready(pawn)))
             {
-                return false;
+                return nullptr;
             }
             const auto prepare = [&](std::wstring_view stage, auto action)
             {
@@ -1443,37 +1529,48 @@ namespace kh3ap::character_swap
             };
             if (!session.cinematic_return_pending && !prepare(L"kairi_idle", character_idle::prepare_kairi))
             {
-                return false;
+                return nullptr;
             }
             if (!session.cinematic_return_pending &&
                 !prepare(L"ground_slam", kairi_ground_slam::prepare))
             {
-                return false;
+                return nullptr;
             }
             if (!session.cinematic_return_pending &&
                 !prepare(L"wall_run", alternate_wall_run::prepare))
             {
-                return false;
+                return nullptr;
             }
-            if (!session.cinematic_return_pending && session.target_id != session.sora_id &&
-                session.target_id != king_mickey_id &&
+            const bool alternate = session.target_id != session.sora_id &&
+                                   session.target_id != king_mickey_id;
+            // Galaxy Toys queues its scripted Gigas boarding while the intro
+            // still owns control. The native queue needs the alternate's
+            // shared Gigas state and animations before that request arrives.
+            const bool needs_traversal = !session.cinematic_return_pending ||
+                (is_uobject_valid_fast(world) &&
+                 world->GetPathName() == L"/Game/Levels/ts/ts_02/ts_02.ts_02");
+            if (alternate && needs_traversal &&
                 (!prepare(L"exploration", character_exploration::prepare_pawn) ||
-                 !prepare(L"traversal", character_traversal::prepare) ||
-                 !prepare(L"roxas_idle", character_idle::prepare_roxas) ||
+                 !prepare(L"traversal", character_traversal::prepare)))
+            {
+                return nullptr;
+            }
+            if (!session.cinematic_return_pending && alternate &&
+                (!prepare(L"roxas_idle", character_idle::prepare_roxas) ||
                  !prepare(L"underwater_combat", character_underwater_combat::prepare) ||
                  !prepare(L"camera", character_camera::prepare) ||
                  !prepare(L"shotlock", character_shotlock::prepare) ||
                  !prepare(L"magic", character_magic::refresh_spells) ||
                  !prepare(L"attack_completion", character_attack_completion::prepare)))
             {
-                return false;
+                return nullptr;
             }
             if (session.cinematic_return_pending)
             {
                 if (character_integer_value(pawn, L"GetMaxHitPoint") < 1 ||
                     character_integer_value(pawn, L"GetMaxMagicPoint") < 0)
                 {
-                    return false;
+                    return nullptr;
                 }
                 trace_cinematic(L"cinematic_ownership_ready", session.cinematic_actor.Get());
             }
@@ -1481,16 +1578,23 @@ namespace kh3ap::character_swap
             {
                 if (!restore_trap_hud())
                 {
-                    return false;
+                    return nullptr;
                 }
                 Kh02Story::refresh_sora_experience(pawn);
             }
             if (session.target_id != session.sora_id)
             {
-                session.stats.apply_base(pawn);
                 session.owned_hero = make_uobject_weak(pawn);
                 session.active_character_id = session.target_id;
-                session.stats.synchronize_totals(pawn);
+                if (session.target_id == king_mickey_id)
+                {
+                    session.stats.apply_base(pawn);
+                    session.stats.synchronize_totals(pawn);
+                }
+                else
+                {
+                    session.stats.apply_shared_progression(pawn);
+                }
             }
             else
             {
@@ -1530,6 +1634,7 @@ namespace kh3ap::character_swap
                 !ascension_locked();
             session.pending = false;
             session.cinematic_return_pending = false;
+            runtime_observe_current_player(pawn);
             session.cinematic_actor = {};
             if (trap.locked() && session.target_id == king_mickey_id)
             {
@@ -1563,7 +1668,7 @@ namespace kh3ap::character_swap
                     "HP={} MP={} strength={} magic={} defense={}\n"),
                 session.target_id, session.stats.level(), actual[0], actual[1], actual[2],
                 actual[3], actual[4]);
-            return true;
+            return pawn;
         }
         catch (const std::exception& failure)
         {
@@ -1589,11 +1694,11 @@ namespace kh3ap::character_swap
             RC::Output::send<RC::LogLevel::Warning>(
                 STR("[KH3APProbeCpp] Experimental character failed: {}\n"),
                 std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
-            return false;
+            return nullptr;
         }
     }
 
-    bool tick(Clock::time_point now)
+    UObject* tick(Clock::time_point now)
     {
         if (ascension.active)
         {
@@ -1670,7 +1775,7 @@ namespace kh3ap::character_swap
         // No UObject discovery while idle. Retries exist only for a requested change.
         if (!session.has_pending_work())
         {
-            return false;
+            return nullptr;
         }
         return finish_pending_swap(now);
     }
@@ -1694,6 +1799,11 @@ namespace kh3ap::character_swap
     {
         betrayal_trap::notify_player_started();
         install_ascension_hooks();
+        if (restored_selection_preload_pending)
+        {
+            restored_selection_preload_pending = false;
+            request_asset_preload(choices[selected].id);
+        }
         character_swap_assets::notify_player_started();
         kairi_shining_hud::notify_player_started();
         character_swap_effects::notify_player_started();
@@ -1787,6 +1897,7 @@ namespace kh3ap::character_swap
         const auto velocity = read_vector(pawn, L"GetVelocity");
         const auto control_rotation =
             read_vector(object(pawn, L"Controller"), L"GetControlRotation");
+        const auto local_player = make_uobject_weak(object(object(pawn, L"Controller"), L"Player"));
         if (!begin(pawn, session.sora_id, true))
         {
             return nullptr;
@@ -1794,7 +1905,9 @@ namespace kh3ap::character_swap
         // Keep the selected alternate available for R2 after this sequence,
         // without automatically restoring it during the freefall/ground slam.
         session.travel_character_id = -1;
-        auto* incoming = player();
+        // The UI manager can still name the retired controller until the next
+        // frame. LocalPlayer already owns the synchronous factory's possession.
+        auto* incoming = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
         if (!sora_variant(incoming) || !owns_swap_pawn(incoming))
         {
             return nullptr;
@@ -1816,6 +1929,10 @@ namespace kh3ap::character_swap
         camera.vector(L"NewRotation", control_rotation[0], control_rotation[1],
                       control_rotation[2]);
         camera.run();
+        combat_target_handoff::apply(incoming);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+        RuntimeEnemyClearService::handoff_protection(session.diagnostic_outgoing, incoming);
+#endif
         return incoming;
     }
 
@@ -1993,6 +2110,26 @@ namespace kh3ap::character_swap
         return target != session.sora_id && swap_preparation_pending(target);
     }
 
+    void refresh_alternate_stats()
+    {
+        auto* pawn = current_hero();
+        if (!pawn || session.pending || id(pawn) == king_mickey_id)
+        {
+            return;
+        }
+        try
+        {
+            session.stats.apply_shared_progression(pawn);
+        }
+        catch (const std::exception& error)
+        {
+            const std::string reason = error.what();
+            RC::Output::send<RC::LogLevel::Warning>(
+                STR("[KH3APProbeCpp] Alternate stat refresh failed pawn={} reason={}\n"),
+                pawn->GetName(), std::wstring(reason.begin(), reason.end()));
+        }
+    }
+
     void apply_stat_bonus(int hp_amount, int mp_amount)
     {
         auto* pawn = current_hero();
@@ -2079,7 +2216,7 @@ namespace kh3ap::character_swap
                                              current_runtime_trap_live_state_status(pawn).ready);
     }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-    bool diagnostic_select(int player_id, bool preload)
+    bool diagnostic_select(int player_id, bool preload, bool persist)
     {
         if (manual_swaps_blocked() || session.pending || session.owned_hero.Get() ||
             !character_unlocks::available(player_id))
@@ -2091,6 +2228,10 @@ namespace kh3ap::character_swap
             if (choices[index].id == player_id)
             {
                 selected = index;
+                if (persist && (!persist_selection || !persist_selection(player_id)))
+                {
+                    return false;
+                }
                 // Diagnostic-only cold-load control for comparable A/B captures.
                 request_asset_preload(preload ? player_id : -1);
                 return true;
