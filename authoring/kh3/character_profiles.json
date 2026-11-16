@@ -354,6 +354,21 @@
       "evidence": "Matching voice notify arguments, mesh owner +0x1b8, animation context and character type test."
     },
     {
+      "id": "voice_state_begin",
+      "source": "KH3APProbeCpp/kh3ap/features/player/player_animation_support.cpp",
+      "egs": {
+        "rva": "0x6e7720",
+        "bytes": "488bc44889701855574156488bec4883"
+      },
+      "steam": {
+        "rva": "0x563e80",
+        "bytes": "48896c24184889742420574883ec600f"
+      },
+      "status": "matched_offline",
+      "live_steam_validated": false,
+      "evidence": "2026-11-16: TresAnimNotifyState_PlayVoice NotifyBegin (notify, mesh, animation, duration), vtable +0x248. Both builds insert the per-owner pending voice into the map at notify+0x90; Tick and End skip missing owner records. EGS manual Airstep capture traced bt1011840sr0 from SuperSlideLoop (1152) through NotifyTick 0x6e78f0, attached playback return 0x6e7e92. Steam paired via Tick 0x568130 and its preceding Begin vtable entry; no Steam gameplay test."
+    },
+    {
       "id": "attack_begin",
       "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
       "egs": {

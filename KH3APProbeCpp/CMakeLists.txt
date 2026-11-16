@@ -259,6 +259,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_profile.cpp
     kh3ap/features/player/characters/character_pawn_pool.cpp
     kh3ap/features/player/characters/character_swap_assets.cpp
+    kh3ap/features/player/characters/character_chest_voice.cpp
     kh3ap/features/player/characters/character_swap_effects.cpp
     kh3ap/features/player/combat/kairi_shining_hud.cpp
     kh3ap/features/player/characters/character_exploration.cpp

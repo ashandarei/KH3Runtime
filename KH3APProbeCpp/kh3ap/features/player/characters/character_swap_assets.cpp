@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_swap_assets.h"
+#include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/combat/character_magic.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
@@ -307,6 +308,10 @@ namespace kh3ap::character_swap_assets
                 continue;
             }
             assets.push_back({character.pawn_class, true});
+            if (auto* voice = character_chest_voice::asset_path(character.id))
+            {
+                assets.push_back({voice, false});
+            }
             // These weapons are selected by the native factory at runtime,
             // rather than referenced by their pawn classes. Preload their
             // models, effects and sounds before the first requested swap.

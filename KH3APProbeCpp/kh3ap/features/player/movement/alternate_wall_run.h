@@ -15,6 +15,8 @@ namespace kh3ap::alternate_wall_run
     void capture_sora(RC::Unreal::UObject* pawn);
     bool ready(RC::Unreal::UObject* pawn);
     void refresh_unlocks(RC::Unreal::UObject* pawn, bool enabled);
+    RC::Unreal::UObject* replacement_voice(RC::Unreal::UObject* notify, RC::Unreal::UObject* mesh,
+                                           RC::Unreal::UObject* animation);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
     bool diagnostic_move(RC::Unreal::UObject* pawn, float x, float y);
     void diagnostic_tick();
