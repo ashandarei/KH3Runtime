@@ -4,13 +4,8 @@
 
 namespace kh3ap::kh02rewards
 {
-    inline auto reward_notice(std::wstring_view method, std::wstring_view item) -> std::wstring
+    inline auto reward_notice(std::wstring_view item) -> std::wstring
     {
-        auto message = std::wstring{L"Received "} + std::wstring{item};
-        if (method != L"controller_unlock")
-        {
-            message += L" for Sora";
-        }
-        return message;
+        return std::wstring{L"Received "} + std::wstring{item};
     }
 } // namespace kh3ap::kh02rewards

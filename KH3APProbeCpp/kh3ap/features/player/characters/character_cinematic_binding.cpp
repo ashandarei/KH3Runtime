@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_cinematic_binding.h"
 #include "kh3ap/features/player/characters/character_cinematic_policy.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -48,7 +49,7 @@ namespace kh3ap::character_cinematic_binding
         auto sora_groups(UObject* matinee) -> std::vector<UObject*>
         {
             if (!is_uobject_valid_fast(matinee) ||
-                kh02_actor_world(matinee) != kh02_current_world())
+                actor_owning_world(matinee) != kh02_current_world())
             {
                 return {};
             }
@@ -181,7 +182,7 @@ namespace kh3ap::character_cinematic_binding
                     auto* actor = *slot;
                     bool player_actor = false;
                     if (is_uobject_valid_fast(actor) &&
-                        kh02_actor_world(actor) == kh02_actor_world(matinee))
+                        actor_owning_world(actor) == actor_owning_world(matinee))
                     {
                         auto* player_class = UObjectGlobals::StaticFindObject<UClass*>(
                             nullptr, nullptr, L"/Script/TresGame.TresPlayerPawnBase");
@@ -231,7 +232,7 @@ namespace kh3ap::character_cinematic_binding
     bool bind(UObject* matinee, UObject* pawn)
     {
         if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(matinee) ||
-            kh02_actor_world(pawn) != kh02_actor_world(matinee))
+            actor_owning_world(pawn) != actor_owning_world(matinee))
         {
             return false;
         }
@@ -274,7 +275,7 @@ namespace kh3ap::character_cinematic_binding
             {
                 bindings.push_back({make_uobject_weak(matinee), make_uobject_weak(item.group),
                                     make_uobject_weak(pawn), make_uobject_weak(*item.slot),
-                                    make_uobject_weak(kh02_actor_world(pawn)), *item.tag});
+                                    make_uobject_weak(actor_owning_world(pawn)), *item.tag});
             }
             else if (found->pawn.Get() != pawn)
             {

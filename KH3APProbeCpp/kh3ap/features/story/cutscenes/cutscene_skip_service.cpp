@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "cutscene_skip_service.h"
 #include "cutscene_skip_transaction.h"
 #include "cutscene_skip_view.h"
@@ -5,6 +6,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/bridge/utilities.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObject.hpp>
@@ -130,7 +132,8 @@ namespace kh3ap
             const bool alive = is_uobject_valid_fast(actor_.Get());
             const auto action =
                 transaction_.advance(now, enabled(), same_world, alive,
-                                     same_world && native_cutscene_pause_type(world) == 1, false);
+                                     same_world && native_cutscene_pause_type(world) == 1,
+                                     same_world && alive && Kh02Story::defers_cutscene_skip(actor_.Get(), world));
             if (action == CutsceneSkipTransaction::Action::Transition)
             {
                 scene_open_ = false;
@@ -217,7 +220,7 @@ namespace kh3ap
         {
             return std::nullopt;
         }
-        auto* world = kh02_actor_world(context);
+        auto* world = actor_owning_world(context);
         const auto type = native_cutscene_pause_type(world);
         if (type < 0 || type > 255)
         {

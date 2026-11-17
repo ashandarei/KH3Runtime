@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_pawn_pool.h"
 #include "kh3ap/features/player/characters/character_swap_stats.h"
@@ -117,12 +118,12 @@ namespace kh3ap::character_pawn_pool
         {
             return pair.pawn.Get() && pair.controller.Get() && pair.state.Get() &&
                    pair.world.Get() == kh02_current_world() &&
-                   kh02_actor_world(pair.pawn.Get()) == pair.world.Get() &&
-                   kh02_actor_world(pair.controller.Get()) == pair.world.Get();
+                   actor_owning_world(pair.pawn.Get()) == pair.world.Get() &&
+                   actor_owning_world(pair.controller.Get()) == pair.world.Get();
         }
         void collect_actor(Pair& pair, UObject* actor)
         {
-            if (!is_uobject_valid_fast(actor) || kh02_actor_world(actor) != pair.world.Get() ||
+            if (!is_uobject_valid_fast(actor) || actor_owning_world(actor) != pair.world.Get() ||
                 std::any_of(pair.actors.begin(), pair.actors.end(),
                             [&](const auto& entry)
                             {
@@ -179,7 +180,7 @@ namespace kh3ap::character_pawn_pool
             pair.controller = make_uobject_weak(object(pawn, L"Controller"));
             pair.state = make_uobject_weak(object(pair.controller.Get(), L"PlayerState"));
             pair.local_player = make_uobject_weak(object(pair.controller.Get(), L"Player"));
-            pair.world = make_uobject_weak(kh02_actor_world(pawn));
+            pair.world = make_uobject_weak(actor_owning_world(pawn));
             if (!valid(pair))
             {
                 throw std::runtime_error("pool_capture_lifetime");
@@ -505,7 +506,7 @@ namespace kh3ap::character_pawn_pool
         auto* incoming = object(incoming_controller, L"Pawn");
         if (!valid(active.source) || !is_uobject_valid_fast(incoming) ||
             incoming == active.source.pawn.Get() ||
-            kh02_actor_world(incoming) != active.source.world.Get() ||
+            actor_owning_world(incoming) != active.source.world.Get() ||
             object(active.source.controller.Get(), L"Player") ||
             object(active.source.pawn.Get(), L"Controller"))
         {

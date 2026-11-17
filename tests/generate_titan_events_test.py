@@ -15,5 +15,10 @@ s=replace_block(s,"        bool bool_call(",'''        bool bool_call(UObject* o
     ++object->writes;return true;
 }''')
 s=replace_block(s,"        bool hidden_value(","        bool hidden_value(UObject* actor) { ++fake_titan::calls;return actor->hidden; }")
+# This fixture exercises streamed arena geometry and binding notifications.
+# The separate replacement-Titan attack hook needs the real executable/UE4SS
+# ABI; it is neither called nor simulated by the arena event tests.
+s=replace_block(s,"        bool has_titan_attack_gate_layout()", "")
+s=replace_block(s,"    void install_replacement_titan_attack_support()", "")
 s=s.replace("using Clock = std::chrono::steady_clock;","using Clock = fake_titan::Clock;")
 Path(sys.argv[1]).write_text('#pragma once\n#include "titan_events_stubs.h"\n'+s)

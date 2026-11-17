@@ -239,12 +239,21 @@ namespace kh3ap::enemy_remap_detail
         return binding;
     }
 
-    [[nodiscard]] auto resolve_and_bind_runtime_boss_pawn(UObject* pawn)
+    [[nodiscard]] auto resolve_and_bind_runtime_boss_pawn(UObject* pawn, bool allow_unbound_match)
             -> RuntimeBossEntityBinding
     {
         if (!is_runtime_boss_replacement_pawn(pawn))
         {
             return {};
+        }
+
+        // Keep the source slot when a replacement has cleared/replaced its
+        // native link. Matching by class alone can lose that slot to a dynamic
+        // entity or another copy of the same boss in the encounter.
+        const auto tracked = resolve_tracked_runtime_boss_pawn(pawn);
+        if (tracked.level_entity)
+        {
+            return bind_runtime_boss_pawn(pawn, tracked.level_entity, tracked.level_entity_path);
         }
 
         UObject* const linked_entity = read_boss_owner_property(
@@ -300,7 +309,7 @@ namespace kh3ap::enemy_remap_detail
                         candidate,
                         candidate_path);
             }
-            if (!candidate_actor &&
+            if (allow_unbound_match && !candidate_actor &&
                 replacement_class_path == pawn_class_path)
             {
                 if (unique_unbound_entity)

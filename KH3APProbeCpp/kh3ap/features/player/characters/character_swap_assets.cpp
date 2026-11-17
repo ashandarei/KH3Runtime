@@ -1,4 +1,6 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_swap_assets.h"
+#include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/combat/character_magic.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
@@ -135,7 +137,7 @@ namespace kh3ap::character_swap_assets
             auto* controller = object(manager, L"m_pPlayerController");
             auto* pawn = object(controller, L"Pawn");
             return pawn && object(pawn, L"Controller") == controller &&
-                           kh02_actor_world(pawn) == kh02_current_world()
+                           actor_owning_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
         }
@@ -230,7 +232,7 @@ namespace kh3ap::character_swap_assets
             }
             game_thread = GetCurrentThreadId();
             request_pawn = make_uobject_weak(pawn);
-            request_world = make_uobject_weak(kh02_actor_world(pawn));
+            request_world = make_uobject_weak(actor_owning_world(pawn));
             loading = true;
             selection_pending = false;
             handoff_pending = false;
@@ -307,6 +309,10 @@ namespace kh3ap::character_swap_assets
                 continue;
             }
             assets.push_back({character.pawn_class, true});
+            if (auto* voice = character_chest_voice::asset_path(character.id))
+            {
+                assets.push_back({voice, false});
+            }
             // These weapons are selected by the native factory at runtime,
             // rather than referenced by their pawn classes. Preload their
             // models, effects and sounds before the first requested swap.
@@ -344,6 +350,8 @@ namespace kh3ap::character_swap_assets
             if (character.id == PlayerId::Kairi)
             {
                 assets.push_back({player_animation_support::kairi_idle_animation_set_path, false});
+                assets.push_back({player_animation_support::aqua_animation_set_path, false});
+                assets.push_back({player_animation_support::riku_animation_set_path, false});
                 assets.push_back({player_animation_support::kairi_attack_data_path, false});
             }
             selection_pending = true;

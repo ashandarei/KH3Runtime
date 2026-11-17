@@ -1,7 +1,9 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_inventory_menu.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/character_ids.h"
 #include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/hooks/native_detour_lifetime.h"
 #include "alternate_weapon_catalog.h"
 #include "character_record_lookup_stub.h"
 #include "kh3ap/features/player/characters/character_swap.h"
@@ -23,6 +25,7 @@
 #include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
+#include "kh3ap/core/input/runtime_controller_input_profile.h"
 #include <array>
 #include <algorithm>
 #include <cstring>
@@ -36,6 +39,7 @@ namespace kh3ap
     {
         using BuildRoster = void (*)(UObject*);
         using TickCamp = void (*)(UObject*);
+        using GameOverSelect = void (*)(UObject*, int32_t, int32_t);
         using ReadStatus = void (*)(UObject*, uint8_t, void*);
         using FindCharacter = void* (*)(void*, uint8_t, uint8_t, int32_t);
         inline static const uintptr_t character_record_lookup_rva =
@@ -53,9 +57,12 @@ namespace kh3ap
         size_t manager_save_owner_offset{0x140};
         size_t manager_catalog_offset{0x360};
         uintptr_t camp_vtable{0x7c2a488};
+        uintptr_t game_over_vtable{};
         uint64_t original{};
         uint64_t original_tick{};
         uint64_t original_record_lookup{};
+        uint64_t original_game_over_select{};
+        std::unique_ptr<PLH::x64Detour> game_over_select_hook;
         std::unique_ptr<PLH::x64Detour> hook;
         std::unique_ptr<PLH::x64Detour> tick_hook;
         std::unique_ptr<PLH::x64Detour> record_lookup_hook;
@@ -214,7 +221,7 @@ namespace kh3ap
                         save_data == reinterpret_cast<std::byte*>(save_owner) + active_save_data_offset &&
                         try_read_reflected_object_property_value(controller, L"Pawn") == hero &&
                         try_read_reflected_object_property_value(hero, L"Controller") == controller &&
-                        kh02_actor_world(hero) == kh02_current_world() && record &&
+                        actor_owning_world(hero) == kh02_current_world() && record &&
                         field<uint8_t>(record, 0) == requested_character)
                     {
                         // The camp equipment/ability readers and writers use the
@@ -322,7 +329,7 @@ namespace kh3ap
             const auto unique_id = character_id(hero);
             if (!is_uobject_valid_fast(hero) || !unique_id || !is_uobject_valid_fast(camp_controller) ||
                 field<uintptr_t>(camp_controller, 0) != self.base + self.camp_vtable ||
-                kh02_actor_world(hero) != kh02_current_world())
+                actor_owning_world(hero) != kh02_current_world())
             {
                 return;
             }
@@ -486,7 +493,7 @@ namespace kh3ap
             auto* hero = self.portrait_hero.Get();
             const bool alternate_camp = is_uobject_valid_fast(hero) && hero == current_hero() &&
                                         is_uobject_valid_fast(camp_controller) &&
-                                        kh02_actor_world(hero) == kh02_current_world() &&
+                                        actor_owning_world(hero) == kh02_current_world() &&
                                         field<uint8_t>(camp_controller, 0xc9) == character_id(hero);
             const bool spawning_portrait = alternate_camp && field<int32_t>(camp_controller, 0x58) == 7;
             auto* status = spawning_portrait ? field<UObject*>(camp_controller, 0x158) : nullptr;
@@ -548,6 +555,49 @@ namespace kh3ap
             }
         }
 
+        static void game_over_select(UObject* menu, int32_t action, int32_t anchor)
+        {
+            auto& self = *active;
+            auto* hero = character_swap::current_hero();
+            // Retail alternate-character death menus (13-15) label action 12
+            // Prepare and Retry, but implement it as Premium Menu only. Our
+            // owned alternates support the full camp inventory. Reuse action 3
+            // and its original camp-close/retry delegates without swapping pawns.
+            if (action == 12 && is_uobject_valid_fast(menu) &&
+                field<uintptr_t>(menu, 0) == self.base + self.game_over_vtable &&
+                field<uint8_t>(menu, 0xe8) == 1 &&
+                field<int32_t>(menu, 0x2b0) >= 13 && field<int32_t>(menu, 0x2b0) <= 15 &&
+                is_uobject_valid_fast(hero) && character_swap::owns_swap_pawn(hero))
+            {
+                action = 3;
+                Output::send<LogLevel::Verbose>(
+                    STR("[KH3APProbeCpp] Alternate Prepare and Retry routed to native camp\n"));
+            }
+            reinterpret_cast<GameOverSelect>(self.original_game_over_select)(menu, action, anchor);
+        }
+
+        void install_game_over_select()
+        {
+            controller_input::DeathUiProfile profile;
+            if (!controller_input::supported(base, profile) ||
+                !character_native::verify_sites({character_native::Site::game_over_select}))
+            {
+                return;
+            }
+            game_over_vtable = profile.game_over_vtable;
+            game_over_select_hook = std::make_unique<PLH::x64Detour>(
+                base + character_native::rva(character_native::Site::game_over_select),
+                reinterpret_cast<uintptr_t>(&game_over_select), &original_game_over_select);
+            const bool installed = game_over_select_hook->hook() && original_game_over_select;
+            if (!installed && !release_native_detour(game_over_select_hook))
+            {
+                Output::send<LogLevel::Error>(
+                    STR("[KH3APProbeCpp] Prepare and Retry unhook failed; retaining callback context\n"));
+            }
+            Output::send<LogLevel::Verbose>(
+                STR("[KH3APProbeCpp] Alternate Prepare and Retry camp routing installed={}\n"), installed);
+        }
+
         void install()
         {
             if (attempted)
@@ -604,50 +654,55 @@ namespace kh3ap
             if (!hook->hook() || !original || !tick_hook->hook() || !original_tick || !record_lookup_hook->hook() ||
                 !original_record_lookup)
             {
-                if (record_lookup_hook->isHooked())
-                {
-                    record_lookup_hook->unHook();
-                }
-                if (tick_hook->isHooked())
-                {
-                    tick_hook->unHook();
-                }
-                if (hook->isHooked())
-                {
-                    hook->unHook();
-                }
-                active = nullptr;
+                shutdown();
+                return;
+            }
+            if (active == this)
+            {
+                install_game_over_select();
             }
         }
 
-        ~Impl()
+        bool shutdown()
         {
-            if (record_lookup_hook && record_lookup_hook->isHooked())
+            bool released = true;
+            for (auto* detour : {&game_over_select_hook, &record_lookup_hook, &tick_hook, &hook})
             {
-                record_lookup_hook->unHook();
+                if (!release_native_detour(*detour))
+                {
+                    released = false;
+                }
             }
-            if (record_lookup_stub && (!record_lookup_hook || !record_lookup_hook->isHooked()))
+            if (record_lookup_stub && !record_lookup_hook)
             {
                 VirtualFree(record_lookup_stub, 0, MEM_RELEASE);
+                record_lookup_stub = nullptr;
             }
-            if (tick_hook && tick_hook->isHooked())
+            if (!released)
             {
-                tick_hook->unHook();
-            }
-            if (hook && hook->isHooked())
-            {
-                hook->unHook();
+                Output::send<LogLevel::Error>(
+                    STR("[KH3APProbeCpp] Inventory menu unhook failed; retaining callback context\n"));
+                return false;
             }
             if (active == this)
             {
                 active = nullptr;
             }
+            return true;
         }
     };
 
     Kh02InventoryMenu::Kh02InventoryMenu() : impl(std::make_unique<Impl>()) {}
 
-    Kh02InventoryMenu::~Kh02InventoryMenu() = default;
+    Kh02InventoryMenu::~Kh02InventoryMenu()
+    {
+        if (impl && !impl->shutdown())
+        {
+            // Native code can still enter a retained hook. Preserve its Impl,
+            // original function pointers and lookup stub for process lifetime.
+            impl.release();
+        }
+    }
 
     void Kh02InventoryMenu::install()
     {

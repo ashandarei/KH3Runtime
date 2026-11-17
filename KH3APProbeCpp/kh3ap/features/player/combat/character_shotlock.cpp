@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <chrono>
 #include <utility>
 #include <new>
@@ -57,6 +58,7 @@ namespace kh3ap::character_shotlock
         using player_animation_support::PlayerId;
         constexpr int riku_player_id = static_cast<int>(PlayerId::Riku);
         constexpr int roxas_player_id = static_cast<int>(PlayerId::Roxas);
+        constexpr int kairi_player_id = static_cast<int>(PlayerId::Kairi);
         constexpr size_t maximum_attack_row_bytes = 4096;
         // EGS CL1065258: the ordinary shotlock selector reads these owning
         // controller fields. Oblivion maps to 41, then 42 at its 32-lock maximum.
@@ -264,7 +266,7 @@ namespace kh3ap::character_shotlock
                 auto* pawn = object(controller, L"Pawn");
                 if (object(local, L"PlayerController") == controller &&
                     object(pawn, L"Controller") == controller &&
-                    kh02_actor_world(pawn) == kh02_current_world())
+                    actor_owning_world(pawn) == kh02_current_world())
                 {
                     // Input can arrive after the factory commits but before
                     // the incoming camera/HUD is ready. Finish that handoff
@@ -467,6 +469,45 @@ namespace kh3ap::character_shotlock
                 *power->ContainerPtrToValuePtr<float>(target) = *power->ContainerPtrToValuePtr<float>(original);
                 auto* flag = static_cast<FBoolProperty*>(magic);
                 flag->SetPropertyValueInContainer(target, flag->GetPropertyValueInContainer(original));
+            }
+            return true;
+        }
+
+        bool prepare_kairi_damage(UObject* pawn)
+        {
+            if (!character_attack_completion::prepare(pawn)) { return false; }
+            auto* source = find_loaded_runtime_asset(player_animation_support::kairi_attack_data_path);
+            auto* set = object(object(pawn, L"MyAtkColl"), L"m_pOwnerDataTableSet");
+            auto* destination = object(set, L"m_AttackData");
+            if (!source || !destination) { return false; }
+            if (set->GetOuterPrivate() != pawn || destination->GetOuterPrivate() != set)
+            {
+                throw std::runtime_error("kairi_shotlock_private_damage_required");
+            }
+            constexpr auto schema = L"/Script/TresGame.TresAttackDataTable";
+            Kh02DataTableView original(source, schema, "kairi_shotlock_source_layout");
+            Kh02DataTableView playable(destination, schema, "kairi_shotlock_destination_layout");
+            auto* power = original.schema->GetPropertyByNameInChain(L"m_Power");
+            auto* magic = original.schema->GetPropertyByNameInChain(L"m_bIsMagicAttack");
+            if (original.schema != playable.schema || !power ||
+                power->GetClass().GetName() != L"FloatProperty" ||
+                power->GetElementSize() != sizeof(float) || !magic || !magic->IsA<FBoolProperty>())
+            {
+                throw std::runtime_error("kairi_shotlock_scaling_layout");
+            }
+            for (const auto* name : {L"SF_SHINING", L"SF_SHINING_END"})
+            {
+                auto* source_row = original.find(name);
+                auto* target_row = playable.find(name);
+                if (!source_row || !target_row)
+                {
+                    throw std::runtime_error("kairi_shotlock_scaling_row_missing");
+                }
+                // Always derive from the authored row: repeated preparation of
+                // a pooled pawn must remain x2, rather than doubling again.
+                *power->ContainerPtrToValuePtr<float>(target_row) =
+                    2.0f * *power->ContainerPtrToValuePtr<float>(source_row);
+                static_cast<FBoolProperty*>(magic)->SetPropertyValueInContainer(target_row, true);
             }
             return true;
         }
@@ -742,7 +783,7 @@ namespace kh3ap::character_shotlock
             // A new possession has not sampled its input yet. An already-held
             // logical aim request belongs to the handoff until it is released.
             release_required_controller = make_uobject_weak(controller);
-            release_required_world = make_uobject_weak(kh02_actor_world(pawn));
+            release_required_world = make_uobject_weak(actor_owning_world(pawn));
         }
     }
 
@@ -760,7 +801,7 @@ namespace kh3ap::character_shotlock
             return false;
         }
         auto* controller = aim_controller(pawn);
-        auto* world = kh02_actor_world(pawn);
+        auto* world = actor_owning_world(pawn);
         if (!controller || !is_uobject_valid_fast(world) || world != kh02_current_world())
         {
             return false;
@@ -877,7 +918,7 @@ namespace kh3ap::character_shotlock
         const auto before = race_state(pawn);
         aim_race = {};
         aim_race.active = true;
-        aim_race.world = make_uobject_weak(kh02_actor_world(pawn));
+        aim_race.world = make_uobject_weak(actor_owning_world(pawn));
         aim_race.local = make_uobject_weak(object(object(pawn, L"Controller"), L"Player"));
         aim_race.finish_at = std::chrono::steady_clock::now() + shotlock_aim_race_timeout;
         aim_race.result = {{"status", "running"},
@@ -903,7 +944,7 @@ namespace kh3ap::character_shotlock
     void diagnostic_after_factory(UObject* pawn)
     {
         if (aim_race.active && aim_race.after_factory &&
-            kh02_actor_world(pawn) == aim_race.world.Get())
+            actor_owning_world(pawn) == aim_race.world.Get())
         {
             aim_race.after_factory = false;
             press_race_input(pawn);
@@ -965,6 +1006,10 @@ namespace kh3ap::character_shotlock
             return true;
         }
         const auto kind = player_id(pawn);
+        if (kind == kairi_player_id)
+        {
+            return prepare_kairi_damage(pawn);
+        }
         if (kind != riku_player_id && kind != roxas_player_id)
         {
             return true;

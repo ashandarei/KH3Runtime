@@ -6,7 +6,7 @@
 #include "kh3ap/features/kh02/combat/kh02_enemy_stats.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_event_aqua.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_cutscene_reflection.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/core/kh02_world_identity.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/input/runtime_player_control.h"
@@ -77,7 +77,7 @@ namespace kh3ap
 
     void Kh02MirrorGameplaySession::source_entrance_finished(UObject* source_script)
     {
-        if (world.Get() == kh02_actor_world(source_script) && script.Get() == source_script)
+        if (world.Get() == actor_owning_world(source_script) && script.Get() == source_script)
         {
             entrance_finish_script = make_uobject_weak(source_script);
             entrance_reveal_requested = false;
@@ -110,7 +110,7 @@ namespace kh3ap
         auto* source_script = islands_battle_script.Get();
         auto* current_world = world.Get();
         if (!is_uobject_valid_fast(source_script) || !is_uobject_valid_fast(current_world) ||
-            kh02_actor_world(source_script) != current_world || kh02_actor_world(pawn) != current_world)
+            actor_owning_world(source_script) != current_world || actor_owning_world(pawn) != current_world)
         {
             clear_islands_battle_entry();
             return;
@@ -171,7 +171,7 @@ namespace kh3ap
         {
             return;
         }
-        if (source_script != script.Get() || kh02_actor_world(source_script) != world.Get())
+        if (source_script != script.Get() || actor_owning_world(source_script) != world.Get())
         {
             entrance_finish_script = {};
             return;
@@ -225,7 +225,7 @@ namespace kh3ap
             try
             {
                 auto* source_initializer = initializer.Get();
-                if (!is_uobject_valid_fast(source_initializer) || kh02_actor_world(source_initializer) != current_world)
+                if (!is_uobject_valid_fast(source_initializer) || actor_owning_world(source_initializer) != current_world)
                 {
                     throw std::runtime_error("The 0.2 mirror initializer no longer belongs to this world");
                 }

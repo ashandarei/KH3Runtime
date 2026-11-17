@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_portal.h"
 #include "kh3ap/features/kh02/transport/kh02_asset_companion.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -260,7 +261,7 @@ namespace kh3ap
         void discover(UObject* pawn)
         {
             auto* w = kh02_current_world();
-            if (is_uobject_valid_fast(pawn) && kh02_actor_world(pawn) != w)
+            if (is_uobject_valid_fast(pawn) && actor_owning_world(pawn) != w)
             {
                 return;
             }

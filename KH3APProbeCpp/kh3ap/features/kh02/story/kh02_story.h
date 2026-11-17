@@ -46,6 +46,7 @@ namespace kh3ap
         // Grants may use this solely to authorize writes to Sora's persistent records.
         static auto persistent_reward_context() -> RC::Unreal::UObject*;
         static auto current_hero() -> RC::Unreal::UObject*;
+        static auto defers_cutscene_skip(RC::Unreal::UObject* script, RC::Unreal::UObject* world) -> bool;
         // Consumes the existing native award only for the owned 0.2 Aqua.
         static auto award_shared_experience(void* save_owner, int amount, int lane) noexcept -> bool;
         static void refresh_sora_experience(RC::Unreal::UObject* pawn);

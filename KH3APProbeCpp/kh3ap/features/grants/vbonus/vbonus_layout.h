@@ -55,9 +55,9 @@ namespace kh3ap::vbonus_detail
     constexpr uint8_t s_last_hp_vbonus_kind = 5;
     constexpr uint8_t s_first_mp_vbonus_kind = 8;
     constexpr uint8_t s_last_mp_vbonus_kind = 11;
-    constexpr uint8_t s_item_slot_vbonus_kind = 16;
+    constexpr uint8_t s_item_slot_vbonus_kind = 18;
     constexpr uint8_t s_accessory_slot_vbonus_kind = 17;
-    constexpr uint8_t s_armor_slot_vbonus_kind = 18;
+    constexpr uint8_t s_armor_slot_vbonus_kind = 16;
     constexpr uint8_t s_first_magic_vbonus_kind = 24;
     constexpr uint8_t s_last_magic_vbonus_kind = 29;
     constexpr uint32_t s_vbonus_hud_hp_type = 5;

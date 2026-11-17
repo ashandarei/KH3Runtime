@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_crowd.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
@@ -23,7 +24,7 @@ namespace kh3ap::character_crowd
         constexpr size_t player_reference_offset = 0x338;
         constexpr size_t maximum_crowd_actors = 64;
         if (!is_uobject_valid_fast(pawn) || kh02_current_story_world() ||
-            kh02_actor_world(pawn) != kh02_current_world() ||
+            actor_owning_world(pawn) != kh02_current_world() ||
             !character_native::verify_sites({character_native::Site::crowd_player_binding,
                                              character_native::Site::crowd_player_tick}))
         {
@@ -54,7 +55,7 @@ namespace kh3ap::character_crowd
         }
         for (auto* actor : find_live_actors_of_class(pawn, actor_class, maximum_crowd_actors))
         {
-            if (kh02_actor_world(actor) != kh02_actor_world(pawn))
+            if (actor_owning_world(actor) != actor_owning_world(pawn))
             {
                 continue;
             }

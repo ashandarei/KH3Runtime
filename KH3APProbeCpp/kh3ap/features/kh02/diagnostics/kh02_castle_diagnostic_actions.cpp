@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/player_action_commands.h"
 #include "kh02_diagnostic_action_helpers.h"
 #include "kh3ap/features/kh02/story/kh02_entry_session.h"
@@ -367,7 +368,7 @@ namespace kh3ap
             ReflectedCall normal(manager, L"GetTresCameraNormal");
             normal.run();
             auto* camera = normal.result();
-            if (!is_uobject_valid_fast(camera) || kh02_actor_world(camera) != w)
+            if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != w)
             {
                 throw std::runtime_error("kh02_star_camera_missing");
             }
@@ -406,7 +407,7 @@ namespace kh3ap
             float best = action == Action::FlowChestApproach ? std::numeric_limits<float>::max() : 350.f * 350.f;
             for (auto* chest : find_live_actors_of_class(pawn, cls, 128))
             {
-                if (kh02_actor_world(chest) != w || !chest->GetPathName().starts_with(L"/Game/Zevels/dw/"))
+                if (actor_owning_world(chest) != w || !chest->GetPathName().starts_with(L"/Game/Zevels/dw/"))
                 {
                     continue;
                 }
@@ -657,7 +658,7 @@ namespace kh3ap
             }
             {
                 auto* property = script->GetPropertyByNameInChain(L"CheckPointActor");
-                if (!is_uobject_valid_fast(checkpoint) || kh02_actor_world(checkpoint) != w || !property ||
+                if (!is_uobject_valid_fast(checkpoint) || actor_owning_world(checkpoint) != w || !property ||
                     property->GetClass().GetName() != L"ObjectProperty" || property->GetElementSize() != 8)
                 {
                     throw std::runtime_error("kh02_resume_checkpoint");
@@ -748,7 +749,7 @@ namespace kh3ap
         }
         else if (action == Action::FlowInventory || action == Action::FlowInventoryHealthFixture)
         {
-            if (!entry.initialized || Kh02Story::current_hero() != pawn || kh02_actor_world(pawn) != w ||
+            if (!entry.initialized || Kh02Story::current_hero() != pawn || actor_owning_world(pawn) != w ||
                 (pawn->GetClassPrivate()->GetName() != L"p_ex001_Pawn_C" &&
                  pawn->GetClassPrivate()->GetName() != L"p_ex002_Pawn_C"))
             {

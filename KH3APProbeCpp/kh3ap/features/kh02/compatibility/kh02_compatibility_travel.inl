@@ -24,7 +24,7 @@ void parse_travel()
             throw std::runtime_error("kh02_mirror_jump_fade");
         }
         const int fade_kind = *cursor++;
-        auto* source_world = kh02_actor_world(frame->Object);
+        auto* source_world = actor_owning_world(frame->Object);
         if (story->mirror_travel.stage(source_world, frame->Node->GetPathName(), destination, destination_tag,
                                        fade_kind, story->source_flags.value(L"gameflow_REBELLIS_CLEAR")))
         {

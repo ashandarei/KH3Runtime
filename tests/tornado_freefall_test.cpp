@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <cassert>
 #include <cstdint>
 #include <stdexcept>
@@ -30,7 +31,7 @@ bool fail_swap = false;
 int swaps = 0, native_calls = 0;
 UObject* native_player{};
 bool is_uobject_valid_fast(UObject* p) { return p && p->live; }
-UObject* kh02_actor_world(UObject* p) { return p ? p->world : nullptr; }
+UObject* actor_owning_world(UObject* p) { return p ? p->world : nullptr; }
 UObject* kh02_current_world() { return world; }
 bool tornado_world(UObject* p) { return p && p == world; }
 UObject* local_pawn() { return player; }

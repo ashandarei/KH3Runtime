@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "character_reactions.h"
 #include "character_reaction_policy.h"
 #include "character_swap.h"
@@ -140,7 +141,7 @@ namespace kh3ap::character_reactions
         if (!pawn || character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn) ||
             !character_traversal::ready(pawn) || object(pawn, L"Controller") != controller ||
             object(object(controller, L"Player"), L"PlayerController") != controller ||
-            kh02_actor_world(pawn) != kh02_current_world())
+            actor_owning_world(pawn) != kh02_current_world())
         {
             return false;
         }
@@ -158,7 +159,7 @@ namespace kh3ap::character_reactions
                    object(state, L"MyCharPawn") == pawn &&
                    is_uobject_valid_fast(ship) && is_uobject_valid_fast(ship_class) &&
                    is_uobject_a_fast(ship, ship_class) &&
-                   kh02_actor_world(ship) == kh02_current_world() &&
+                   actor_owning_world(ship) == kh02_current_world() &&
                    object(ship, L"m_PlayerController") == controller;
         }
         if (situation)
@@ -198,8 +199,8 @@ namespace kh3ap::character_reactions
         auto* actor = object(info, L"m_Actor");
         auto* reactor = object(info, L"m_Component");
         auto* type = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/TresGame.TresReactorComponent");
-        auto* world = kh02_actor_world(pawn);
-        if (!world || !is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world ||
+        auto* world = actor_owning_world(pawn);
+        if (!world || !is_uobject_valid_fast(actor) || actor_owning_world(actor) != world ||
             !is_uobject_valid_fast(reactor) || !is_uobject_valid_fast(type) || !is_uobject_a_fast(reactor, type) ||
             reactor->GetOuterPrivate() != actor || !boolean(reactor, L"m_bIsGimmickActive", true) ||
             !boolean(actor, L"bHidden", false))

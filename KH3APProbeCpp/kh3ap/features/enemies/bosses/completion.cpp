@@ -11,6 +11,7 @@
 #include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/UFunctionStructs.hpp>
+#include <Unreal/Hooks.hpp>
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <algorithm>
@@ -25,6 +26,14 @@ namespace kh3ap::enemy_remap_detail
     namespace
     {
         constexpr auto max_level_entity_group_names = 64;
+        struct PendingBossDefeat
+        {
+            FWeakObjectPtr pawn;
+            FWeakObjectPtr entity;
+            std::wstring entity_path;
+        };
+        std::vector<PendingBossDefeat> pending_boss_defeats;
+        std::optional<FName> enemy_killed_event;
     }
 
     [[nodiscard]] static auto read_level_entity_group_names(UObject* level_entity)
@@ -801,12 +810,11 @@ namespace kh3ap::enemy_remap_detail
                 function,
                 params,
                 STR("inStateID"));
-        const bool titan_action = state_id == 99 &&
-                is_titan_completion_action(pawn->GetClassPrivate()->GetPathName(), *state_id);
+        const bool completion_action = state_id == 99;
         if (!state_id.has_value() ||
             (*state_id != tres_state_appear &&
              *state_id != tres_state_die &&
-             *state_id != tres_state_vanish_die && !titan_action))
+             *state_id != tres_state_vanish_die && !completion_action))
         {
             return;
         }
@@ -815,7 +823,7 @@ namespace kh3ap::enemy_remap_detail
         // only needs restoring at appearance and immediately before a
         // death transition; doing reflection work for every AI state was
         // unnecessary and could amplify encounter-start stalls.
-        (void)resolve_and_bind_runtime_boss_pawn(pawn);
+        (void)resolve_and_bind_runtime_boss_pawn(pawn, !completion_action);
     }
 
     auto observe_runtime_boss_state(
@@ -843,12 +851,11 @@ namespace kh3ap::enemy_remap_detail
                 function,
                 params,
                 STR("inStateID"));
-        const bool titan_action = state_id == 99 &&
-                is_titan_completion_action(pawn->GetClassPrivate()->GetPathName(), *state_id);
+        const bool completion_action = state_id == 99;
         if (!state_id.has_value() ||
             (*state_id != tres_state_appear &&
              *state_id != tres_state_die &&
-             *state_id != tres_state_vanish_die && !titan_action))
+             *state_id != tres_state_vanish_die && !completion_action))
         {
             return;
         }
@@ -857,7 +864,7 @@ namespace kh3ap::enemy_remap_detail
                 resolve_tracked_runtime_boss_pawn(pawn);
         if (!binding.level_entity)
         {
-            binding = resolve_and_bind_runtime_boss_pawn(pawn);
+            binding = resolve_and_bind_runtime_boss_pawn(pawn, !completion_action);
         }
         if (!binding.level_entity)
         {
@@ -882,7 +889,7 @@ namespace kh3ap::enemy_remap_detail
         if (*state_id != tres_state_die &&
             *state_id != tres_state_vanish_die)
         {
-            if (!titan_action)
+            if (!completion_action)
             {
                 return;
             }
@@ -895,6 +902,62 @@ namespace kh3ap::enemy_remap_detail
         }
         retire_runtime_xemnas_center(pawn);
         dispatch_runtime_boss_wipe_out(pawn, binding);
+    }
+
+    auto install_runtime_boss_defeat_observer() -> void
+    {
+        if (enemy_killed_event) return;
+        enemy_killed_event.emplace(L"ReceiveTresEnemyKilled", FNAME_Add);
+        Hook::RegisterProcessEventPreCallback([](UObject*, UFunction* function, void* params) {
+            // Shared native kill notification, independent of the replacement's
+            // animation/state implementation. No per-frame enemy discovery.
+            if (!s_runtime_enemy_remap.active || !s_runtime_enemy_remap.boss.boss_enabled.load() ||
+                !function || function->GetNamePrivate() != *enemy_killed_event || !params)
+                return;
+            auto* property = find_function_param_by_name(function, L"Pawn");
+            if (!property || property->GetClass().GetName() != L"ObjectProperty" ||
+                property->GetElementSize() != sizeof(UObject*)) return;
+            auto* pawn = *property->ContainerPtrToValuePtr<UObject*>(params);
+            if (!is_uobject_valid_fast(pawn) || !has_runtime_boss_replacement_class(pawn)) return;
+            // The event broadcasts to several level scripts for one death.
+            if (std::any_of(pending_boss_defeats.begin(), pending_boss_defeats.end(),
+                    [pawn](const auto& pending) { return pending.pawn.Get() == pawn; })) return;
+            // Death must identify an actual source-slot owner. Never assign an
+            // unowned summon to an empty slot merely because its class matches.
+            const auto binding = resolve_and_bind_runtime_boss_pawn(pawn, false);
+            if (!is_uobject_valid_fast(binding.level_entity)) return;
+            PendingBossDefeat pending;
+            pending.pawn = pawn;
+            pending.entity = binding.level_entity;
+            pending.entity_path = binding.level_entity_path;
+            pending_boss_defeats.push_back(std::move(pending));
+            Output::send<LogLevel::Warning>(
+                L"[KH3APProbeCpp] Boss native defeat observed event=ReceiveTresEnemyKilled pawn={} entity={} polling=false\n",
+                pawn->GetPathName(), binding.level_entity_path);
+        });
+    }
+
+    auto process_pending_runtime_boss_defeats() -> void
+    {
+        if (pending_boss_defeats.empty()) return;
+        // Leave the damage/kill stack before handing control to story scripts.
+        // Native counters have settled by this update. Consume each event once;
+        // an incomplete group waits for its next kill notification, not a timer.
+        auto pending = std::move(pending_boss_defeats);
+        pending_boss_defeats.clear();
+        if (!s_runtime_enemy_remap.active || !s_runtime_enemy_remap.boss.boss_enabled.load()) return;
+        for (const auto& defeat : pending)
+        {
+            auto* pawn = defeat.pawn.Get();
+            auto* entity = defeat.entity.Get();
+            if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(entity)) continue;
+            const auto binding = resolve_tracked_runtime_boss_pawn(pawn);
+            if (binding.level_entity != entity || binding.level_entity_path != defeat.entity_path) continue;
+            const auto counts = read_runtime_boss_completion_counts(binding);
+            if (!counts.synchronized || !native_boss_defeat_confirmed(counts.spawn_count, counts.kill_count_after)) continue;
+            retire_runtime_xemnas_center(pawn);
+            dispatch_runtime_boss_wipe_out(pawn, binding);
+        }
     }
 
     auto observe_or_suppress_runtime_boss_wipe_out(

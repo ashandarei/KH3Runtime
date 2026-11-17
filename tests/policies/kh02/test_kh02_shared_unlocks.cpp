@@ -82,8 +82,8 @@ int main()
     assert(uses_native_ability_popup(L"durable_sora_ability"));
     assert(!uses_native_ability_popup(L"bp_tres_get_item"));
     assert(!uses_native_ability_popup(L"durable_sora_vbonus"));
-    assert(reward_notice(L"controller_unlock", L"Unlock: Magic") == L"Received Unlock: Magic");
-    assert(reward_notice(L"controller_unlock", L"Unlock: Links") == L"Received Unlock: Links");
-    assert(reward_notice(L"bp_tres_get_item", L"Potion") == L"Received Potion for Sora");
-    assert(reward_notice(L"durable_sora_vbonus", L"Magic: Fire") == L"Received Magic: Fire for Sora");
+    assert(reward_notice(L"Unlock: Magic") == L"Received Unlock: Magic");
+    assert(reward_notice(L"Unlock: Links") == L"Received Unlock: Links");
+    assert(reward_notice(L"Potion") == L"Received Potion");
+    assert(reward_notice(L"Magic: Fire") == L"Received Magic: Fire");
 }

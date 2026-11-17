@@ -44,16 +44,34 @@ int main()
     assert(!travel_adoption_is_current(true, true, 0, 16));
     assert(!travel_adoption_is_current(true, true, -1, -1));
     using kh3ap::character_swap::travel_target_after_swap;
-    using kh3ap::character_swap::is_remind_area_c_exit_cinematic;
+    using kh3ap::character_swap::is_scream_strike_exit_cinematic;
+    constexpr auto door_vault = L"/Game/Levels/mi/mi_04/mi_04.mi_04";
+    constexpr auto scream_exit = L"/Game/Cutscene/Localization/ja/mi/cutscene_mi04_mi358."
+                                 L"cutscene_mi04_mi358:PersistentLevel.mi358";
+    assert(is_scream_strike_exit_cinematic(door_vault, scream_exit));
+    assert(!is_scream_strike_exit_cinematic(outside, scream_exit));
+    assert(!is_scream_strike_exit_cinematic(door_vault, L"mi358"));
+    assert(!is_scream_strike_exit_cinematic(door_vault,
+        L"/Game/Cutscene/Localization/ja/mi/cutscene_mi04_mi357."
+        L"cutscene_mi04_mi357:PersistentLevel.mi357"));
+    assert(!is_scream_strike_exit_cinematic(door_vault,
+        L"/Game/Cutscene/Localization/ja/mi/cutscene_mi04_mi358."
+        L"cutscene_mi04_mi358:PersistentLevel.cutscene_mi04_mi358_C_0"));
+    using kh3ap::character_swap::is_remind_maze_exit_cinematic;
     constexpr auto remind_skein = L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05";
     constexpr auto area_d_exit =
         L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081.kg_02_camera_ms081:PersistentLevel.ms081_C-D";
     constexpr auto area_e_exit =
         L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081.kg_02_camera_ms081:PersistentLevel.ms081_C-E";
-    assert(is_remind_area_c_exit_cinematic(remind_skein, area_d_exit));
-    assert(!is_remind_area_c_exit_cinematic(remind_skein, area_e_exit));
-    assert(!is_remind_area_c_exit_cinematic(L"/Game/Levels/kg/kg_02/kg_02.kg_02", area_d_exit));
-    assert(!is_remind_area_c_exit_cinematic(remind_skein, L"ms081_C-D"));
+    constexpr auto saix_exit =
+        L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms091.kg_02_camera_ms091:PersistentLevel.ms091_D-E";
+    assert(is_remind_maze_exit_cinematic(remind_skein, area_d_exit));
+    assert(is_remind_maze_exit_cinematic(remind_skein, saix_exit));
+    assert(!is_remind_maze_exit_cinematic(remind_skein, area_e_exit));
+    assert(!is_remind_maze_exit_cinematic(L"/Game/Levels/kg/kg_02/kg_02.kg_02", area_d_exit));
+    assert(!is_remind_maze_exit_cinematic(L"/Game/Levels/kg/kg_02/kg_02.kg_02", saix_exit));
+    assert(!is_remind_maze_exit_cinematic(remind_skein, L"ms081_C-D"));
+    assert(!is_remind_maze_exit_cinematic(remind_skein, L"ms091_D-E"));
     using kh3ap::character_swap::collapse_sora_role_is_inactive;
     constexpr auto thebes = L"/Game/Levels/he/he_03/he_03.he_03";
     constexpr auto collapse_one = L"/Game/Levels/he/he_03/umap/he_03_camera_ms024s."

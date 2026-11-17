@@ -4,7 +4,7 @@
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
@@ -42,7 +42,7 @@ namespace kh3ap
         for (auto* candidate : saves)
         {
             if (is_uobject_valid_fast(candidate) && candidate->GetName() == L"g_ex_SavePoint_C_1" &&
-                kh02_actor_world(candidate) == world)
+                actor_owning_world(candidate) == world)
             {
                 if (save)
                 {
@@ -75,7 +75,7 @@ namespace kh3ap
                 notice = candidate;
             }
         }
-        if (!is_uobject_valid_fast(notice) || kh02_actor_world(notice) != world ||
+        if (!is_uobject_valid_fast(notice) || actor_owning_world(notice) != world ||
             notice->GetName() != L"lv_EventTriggerBox_SavePointMes" ||
             !notice->GetPathName().starts_with(L"/Game/Zevels/dw/dw_02/umap/dw_02_gameflow."))
         {

@@ -144,7 +144,7 @@ verifies generated output. Builds check local inputs without importing APWorld.
 - [Contributing](CONTRIBUTING.md)
 - [Source guide](KH3APProbeCpp/kh3ap/README.md) · [Data contract](docs/DATA_CONTRACT.md)
 - [KH0.2 runtime](docs/kh02-runtime.md) · [KH0.2 asset loading](docs/kh02-asset-loading.md)
-- [UI authoring](docs/MOVIE_SOURCES.md) · [Character profiles](docs/CHARACTER_RUNTIME.md)
+- [UI authoring](docs/MOVIE_SOURCES.md) · [Character profiles](authoring/kh3/character_profiles.json)
 
 ## License
 

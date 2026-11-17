@@ -31,6 +31,7 @@ namespace kh3ap
         void tick(RC::Unreal::UObject* pawn);
         auto needs_tick() const -> bool;
         auto playing() const -> bool;
+        auto defers_cutscene_skip(RC::Unreal::UObject* script, RC::Unreal::UObject* world) const -> bool;
         auto presentation_seconds() const -> std::optional<float>;
         auto completed_movie(std::string_view logical) const -> bool;
         auto error() const -> const std::string&;

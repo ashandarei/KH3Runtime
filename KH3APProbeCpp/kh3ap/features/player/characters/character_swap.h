@@ -36,7 +36,7 @@ namespace kh3ap
         RC::Unreal::UObject* controlled_travel_pawn();
         void notify_cinematic_started(RC::Unreal::UObject* source);
         void notify_cinematic_finished(RC::Unreal::UObject* source);
-        void apply_stat_bonus(int hp_amount, int mp_amount);
+        void refresh_victory_bonuses();
         void refresh_alternate_stats();
         bool start_king_mickey_trap(RC::Unreal::UObject* pawn, int64_t receipt_index = -1);
         bool manual_swaps_blocked();

@@ -1,7 +1,7 @@
 #include "kh02_doors.h"
 #include "kh3ap/features/kh02/core/kh02_world_identity.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/NameTypes.hpp>
@@ -27,7 +27,7 @@ namespace kh3ap
         {
             return false;
         }
-        auto* world = kh02_actor_world(actor);
+        auto* world = actor_owning_world(actor);
         const auto* room =
             is_uobject_valid_fast(world) ? kh02_world_identity::mirror_room(world->GetPathName()) : nullptr;
         auto* map = actor->GetPropertyByNameInChain(L"m_MapName");

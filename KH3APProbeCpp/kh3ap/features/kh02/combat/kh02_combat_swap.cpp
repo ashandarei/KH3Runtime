@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh02_combat_swap.h"
@@ -770,7 +771,7 @@ namespace kh3ap
                         state_id(state(pawn)) == player_state_ids::floating);
             }
             if ((id != player_id_value(PlayerId::Sora) && id != player_id_value(PlayerId::Aqua)) ||
-                !Kh02Story::native_save_ready(pawn) || kh02_actor_world(pawn) != swap_context_world() ||
+                !Kh02Story::native_save_ready(pawn) || actor_owning_world(pawn) != swap_context_world() ||
                 !runtime_sora_control_ready(pawn) || Kh02Story::challenges_open() ||
                 !ordinary_state(state_id(state(pawn))))
             {
@@ -815,7 +816,7 @@ namespace kh3ap
             auto* self = active;
             float applied_delta = delta;
             if (self->camera_transition_frames > 0 && self->transition_camera.Get() == camera &&
-                kh02_actor_world(camera) == self->request_world.Get())
+                actor_owning_world(camera) == self->request_world.Get())
             {
                 // The camera must see the same first ground step as the pawn.
                 // Doing this only in the later mod update leaves the camera
@@ -884,7 +885,7 @@ namespace kh3ap
                 auto* pawn = object(current, L"MyCharPawn");
                 if (!self->run_handoff || Clock::now() > self->run_until || !is_uobject_valid_fast(pawn) ||
                     player_id(pawn) != self->target || pawn == self->outgoing.Get() ||
-                    kh02_actor_world(pawn) != self->request_world.Get() ||
+                    actor_owning_world(pawn) != self->request_world.Get() ||
                     local_player_pawn(self->request_world.Get()) != pawn ||
                     current->GetClassPrivate()->GetName() != L"TresPlayerState_Run")
                 {
@@ -938,7 +939,7 @@ namespace kh3ap
             try
             {
                 auto* pawn = object(current, L"MyCharPawn");
-                if (player_id(pawn) == self->target && kh02_actor_world(pawn) == self->request_world.Get() &&
+                if (player_id(pawn) == self->target && actor_owning_world(pawn) == self->request_world.Get() &&
                     attack_state(current, pawn))
                 {
                     // Keep an ongoing air swing even if this selector's ground
@@ -958,7 +959,7 @@ namespace kh3ap
             auto* self = active;
             auto* pawn = object(current, L"MyCharPawn");
             const bool resume = self->resuming_swing && player_id(pawn) == self->target &&
-                                kh02_actor_world(pawn) == self->request_world.Get() && attack_state(current, pawn);
+                                actor_owning_world(pawn) == self->request_world.Get() && attack_state(current, pawn);
             reinterpret_cast<void (*)(UObject*)>(self->original_attack)(current);
             if (!resume)
             {
@@ -1124,6 +1125,8 @@ namespace kh3ap
                 test_result["run_resumes"].push_back({
                     {"player", player_id(pawn)},
                     {"source_phase", run_phase},
+                    {"requested_play_rate", run_play_rate},
+                    {"play_rate", animation_value(anim, L"SQEX_AnimGetCurrentPlayRate")},
                     {"time", animation_value(anim, L"SQEX_AnimGetCurrentTime")},
                     {"length", length},
                     {"motion", to_utf8(field<FName>(run, 0xa0).ToString())}});
@@ -1160,7 +1163,7 @@ namespace kh3ap
             bool applied = false;
             try
             {
-                if (resuming_swing && player_id(pawn) == target && kh02_actor_world(pawn) == request_world.Get())
+                if (resuming_swing && player_id(pawn) == target && actor_owning_world(pawn) == request_world.Get())
                 {
                     *reinterpret_cast<int*>(reinterpret_cast<std::byte*>(current) + combo_index_offset) = swing_index;
                     *reinterpret_cast<uint8_t*>(reinterpret_cast<std::byte*>(current) + combo_air_offset) = swing_air;
@@ -1169,7 +1172,7 @@ namespace kh3ap
                 }
                 else if (const auto* intent = attack_buffer.front();
                          intent && intent->attempted && pawn == local_player_pawn(request_world.Get()) &&
-                         attack_state(current, pawn) && kh02_actor_world(pawn) == request_world.Get())
+                         attack_state(current, pawn) && actor_owning_world(pawn) == request_world.Get())
                 {
                     if (field<int>(current, combo_index_offset) == 0 &&
                         (field<uint8_t>(current, combo_air_offset) != 0) == intent->air)
@@ -1183,7 +1186,7 @@ namespace kh3ap
                 }
                 else if (next_index >= 0 && incoming.Get() == pawn && Clock::now() <= combo_until &&
                          pawn == local_player_pawn(request_world.Get()) &&
-                         kh02_actor_world(pawn) == request_world.Get() && attack_state(current, pawn))
+                         actor_owning_world(pawn) == request_world.Get() && attack_state(current, pawn))
                 {
                     if (field<int>(current, combo_index_offset) == 0 &&
                         (field<uint8_t>(current, combo_air_offset) != 0) == air)
@@ -1206,7 +1209,7 @@ namespace kh3ap
             }
             const int selected = reinterpret_cast<Select>(original)(current);
             [[maybe_unused]] uint64_t input_serial{};
-            if (kh02_actor_world(pawn) == swap_context_world() && attack_state(current, pawn) &&
+            if (actor_owning_world(pawn) == swap_context_world() && attack_state(current, pawn) &&
                 local_player_pawn(swap_context_world()) == pawn)
             {
                 if (!resuming_swing)
@@ -1227,7 +1230,7 @@ namespace kh3ap
                 swing_state = make_uobject_weak(current);
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            if (kh02_actor_world(pawn) == swap_context_world() && attack_state(current, pawn) &&
+            if (actor_owning_world(pawn) == swap_context_world() && attack_state(current, pawn) &&
                 local_player_pawn(swap_context_world()) == pawn)
             {
                 selections.push_back({{"player", player_id(pawn)},
@@ -1260,7 +1263,7 @@ namespace kh3ap
             auto* active_hud = object(manager, L"m_ActiveHUD");
             auto* hud = object(object(active_hud, L"TresCockpit"), L"m_pHudCommand");
             if (!is_uobject_valid_fast(hud) || hud->GetClassPrivate()->GetName() != L"TresUIP_HudCommand" ||
-                kh02_actor_world(active_hud) != kh02_actor_world(pawn) || object(hud, L"m_pUIManager") != manager)
+                actor_owning_world(active_hud) != actor_owning_world(pawn) || object(hud, L"m_pUIManager") != manager)
             {
                 return std::nullopt;
             }
@@ -1554,6 +1557,11 @@ namespace kh3ap
                 const float length = animation_value(anim, L"SQEX_AnimGetCurrentLength");
                 const float time = animation_value(anim, L"SQEX_AnimGetCurrentTime");
                 run_play_rate = animation_value(anim, L"SQEX_AnimGetCurrentPlayRate");
+                // The source rate already includes its character's stride
+                // correction. Transfer the underlying rate so the receiving
+                // play hook applies its own correction exactly once; otherwise
+                // Kairi's Aqua loop multiplier compounds on every round trip.
+                run_play_rate /= character_idle::movement_play_rate_scale(anim, run_animation);
                 Call loop(anim, L"SQEX_IsAnimLoop");
                 loop.name(L"InSlotName", L"FullBody");
                 loop.run();
@@ -1594,7 +1602,7 @@ namespace kh3ap
             }
             capture_frame(pawn);
             outgoing = make_uobject_weak(pawn);
-            request_world = make_uobject_weak(kh02_actor_world(pawn));
+            request_world = make_uobject_weak(actor_owning_world(pawn));
             incoming = {};
             positioned = {};
             next_index = captured_index;
@@ -1999,7 +2007,7 @@ namespace kh3ap
         {
             auto* owner = swing_owner.Get();
             if (GetCurrentThreadId() != game_thread || !is_uobject_valid_fast(victim) ||
-                !is_uobject_valid_fast(owner) || kh02_actor_world(owner) != swap_context_world() ||
+                !is_uobject_valid_fast(owner) || actor_owning_world(owner) != swap_context_world() ||
                 state(owner) != swing_state.Get())
             {
                 return false;
@@ -2095,7 +2103,7 @@ namespace kh3ap
             {
                 return false;
             }
-            test_world = make_uobject_weak(kh02_actor_world(pawn));
+            test_world = make_uobject_weak(actor_owning_world(pawn));
             runtime_controller_test_stick_lease(nullptr, false);
             test_camera = false;
             test_movement = false;

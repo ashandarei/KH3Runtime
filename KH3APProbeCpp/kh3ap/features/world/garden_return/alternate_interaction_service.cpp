@@ -863,7 +863,14 @@ namespace kh3ap::garden_return_detail
                     aqua_save_released = false;
                     aqua_save_dispatched = false;
                     aqua_save_started = Clock::now();
-                    config.select_aqua();
+                    // Only the KH0.2 chapter owns Aqua restoration. Ordinary
+                    // KH3 alternates keep their existing character selection;
+                    // arming chapter restoration here would return Aqua to
+                    // Sora as soon as it observes a world outside KH0.2.
+                    if (kh02_aqua)
+                    {
+                        config.select_aqua();
+                    }
                     config.set_phase(L"waiting_for_aqua_save_release");
                     return true;
                 });

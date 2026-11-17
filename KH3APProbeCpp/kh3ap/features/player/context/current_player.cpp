@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -44,11 +45,11 @@ namespace kh3ap
             return false; // Space vehicles and title/NPC controllers are separate.
         }
         auto* world = kh02_current_world();
-        if (!is_uobject_valid_fast(world) || kh02_actor_world(pawn) != world) { return false; }
+        if (!is_uobject_valid_fast(world) || actor_owning_world(pawn) != world) { return false; }
         auto* controller = player_properties.read_object(pawn, L"Controller");
         auto* local_player = player_properties.read_object(controller, L"Player");
         if (!is_uobject_valid_fast(controller) || !is_uobject_valid_fast(local_player) ||
-            kh02_actor_world(controller) != world ||
+            actor_owning_world(controller) != world ||
             player_properties.read_object(controller, L"Pawn") != pawn ||
             player_properties.read_object(local_player, L"PlayerController") != controller)
         {

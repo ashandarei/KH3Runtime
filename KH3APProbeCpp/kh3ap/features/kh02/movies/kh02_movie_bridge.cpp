@@ -632,6 +632,15 @@ namespace kh3ap
         return impl->playback.phase == Kh02MoviePlaybackState::Phase::stream_playing;
     }
 
+    auto Kh02MovieBridge::defers_cutscene_skip(UObject* script, UObject* world) const -> bool
+    {
+        // DW010's original OnEventSkip returns while IsVideoPlaying is false.
+        // Keep the native fade/request unissued until its asynchronous movie is
+        // playing. Prewarms and other scene/world owners must not delay a skip.
+        return impl->story_movie && !impl->prewarmed && is_uobject_valid_fast(script) && is_uobject_valid_fast(world) &&
+               impl->continuations.source() == script && impl->world.Get() == world && impl->playback.preparing();
+    }
+
     auto Kh02MovieBridge::presentation_seconds() const -> std::optional<float>
     {
         if (!playing() || !impl->decoder.frames() || impl->presenter.shown_frame() < 0)

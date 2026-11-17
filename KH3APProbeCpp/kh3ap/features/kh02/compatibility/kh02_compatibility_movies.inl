@@ -114,7 +114,7 @@ void execute_movies()
     }
     if (adapter == Adapter::MatineeForMovie)
     {
-        if (!is_uobject_valid_fast(target) || kh02_actor_world(target) != story->gameplay.world.Get() ||
+        if (!is_uobject_valid_fast(target) || actor_owning_world(target) != story->gameplay.world.Get() ||
             !frame->Node->GetPathName().starts_with(L"/Game/Zutscene/Localization/en/"))
         {
             throw std::runtime_error("kh02_matinee_movie_owner");

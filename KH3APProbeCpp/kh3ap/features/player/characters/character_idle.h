@@ -17,6 +17,9 @@ namespace kh3ap::character_idle
     // Roxas selects his idle from battle/state context, not weapon dismissal.
     bool prepare_roxas(RC::Unreal::UObject* pawn);
     RC::Unreal::FName effective_animation_name(RC::Unreal::UObject* animation_instance, RC::Unreal::FName name);
+    // Playback applies this receiver-specific stride correction once. Handoffs
+    // remove it from the observed source rate before playing another hero.
+    float movement_play_rate_scale(RC::Unreal::UObject* animation_instance, RC::Unreal::FName name);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
     bool diagnostic_battle(bool enabled);
 #endif

@@ -17,6 +17,10 @@ namespace kh3ap::player_animation_support
         L"/Game/Character/pc/p_ex001/anm/p_ex001_AnimSet.p_ex001_AnimSet";
     inline constexpr auto kairi_idle_animation_set_path =
         L"/Game/Character/npc/n_ex005/anm/n_ex005_GM_Body_AnimSet.n_ex005_GM_Body_AnimSet";
+    inline constexpr auto aqua_animation_set_path =
+        L"/Game/Character/pc/p_ex002/anm/p_ex002_AnimSet.p_ex002_AnimSet";
+    inline constexpr auto riku_animation_set_path =
+        L"/Game/Character/pc/p_ex003/anm/p_ex003_AnimSet.p_ex003_AnimSet";
     inline constexpr auto sora_attack_data_path =
         L"/Game/DataTable/Player/Attack/p_ex001_AttackData.p_ex001_AttackData";
     inline constexpr auto kairi_attack_data_path =
@@ -32,6 +36,8 @@ namespace kh3ap::player_animation_support
 
     // Verify EGS CL1065258 and both native skeleton-remapping entry points.
     bool supported_skeleton_layout();
+    // Shared voice hook for borrowed movement/chests and Kairi's ground slam.
+    bool initialize_voice_notify();
     void allow_animation_skeleton(RC::Unreal::UObject* animation_instance,
                                   RC::Unreal::UObject* animation);
 } // namespace kh3ap::player_animation_support

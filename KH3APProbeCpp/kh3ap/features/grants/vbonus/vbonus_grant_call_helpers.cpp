@@ -227,6 +227,7 @@ namespace kh3ap
         }
         if (flag_owned)
         {
+            if (mirror_stats) { character_swap::refresh_victory_bonuses(); }
             // This receipt's native reward has already been recorded. A retry
             // must not add it again. The generated pool fits the finite native
             // reward catalog; extra console copies reuse an owned flag.
@@ -256,7 +257,7 @@ namespace kh3ap
         const auto persistent_applied_at = std::chrono::steady_clock::now();
         if (mirror_stats)
         {
-            character_swap::apply_stat_bonus(hp_amount, mp_amount);
+            character_swap::refresh_victory_bonuses();
         }
 
         int32_t magic_command = 0;

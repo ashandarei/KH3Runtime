@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_runtime.h"
 #include "kh02_entry_service.h"
 #include "kh02_recovery_service.h"
@@ -330,7 +331,7 @@ namespace kh3ap
             auto* controller = try_read_reflected_object_property_value(pawn, L"Controller");
             if (!impl->config.gameplay_ready() || !is_uobject_valid_fast(pawn) ||
                 pawn->GetClassPrivate()->GetName() != L"p_ex001_Pawn_C" ||
-                kh02_actor_world(pawn) != kh02_current_world() || !is_uobject_valid_fast(controller) ||
+                actor_owning_world(pawn) != kh02_current_world() || !is_uobject_valid_fast(controller) ||
                 try_read_reflected_object_property_value(controller, L"Pawn") != pawn)
             {
                 throw std::runtime_error("kh02_health_fixture_requires_garden_sora");

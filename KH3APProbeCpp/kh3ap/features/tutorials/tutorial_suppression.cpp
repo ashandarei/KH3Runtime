@@ -1,6 +1,7 @@
 #include "kh3ap/core/platform/game_build.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/tutorials/tutorial_suppression.h"
+#include "kh3ap/hooks/native_detour_lifetime.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/world/space/space_service.h"
 #include <DynamicOutput/DynamicOutput.hpp>
@@ -416,13 +417,42 @@ namespace kh3ap
                 tutorial_installed,notice_installed,steam?STR("steam"):STR("egs"));
         }
 
+        bool install_steam_overview_suppression()
+        {
+            // Steam 66743F34/A969000: the state-107 dispatcher calls this
+            // void(manager*) selector at 0x17dc53e. It retains native seen-bit
+            // writes/unlocks and queues 108; only the next tick opens dialogue
+            // at 0x17dc548. The shared callback redirects just 108 back to 107,
+            // leaving the final state 19 and other native continuations intact.
+            constexpr uintptr_t entry = 0x17d5010;
+            if (!matches(base + entry,
+                         {0x48,0x8b,0xc4,0x55,0x41,0x56,0x41,0x57,0x48,0x8b,0xec,0x48,0x83,0xec,0x50}) ||
+                !matches(base + 0x17d5174, {0xc7,0x87,0x10,0x05,0x00,0x00,0x6c,0x00,0x00,0x00}) ||
+                !matches(base + 0x17d5ad2, {0xc7,0x87,0x10,0x05,0x00,0x00,0x6c,0x00,0x00,0x00}) ||
+                !matches(base + 0x17d5ade, {0xc7,0x87,0x10,0x05,0x00,0x00,0x13,0x00,0x00,0x00}) ||
+                !matches(base + 0x17dc53b, {0x48,0x8b,0xce,0xe8,0xcd,0x8a,0xff,0xff}) ||
+                !matches(base + 0x17dd0e8, {0x3b,0xc5,0x7d,0x01,0x48,0xc5,0x7d,0x01}))
+            {
+                return false;
+            }
+            dialogue_hook = std::make_unique<PLH::x64Detour>(
+                base + entry, reinterpret_cast<uintptr_t>(&suppress_dialogue), &original_dialogue);
+            const bool installed = dialogue_hook->hook() && original_dialogue;
+            if (!installed && !release_native_detour(dialogue_hook))
+            {
+                Output::send<LogLevel::Error>(
+                    STR("[KH3APProbeCpp] TutorialSuppression overview unhook failed; retaining trampoline\n"));
+            }
+            return installed;
+        }
+
         bool install_steam_embark_suppression()
         {
             // Steam 0x66743F34: destination setup at 0x17d8c60 calls the
             // native test-and-set of seen bit 9, then queues state 112 or 55.
             // Change only the first-time continuation to 55. All selector
             // setup, the seen-bit write and native cleanup remain intact.
-            // This is independent of the EGS-only help/overview detours.
+            // This is independent of the help and overview detours.
             if (!matches(base+0x17d8c60,{0x40,0x57,0x48,0x83,0xec,0x50,0x48,0xc7,0x44,0x24,0x20,0xfe,0xff,0xff,0xff}) ||
                 !matches(base+0x17d8da4,{0xe8,0x67,0x9d,0xd4,0xff,0x48,0x85,0xc0,0x74,0x1c,0x48,0x8d,0x88,0x78,0x46,0x01,0x00,0xe8,0xf6,0x4e,0x8c,0xff,0x3c,0x01,0x75,0x0c}) ||
                 !matches(base+0x109dcb0,{0x0f,0xb7,0x81,0xfe,0x01,0x00,0x00,0xba,0x00,0x02,0x00,0x00,0x66,0x85,0xc2,0x75,0x0d,0x66,0x0b,0xc2,0x66,0x89,0x81,0xfe,0x01,0x00,0x00,0xb0,0x01,0xc3,0x32,0xc0,0xc3}) ||
@@ -523,6 +553,10 @@ namespace kh3ap
         if (pe->Signature!=IMAGE_NT_SIGNATURE) return;
         if (kh3ap::native_build::steam.matches(pe->FileHeader.TimeDateStamp, pe->OptionalHeader.SizeOfImage))
         {
+            const bool overview_installed = install_steam_overview_suppression();
+            Output::send<LogLevel::Warning>(
+                STR("[KH3APProbeCpp] TutorialSuppression steam_overview installed={} pre_open=true native_progress=preserved\n"),
+                overview_installed);
             const bool installed=install_steam_embark_suppression();
             Output::send<LogLevel::Warning>(STR("[KH3APProbeCpp] TutorialSuppression steam_embark installed={} pre_open=true native_seen_bit=true\n"),installed);
             install_savepoint_notice_suppression(true);

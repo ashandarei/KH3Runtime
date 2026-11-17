@@ -1,5 +1,7 @@
 #include "kh3ap/features/player/characters/character_swap_stats.h"
 #include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/features/player/characters/character_bonus_policy.h"
+#include "kh3ap/features/grants/vbonus/vbonus_grant_internal.h"
 #include "kh3ap/app/config.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/settings/pak_seed_settings.h"
@@ -273,6 +275,7 @@ namespace kh3ap::character_swap
         auto* base_stats =
             reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(parameter) + base_stats_offset);
         base_stats[base_ability_point_index] = alternate_max_ap;
+        synchronize_bonuses(pawn);
     }
 
     void CharacterSwapStats::apply_shared_progression(UObject* pawn)
@@ -299,6 +302,7 @@ namespace kh3ap::character_swap
         pawn_field<int32_t>(parameter, base_level_offset) = sora_level;
         std::memcpy(reinterpret_cast<std::byte*>(parameter) + base_stats_offset, stats.data(),
                     sizeof(stats));
+        synchronize_bonuses(pawn);
     }
 
     auto CharacterSwapStats::synchronize_totals(UObject* pawn) const -> void
@@ -334,16 +338,58 @@ namespace kh3ap::character_swap
         }
     }
 
-    auto CharacterSwapStats::add_bonus(UObject* pawn, int hp_amount, int mp_amount) -> void
+    void CharacterSwapStats::synchronize_bonuses(UObject* pawn)
     {
+        using namespace vbonus_detail;
         auto* parameter = parameters(pawn);
-        auto* stats =
-            reinterpret_cast<int32_t*>(reinterpret_cast<std::byte*>(parameter) + base_stats_offset);
-        stats[0] += hp_amount;
-        stats[1] += mp_amount;
-        sora_stats[0] += hp_amount;
-        sora_stats[1] += mp_amount;
-        sora_totals[0] += hp_amount;
-        sora_totals[1] += mp_amount;
+        const auto& banks = native_vbonus_bank_function_cache();
+        const auto& amounts = native_vbonus_stat_function_cache();
+        if (!banks.ready || !amounts.ready)
+        {
+            throw std::runtime_error("character_bonus_native_functions_unavailable");
+        }
+        auto* owner = static_cast<UObject*>(banks.get_save_owner());
+        if (!is_uobject_valid_fast(owner) || owner->GetClassPrivate()->GetName() != L"TresGameInstance")
+        {
+            throw std::runtime_error("character_bonus_save_owner_unavailable");
+        }
+        auto* save = reinterpret_cast<uint8_t*>(owner) + s_active_save_data_offset;
+        auto* sora = save + s_sora_character_record_offset;
+        auto* target = pawn_field<uint8_t*>(parameter, s_sora_record_from_equipment_offset);
+        const auto address = reinterpret_cast<uintptr_t>(target);
+        const auto in_bank = [address](const uint8_t* first, size_t count)
+        {
+            const auto begin = reinterpret_cast<uintptr_t>(first);
+            return address >= begin && address < begin + count * character_bonuses::record_size &&
+                   (address - begin) % character_bonuses::record_size == 0;
+        };
+        if (target == sora || (!in_bank(sora, 16) && !in_bank(save + 0x9572ac, 14)))
+        {
+            throw std::runtime_error("character_bonus_record_identity_mismatch");
+        }
+        const auto difficulty = pawn_field<int32_t>(owner, s_difficulty_offset);
+        std::array<int32_t, 2> totals{};
+        for (const auto kind : character_bonuses::shared_kinds)
+        {
+            if (kind > s_last_mp_vbonus_kind) { continue; }
+            int32_t hp = 0;
+            int32_t mp = 0;
+            amounts.resolve_stat_amounts(difficulty, kind, &hp, &mp);
+            const auto count = sora[character_bonuses::bonus_offset + kind];
+            totals[0] += hp * count;
+            totals[1] += mp * count;
+        }
+        if (totals[0] < 0 || totals[0] > INT16_MAX || totals[1] < 0 || totals[1] > INT16_MAX)
+        {
+            throw std::runtime_error("character_bonus_stat_range");
+        }
+        character_bonuses::synchronize(
+            std::span<uint8_t, character_bonuses::record_size>{target, character_bonuses::record_size},
+            std::span<const uint8_t, character_bonuses::record_size>{sora, character_bonuses::record_size});
+        // Native stat getters add these signed bonus shorts to the base cache.
+        // Assign from authoritative counts so retries, equipment refreshes and
+        // pooled-pawn reuse cannot stack bonuses or lose them on the next swap.
+        pawn_field<int16_t>(parameter, 0x6c) = static_cast<int16_t>(totals[0]);
+        pawn_field<int16_t>(parameter, 0x6e) = static_cast<int16_t>(totals[1]);
     }
 } // namespace kh3ap::character_swap

@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/party/betrayal_trap.h"
 #include <chrono>
 #include "kh3ap/features/player/character_ids.h"
@@ -37,6 +38,7 @@
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_crowd.h"
+#include "kh3ap/features/player/movement/character_rails.h"
 #include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/player/combat/combat_target_handoff.h"
@@ -120,7 +122,7 @@ namespace kh3ap::character_swap
 
         struct SwapSession
         {
-            FWeakObjectPtr owned_hero, swap_world;
+            FWeakObjectPtr owned_hero, swap_world, outgoing_rail_pawn;
             std::unique_ptr<character_party::Handoff> party_handoff;
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             FWeakObjectPtr diagnostic_outgoing;
@@ -266,7 +268,7 @@ namespace kh3ap::character_swap
                     L"viewport_world={} owned={}\n",
                     GetCurrentProcessId(), stage, session.active_character_id, session.pending,
                     name(actor),
-                    name(is_uobject_valid_fast(actor) ? kh02_actor_world(actor) : nullptr),
+                    name(is_uobject_valid_fast(actor) ? actor_owning_world(actor) : nullptr),
                     name(kh02_current_world()), name(session.owned_hero.Get()))));
 #endif
         }
@@ -324,7 +326,7 @@ namespace kh3ap::character_swap
             auto* controller = object(manager, L"m_pPlayerController");
             auto* pawn = object(controller, L"Pawn");
             return is_uobject_valid_fast(pawn) && object(pawn, L"Controller") == controller &&
-                           kh02_actor_world(pawn) == kh02_current_world()
+                           actor_owning_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
         }
@@ -560,7 +562,7 @@ namespace kh3ap::character_swap
             get_control_rotation.run();
             const auto control_rotation = get_control_rotation.result_vector();
             session.target_id = target;
-            session.swap_world = make_uobject_weak(kh02_actor_world(pawn));
+            session.swap_world = make_uobject_weak(actor_owning_world(pawn));
             session.deadline = Clock::now() + character_swap_handoff_timeout;
             Call change(library, L"BP_TresGameChangePlayer");
             change.object(L"WorldContextObject", pawn);
@@ -574,6 +576,7 @@ namespace kh3ap::character_swap
             RuntimeEnemyClearService::prepare_protection_handoff(pawn);
 #endif
             session.pending = true;
+            session.outgoing_rail_pawn = make_uobject_weak(pawn);
             session.cinematic_return_pending = cinematic_handoff;
             betrayal_trap::prepare_player_swap(pawn);
             session.travel_character_id =
@@ -661,7 +664,7 @@ namespace kh3ap::character_swap
         {
             auto* world = kh02_current_world();
             if (!is_uobject_valid_fast(boss) || !is_uobject_valid_fast(world) ||
-                kh02_actor_world(boss) != world ||
+                actor_owning_world(boss) != world ||
                 world->GetPathName().find(L"/Game/Levels/bt/bt_04/") == std::wstring::npos)
             {
                 return;
@@ -714,7 +717,7 @@ namespace kh3ap::character_swap
 
         bool inactive_collapse_sora_role(UObject* matinee, UObject* group)
         {
-            auto* world = kh02_actor_world(matinee);
+            auto* world = actor_owning_world(matinee);
             if (!is_uobject_valid_fast(world)) return false;
             const auto world_path = world->GetPathName();
             const auto scene_path = matinee->GetPathName();
@@ -741,7 +744,7 @@ namespace kh3ap::character_swap
         bool cinematic_uses_sora(UObject* matinee)
         {
             if (!is_uobject_valid_fast(matinee) ||
-                kh02_actor_world(matinee) != kh02_current_world())
+                actor_owning_world(matinee) != kh02_current_world())
             {
                 return false;
             }
@@ -815,14 +818,14 @@ namespace kh3ap::character_swap
             // overwrites its active movement settings with the ground snapshot.
             // Only a new pawn, world or character needs travel adoption.
             if (travel_adoption_is_current(session.owned_hero.Get() == pawn,
-                    session.swap_world.Get() == kh02_actor_world(pawn),
+                    session.swap_world.Get() == actor_owning_world(pawn),
                     session.active_character_id, session.travel_character_id))
             {
                 return true;
             }
             // Travel can recreate the alternate before cinematic input unlocks.
             // Retain the departure's stat snapshot; only adopt verified local possession.
-            session.swap_world = make_uobject_weak(kh02_actor_world(pawn));
+            session.swap_world = make_uobject_weak(actor_owning_world(pawn));
             session.owned_hero = make_uobject_weak(pawn);
             session.active_character_id = session.travel_character_id;
             session.rebind_pending = true;
@@ -836,7 +839,7 @@ namespace kh3ap::character_swap
             adopt_travel_pawn();
             auto* world = kh02_current_world();
             if (is_uobject_valid_fast(matinee) && is_uobject_valid_fast(world) &&
-                kh02_actor_world(matinee) == world &&
+                actor_owning_world(matinee) == world &&
                 is_ascension_cinematic(world->GetPathName(), matinee->GetPathName()))
             {
                 // This authored movie starts before BP_AscensionAttackStart.
@@ -849,7 +852,7 @@ namespace kh3ap::character_swap
                     UGameplayStatics::GetAllActorsOfClass(world, type, actors);
                     for (auto* actor : actors)
                     {
-                        if (is_uobject_valid_fast(actor) && kh02_actor_world(actor) == world &&
+                        if (is_uobject_valid_fast(actor) && actor_owning_world(actor) == world &&
                             actor->GetClassPrivate()->GetName() == L"e_ex301_Pawn_C")
                         {
                             enter_ascension(actor);
@@ -860,7 +863,7 @@ namespace kh3ap::character_swap
                 }
             }
             const bool tornado_freefall = is_uobject_valid_fast(matinee) &&
-                is_uobject_valid_fast(world) && kh02_actor_world(matinee) == world &&
+                is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
                 is_tornado_freefall_cinematic(world->GetPathName(), matinee->GetPathName());
             const bool tornado_return = tornado_freefall && !kairi_ground_slam::ready(player());
             if (tornado_freefall)
@@ -876,13 +879,19 @@ namespace kh3ap::character_swap
                     session.return_requested = false;
                 }
             }
-            const bool native_sora = tornado_return;
+            // Scream Strike's ending leaves a bound alternate at its old position
+            // while the door scenery changes. Let its authored end-position pass
+            // move native Sora, then restore the retained character after the movie.
+            const bool scream_strike_exit = is_uobject_valid_fast(matinee) &&
+                is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
+                is_scream_strike_exit_cinematic(world->GetPathName(), matinee->GetPathName());
+            const bool native_sora = tornado_return || scream_strike_exit;
             // These sequences move Sora across a labyrinth door. The
             // authored position must reach the native pawn before we restore
             // the combat ally at the end of cinematic mode.
             const bool native_exit = is_uobject_valid_fast(matinee) && is_uobject_valid_fast(world) &&
-                                     kh02_actor_world(matinee) == world &&
-                                     is_remind_area_c_exit_cinematic(world->GetPathName(),
+                                     actor_owning_world(matinee) == world &&
+                                     is_remind_maze_exit_cinematic(world->GetPathName(),
                                                                     matinee->GetPathName());
             if (native_sora && session.travel_character_id >= 0 && cinematic_uses_sora(matinee))
             {
@@ -929,7 +938,7 @@ namespace kh3ap::character_swap
             }
             session.pending = true;
             session.cinematic_return_pending = true;
-            // The Area C transition is a level Matinee. Input readiness
+            // These maze exits are level Matinees. Input readiness
             // returns after the gameflow ends cinematic mode, without the
             // movie-class pause-menu notification that clears this hold.
             if (!native_exit)
@@ -1209,7 +1218,7 @@ namespace kh3ap::character_swap
             }
             // A native map transition can reconstruct the selected pawn.
             // Rebind only after the existing player-start event, then stop.
-            session.swap_world = make_uobject_weak(kh02_actor_world(pawn));
+            session.swap_world = make_uobject_weak(actor_owning_world(pawn));
             session.hp = character_integer_value(pawn, L"GetHitPoint");
             session.hp_break.reset();
             character_magic::capture(pawn);
@@ -1490,7 +1499,7 @@ namespace kh3ap::character_swap
                 }
                 auto* incoming = player();
                 if (trap.locked() && id(incoming) == king_mickey_id &&
-                    kh02_actor_world(incoming) == kh02_current_world())
+                    actor_owning_world(incoming) == kh02_current_world())
                 {
                     session.owned_hero = make_uobject_weak(incoming);
                     session.swap_world = make_uobject_weak(kh02_current_world());
@@ -1609,6 +1618,8 @@ namespace kh3ap::character_swap
             // Ownership is committed now. Resource restoration can fail after
             // possession, but crowds must still follow the actual local pawn.
             character_crowd::rebind(pawn);
+            character_rails::rebind_doors(session.outgoing_rail_pawn.Get(), pawn);
+            session.outgoing_rail_pawn = {};
             if (auto hp_break = std::exchange(session.hp_break, std::nullopt))
             {
                 hp_break->restore(pawn);
@@ -1972,7 +1983,7 @@ namespace kh3ap::character_swap
     void notify_cinematic_finished(UObject* source)
     {
         if (!is_uobject_valid_fast(source) ||
-            kh02_actor_world(source) != kh02_current_world())
+            actor_owning_world(source) != kh02_current_world())
         {
             return;
         }
@@ -1997,7 +2008,7 @@ namespace kh3ap::character_swap
     {
         betrayal_trap::cancel();
         if (is_uobject_valid_fast(source) &&
-            kh02_actor_world(source) == kh02_current_world())
+            actor_owning_world(source) == kh02_current_world())
         {
             if (session.pending && session.target_id == session.travel_character_id)
             {
@@ -2054,7 +2065,7 @@ namespace kh3ap::character_swap
         auto* local = object(controller, L"Player");
         return is_uobject_valid_fast(pawn) && !kh02_current_story_world() &&
                session.swap_world.Get() == kh02_current_world() &&
-               kh02_actor_world(pawn) == session.swap_world.Get() &&
+               actor_owning_world(pawn) == session.swap_world.Get() &&
                object(controller, L"Pawn") == pawn &&
                object(local, L"PlayerController") == controller &&
                (pawn == session.owned_hero.Get() ||
@@ -2067,7 +2078,7 @@ namespace kh3ap::character_swap
                ready(pawn) &&
                (sora_variant(pawn) || pawn == current_hero() ||
                 (session.pending && id(pawn) == session.target_id &&
-                 kh02_actor_world(pawn) == session.swap_world.Get())) &&
+                 actor_owning_world(pawn) == session.swap_world.Get())) &&
                !character_shotlock::blocks_swap(pawn) && !character_style::blocks_swap(pawn);
     }
 
@@ -2130,16 +2141,16 @@ namespace kh3ap::character_swap
         }
     }
 
-    void apply_stat_bonus(int hp_amount, int mp_amount)
+    void refresh_victory_bonuses()
     {
         auto* pawn = current_hero();
-        if (!pawn || session.pending || (hp_amount == 0 && mp_amount == 0))
+        if (!pawn || session.pending)
         {
             return;
         }
         try
         {
-            session.stats.add_bonus(pawn, hp_amount, mp_amount);
+            CharacterSwapStats::synchronize_bonuses(pawn);
         }
         catch (...)
         {

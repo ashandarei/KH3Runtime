@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
@@ -77,7 +78,7 @@ namespace kh3ap
         auto* local_player = object(controller, L"Player");
         return is_uobject_valid_fast(pawn) && object(pawn, L"Controller") == controller &&
                        object(local_player, L"PlayerController") == controller &&
-                       kh02_actor_world(pawn) == kh02_current_world()
+                       actor_owning_world(pawn) == kh02_current_world()
                    ? pawn : nullptr;
     }
 
@@ -98,7 +99,8 @@ namespace kh3ap
         // existing Sora-only context rules.
         if (command == L"inspect" || command == L"damage_pulse" || command == L"sora_protection" ||
             command == L"press_action" || command == L"attack_combo" || command == L"union_cross_input" ||
-            command == L"defeat_all" || command == L"olympus_statue_scene")
+            command == L"defeat_all" || command == L"olympus_statue_scene" ||
+            command == L"monstropolis_scream_scene")
         {
             return controlled_combat_pawn();
         }

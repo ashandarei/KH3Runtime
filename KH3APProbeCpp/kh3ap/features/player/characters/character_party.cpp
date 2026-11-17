@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/characters/character_party.h"
 #include "kh3ap/features/player/characters/character_profile.h"
@@ -55,7 +56,7 @@ namespace kh3ap::character_party
             {
                 auto* pawn = manager->GetOuterPrivate();
                 auto* controller = party_native::read_object_like_property(manager, L"m_pController");
-                if (controller && kh02_actor_world(pawn) == active_world.Get() &&
+                if (controller && actor_owning_world(pawn) == active_world.Get() &&
                     party_native::read_object_like_property(pawn, L"MyFrdMgr") == manager &&
                     party_native::read_object_like_property(pawn, L"Controller") == controller)
                 {
@@ -139,7 +140,7 @@ namespace kh3ap::character_party
         auto **defaults = slots<UObject *>(manager, L"m_FriendPawnBPDefault", L"ClassProperty");
         auto **classes = slots<UObject *>(manager, L"m_FriendPawnBP", L"ClassProperty");
         source_manager_ = make_uobject_weak(manager);
-        source_world_ = make_uobject_weak(kh02_actor_world(outgoing));
+        source_world_ = make_uobject_weak(actor_owning_world(outgoing));
         if (!source_manager_.Get() || !source_world_.Get())
         {
             throw std::runtime_error("character_party_source_lifetime");
@@ -147,7 +148,7 @@ namespace kh3ap::character_party
         for (size_t index = 0; index < friend_count; ++index)
         {
             auto *pawn = pawns[index].Get();
-            if (pawn && (kh02_actor_world(pawn) != source_world_.Get() ||
+            if (pawn && (actor_owning_world(pawn) != source_world_.Get() ||
                          party_native::read_object_like_property(pawn, L"m_pFriendMan") != manager))
             {
                 throw std::runtime_error("character_party_friend_owner");
@@ -227,7 +228,7 @@ namespace kh3ap::character_party
         }
         auto *manager = party_native::read_object_like_property(incoming, L"MyFrdMgr");
         if (!party_native::is_friend_component(manager) ||
-            kh02_actor_world(incoming) != source_world_.Get() || kh02_current_story_world())
+            actor_owning_world(incoming) != source_world_.Get() || kh02_current_story_world())
         {
             throw std::runtime_error("character_party_destination_manager");
         }

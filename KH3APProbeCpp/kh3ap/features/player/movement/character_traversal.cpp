@@ -9,6 +9,7 @@
 #include <polyhook2/Detour/x64Detour.hpp>
 
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
 #include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/features/world/garden_return/garden_return_service.h"
@@ -810,6 +811,11 @@ namespace kh3ap::character_traversal
             sets->Add(private_set);
         }
         character_rails::prepare(pawn);
+        const auto chest_index = required_indices.at(FName(L"OpenTreasureL", FNAME_Add));
+        if (!character_chest_voice::prepare(pawn, instance, borrowed[chest_index]))
+        {
+            return false;
+        }
         prepared_pawn = make_uobject_weak(pawn);
         prepared_animation = make_uobject_weak(instance);
         RC::Output::send<RC::LogLevel::Normal>(

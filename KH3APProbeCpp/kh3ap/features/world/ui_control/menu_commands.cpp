@@ -5,6 +5,7 @@
 #include "kh3ap/core/ui/ui_layout.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/features/world/space/space_service.h"
+#include "kh3ap/features/world/garden_return/garden_return_service.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
@@ -258,6 +259,7 @@ namespace kh3ap
     {
         const bool flying = command == L"space_retry";
         const bool continuing = command == L"continue";
+        const bool preparing = command == L"prepare_retry";
         int32_t requested_action = continuing ? 0 : game_over_retry_action;
         auto* pause = pause_ref.Get();
         offset(pause, L"m_GameOver", pause_game_over_offset);
@@ -282,6 +284,15 @@ namespace kh3ap
         const bool game_over_open = field<uint8_t>(game_over, 0xe8) == 1;
         if (dispatched)
         {
+            if (preparing)
+            {
+                if (!game_over_open && RuntimeGardenReturnService::camp_menu_open() &&
+                    sora_ref.Get() == cutscene_pawn())
+                {
+                    finish(L"completed", L"native_prepare_retry_opened_camp");
+                }
+                return;
+            }
             const bool recovered =
                 flying
                     ? (space_hp > 0 && RuntimeSpaceService::item_delivery_context() != nullptr)
@@ -310,6 +321,10 @@ namespace kh3ap
             return;
         }
         const int type = field<int32_t>(game_over, 0x2b0);
+        if (preparing)
+        {
+            requested_action = type >= 13 && type <= 15 ? 12 : 3;
+        }
         // Native Gummi free-flight restart (7) and battle Retry (6)
         // have distinct menu types and delegates from Sora Retry (2).
         if (flying)
@@ -342,7 +357,8 @@ namespace kh3ap
         }
         if (index < 0)
         {
-            finish(L"error", continuing ? L"continue_not_offered" : L"retry_not_offered");
+            finish(L"error", preparing ? L"prepare_retry_not_offered" :
+                             continuing ? L"continue_not_offered" : L"retry_not_offered");
             return;
         }
         auto* button =

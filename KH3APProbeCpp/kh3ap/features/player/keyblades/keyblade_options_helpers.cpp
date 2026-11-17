@@ -168,8 +168,7 @@ namespace kh3ap
                 installed_seed_slot_data().int64_field("stylesanity"));
             RuntimeSoraAbilityEntryState shared{};
             std::wstring call_failure{};
-            if (mode == RuntimeStyleChangeMode::Shared &&
-                !try_read_runtime_sora_ability_entry_state(s_style_id, sora, &shared, &call_failure))
+            if (!try_read_runtime_sora_ability_entry_state(s_style_id, sora, &shared, &call_failure))
             {
                 state.force_apply = true;
                 return;

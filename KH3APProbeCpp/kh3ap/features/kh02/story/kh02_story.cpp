@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_postboss_handoff.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include "kh3ap/features/kh02/progress/kh02_aqua_progression.h"
@@ -331,7 +332,7 @@ namespace kh3ap
              {
                  auto* opening = opening_scene.source_matinee();
                  if (!opening_scene.was_dispatched() || !is_uobject_valid_fast(opening) ||
-                     kh02_actor_world(opening) != world || !flag(opening, L"bIsPlaying") ||
+                     actor_owning_world(opening) != world || !flag(opening, L"bIsPlaying") ||
                      real(opening, L"InterpPosition") <= 0.f)
                  {
                      return nullptr;
@@ -342,7 +343,7 @@ namespace kh3ap
              [this](UObject* pawn)
              {
                  Kh02InventoryMenu::install_shared();
-                 auto* world = kh02_actor_world(pawn);
+                 auto* world = actor_owning_world(pawn);
                  const auto* room = mirror_room(world->GetPathName());
                  if (room && (room->area == 8 || room->area == 9) && mirror_travel.arrival_package == room->package)
                  {
@@ -393,7 +394,7 @@ namespace kh3ap
              [this](UObject* world)
              {
                  auto* scene = postboss.matinee_binding().Get();
-                 return is_uobject_valid_fast(scene) && kh02_actor_world(scene) == world &&
+                 return is_uobject_valid_fast(scene) && actor_owning_world(scene) == world &&
                         (flag(scene, L"bIsPlaying") || flag(scene, L"bPaused"));
              }}};
         Kh02PostBossHandoff postboss;
@@ -591,10 +592,10 @@ namespace kh3ap
             const bool native_restore = !castle.armed;
             // Preserve a failed bootstrap on this world. The frame
             // update must not replace it with another 90-second wait.
-            entry_world = make_uobject_weak(kh02_actor_world(object));
+            entry_world = make_uobject_weak(actor_owning_world(object));
             try
             {
-                auto* world = kh02_actor_world(object);
+                auto* world = actor_owning_world(object);
                 if (!enemy_stats.prepare(object))
                 {
                     throw std::runtime_error("kh02_enemy_stats_not_preloaded");
@@ -645,7 +646,7 @@ namespace kh3ap
             {
                 try
                 {
-                    auto* w = kh02_actor_world(object);
+                    auto* w = actor_owning_world(object);
                     begin_arrival(w);
                     bind_mirror_progress(w, kh02_checkpoint::mirror_scene_dw015);
                     mirror.begin_hub(w, mirror_services());
@@ -656,14 +657,14 @@ namespace kh3ap
                 }
                 return;
             }
-            auto* candidate_world = kh02_actor_world(object);
+            auto* candidate_world = actor_owning_world(object);
             if (auto* r =
                     is_uobject_valid_fast(candidate_world) ? mirror_room(candidate_world->GetPathName()) : nullptr;
                 r && object->GetClassPrivate()->GetName() == std::wstring(r->name) + L"_C")
             {
                 try
                 {
-                    auto* w = kh02_actor_world(object);
+                    auto* w = actor_owning_world(object);
                     bind_mirror_progress(w, kh02_checkpoint::mirror_scene_dw016);
                     const int source_checkpoint = source_flags.value(L"gameflow_DW");
                     const int area_checkpoint = kh02_area_entry_checkpoint(r->area, source_checkpoint);
@@ -835,7 +836,7 @@ namespace kh3ap
 
         Kh02StoryNativeOverrides native_overrides;
         Kh02NativeAliases native_aliases;
-        Kh02StoryMusic music{kh02_actor_world};
+        Kh02StoryMusic music{actor_owning_world};
 
         void configure_music(UObject* world)
         {
@@ -1026,7 +1027,7 @@ namespace kh3ap
         {
             auto* pawn = gameplay.pawn.Get();
             return (entry.initialized || mirror.initialized) && is_uobject_valid_fast(pawn) &&
-                   is_uobject_valid_fast(gameplay.world.Get()) && kh02_actor_world(pawn) == gameplay.world.Get();
+                   is_uobject_valid_fast(gameplay.world.Get()) && actor_owning_world(pawn) == gameplay.world.Get();
         }
 
         void track_challenges(UObject* pawn)
@@ -1034,7 +1035,7 @@ namespace kh3ap
             // Castle Town uses an experimental DW host that the ordinary AP grant
             // gate excludes. Its entry routine already captured the possessed Sora
             // through GetPlayerPawn; keep using that weak, world-bound actor here.
-            if (!is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != gameplay.world.Get())
+            if (!is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != gameplay.world.Get())
             {
                 pawn = gameplay.pawn.Get();
             }
@@ -1121,7 +1122,7 @@ namespace kh3ap
                                                darkside_pillars.watch(object);
                                            },
                                            [this](UObject* object)
-                                           { chest_observer.mapset_finished(kh02_actor_world(object)); },
+                                           { chest_observer.mapset_finished(actor_owning_world(object)); },
                                            [this](UObject* object) { boss_rush_mirror.watch(object); }}};
 
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -1274,7 +1275,7 @@ namespace kh3ap
                     return;
                 }
             }
-            auto* verified_world = is_uobject_valid_fast(pawn) ? kh02_actor_world(pawn) : nullptr;
+            auto* verified_world = is_uobject_valid_fast(pawn) ? actor_owning_world(pawn) : nullptr;
             if (is_uobject_valid_fast(verified_world))
             {
                 // Retire the old generation before any deferred source graph
@@ -1295,7 +1296,7 @@ namespace kh3ap
             // Arrival must finish streaming the authored PlayerStarts before the HUD
             // resolves the initial minimap section.
             hud.tick(pawn, !map_session.active() && entry.initialized && is_uobject_valid_fast(pawn) &&
-                               kh02_actor_world(pawn) == gameplay.world.Get());
+                               actor_owning_world(pawn) == gameplay.world.Get());
             // Resume the source latent link on a later service tick, after its
             // calling graph has returned. Neither KH3 magic state nor native help
             // UI is touched. Expired callbacks are discarded on map transitions.
@@ -1522,7 +1523,7 @@ namespace kh3ap
     {
         auto* hero = kh02_story_player(pawn);
         auto* world = kh02_current_story_world();
-        if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(hero) || kh02_actor_world(hero) != world ||
+        if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(hero) || actor_owning_world(hero) != world ||
             impl->recovery_world.Get() != world || impl->recovery_error.empty() || impl->recovery_exit_dispatched)
         {
             return false;
@@ -1554,7 +1555,7 @@ namespace kh3ap
     {
         auto* hero = kh02_story_player(pawn);
         auto* world = kh02_current_world();
-        if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(hero) || kh02_actor_world(hero) != world ||
+        if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(hero) || actor_owning_world(hero) != world ||
             world->GetPathName() != L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01" || !Impl::loading_closed() ||
             !runtime_sora_control_ready(hero))
         {
@@ -1583,6 +1584,12 @@ namespace kh3ap
     auto Kh02Story::current_hero() -> UObject*
     {
         return kh02_story_player(nullptr);
+    }
+
+    auto Kh02Story::defers_cutscene_skip(UObject* script, UObject* world) -> bool
+    {
+        auto* self = Impl::compat_instance;
+        return self && world == kh02_current_story_world() && self->movie_bridge.defers_cutscene_skip(script, world);
     }
 
     void Kh02Story::refresh_sora_experience(UObject* pawn)
@@ -1674,7 +1681,7 @@ namespace kh3ap
             return nullptr;
         }
         auto* controller = try_read_reflected_object_property_value(pawn, L"Controller");
-        auto* instance = try_read_reflected_object_property_value(kh02_actor_world(pawn), L"OwningGameInstance");
+        auto* instance = try_read_reflected_object_property_value(actor_owning_world(pawn), L"OwningGameInstance");
         auto* manager = try_read_reflected_object_property_value(instance, L"m_UIManager");
         if (!is_uobject_valid_fast(controller) ||
             try_read_reflected_object_property_value(controller, L"Pawn") != pawn ||
@@ -1744,7 +1751,7 @@ namespace kh3ap
         auto* hero = kh02_story_player(pawn);
         if (is_uobject_valid_fast(hero))
         {
-            impl->map_session.observe_world(kh02_actor_world(hero));
+            impl->map_session.observe_world(actor_owning_world(hero));
         }
         impl->map_session.tick(hero);
     }
@@ -1799,7 +1806,7 @@ namespace kh3ap
         {
             // Retire old presentation before either movie callbacks or an EOF
             // hold can resume its graph between the slower story polls.
-            impl->map_session.observe_world(kh02_actor_world(hero));
+            impl->map_session.observe_world(actor_owning_world(hero));
         }
         impl->dressing_room.tick(hero, impl->challenges_active());
         impl->map_session.tick(hero);
@@ -1807,8 +1814,8 @@ namespace kh3ap
         {
             return;
         }
-        impl->darkside_projectiles.tick(hero, is_uobject_valid_fast(hero) ? kh02_actor_world(hero) : nullptr);
-        impl->darkside_pillars.tick(is_uobject_valid_fast(hero) ? kh02_actor_world(hero) : nullptr);
+        impl->darkside_projectiles.tick(hero, is_uobject_valid_fast(hero) ? actor_owning_world(hero) : nullptr);
+        impl->darkside_pillars.tick(is_uobject_valid_fast(hero) ? actor_owning_world(hero) : nullptr);
         if (impl->timed_inputs.walk_active())
         {
             const bool castle_scene_started =
@@ -1844,7 +1851,7 @@ namespace kh3ap
     auto Kh02Story::native_save_ready(UObject* pawn) -> bool
     {
         auto* self = Impl::compat_instance;
-        auto* w = kh02_actor_world(pawn);
+        auto* w = actor_owning_world(pawn);
         if (!self || !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(w) || self->gameplay.world.Get() != w ||
             !self->entry.initialized)
         {
@@ -1919,7 +1926,7 @@ namespace kh3ap
     {
         auto* self = Impl::compat_instance;
         auto* pawn = kh02_story_player(nullptr);
-        if (!self || !is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != self->gameplay.world.Get())
+        if (!self || !is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != self->gameplay.world.Get())
         {
             return false;
         }

@@ -29,10 +29,11 @@ namespace kh3ap::kairi_ground_slam
     {
         // EGS CL1065258 attack setup and animation-notify entry points.
         // Each hook below also checks its exact instruction prologue.
-        const uintptr_t kairi_setup_rva = character_native::rva(character_native::Site::kairi_setup);
+        const uintptr_t kairi_setup_rva =
+            character_native::rva(character_native::Site::kairi_setup);
         const uintptr_t sora_setup_rva = character_native::rva(character_native::Site::sora_setup);
-        const uintptr_t voice_notify_rva = character_native::rva(character_native::Site::voice_notify);
-        const uintptr_t attack_begin_rva = character_native::rva(character_native::Site::attack_begin);
+        const uintptr_t attack_begin_rva =
+            character_native::rva(character_native::Site::attack_begin);
         const uintptr_t attack_end_rva = character_native::rva(character_native::Site::attack_end);
         // EGS Attack state fields, verified against the forced dive-attack setup.
         constexpr size_t state_pawn_offset = 0x68;
@@ -55,19 +56,16 @@ namespace kh3ap::kairi_ground_slam
         constexpr auto slam_damage_row_name = L"DIVEFALL_ATTACK";
         constexpr auto slam_finisher_damage_row_name = L"DIVEFALL_ATTACK_END";
         constexpr std::array damage_row_names{slam_damage_row_name, slam_finisher_damage_row_name};
-        constexpr std::array asset_paths{
-            player_animation_support::sora_animation_set_path,
-            player_animation_support::sora_attack_data_path,
-            player_animation_support::kairi_attack_data_path};
+        constexpr std::array asset_paths{player_animation_support::sora_animation_set_path,
+                                         player_animation_support::sora_attack_data_path,
+                                         player_animation_support::kairi_attack_data_path};
         using Setup = void (*)(UObject*);
         using VoiceNotify = void (*)(UObject*, UObject*, UObject*);
         using AttackBegin = void (*)(UObject*, UObject*, UObject*, float);
         uint64_t original_setup{};
-        uint64_t original_voice_notify{};
         uint64_t original_attack_begin{};
         uint64_t original_attack_end{};
         std::unique_ptr<PLH::x64Detour> setup_hook;
-        std::unique_ptr<PLH::x64Detour> voice_notify_hook;
         std::unique_ptr<PLH::x64Detour> attack_begin_hook;
         std::unique_ptr<PLH::x64Detour> attack_end_hook;
         FWeakObjectPtr prepared_pawn;
@@ -160,24 +158,28 @@ namespace kh3ap::kairi_ground_slam
             }
         }
 
-        void play_voice(UObject* notify, UObject* mesh, UObject* animation)
+    } // namespace
+
+    bool suppress_voice(UObject* notify, UObject* mesh, UObject* animation)
+    {
+        auto* pawn = prepared_pawn.Get();
+        if (pawn && character_swap::current_hero() == pawn &&
+            animation == ground_slam_animation.Get() && mesh == object_property(pawn, L"MyMesh") &&
+            is_uobject_valid_fast(notify) && notify->GetOuterPrivate() == animation)
         {
-            auto* pawn = prepared_pawn.Get();
-            if (pawn && character_swap::current_hero() == pawn &&
-                animation == ground_slam_animation.Get() &&
-                mesh == object_property(pawn, L"MyMesh") && is_uobject_valid_fast(notify) &&
-                notify->GetOuterPrivate() == animation)
-            {
-                // The borrowed sequence has a hard-coded Sora battle voice.
-                // Keep its hit/effect notifies and every other voice untouched.
+            // The borrowed sequence has a hard-coded Sora battle voice.
+            // Keep its hit/effect notifies and every other voice untouched.
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                RC::Output::send<RC::LogLevel::Normal>(
-                    STR("[KH3APProbeCpp] Kairi ground slam Sora voice suppressed\n"));
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] Kairi ground slam Sora voice suppressed\n"));
 #endif
-                return;
-            }
-            reinterpret_cast<VoiceNotify>(original_voice_notify)(notify, mesh, animation);
+            return true;
         }
+        return false;
+    }
+
+    namespace
+    {
 
         void setup_attack(UObject* state)
         {
@@ -203,35 +205,33 @@ namespace kh3ap::kairi_ground_slam
 
         bool install()
         {
-            if (setup_hook && voice_notify_hook && attack_begin_hook &&
-                attack_end_hook)
+            if (setup_hook && attack_begin_hook && attack_end_hook)
             {
                 return true;
             }
             const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-            if (!player_animation_support::supported_skeleton_layout() || !character_native::verify_sites({character_native::Site::kairi_setup, character_native::Site::sora_setup, character_native::Site::voice_notify, character_native::Site::attack_begin, character_native::Site::attack_end}))
+            if (!player_animation_support::supported_skeleton_layout() ||
+                !player_animation_support::initialize_voice_notify() ||
+                !character_native::verify_sites(
+                    {character_native::Site::kairi_setup, character_native::Site::sora_setup,
+                     character_native::Site::attack_begin, character_native::Site::attack_end}))
             {
                 return false;
             }
             setup_hook = std::make_unique<PLH::x64Detour>(
                 base + kairi_setup_rva, reinterpret_cast<uintptr_t>(&setup_attack),
                 &original_setup);
-            voice_notify_hook = std::make_unique<PLH::x64Detour>(
-                base + voice_notify_rva, reinterpret_cast<uintptr_t>(&play_voice),
-                &original_voice_notify);
             attack_begin_hook = std::make_unique<PLH::x64Detour>(
                 base + attack_begin_rva, reinterpret_cast<uintptr_t>(&begin_attack),
                 &original_attack_begin);
             attack_end_hook = std::make_unique<PLH::x64Detour>(
                 base + attack_end_rva, reinterpret_cast<uintptr_t>(&end_attack),
                 &original_attack_end);
-            if (!setup_hook->hook() || !original_setup || !voice_notify_hook->hook() || !original_voice_notify ||
-                !attack_begin_hook->hook() || !original_attack_begin || !attack_end_hook->hook() ||
-                !original_attack_end)
+            if (!setup_hook->hook() || !original_setup || !attack_begin_hook->hook() ||
+                !original_attack_begin || !attack_end_hook->hook() || !original_attack_end)
             {
                 attack_end_hook.reset();
                 attack_begin_hook.reset();
-                voice_notify_hook.reset();
                 setup_hook.reset();
                 return false;
             }
@@ -288,8 +288,8 @@ namespace kh3ap::kairi_ground_slam
 
     } // namespace
 
-    void observe_gimmick_damage(UObject* component, UObject* controller,
-                               const void* damage_info, UObject* causer)
+    void observe_gimmick_damage(UObject* component, UObject* controller, const void* damage_info,
+                                UObject* causer)
     {
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         auto* pawn = owned_ground_slam();
@@ -319,7 +319,8 @@ namespace kh3ap::kairi_ground_slam
         auto* animation_instance = prepared_animation_instance.Get();
         return !unavailable && is_uobject_valid_fast(pawn) && prepared_pawn.Get() == pawn &&
                is_uobject_valid_fast(ground_slam_animation.Get()) &&
-               is_uobject_valid_fast(animation_instance) && animation_instance ==
+               is_uobject_valid_fast(animation_instance) &&
+               animation_instance ==
                    object_property(object_property(pawn, L"MyMesh"), L"AnimScriptInstance");
     }
 

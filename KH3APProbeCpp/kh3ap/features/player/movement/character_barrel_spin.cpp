@@ -3,7 +3,7 @@
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
@@ -46,7 +46,7 @@ namespace kh3ap::character_barrel_spin
             (actor->GetClassPrivate()->GetPathName() != barrel_class_path &&
              actor->GetClassPrivate()->GetPathName() != olympus_barrel_class_path) ||
             object(actor, L"MyReactor") != reactor || !is_uobject_valid_fast(reactor) ||
-            kh02_actor_world(actor) != kh02_actor_world(pawn))
+            actor_owning_world(actor) != actor_owning_world(pawn))
         {
             return false;
         }

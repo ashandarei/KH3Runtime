@@ -68,6 +68,7 @@ struct Fixture
 
     Fixture()
     {
+        sora.sora_ability_candidate = true;
         music_update_events.store(static_cast<uint32_t>(MusicUpdate::Startup));
         fake_runtime::manager = {};
         fake_runtime::settings = {};
@@ -514,6 +515,37 @@ static void test_suspended_field_restore()
     assert(f.field.pending_track == original);
 }
 
+static void test_form_theme_requires_sora_pawn()
+{
+    Fixture f;
+    f.forms = true;
+    auto& service = *f.service;
+    const auto now = Clock::now();
+    service.form_observation_dirty = true;
+    service.update_form_theme(now);
+    assert(service.form_on_event && !service.held_slots.empty());
+
+    // The alternate still has Sora-like fixture equipment/state. Classification
+    // must end the theme and release the underlying music anyway.
+    f.sora.sora_ability_candidate = false;
+    service.form_observation_dirty = true;
+    service.update_form_theme(now + std::chrono::seconds(1));
+    assert(!service.form_on_event && service.form_track.empty());
+    assert(!service.form_requested_track && !service.form_deadline);
+    assert(service.held_slots.empty());
+
+    f.sora.sora_ability_candidate = true;
+    f.sora.alive = false;
+    service.form_observation_dirty = true;
+    service.update_form_theme(now + std::chrono::seconds(2));
+    assert(!service.form_on_event && !service.form_requested_track);
+
+    service.config.player_pawn = [] { return nullptr; };
+    service.form_observation_dirty = true;
+    service.update_form_theme(now + std::chrono::seconds(3));
+    assert(!service.form_on_event && !service.form_requested_track);
+}
+
 static void test_form_ownership()
 {
     Fixture f;
@@ -956,6 +988,7 @@ int main()
     test_level_objects_and_live_context();
     test_event_only_idle_and_gate();
     test_form_events_drive_theme_and_end();
+    test_form_theme_requires_sora_pawn();
     test_weapon_replacement_without_state_change();
     const std::string literal = "/Game/Sound/BGM/BGM_bx_battle.BGM_bx_battle";
     std::vector<uint8_t> code{0x67, 0x1f};

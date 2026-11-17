@@ -5,7 +5,7 @@
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/actor_discovery.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/AActor.hpp>
 #include <Unreal/UClass.hpp>
@@ -51,7 +51,7 @@ namespace kh3ap
                 match = actor;
             }
         }
-        if (!is_uobject_valid_fast(match) || kh02_actor_world(match) != world)
+        if (!is_uobject_valid_fast(match) || actor_owning_world(match) != world)
         {
             throw std::runtime_error("kh02_collapse_matinee_missing");
         }
@@ -77,7 +77,7 @@ namespace kh3ap
         try
         {
             auto* pawn = context;
-            if (!is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != world)
+            if (!is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != world)
             {
                 throw std::runtime_error("kh02_prefetch_pawn");
             }

@@ -1,7 +1,7 @@
 #include "kh02_arrival_notifications.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
@@ -43,7 +43,7 @@ namespace kh3ap
         {
             auto* owner_world = world.Get();
             if (!is_uobject_valid_fast(owner_world) || !is_uobject_valid_fast(context) || layer != 0 || !latent ||
-                (context != owner_world && kh02_actor_world(context) != owner_world))
+                (context != owner_world && actor_owning_world(context) != owner_world))
             {
                 return;
             }
@@ -53,7 +53,7 @@ namespace kh3ap
             std::memcpy(&linkage, latent, sizeof(linkage));
             std::memcpy(&execution, latent + 8, sizeof(execution));
             std::memcpy(&target, latent + 16, sizeof(target));
-            if (!is_uobject_valid_fast(target) || kh02_actor_world(target) != owner_world)
+            if (!is_uobject_valid_fast(target) || actor_owning_world(target) != owner_world)
             {
                 return;
             }

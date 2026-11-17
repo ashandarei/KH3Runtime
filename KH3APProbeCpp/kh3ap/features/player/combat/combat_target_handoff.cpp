@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/combat/combat_target_handoff.h"
 #include "kh3ap/features/player/combat/combat_blackboard_handoff.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -73,7 +74,7 @@ namespace kh3ap::combat_target_handoff
         auto* action_class = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/TresGame.TresActionDefinitionBase");
         if (!is_uobject_valid_fast(enemy_class) || !is_uobject_valid_fast(action_class)) return false;
         source = make_uobject_weak(outgoing);
-        source_world = make_uobject_weak(kh02_actor_world(outgoing));
+        source_world = make_uobject_weak(actor_owning_world(outgoing));
         if (source.Get() != outgoing || !source_world.Get()) return false;
         combat_blackboard_handoff::capture_cameras(outgoing);
         const auto capture_action = [&](UObject* state)
@@ -95,7 +96,7 @@ namespace kh3ap::combat_target_handoff
         UGameplayStatics::GetAllActorsOfClass(outgoing, enemy_class, enemies);
         for (auto* enemy : enemies)
         {
-            if (!is_uobject_valid_fast(enemy) || kh02_actor_world(enemy) != source_world.Get()) continue;
+            if (!is_uobject_valid_fast(enemy) || actor_owning_world(enemy) != source_world.Get()) continue;
             // Titan scripts retain a strong player independently of AI targets.
             // Capture only exact references to the verified outgoing pawn.
             if (object(enemy, L"m_Player") == outgoing)
@@ -132,7 +133,7 @@ namespace kh3ap::combat_target_handoff
         if (source_world.Get() != kh02_current_world()) { cancel(); return; }
         auto* controller = object(incoming, L"Controller");
         if (!is_uobject_valid_fast(incoming) || incoming == source.Get() || object(controller, L"Pawn") != incoming ||
-            kh02_actor_world(incoming) != source_world.Get()) return;
+            actor_owning_world(incoming) != source_world.Get()) return;
         const auto replacement = make_uobject_weak(incoming);
         if (replacement.Get() != incoming) return;
         // Blackboard observers may abort/update actions synchronously. Repair
@@ -146,7 +147,7 @@ namespace kh3ap::combat_target_handoff
         for (const auto& reference : cached_players)
         {
             auto* enemy = reference.Get();
-            if (!enemy || kh02_actor_world(enemy) != source_world.Get()) continue;
+            if (!enemy || actor_owning_world(enemy) != source_world.Get()) continue;
             auto* property = properties.resolve_object(enemy, L"m_Player");
             if (!property) continue;
             auto** cached = property->ContainerPtrToValuePtr<UObject*>(enemy);
@@ -176,7 +177,7 @@ namespace kh3ap::combat_target_handoff
         for (const auto& ref : controllers)
         {
             auto* ai = ref.Get();
-            if (!ai || kh02_actor_world(ai) != source_world.Get()) continue;
+            if (!ai || actor_owning_world(ai) != source_world.Get()) continue;
             auto* current = target(ai);
             if (current == incoming)
             {

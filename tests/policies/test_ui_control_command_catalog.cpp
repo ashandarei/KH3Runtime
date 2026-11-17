@@ -15,6 +15,7 @@ int main()
                                         L"kh02_voice_ja",
                                         L"inspect",
                                         L"retry",
+                                        L"prepare_retry",
                                         L"continue",
                                         L"game_over",
                                         L"select_sora",
@@ -49,6 +50,7 @@ int main()
                (command.name == L"dismiss_message" || command.name == L"acknowledge_notice"));
     }
     assert(find_command(L"retry")->kind == find_command(L"continue")->kind);
+    assert(find_command(L"retry")->kind == find_command(L"prepare_retry")->kind);
     assert(find_command(L"retry")->kind == find_command(L"space_retry")->kind);
     assert(find_command(L"skip_cutscene")->kind == find_command(L"resume_cutscene")->kind);
     assert(find_command(L"inspect")->kind != find_command(L"select_sora")->kind);

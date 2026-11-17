@@ -54,11 +54,20 @@ namespace kh3ap::character_swap
                           L"he_06_camera_ms130:PersistentLevel.ms130m";
     }
 
-    constexpr bool is_remind_area_c_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
+    constexpr bool is_remind_maze_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
     {
         return world == L"/Game/Levels/kg_DLC/kg_05/kg_05.kg_05" &&
-               matinee == L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081."
-                          L"kg_02_camera_ms081:PersistentLevel.ms081_C-D";
+               (matinee == L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms081."
+                           L"kg_02_camera_ms081:PersistentLevel.ms081_C-D" ||
+                matinee == L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms091."
+                           L"kg_02_camera_ms091:PersistentLevel.ms091_D-E");
+    }
+
+    constexpr bool is_scream_strike_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
+    {
+        return world == L"/Game/Levels/mi/mi_04/mi_04.mi_04" &&
+               matinee == L"/Game/Cutscene/Localization/ja/mi/cutscene_mi04_mi358."
+                          L"cutscene_mi04_mi358:PersistentLevel.mi358";
     }
 
     constexpr int travel_target_after_swap(int retained, int incoming, int sora, bool cinematic)

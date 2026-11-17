@@ -12,6 +12,7 @@ namespace kh3ap::character_rails
         L"/Game/Blueprints/Projectile/TresProj_CoverShot.TresProj_CoverShot_C";
     bool initialize();
     void prepare(RC::Unreal::UObject* pawn);
+    void rebind_doors(RC::Unreal::UObject* outgoing, RC::Unreal::UObject* incoming);
     bool route(int controller, std::wstring_view key, int event, bool gamepad);
     void observe_state_write(uintptr_t queue, uintptr_t state);
 }

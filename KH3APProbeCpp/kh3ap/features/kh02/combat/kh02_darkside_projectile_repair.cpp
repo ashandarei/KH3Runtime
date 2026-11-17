@@ -4,7 +4,7 @@
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/FProperty.hpp>
 #include <Unreal/FWeakObjectPtr.hpp>
 #include <Unreal/NameTypes.hpp>
@@ -194,7 +194,7 @@ namespace kh3ap
                     auto* collision = tracked.collision.Get();
                     auto* owner = tracked.owner.Get();
                     if (is_uobject_valid_fast(world) && exact_class(actor, projectile_class_path) &&
-                        source_actor(actor) && kh02_actor_world(actor) == world && is_uobject_valid_fast(collision) &&
+                        source_actor(actor) && actor_owning_world(actor) == world && is_uobject_valid_fast(collision) &&
                         is_uobject_valid_fast(owner) && object_field(actor, L"MyAtkColl") == collision &&
                         object_field(actor, L"Owner") == owner && team(actor) == tracked.applied_team &&
                         read<int>(collision, collision_team_offset) == tracked.applied_team)
@@ -219,7 +219,7 @@ namespace kh3ap
             {
                 return;
             }
-            auto* world = kh02_actor_world(actor);
+            auto* world = actor_owning_world(actor);
             if (!is_uobject_valid_fast(world) || world->GetPathName() != forest_world_path)
             {
                 return;
@@ -258,7 +258,7 @@ namespace kh3ap
             auto* sora_type = is_uobject_valid_fast(sora) ? sora->GetClassPrivate() : nullptr;
             bool possessed{};
             if (is_uobject_valid_fast(sora_type) && sora_type->GetName() == L"p_ex001_Pawn_C" &&
-                kh02_actor_world(sora) == world)
+                actor_owning_world(sora) == world)
             {
                 auto* controller = object_field(sora, L"Controller");
                 possessed = is_uobject_valid_fast(controller) && object_field(controller, L"Pawn") == sora;
@@ -280,9 +280,9 @@ namespace kh3ap
                     }
                     auto* owner = object_field(actor, L"Owner");
                     if (!exact_class(actor, projectile_class_path) || !source_actor(actor) ||
-                        kh02_actor_world(actor) != world ||
+                        actor_owning_world(actor) != world ||
                         (!exact_class(owner, boss_class_path) && !exact_class(owner, first_boss_class_path)) ||
-                        !source_actor(owner) || kh02_actor_world(owner) != world)
+                        !source_actor(owner) || actor_owning_world(owner) != world)
                     {
                         continue;
                     }

@@ -1,6 +1,6 @@
 #include "kh02_source_script_registry.h"
 #include "kh02_arrival_presentation.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_map_session.h"
 #include "kh02_arrival_notifications.h"
 #include "kh02_loading_completion.h"
@@ -168,7 +168,7 @@ namespace kh3ap
 
         void source_loading_ready(UObject* script)
         {
-            auto* w = kh02_actor_world(script);
+            auto* w = actor_owning_world(script);
             if (state.active() && is_uobject_valid_fast(w) && w->GetPathName() == arrival_target)
             {
                 hooks.prepare_music();
@@ -198,7 +198,7 @@ namespace kh3ap
             {
                 return;
             }
-            auto* w = is_uobject_valid_fast(pawn) ? kh02_actor_world(pawn) : arrival_world.Get();
+            auto* w = is_uobject_valid_fast(pawn) ? actor_owning_world(pawn) : arrival_world.Get();
             const auto now = GetTickCount64();
             try
             {
@@ -348,7 +348,7 @@ namespace kh3ap
                 const bool ready = readiness.at("ready").get<bool>();
                 auto* fade_source = entry_fade_source.Get();
                 if (settled && !view.at("changing").get<bool>() &&
-                    is_uobject_valid_fast(fade_source) && kh02_actor_world(fade_source) == w &&
+                    is_uobject_valid_fast(fade_source) && actor_owning_world(fade_source) == w &&
                     sources.accepts(entry_fade_generation))
                 {
                     // The imported field gameflow closes loading, but its source
@@ -503,7 +503,7 @@ namespace kh3ap
         {
             return;
         }
-        observe_world(kh02_actor_world(script));
+        observe_world(actor_owning_world(script));
         const auto identity = script->GetClassPrivate()->GetPathName();
         if (impl->sources.replacing(identity,
                                     [script](const FWeakObjectPtr& previous) { return previous.Get() == script; }))
@@ -552,7 +552,7 @@ namespace kh3ap
 
     void Kh02MapSession::source_loading_ready(UObject* script)
     {
-        if (!is_uobject_valid_fast(script) || !owns_world(kh02_actor_world(script)))
+        if (!is_uobject_valid_fast(script) || !owns_world(actor_owning_world(script)))
         {
             return;
         }
@@ -563,7 +563,7 @@ namespace kh3ap
             return;
         }
         impl->source_loading_ready(script);
-        if (kh02_field_host_entry_fade(kh02_actor_world(script)->GetPathName()))
+        if (kh02_field_host_entry_fade(actor_owning_world(script)->GetPathName()))
         {
             // Normal mirror/door travel retains the departure's foreground
             // fade. These replacement field hosts must finish the persistent
@@ -575,7 +575,7 @@ namespace kh3ap
     void Kh02MapSession::request_entry_fade(UObject* script)
     {
         if (!impl->state.active() || !is_uobject_valid_fast(script) ||
-            !owns_world(kh02_actor_world(script)))
+            !owns_world(actor_owning_world(script)))
         {
             return;
         }

@@ -16,7 +16,7 @@ int main()
                                            shared, spellweaver, seven_wishes) == shared);
             assert(character_style_enabled(owner, false, RuntimeStyleChangeMode::PerKeyblade,
                                            shared, spellweaver, seven_wishes) ==
-                   (owner == CharacterStyleOwner::Aqua ? spellweaver : seven_wishes));
+                   (shared || (owner == CharacterStyleOwner::Aqua ? spellweaver : seven_wishes)));
         }
         for (const auto mode : {RuntimeStyleChangeMode::Shared, RuntimeStyleChangeMode::PerKeyblade})
         {

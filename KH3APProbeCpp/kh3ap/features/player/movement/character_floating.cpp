@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/characters/character_profile.h"
@@ -49,7 +50,7 @@ namespace kh3ap::character_floating
             auto* local = properties.read_object(controller, L"Player");
             return is_uobject_valid_fast(pawn) && properties.read_object(pawn, L"Controller") == controller &&
                 properties.read_object(local, L"PlayerController") == controller &&
-                kh02_actor_world(pawn) == kh02_current_world() ? pawn : nullptr;
+                actor_owning_world(pawn) == kh02_current_world() ? pawn : nullptr;
         }
 
         int state_id(UObject* pawn)
@@ -64,8 +65,8 @@ namespace kh3ap::character_floating
             const auto original = reinterpret_cast<Notify>(original_notify);
             original(source_controller, enabled, special);
             auto* pawn = local_pawn();
-            if (!pawn || !tornado_world(kh02_actor_world(pawn)) ||
-                kh02_actor_world(source_controller) != kh02_actor_world(pawn))
+            if (!pawn || !tornado_world(actor_owning_world(pawn)) ||
+                actor_owning_world(source_controller) != actor_owning_world(pawn))
             {
                 return;
             }
@@ -98,7 +99,7 @@ namespace kh3ap::character_floating
         void begin_tornado_phase(UObject* action, TornadoBegin original, bool suction)
         {
             auto* boss = properties.read_object(action, L"MyCharPawn");
-            auto* world = kh02_actor_world(boss);
+            auto* world = actor_owning_world(boss);
             if (!tornado_world(world) || world != kh02_current_world())
             {
                 original(action);
@@ -124,7 +125,7 @@ namespace kh3ap::character_floating
             // must be locally possessed before the native sequence starts.
             auto* controller = properties.read_object(pawn, L"Controller");
             auto* local = properties.read_object(controller, L"Player");
-            if (is_uobject_valid_fast(pawn) && kh02_actor_world(pawn) == world &&
+            if (is_uobject_valid_fast(pawn) && actor_owning_world(pawn) == world &&
                 properties.read_object(controller, L"Pawn") == pawn &&
                 properties.read_object(local, L"PlayerController") == controller)
             {
@@ -214,7 +215,7 @@ namespace kh3ap::character_floating
 
     bool restore_camera_view(UObject* pawn)
     {
-        auto* world = kh02_actor_world(pawn);
+        auto* world = actor_owning_world(pawn);
         if (!is_uobject_valid_fast(pawn) || !tornado_world(world) || world != kh02_current_world())
         {
             return false;
@@ -224,14 +225,14 @@ namespace kh3ap::character_floating
         auto* manager = properties.read_object(controller, L"PlayerCameraManager");
         if (properties.read_object(controller, L"Pawn") != pawn ||
             properties.read_object(local, L"PlayerController") != controller ||
-            !is_uobject_valid_fast(manager) || kh02_actor_world(manager) != world)
+            !is_uobject_valid_fast(manager) || actor_owning_world(manager) != world)
         {
             return false;
         }
         Kh02ReflectedCall active(manager, L"GetActiveCamera", "Tornado camera handoff", 256);
         active.run();
         auto* camera = active.result();
-        if (!is_uobject_valid_fast(camera) || kh02_actor_world(camera) != world ||
+        if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != world ||
             camera->GetClassPrivate()->GetName() != L"BP_TresCameraHe903_C" ||
             properties.read_object(camera, L"m_CameraManager") != manager ||
             properties.read_object(camera, L"m_PlayerController") != controller)
@@ -280,7 +281,7 @@ namespace kh3ap::character_floating
                             *step->ContainerPtrToValuePtr<int32_t>(current) == 8;
         auto* vacuum_boss = properties.read_object(vacuum_action.Get(), L"MyCharPawn");
         const bool sucking = is_uobject_valid_fast(vacuum_boss) &&
-                             kh02_actor_world(vacuum_boss) == kh02_current_world();
+                             actor_owning_world(vacuum_boss) == kh02_current_world();
         return !sucking && !diving && freefall_world.Get() != kh02_current_world();
     }
 }

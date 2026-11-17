@@ -3,7 +3,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/AActor.hpp>
 #include <Unreal/UClass.hpp>
@@ -70,7 +70,7 @@ namespace kh3ap
                       [&](const auto& entry)
                       {
                           auto* actor = entry.actor.Get();
-                          if (!is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world)
+                          if (!is_uobject_valid_fast(actor) || actor_owning_world(actor) != world)
                           {
                               return true;
                           }

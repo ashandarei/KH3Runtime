@@ -6,6 +6,7 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <map>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -50,6 +51,8 @@ class RuntimeState {
 public:
     int bx=710;
     bool ship=false;
+    int scala=0, kairi_reads=0, kairi_writes=0;
+    std::map<std::wstring,bool> hearts;
     std::array<int,2> reads{},writes{};
     std::array<bool,2> read_failure{},write_failure{};
     void native_bx(int value) { bx=value;written(L"gameflow_BX",true); }
@@ -64,16 +67,20 @@ bool should_run_periodic_update(std::chrono::steady_clock::time_point& last,
     if(last!=std::chrono::steady_clock::time_point{}&&now-last<interval)return false;
     last=now;return true;
 }
-template<class... Args> bool try_call_get_game_flag(std::wstring_view,int32_t& value,RuntimeState& state,Args&&...) {
+template<class... Args> bool try_call_get_game_flag(std::wstring_view name,int32_t& value,RuntimeState& state,Args&&...) {
+    if(name==L"gameflow_BT_DLC_07_BT_01") { ++state.kairi_reads;value=state.scala;return true; }
     ++state.reads[0];value=state.bx;return !state.read_failure[0];
 }
-template<class... Args> bool try_call_get_game_flag_boolean(std::wstring_view,bool& value,RuntimeState& state,Args&&...) {
+template<class... Args> bool try_call_get_game_flag_boolean(std::wstring_view name,bool& value,RuntimeState& state,Args&&...) {
+    if(name.find(L"gameflow_BT_DLC_07_KAIRI_")==0) { ++state.kairi_reads;value=state.hearts[std::wstring(name)];return true; }
     ++state.reads[1];value=state.ship;return !state.read_failure[1];
 }
-template<class... Args> bool try_call_set_game_flag(std::wstring_view,int32_t value,RuntimeState& state,Args&&...) {
+template<class... Args> bool try_call_set_game_flag(std::wstring_view name,int32_t value,RuntimeState& state,Args&&...) {
+    if(name==L"gameflow_BT_DLC_07_BT_01") { ++state.kairi_writes;state.scala=value;written(name,true);return true; }
     ++state.writes[0];if(state.write_failure[0])return false;state.native_bx(value);return true;
 }
-template<class... Args> bool try_call_set_game_flag_boolean(std::wstring_view,bool value,RuntimeState& state,Args&&...) {
+template<class... Args> bool try_call_set_game_flag_boolean(std::wstring_view name,bool value,RuntimeState& state,Args&&...) {
+    if(name.find(L"gameflow_BT_DLC_07_KAIRI_")==0) { ++state.kairi_writes;state.hearts[std::wstring(name)]=value;written(name,false,value);return true; }
     ++state.writes[1];if(state.write_failure[1])return false;state.native_ship(value);return true;
 }
 }
@@ -175,6 +182,36 @@ int main() {
         service.tick(now);
         assert((invalid_options_state.reads==std::array<int,2>{}));
         assert(integer_listeners.empty()&&boolean_listeners.empty());
+    }
+    publish_seed(R"({"skip_collecting_kairi_heart_pieces":true})");
+    {
+        RuntimeState hearts;RuntimeQualityOfLifeService service(config(hearts));
+        service.tick(now);
+        assert(hearts.scala==110&&hearts.kairi_writes==5&&hearts.hearts.size()==4);
+        for(const auto& [name,collected]:hearts.hearts) {
+            assert(collected&&name!=L"gameflow_BT_DLC_07_KAIRI_05");
+        }
+        service.tick(now+1ms);
+        const auto reads=hearts.kairi_reads;
+        for(int i=0;i<10000;++i)service.tick(now+16ms*i);
+        assert(hearts.kairi_reads==reads&&hearts.kairi_writes==5);
+        // An authored reset wakes only the affected rule.
+        hearts.hearts[L"gameflow_BT_DLC_07_KAIRI_03"]=false;
+        written(L"gameflow_BT_DLC_07_KAIRI_03",false,false);
+        service.tick(now+201s);
+        assert(hearts.hearts[L"gameflow_BT_DLC_07_KAIRI_03"]&&hearts.kairi_writes==6);
+        // Reloads and later story events never rewind Darkside progress.
+        hearts.scala=130;written(L"gameflow_BT_DLC_07_BT_01",true);
+        service.request_refresh();service.tick(now+202s);
+        assert(hearts.scala==130&&hearts.kairi_writes==6);
+        hearts.scala=9999;service.request_refresh();service.tick(now+203s);
+        assert(hearts.scala==9999&&hearts.kairi_writes==6);
+    }
+    publish_seed(R"({"skip_collecting_kairi_heart_pieces":false})");
+    {
+        RuntimeState hearts;RuntimeQualityOfLifeService service(config(hearts));
+        service.tick(now);service.request_refresh();service.tick(now+1s);
+        assert(hearts.kairi_reads==0&&hearts.kairi_writes==0&&hearts.scala==0);
     }
     publish_seed(R"({"dark_baymax_phase_1_skip":true,"max_level_ship":true})");hook_failure=true;
     {

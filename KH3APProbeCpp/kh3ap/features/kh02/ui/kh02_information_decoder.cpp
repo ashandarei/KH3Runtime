@@ -1,7 +1,7 @@
 #include "kh02_information_decoder.h"
 #include "kh02_information_operand.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/UScriptStruct.hpp>
@@ -37,7 +37,7 @@ namespace kh3ap
         }
         auto* local = reinterpret_cast<FProperty*>(decoded->local_property);
         auto* property = reinterpret_cast<UObject*>(local);
-        auto* world = kh02_actor_world(frame->Object);
+        auto* world = actor_owning_world(frame->Object);
         if (!frame->Locals || !is_uobject_valid_fast(property) || property->GetOuterPrivate() != frame->Node ||
             !local->IsA<FStructProperty>() || local->GetOffset_Internal() < 0 ||
             local->GetOffset_Internal() + local->GetElementSize() > frame->Node->GetPropertiesSize() ||

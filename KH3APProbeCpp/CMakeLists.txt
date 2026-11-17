@@ -36,6 +36,7 @@ add_library(${TARGET} SHARED
     kh3ap/core/text_format.cpp
     kh3ap/core/objects/asset_load_helpers.cpp
     kh3ap/core/objects/actor_discovery.cpp
+    kh3ap/core/objects/actor_owning_world.cpp
     kh3ap/core/settings/pak_seed_settings.cpp
     kh3ap/core/settings/installed_seed_settings.cpp
     kh3ap/features/enemies/randomization.cpp
@@ -252,6 +253,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/world/space/space_rewards.cpp
     kh3ap/features/world/space/space_battle_markers.cpp
     kh3ap/features/player/characters/character_swap.cpp
+    kh3ap/features/player/characters/character_loadouts.cpp
     kh3ap/features/player/characters/character_swap_stats.cpp
     kh3ap/features/player/combat/character_attack_completion.cpp
     kh3ap/features/player/combat/character_union_cross.cpp
@@ -259,6 +261,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_profile.cpp
     kh3ap/features/player/characters/character_pawn_pool.cpp
     kh3ap/features/player/characters/character_swap_assets.cpp
+    kh3ap/features/player/characters/character_chest_voice.cpp
     kh3ap/features/player/characters/character_swap_effects.cpp
     kh3ap/features/player/combat/kairi_shining_hud.cpp
     kh3ap/features/player/characters/character_exploration.cpp
@@ -268,6 +271,7 @@ add_library(${TARGET} SHARED
         kh3ap/features/player/movement/character_floating.cpp
     kh3ap/features/player/movement/character_traversal.cpp
     kh3ap/features/player/movement/kairi_glide.cpp
+    kh3ap/features/player/movement/kairi_jump_arms.cpp
     kh3ap/features/player/movement/character_rails.cpp
     kh3ap/features/player/combat/character_magic.cpp
     kh3ap/features/player/combat/character_style.cpp

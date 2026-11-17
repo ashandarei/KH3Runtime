@@ -34,4 +34,16 @@ int main()
     state.defer_unissued_request();
     assert(state.advance(40100, true, true, true, true, false) == Action::Request);
     assert(state.advance(55000, true, true, true, true, false) == Action::Cancel);
+
+    // Movie preparation must not consume the single native skip request or
+    // extend its deadline. A timed-out preparation never fades the screen.
+    assert(state.begin(8, 60000));
+    assert(state.advance(60100, true, true, true, true, true) == Action::None);
+    assert(!state.requested());
+    assert(state.advance(62000, true, true, true, true, false) == Action::Request);
+    state.mark_requested();
+    assert(state.advance(62100, true, true, true, false, false) == Action::Transition);
+    assert(state.begin(9, 70000));
+    assert(state.advance(85000, true, true, true, true, true) == Action::Cancel);
+    assert(!state.requested());
 }

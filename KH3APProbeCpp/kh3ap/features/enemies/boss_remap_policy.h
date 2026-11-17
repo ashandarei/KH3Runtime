@@ -9,15 +9,11 @@
 
 namespace kh3ap
 {
-    // Ice/Lava Titan finish through AI_ACTION, not TSID_STATE_DIE.
-    // AI_ACTION also runs while alive; native entity kill counts must confirm
-    // defeat before this candidate can hand completion to the source arena.
-    [[nodiscard]] inline auto is_titan_completion_action(std::wstring_view replacement,
-                                                         uint64_t state) -> bool
+    // Defeat evidence is independent of the randomized boss class/state.
+    // Zero spawns, phase transitions and partial multi-spawn kills cannot finish.
+    [[nodiscard]] constexpr auto native_boss_defeat_confirmed(int64_t spawned, int64_t killed) -> bool
     {
-        return state == 99 &&
-               (replacement == L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C" ||
-                replacement == L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C");
+        return spawned > 0 && killed >= spawned;
     }
 
     inline constexpr float boss_encounter_min_progress_seconds = 20.0f;
