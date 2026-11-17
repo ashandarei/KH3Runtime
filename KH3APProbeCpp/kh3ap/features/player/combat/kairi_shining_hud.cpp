@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
 #include <polyhook2/Detour/x64Detour.hpp>
@@ -232,7 +233,7 @@ namespace kh3ap::kairi_shining_hud
             auto* cockpit = current_cockpit(manager);
             if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(cockpit) ||
                 kh02_current_story_world() || RuntimeSpaceService::is_space_active() ||
-                kh02_actor_world(pawn) != world || object(pawn, L"Controller") != controller ||
+                actor_owning_world(pawn) != world || object(pawn, L"Controller") != controller ||
                 object(object(controller, L"Player"), L"PlayerController") != controller)
             {
                 return false;
@@ -393,7 +394,7 @@ namespace kh3ap::kairi_shining_hud
                 // change. This explicit swap event can adopt its replacement.
                 request_preparation();
             }
-            if (!enabled || !part || !manager || !cockpit || cached_world.Get() != kh02_actor_world(outgoing_pawn) ||
+            if (!enabled || !part || !manager || !cockpit || cached_world.Get() != actor_owning_world(outgoing_pawn) ||
                 cached_world.Get() != kh02_current_world() || manager != current_manager() ||
                 cockpit != current_cockpit(manager) || !contains_part(manager, part))
             {

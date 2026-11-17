@@ -8,7 +8,7 @@
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
 #include <Unreal/UObjectGlobals.hpp>
@@ -99,7 +99,7 @@ namespace kh3ap::character_camera
             sora_target_height = socket_height(pawn, camera) + offset.result_vector()[2];
             if (std::isfinite(sora_target_height))
             {
-                height_world = make_uobject_weak(kh02_actor_world(pawn));
+                height_world = make_uobject_weak(actor_owning_world(pawn));
             }
         }
     }
@@ -116,7 +116,7 @@ namespace kh3ap::character_camera
         if ((player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Roxas) &&
              player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Kairi)) ||
             !character_swap::owns_swap_pawn(pawn) || !height_world.Get() ||
-            kh02_actor_world(pawn) != height_world.Get())
+            actor_owning_world(pawn) != height_world.Get())
         {
             return;
         }

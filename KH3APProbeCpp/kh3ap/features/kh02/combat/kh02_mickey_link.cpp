@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/characters/character_layout.h"
@@ -76,7 +77,7 @@ namespace kh3ap
 
         auto in_islands(UObject* pawn) -> bool
         {
-            auto* world = kh02_actor_world(pawn);
+            auto* world = actor_owning_world(pawn);
             return is_uobject_valid_fast(world) && world == kh02_current_story_world() &&
                    world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02DestinyIslands.APKH02DestinyIslands";
         }
@@ -145,7 +146,7 @@ namespace kh3ap
                 // Only a real selection reaches this dispatcher; offering the
                 // command or rendering its HUD entry never changes character.
                 self->source_pawn = make_uobject_weak(pawn);
-                self->source_world = make_uobject_weak(kh02_actor_world(pawn));
+                self->source_world = make_uobject_weak(actor_owning_world(pawn));
                 self->command_info = make_uobject_weak(info);
                 self->deadline = Clock::now() + link_handoff_timeout;
                 self->pending = true;
@@ -322,7 +323,7 @@ namespace kh3ap
         {
             return;
         }
-        if (kh02_actor_world(pawn) != world)
+        if (actor_owning_world(pawn) != world)
         {
             impl->pending = false;
             impl->phase = "link_handoff_canceled";

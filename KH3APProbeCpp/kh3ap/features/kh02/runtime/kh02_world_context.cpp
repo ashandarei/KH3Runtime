@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_world_context.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/kh02/core/kh02_world_identity.h"
@@ -26,23 +27,6 @@ namespace kh3ap
         }
     }
 
-    auto kh02_actor_world(UObject* actor) -> UObject*
-    {
-        if (!is_uobject_valid_fast(actor))
-        {
-            return nullptr;
-        }
-        // Streamed source actors retain their package World as an Outer. The
-        // engine's level membership is the reflected runtime OwningWorld.
-        auto* level = actor->GetOuterPrivate();
-        if (auto* owning = context_object(level, L"OwningWorld");
-            is_uobject_valid_fast(owning))
-        {
-            return owning;
-        }
-        return static_cast<AActor*>(actor)->GetWorld();
-    }
-
     // Private story presentation follows the possessed hero. The AP grant resolver
     // continues to require its independently validated Sora context.
     auto kh02_story_player(UObject* fallback) -> UObject*
@@ -52,19 +36,19 @@ namespace kh3ap
         auto* controller = context_object(fallback, L"Controller");
         if (is_uobject_valid_fast(fallback) && is_uobject_valid_fast(controller) &&
             context_object(controller, L"Pawn") == fallback &&
-            (!is_uobject_valid_fast(world) || kh02_actor_world(fallback) == world))
+            (!is_uobject_valid_fast(world) || actor_owning_world(fallback) == world))
         {
             return fallback;
         }
         if (kh02_world_kind(world) != Kh02WorldKind::story)
         {
-            return is_uobject_valid_fast(fallback) && kh02_actor_world(fallback) == world ? fallback : nullptr;
+            return is_uobject_valid_fast(fallback) && actor_owning_world(fallback) == world ? fallback : nullptr;
         }
         auto* instance = context_object(viewport, L"GameInstance");
         auto* manager = context_object(instance, L"m_UIManager");
         controller = context_object(manager, L"m_pPlayerController");
         auto* pawn = context_object(controller, L"Pawn");
-        if (!is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != world ||
+        if (!is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != world ||
             context_object(pawn, L"Controller") != controller)
         {
             return nullptr;

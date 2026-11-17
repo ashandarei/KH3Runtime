@@ -2,7 +2,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/features/party/party_helpers.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/UObject.hpp>
@@ -87,7 +87,7 @@ namespace kh3ap
             {
                 previous_manager = manager;
                 previous_pawn = pawn;
-                previous_world = kh02_actor_world(pawn);
+                previous_world = actor_owning_world(pawn);
                 source_world = world;
                 slot = index;
                 deadline = std::chrono::steady_clock::now() + companion_handoff_timeout;
@@ -117,7 +117,7 @@ namespace kh3ap
         {
             return;
         }
-        if (!previous_world.Get() || kh02_actor_world(pawn) != previous_world.Get())
+        if (!previous_world.Get() || actor_owning_world(pawn) != previous_world.Get())
         {
             slot = -1;
             phase = "canceled_world_instance_changed";

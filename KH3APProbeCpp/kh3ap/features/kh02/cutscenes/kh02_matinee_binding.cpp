@@ -9,7 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <utility>
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UScriptStruct.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
@@ -106,7 +106,7 @@ namespace kh3ap
 
     void kh02_bind_event_aqua(UObject* matinee_actor, UObject* event_pawn, const wchar_t* group_name)
     {
-        if (!is_uobject_valid_fast(event_pawn) || kh02_actor_world(event_pawn) != kh02_actor_world(matinee_actor))
+        if (!is_uobject_valid_fast(event_pawn) || actor_owning_world(event_pawn) != actor_owning_world(matinee_actor))
         {
             throw std::runtime_error("kh02_event_binding_world");
         }

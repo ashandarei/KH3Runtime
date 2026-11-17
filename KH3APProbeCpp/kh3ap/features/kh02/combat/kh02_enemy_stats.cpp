@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_battle_level_observer.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh02_enemy_stat_assets.h"
@@ -177,7 +178,7 @@ namespace kh3ap
                           [world](const EnemyHealth& entry)
                           {
                               auto* actor = entry.actor.Get();
-                              return !is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world;
+                              return !is_uobject_valid_fast(actor) || actor_owning_world(actor) != world;
                           });
             std::vector<size_t> captured;
             auto* enemy_class =
@@ -187,7 +188,7 @@ namespace kh3ap
                 for (auto* actor :
                      find_live_actors_of_class(kh02_story_player(context), enemy_class, enemy_capture_limit))
                 {
-                    if (!is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world)
+                    if (!is_uobject_valid_fast(actor) || actor_owning_world(actor) != world)
                     {
                         continue;
                     }
@@ -224,7 +225,7 @@ namespace kh3ap
             {
                 auto& entry = enemy_health[index];
                 auto* actor = entry.actor.Get();
-                if (!is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world)
+                if (!is_uobject_valid_fast(actor) || actor_owning_world(actor) != world)
                 {
                     continue;
                 }
@@ -269,7 +270,7 @@ namespace kh3ap
             {
                 return;
             }
-            auto* world = kh02_actor_world(hero);
+            auto* world = actor_owning_world(hero);
             if (!is_uobject_valid_fast(world) || world != kh02_current_story_world())
             {
                 return;
@@ -489,7 +490,7 @@ namespace kh3ap
 
     auto Kh02EnemyStats::experience_levels(UObject* hero, int sora_level) -> std::pair<int, int>
     {
-        auto* world = kh02_actor_world(hero);
+        auto* world = actor_owning_world(hero);
         if (!is_uobject_valid_fast(world) || impl->profile_world.Get() != world)
         {
             throw std::runtime_error("kh02_experience_battle_profile_unbound");

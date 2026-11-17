@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_inventory_menu.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/character_ids.h"
@@ -218,7 +219,7 @@ namespace kh3ap
                         save_data == reinterpret_cast<std::byte*>(save_owner) + active_save_data_offset &&
                         try_read_reflected_object_property_value(controller, L"Pawn") == hero &&
                         try_read_reflected_object_property_value(hero, L"Controller") == controller &&
-                        kh02_actor_world(hero) == kh02_current_world() && record &&
+                        actor_owning_world(hero) == kh02_current_world() && record &&
                         field<uint8_t>(record, 0) == requested_character)
                     {
                         // The camp equipment/ability readers and writers use the
@@ -326,7 +327,7 @@ namespace kh3ap
             const auto unique_id = character_id(hero);
             if (!is_uobject_valid_fast(hero) || !unique_id || !is_uobject_valid_fast(camp_controller) ||
                 field<uintptr_t>(camp_controller, 0) != self.base + self.camp_vtable ||
-                kh02_actor_world(hero) != kh02_current_world())
+                actor_owning_world(hero) != kh02_current_world())
             {
                 return;
             }
@@ -490,7 +491,7 @@ namespace kh3ap
             auto* hero = self.portrait_hero.Get();
             const bool alternate_camp = is_uobject_valid_fast(hero) && hero == current_hero() &&
                                         is_uobject_valid_fast(camp_controller) &&
-                                        kh02_actor_world(hero) == kh02_current_world() &&
+                                        actor_owning_world(hero) == kh02_current_world() &&
                                         field<uint8_t>(camp_controller, 0xc9) == character_id(hero);
             const bool spawning_portrait = alternate_camp && field<int32_t>(camp_controller, 0x58) == 7;
             auto* status = spawning_portrait ? field<UObject*>(camp_controller, 0x158) : nullptr;

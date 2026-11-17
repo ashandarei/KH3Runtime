@@ -5,7 +5,7 @@
 #include "kh02_cutscene_reflection.h"
 #include "kh02_matinee_binding.h"
 #include "kh3ap/features/kh02/story/kh02_story_music.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -53,7 +53,7 @@ namespace kh3ap
             world = make_uobject_weak(scene_world);
             stream = {};
             if (context.gameplay_world != scene_world || !is_uobject_valid_fast(event_aqua.actor()) ||
-                kh02_actor_world(event_aqua.actor()) != scene_world)
+                actor_owning_world(event_aqua.actor()) != scene_world)
             {
                 event_aqua.forget_actor();
             }

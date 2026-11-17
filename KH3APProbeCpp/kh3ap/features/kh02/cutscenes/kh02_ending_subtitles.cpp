@@ -4,7 +4,7 @@
 #include "kh02/story_movie_metadata.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/features/kh02/movies/kh02_movie_bridge.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
@@ -182,7 +182,7 @@ namespace kh3ap
                                    const LocalizedMessage& localized_message, Json& ending_presentation)
     {
         auto* matinee = ending_subtitle_matinee.Get();
-        if (!is_uobject_valid_fast(matinee) || kh02_actor_world(matinee) != world)
+        if (!is_uobject_valid_fast(matinee) || actor_owning_world(matinee) != world)
         {
             close();
             ending_subtitle_matinee = {};

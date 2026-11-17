@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "betrayal_trap.h"
 #include "betrayal_target_hooks.h"
 #include "party_helpers.h"
@@ -217,7 +218,7 @@ namespace kh3ap::betrayal_trap
                 }
                 if (!is_uobject_valid_fast(weapon) ||
                     properties.read_object(weapon, L"MyPawn") != pawn ||
-                    kh02_actor_world(weapon) != kh02_actor_world(pawn))
+                    actor_owning_world(weapon) != actor_owning_world(pawn))
                 {
                     throw std::runtime_error("betrayal_weapon_owner_mismatch");
                 }
@@ -438,7 +439,7 @@ namespace kh3ap::betrayal_trap
             for (auto it = trap.projectiles.begin(); it != trap.projectiles.end();)
             {
                 auto* actor = it->actor.Get();
-                if (!actor || kh02_actor_world(actor) != trap.world.Get())
+                if (!actor || actor_owning_world(actor) != trap.world.Get())
                 {
                     it = trap.projectiles.erase(it);
                     continue;
@@ -477,7 +478,7 @@ namespace kh3ap::betrayal_trap
             auto* target = trap.player.Get();
             auto* active_world = trap.world.Get();
             if (!target || !active_world || active_world != kh02_current_world() ||
-                kh02_actor_world(target) != active_world)
+                actor_owning_world(target) != active_world)
             {
                 return nullptr;
             }
@@ -495,7 +496,7 @@ namespace kh3ap::betrayal_trap
                 auto* pawn = companion.pawn.Get();
                 if (pawn && properties.read_object(controller, L"Pawn") == pawn &&
                     properties.read_object(pawn, L"Controller") == controller &&
-                    kh02_actor_world(pawn) == active_world)
+                    actor_owning_world(pawn) == active_world)
                 {
                     ++trap.target_redirects;
                     return target;
@@ -693,7 +694,7 @@ namespace kh3ap::betrayal_trap
                 return false;
             }
             install_hooks();
-            auto* current_world = kh02_actor_world(controlled_player);
+            auto* current_world = actor_owning_world(controlled_player);
             if (!current_world || current_world != kh02_current_world())
             {
                 return false;
@@ -706,7 +707,7 @@ namespace kh3ap::betrayal_trap
             }
             for (auto* pawn : slots)
             {
-                if (!pawn || pawn == controlled_player || kh02_actor_world(pawn) != current_world)
+                if (!pawn || pawn == controlled_player || actor_owning_world(pawn) != current_world)
                 {
                     continue;
                 }
@@ -813,7 +814,7 @@ namespace kh3ap::betrayal_trap
     {
         if (!trap.running || !trap.swap_pending || !incoming || incoming == trap.player.Get() ||
             !character_swap::owns_swap_pawn(incoming) ||
-            kh02_actor_world(incoming) != trap.world.Get())
+            actor_owning_world(incoming) != trap.world.Get())
         {
             return;
         }
@@ -904,7 +905,7 @@ namespace kh3ap::betrayal_trap
         }
         auto* controlled_player = trap.player.Get();
         if (now >= trap.expires || !controlled_player || trap.world.Get() != kh02_current_world() ||
-            kh02_actor_world(controlled_player) != trap.world.Get())
+            actor_owning_world(controlled_player) != trap.world.Get())
         {
             trap.last_result = now >= trap.expires ? "completed" : "context_changed";
             restore();
@@ -927,7 +928,7 @@ namespace kh3ap::betrayal_trap
             for (const auto& companion : trap.companions)
             {
                 auto* pawn = companion.pawn.Get();
-                if (!pawn || kh02_actor_world(pawn) != trap.world.Get() ||
+                if (!pawn || actor_owning_world(pawn) != trap.world.Get() ||
                     properties.read_object(pawn, L"Controller") != companion.controller.Get())
                 {
                     cancel();

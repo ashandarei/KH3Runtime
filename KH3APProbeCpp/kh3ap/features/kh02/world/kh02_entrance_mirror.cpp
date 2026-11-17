@@ -11,7 +11,7 @@
 #include <utility>
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/objects/actor_discovery.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/AActor.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
 #include <chrono>
@@ -65,13 +65,13 @@ namespace kh3ap
         }
         UObject* cinematic_mirror = nullptr;
         UObject* gameplay_mirror = nullptr;
-        auto* world = kh02_actor_world(scene);
+        auto* world = actor_owning_world(scene);
         // Resolve the current world's actors. During streaming replacement,
         // the global object hash can still contain the preceding level's
         // same-named actor or miss its newly registered replacement.
         for (auto* actor : find_live_actors_of_class(context, AActor::StaticClass(), actor_scan_limit))
         {
-            if (kh02_actor_world(actor) != world)
+            if (actor_owning_world(actor) != world)
             {
                 continue;
             }
@@ -94,7 +94,7 @@ namespace kh3ap
                 gameplay_mirror = actor;
             }
         }
-        if (!is_uobject_valid_fast(gameplay_mirror) || kh02_actor_world(gameplay_mirror) != kh02_actor_world(scene) ||
+        if (!is_uobject_valid_fast(gameplay_mirror) || actor_owning_world(gameplay_mirror) != actor_owning_world(scene) ||
             (!cinematic_mirror && !allow_retired_duplicate))
         {
             return false;
@@ -113,17 +113,17 @@ namespace kh3ap
             {"scene", path(scene)},
             {"cinematic_mesh", path(cinematic_mesh)},
             {"gameplay_mirror", path(gameplay_mirror)},
-            {"cinematic_world", path(kh02_actor_world(cinematic_mirror))},
-            {"gameplay_world", path(kh02_actor_world(gameplay_mirror))},
-            {"scene_world", path(kh02_actor_world(scene))},
+            {"cinematic_world", path(actor_owning_world(cinematic_mirror))},
+            {"gameplay_world", path(actor_owning_world(gameplay_mirror))},
+            {"scene_world", path(actor_owning_world(scene))},
             {"skeletal_mesh", path(try_read_reflected_object_property_value(cinematic_mesh, L"SkeletalMesh"))},
             {"static_mesh", path(try_read_reflected_object_property_value(gameplay_mesh, L"StaticMesh"))}};
         const bool duplicate_present = is_uobject_valid_fast(cinematic_mirror);
-        if (kh02_actor_world(gameplay_mirror) != kh02_actor_world(scene) || !is_uobject_valid_fast(gameplay_mesh) ||
+        if (actor_owning_world(gameplay_mirror) != actor_owning_world(scene) || !is_uobject_valid_fast(gameplay_mesh) ||
             path(try_read_reflected_object_property_value(gameplay_mesh, L"StaticMesh")) !=
                 "/Game/Zaps/dw/uasset/Meshes/SM_dw_Pro_MirrorD.SM_dw_Pro_MirrorD" ||
             (duplicate_present &&
-             (kh02_actor_world(cinematic_mirror) != kh02_actor_world(scene) || !is_uobject_valid_fast(cinematic_mesh) ||
+             (actor_owning_world(cinematic_mirror) != actor_owning_world(scene) || !is_uobject_valid_fast(cinematic_mesh) ||
               path(try_read_reflected_object_property_value(cinematic_mesh, L"SkeletalMesh")) !=
                   "/Game/Zaps/dw/gimmick/g_dw_MirrorA/mdl/g_dw_MirrorA.g_dw_MirrorA")))
         {

@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/bridge/session/command_sources.h"
@@ -306,7 +307,7 @@ namespace kh3ap
         }
         try
         {
-            auto* world = kh02_actor_world(callback.Context);
+            auto* world = actor_owning_world(callback.Context);
             if (!is_uobject_valid_fast(world) ||
                 !automatic_start.matches(world->GetPathName(), now))
             {
@@ -329,7 +330,7 @@ namespace kh3ap
             auto* player_controller_class =
                 find_loaded_runtime_asset_class(L"/Script/Engine.PlayerController");
             if (!is_uobject_a_fast(controller, player_controller_class) ||
-                kh02_actor_world(controller) != world)
+                actor_owning_world(controller) != world)
             {
                 return;
             }
@@ -343,7 +344,7 @@ namespace kh3ap
             for (auto* start : find_live_actors_of_class(callback.Context, start_class,
                                                          max_map_jump_player_starts))
             {
-                if (!is_uobject_valid_fast(start) || kh02_actor_world(start) != world ||
+                if (!is_uobject_valid_fast(start) || actor_owning_world(start) != world ||
                     start->HasAnyFlags(static_cast<EObjectFlags>(RF_NeedLoad | RF_NeedPostLoad |
                                                                  RF_NeedPostLoadSubobjects)))
                 {

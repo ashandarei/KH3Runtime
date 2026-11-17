@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <chrono>
 #include <utility>
 #include <new>
@@ -265,7 +266,7 @@ namespace kh3ap::character_shotlock
                 auto* pawn = object(controller, L"Pawn");
                 if (object(local, L"PlayerController") == controller &&
                     object(pawn, L"Controller") == controller &&
-                    kh02_actor_world(pawn) == kh02_current_world())
+                    actor_owning_world(pawn) == kh02_current_world())
                 {
                     // Input can arrive after the factory commits but before
                     // the incoming camera/HUD is ready. Finish that handoff
@@ -782,7 +783,7 @@ namespace kh3ap::character_shotlock
             // A new possession has not sampled its input yet. An already-held
             // logical aim request belongs to the handoff until it is released.
             release_required_controller = make_uobject_weak(controller);
-            release_required_world = make_uobject_weak(kh02_actor_world(pawn));
+            release_required_world = make_uobject_weak(actor_owning_world(pawn));
         }
     }
 
@@ -800,7 +801,7 @@ namespace kh3ap::character_shotlock
             return false;
         }
         auto* controller = aim_controller(pawn);
-        auto* world = kh02_actor_world(pawn);
+        auto* world = actor_owning_world(pawn);
         if (!controller || !is_uobject_valid_fast(world) || world != kh02_current_world())
         {
             return false;
@@ -917,7 +918,7 @@ namespace kh3ap::character_shotlock
         const auto before = race_state(pawn);
         aim_race = {};
         aim_race.active = true;
-        aim_race.world = make_uobject_weak(kh02_actor_world(pawn));
+        aim_race.world = make_uobject_weak(actor_owning_world(pawn));
         aim_race.local = make_uobject_weak(object(object(pawn, L"Controller"), L"Player"));
         aim_race.finish_at = std::chrono::steady_clock::now() + shotlock_aim_race_timeout;
         aim_race.result = {{"status", "running"},
@@ -943,7 +944,7 @@ namespace kh3ap::character_shotlock
     void diagnostic_after_factory(UObject* pawn)
     {
         if (aim_race.active && aim_race.after_factory &&
-            kh02_actor_world(pawn) == aim_race.world.Get())
+            actor_owning_world(pawn) == aim_race.world.Get())
         {
             aim_race.after_factory = false;
             press_race_input(pawn);

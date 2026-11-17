@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <cassert>
 #include <chrono>
 #include <string>
@@ -61,7 +62,7 @@ UObject* story_player{};
 UObject* kh02_current_world() { return current_world; }
 UObject* kh02_current_story_world() { return story_world; }
 UObject* kh02_story_player(UObject*) { return story_player; }
-UObject* kh02_actor_world(UObject* object) { return object ? object->world : nullptr; }
+UObject* actor_owning_world(UObject* object) { return object ? object->world : nullptr; }
 template <size_t> struct ReflectedPropertyCache
 {
     UObject* read_object(UObject* object, std::wstring_view name)

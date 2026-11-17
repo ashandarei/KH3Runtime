@@ -235,6 +235,7 @@ namespace kh3ap
         static const RequestCommand* find_request_command(std::wstring_view name) noexcept;
         void accept_cactuar_spawn(UObject* pawn, const std::string& text);
         void accept_olympus_statue_scene(UObject* pawn, const std::string& text);
+        void accept_monstropolis_scream_scene(UObject* pawn, const std::string& text);
         void accept();
         bool update_camera_input(Clock::time_point now);
         bool update_combo_input(Clock::time_point now);

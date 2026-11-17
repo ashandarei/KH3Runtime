@@ -36,6 +36,7 @@ add_library(${TARGET} SHARED
     kh3ap/core/text_format.cpp
     kh3ap/core/objects/asset_load_helpers.cpp
     kh3ap/core/objects/actor_discovery.cpp
+    kh3ap/core/objects/actor_owning_world.cpp
     kh3ap/core/settings/pak_seed_settings.cpp
     kh3ap/core/settings/installed_seed_settings.cpp
     kh3ap/features/enemies/randomization.cpp

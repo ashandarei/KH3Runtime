@@ -6,7 +6,7 @@
 #include "kh3ap/features/kh02/world/kh02_doors.h"
 #include "kh3ap/features/kh02/core/kh02_world_identity.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_cutscene_reflection.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
@@ -79,7 +79,7 @@ namespace kh3ap
             const bool hub_touch =
                 std::find(hub_mirror_events.begin(), hub_mirror_events.end(), event_name) != hub_mirror_events.end();
             if ((event_name == hub_execution || hub_touch) && is_uobject_valid_fast(object) &&
-                kh02_actor_world(object) == mirror.world.Get() &&
+                actor_owning_world(object) == mirror.world.Get() &&
                 object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_03/umap/dw_03_gameflow."))
             {
                 if (hub_touch)
@@ -121,7 +121,7 @@ namespace kh3ap
             }
             if (islands_start)
             {
-                auto* world = kh02_actor_world(object);
+                auto* world = actor_owning_world(object);
                 if (is_uobject_valid_fast(world) && world == mirror.world.Get() &&
                     world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02DestinyIslands.APKH02DestinyIslands" &&
                     object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_10/umap/dw_10_enemy.") &&
@@ -137,7 +137,7 @@ namespace kh3ap
             }
             if (forest_resume)
             {
-                auto* world = kh02_actor_world(object);
+                auto* world = actor_owning_world(object);
                 if (is_uobject_valid_fast(world) && world == mirror.world.Get() && map_session.active() &&
                     world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest" &&
                     object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_08/umap/dw_08_gameflow.") &&
@@ -156,7 +156,7 @@ namespace kh3ap
             {
                 if (parameters && function->GetParmsSize() == sizeof(int32_t) &&
                     object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_05/umap/dw_05_gameflow.") &&
-                    kh02_actor_world(object) == mirror.world.Get())
+                    actor_owning_world(object) == mirror.world.Get())
                 {
                     const auto linkage = read_function_int_param(function, parameters, L"EntryPoint");
                     // Exact native mapset continuations already audited by the
@@ -198,7 +198,7 @@ namespace kh3ap
                     {
                         continue;
                     }
-                    auto* world = kh02_actor_world(object);
+                    auto* world = actor_owning_world(object);
                     if (is_uobject_valid_fast(world) && world == mirror.world.Get() &&
                         world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest")
                     {

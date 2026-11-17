@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/player/characters/character_swap.h"
@@ -479,7 +480,7 @@ namespace kh3ap::alternate_wall_run
     {
         if (test_active || !runtime_sora_control_ready(pawn) || !std::isfinite(x) ||
             !std::isfinite(y) || std::abs(x) > 1 || std::abs(y) > 1 ||
-            kh02_actor_world(pawn) != kh02_current_world())
+            actor_owning_world(pawn) != kh02_current_world())
         {
             return false;
         }

@@ -2,7 +2,7 @@
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
@@ -74,7 +74,7 @@ namespace kh3ap
         for (auto iterator = event_aqua_scenes.begin(); iterator != event_aqua_scenes.end();)
         {
             auto* scene = iterator->matinee.Get();
-            if (!is_uobject_valid_fast(scene) || kh02_actor_world(scene) != kh02_actor_world(event_pawn))
+            if (!is_uobject_valid_fast(scene) || actor_owning_world(scene) != actor_owning_world(event_pawn))
             {
                 iterator = event_aqua_scenes.erase(iterator);
                 continue;

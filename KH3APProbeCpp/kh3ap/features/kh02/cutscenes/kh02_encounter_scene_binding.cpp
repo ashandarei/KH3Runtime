@@ -6,7 +6,7 @@
 #include "kh02_opening_followup.h"
 #include "kh02_scene_catalog.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/story/kh02_postboss_handoff.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
@@ -42,7 +42,7 @@ namespace kh3ap
     void Kh02EncounterSceneBinding::bind_and_show(UObject* object, const wchar_t* group, const Services& services)
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
-        if (kh02_actor_world(object) != services.world.Get() || !is_uobject_valid_fast(services.event_aqua.actor()))
+        if (actor_owning_world(object) != services.world.Get() || !is_uobject_valid_fast(services.event_aqua.actor()))
         {
             throw std::runtime_error("kh02_encounter_scene_context");
         }
@@ -78,7 +78,7 @@ namespace kh3ap
                 // independently of the host's main cinematic Aqua.
                 auto* reflection = *kh02_matinee_actor_slot(object, L"TresInterpGroup_1");
                 if (!is_uobject_valid_fast(reflection) || reflection->GetOuterPrivate() != object->GetOuterPrivate() ||
-                    kh02_actor_world(reflection) != services.world.Get() ||
+                    actor_owning_world(reflection) != services.world.Get() ||
                     reflection->GetName() != L"dw020a_MirrorAqua_p_ex002_0")
                 {
                     throw std::runtime_error("kh02_mirror_aqua_eye_context");

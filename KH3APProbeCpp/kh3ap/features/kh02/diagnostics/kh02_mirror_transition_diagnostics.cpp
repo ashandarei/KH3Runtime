@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_mirror_transition_diagnostics.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include "kh02_runtime_inspection.h"
@@ -40,7 +41,7 @@ namespace kh3ap::kh02_mirror_transition_diagnostics
             auto* world = observed_world.Get();
             auto* script = observed_script.Get();
             if (!is_uobject_valid_fast(world) || !is_uobject_valid_fast(script) ||
-                world != kh02_current_world() || kh02_actor_world(script) != world)
+                world != kh02_current_world() || actor_owning_world(script) != world)
             {
                 return;
             }
@@ -57,7 +58,7 @@ namespace kh3ap::kh02_mirror_transition_diagnostics
                 record["fade"] = presentation.fade(script);
                 record["loading_closed"] = Kh02ArrivalPresentation::loading_closed();
                 auto* hero = kh02_story_player(nullptr);
-                if (is_uobject_valid_fast(hero) && kh02_actor_world(hero) == world)
+                if (is_uobject_valid_fast(hero) && actor_owning_world(hero) == world)
                 {
                     record["pawn"] = to_utf8(hero->GetPathName());
                     auto* id = hero->GetPropertyByNameInChain(L"m_PlayerUniqueID");

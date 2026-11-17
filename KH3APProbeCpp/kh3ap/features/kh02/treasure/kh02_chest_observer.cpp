@@ -5,7 +5,7 @@
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/treasure/chest_persistence_service.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -80,7 +80,7 @@ namespace kh3ap
         for (const auto& weak : pending)
         {
             auto* chest = weak.Get();
-            if (!is_uobject_valid_fast(chest) || kh02_actor_world(chest) != world ||
+            if (!is_uobject_valid_fast(chest) || actor_owning_world(chest) != world ||
                 is_fake_chest(chest))
             {
                 continue;
@@ -155,7 +155,7 @@ namespace kh3ap
             for (const auto& weak : watched)
             {
                 auto* chest = weak.Get();
-                if (is_uobject_valid_fast(chest) && kh02_actor_world(chest) == world)
+                if (is_uobject_valid_fast(chest) && actor_owning_world(chest) == world)
                 {
                     notify(chest);
                 }

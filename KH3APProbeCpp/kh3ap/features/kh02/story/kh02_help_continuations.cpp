@@ -2,7 +2,7 @@
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/uobject_validity.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/TArray.hpp>
@@ -44,7 +44,7 @@ namespace kh3ap
             auto* target = continuation.callback.Get();
             if (continuation.world.Get() != world ||
                 !session.accepts_continuation(continuation.generation, continuation.world.Get()) ||
-                !is_uobject_valid_fast(target) || kh02_actor_world(target) != world)
+                !is_uobject_valid_fast(target) || actor_owning_world(target) != world)
             {
                 continue;
             }

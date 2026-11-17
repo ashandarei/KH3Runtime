@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_arrival_presentation.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -151,7 +152,7 @@ namespace kh3ap
                 release_damage_protection();
                 original_no_hp_damage = no_hp_damage_override(pawn);
                 protected_pawn = make_uobject_weak(pawn);
-                protected_world = make_uobject_weak(kh02_actor_world(pawn));
+                protected_world = make_uobject_weak(actor_owning_world(pawn));
                 // The general IsConditionNoHpDamage query also includes
                 // cinematic/state protection. Own only the setter's reflected
                 // override, leaving those independent protections untouched.
@@ -184,7 +185,7 @@ namespace kh3ap
             // Travel can retain the outgoing UObject after its gameplay state
             // has retired. Do not call pawn condition methods across worlds.
             if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(world) || world != kh02_current_world() ||
-                kh02_actor_world(pawn) != world)
+                actor_owning_world(pawn) != world)
             {
                 damage_restoration_verified = true;
                 return;

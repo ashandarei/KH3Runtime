@@ -1,7 +1,7 @@
 #include "kh02_postclear_treasure.h"
 #include "kh02_postclear_treasure_policy.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
@@ -17,7 +17,7 @@ namespace kh3ap
 
     void Kh02PostclearTreasure::tick(UObject* pawn)
     {
-        auto* current_world = kh02_actor_world(pawn);
+        auto* current_world = actor_owning_world(pawn);
         if (world.Get() != current_world)
         {
             world = make_uobject_weak(current_world);

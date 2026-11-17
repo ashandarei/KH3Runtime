@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "character_style.h"
 #include "character_style_state.h"
 #include "kh3ap/features/player/characters/character_profile.h"
@@ -217,7 +218,7 @@ namespace kh3ap::character_style
         {
             return;
         }
-        auto* current_world = kh02_actor_world(outgoing);
+        auto* current_world = actor_owning_world(outgoing);
         if (!is_uobject_valid_fast(current_world) || current_world != kh02_current_world())
         {
             reset();
@@ -251,7 +252,7 @@ namespace kh3ap::character_style
         {
             return;
         }
-        if (world.Get() != kh02_actor_world(incoming))
+        if (world.Get() != actor_owning_world(incoming))
         {
             forms = {};
             cancel();

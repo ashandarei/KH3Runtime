@@ -2,7 +2,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <exception>
 #include <utility>
@@ -69,7 +69,7 @@ namespace kh3ap
             return;
         }
         const bool owned = is_uobject_valid_fast(pawn) && walk_pawn.Get() == pawn &&
-                           kh02_actor_world(pawn) == walk_world.Get() &&
+                           actor_owning_world(pawn) == walk_world.Get() &&
                            try_read_reflected_object_property_value(controller, L"Pawn") == pawn;
         if (!owned || (castle_trigger && castle_scene_started) || std::chrono::steady_clock::now() >= walk_until)
         {

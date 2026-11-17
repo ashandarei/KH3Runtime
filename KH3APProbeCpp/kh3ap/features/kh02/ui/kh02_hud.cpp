@@ -5,7 +5,7 @@
 #include "kh3ap/features/kh02/treasure/kh02_hud_treasure_rows.h"
 #include "kh02_hud_reflection.h"
 #include "kh02_hud.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh02/runtime_metadata.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -100,7 +100,7 @@ namespace kh3ap
             std::wstring selected;
             for (auto* start : starts)
             {
-                if (!is_uobject_valid_fast(start) || kh02_actor_world(start) != world ||
+                if (!is_uobject_valid_fast(start) || actor_owning_world(start) != world ||
                     !start->GetPathName().starts_with(L"/Game/Zevels/") ||
                     start_name(start, L"PlayerStartTag") != arrival_tag)
                 {

@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_swap_assets.h"
 #include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/characters/character_reaction_animations.h"
@@ -136,7 +137,7 @@ namespace kh3ap::character_swap_assets
             auto* controller = object(manager, L"m_pPlayerController");
             auto* pawn = object(controller, L"Pawn");
             return pawn && object(pawn, L"Controller") == controller &&
-                           kh02_actor_world(pawn) == kh02_current_world()
+                           actor_owning_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
         }
@@ -231,7 +232,7 @@ namespace kh3ap::character_swap_assets
             }
             game_thread = GetCurrentThreadId();
             request_pawn = make_uobject_weak(pawn);
-            request_world = make_uobject_weak(kh02_actor_world(pawn));
+            request_world = make_uobject_weak(actor_owning_world(pawn));
             loading = true;
             selection_pending = false;
             handoff_pending = false;

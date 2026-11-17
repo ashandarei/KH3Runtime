@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <new>
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/movement/character_rails.h"
@@ -8,6 +9,7 @@
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
+#include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
@@ -16,8 +18,11 @@
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/FMemory.hpp>
+#include <Unreal/AActor.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FMulticastDelegateProperty.hpp>
+#include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <cmath>
@@ -93,7 +98,7 @@ namespace kh3ap::character_rails
             const FName unison_blizzard(L"TresProj_UnisonBlizzard_C", FNAME_Add);
             if (supported_player(owner) && character_traversal::rail_ready(owner) &&
                 projectile->GetClassPrivate()->GetNamePrivate() != unison_blizzard &&
-                kh02_actor_world(projectile) == kh02_actor_world(owner))
+                actor_owning_world(projectile) == actor_owning_world(owner))
             {
                 auto* life = number(projectile, L"m_GenerateRailLife");
                 auto* height = number(projectile, L"m_GenerateRailHeight");
@@ -279,6 +284,70 @@ namespace kh3ap::character_rails
             *id->ContainerPtrToValuePtr<uint8_t>(state) != player_state_ids::rail_slide_mi)
         {
             release_shot();
+        }
+    }
+
+    void rebind_doors(UObject* outgoing, UObject* incoming)
+    {
+        // Door generators bind these delegates once in BeginPlay. The native
+        // player factory replaces that pawn, so reconnect on ownership commit.
+        // Later streamed generators bind the current player themselves.
+        auto* world = kh02_current_world();
+        if (!is_uobject_valid_fast(incoming) || !is_uobject_valid_fast(world) ||
+            actor_owning_world(incoming) != world || kh02_current_story_world() ||
+            world->GetPathName() != L"/Game/Levels/mi/mi_04/mi_04.mi_04")
+        {
+            return;
+        }
+        auto* controller = properties.read_object(incoming, L"Controller");
+        auto* local = properties.read_object(controller, L"Player");
+        if (!is_uobject_valid_fast(local) ||
+            properties.read_object(local, L"PlayerController") != controller ||
+            properties.read_object(controller, L"Pawn") != incoming)
+        {
+            return;
+        }
+        auto* type = UObjectGlobals::StaticFindObject<UClass*>(
+            nullptr, nullptr, L"/Script/TresGame.TresGimmickGeneratorMI_04");
+        if (!is_uobject_valid_fast(type)) { return; }
+        const auto doors = find_live_actors_of_class(incoming, type, 64);
+        for (const auto& [event, callback] : {
+                 std::pair{L"OnPlayerSpecificAction", L"OnPlayerSpecificAction"},
+                 std::pair{L"OnDtorState", L"OnPlayerStateEnd"}})
+        {
+            auto* field = properties.resolve(incoming, event);
+            if (!field || !field->IsA<FMulticastDelegateProperty>() ||
+                field->GetElementSize() != sizeof(FMulticastScriptDelegate))
+            {
+                throw std::runtime_error("character_rail_door_delegate_layout");
+            }
+            auto& listeners = field->ContainerPtrToValuePtr<FMulticastScriptDelegate>(incoming)->InvocationList;
+            const FName function(callback, FNAME_Add);
+            for (auto* door : doors)
+            {
+                if (actor_owning_world(door) != world || !door->GetFunctionByNameInChain(callback)) { continue; }
+                if (outgoing != incoming && is_uobject_valid_fast(outgoing) &&
+                    actor_owning_world(outgoing) == world && properties.resolve(outgoing, event) == field)
+                {
+                    auto& old = field->ContainerPtrToValuePtr<FMulticastScriptDelegate>(outgoing)->InvocationList;
+                    for (int index = old.Num() - 1; index >= 0; --index)
+                    {
+                        if (old[index].Object.Get() == door && old[index].FunctionName == function)
+                        {
+                            old.RemoveAt(index);
+                        }
+                    }
+                }
+                if (!listeners.ContainsByPredicate([&](const auto& entry) {
+                        return entry.Object.Get() == door && entry.FunctionName == function;
+                    }))
+                {
+                    listeners.Add(FScriptDelegate{make_uobject_weak(door), function});
+                    RC::Output::send<RC::LogLevel::Normal>(
+                        STR("[KH3APProbeCpp] Character rail door rebound pawn={} door={} event={}\n"),
+                        incoming->GetName(), door->GetName(), event);
+                }
+            }
         }
     }
 

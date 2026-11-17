@@ -5,7 +5,7 @@
 #include "kh02_map_session.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_event_aqua.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_cutscene_reflection.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/world/kh02_castle_boss_streams.h"
 #include "kh3ap/features/kh02/world/kh02_castle_scenery.h"
 #include "kh3ap/features/kh02/world/kh02_castle_entry_dispatch.h"
@@ -112,7 +112,7 @@ namespace kh3ap
         local.object(L"WorldContextObject", script);
         local.run();
         auto* pawn = local.result();
-        if (is_uobject_valid_fast(pawn) && kh02_actor_world(pawn) == world)
+        if (is_uobject_valid_fast(pawn) && actor_owning_world(pawn) == world)
         {
             services.gameplay.pawn = make_uobject_weak(pawn);
         }

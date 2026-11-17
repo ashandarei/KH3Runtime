@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <chrono>
 #include "kh3ap/features/story/cutscenes/cutscene_skip_view.h"
 #include "kh3ap/features/story/cutscenes/cutscene_skip_view_policy.h"
@@ -53,7 +54,7 @@ namespace kh3ap
         {
             return;
         }
-        auto* world = kh02_actor_world(source);
+        auto* world = actor_owning_world(source);
         if (!is_uobject_valid_fast(world) || world != kh02_current_world())
         {
             return;
@@ -98,7 +99,7 @@ namespace kh3ap
             local.object(L"WorldContextObject", world);
             local.run();
             auto* pawn = local.result();
-            if (!is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != world ||
+            if (!is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != world ||
                 !runtime_sora_control_ready(pawn))
             {
                 return;

@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_controller_input_policy.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
@@ -37,7 +38,7 @@ namespace kh3ap
             auto* local = try_read_reflected_object_property_value(controller, L"Player");
             return is_uobject_valid_fast(pawn) &&
                    (owned || (aqua && kh02_current_story_world() &&
-                              kh02_actor_world(pawn) == kh02_current_story_world())) &&
+                              actor_owning_world(pawn) == kh02_current_story_world())) &&
                    try_read_reflected_object_property_value(pawn, L"Controller") == controller &&
                    is_uobject_valid_fast(local) &&
                    try_read_reflected_object_property_value(local, L"PlayerController") ==
@@ -64,6 +65,6 @@ namespace kh3ap
 
     auto character_controller_input_policy() -> RuntimeControllerInputPolicy
     {
-        return {alternate_controller_allowed, route_action, kh02_actor_world};
+        return {alternate_controller_allowed, route_action, actor_owning_world};
     }
 } // namespace kh3ap

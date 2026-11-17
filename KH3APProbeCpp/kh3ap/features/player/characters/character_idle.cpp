@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/characters/character_idle.h"
@@ -988,7 +989,7 @@ namespace kh3ap::character_idle
             (pawn == roxas_owner.Get() && roxas_instance.Get());
         auto* controller = object(pawn, L"Controller");
         if (!pawn || !prepared || object(controller, L"Pawn") != pawn ||
-            kh02_actor_world(pawn) != kh02_current_world())
+            actor_owning_world(pawn) != kh02_current_world())
         {
             return false;
         }

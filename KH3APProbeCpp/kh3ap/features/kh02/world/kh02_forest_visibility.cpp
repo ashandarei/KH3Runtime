@@ -3,7 +3,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/TArray.hpp>
@@ -78,7 +78,7 @@ namespace kh3ap
     auto Kh02ForestVisibility::tick(UObject* pawn, UObject* world, bool ready) -> std::optional<std::string>
     {
         if (forest_lod_volumes.empty() || !ready || !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(world) ||
-            kh02_actor_world(pawn) != world ||
+            actor_owning_world(pawn) != world ||
             world->GetPathName() != L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest")
         {
             return std::nullopt;
@@ -105,7 +105,7 @@ namespace kh3ap
                 continue;
             }
             auto* actor = volume.actor.Get();
-            if (!is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world)
+            if (!is_uobject_valid_fast(actor) || actor_owning_world(actor) != world)
             {
                 volume.dirty = false;
                 continue;
@@ -152,7 +152,7 @@ namespace kh3ap
                 // the source visibility functions, never starting a vine.
                 for (auto* gimmick : *gimmicks)
                 {
-                    if (!is_uobject_valid_fast(gimmick) || kh02_actor_world(gimmick) != world ||
+                    if (!is_uobject_valid_fast(gimmick) || actor_owning_world(gimmick) != world ||
                         !gimmick->GetPropertyByNameInChain(L"temp_IsShowLODGimmick") ||
                         flag(gimmick, L"temp_IsShowLODGimmick") == shown)
                     {

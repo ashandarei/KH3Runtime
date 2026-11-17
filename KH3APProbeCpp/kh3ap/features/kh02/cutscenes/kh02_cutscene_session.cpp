@@ -5,7 +5,7 @@
 #include "kh02_ending_voice.h"
 #include "kh02_event_aqua_scenes.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <exception>
 #include <utility>
@@ -31,7 +31,7 @@ namespace kh3ap
 
         void prepare_ending_presentation(UObject* matinee, UObject* world, UObject* pawn)
         {
-            if (!is_uobject_valid_fast(matinee) || kh02_actor_world(matinee) != world)
+            if (!is_uobject_valid_fast(matinee) || actor_owning_world(matinee) != world)
             {
                 return;
             }

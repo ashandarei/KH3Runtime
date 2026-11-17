@@ -63,6 +63,13 @@ namespace kh3ap::character_swap
                            L"kg_02_camera_ms091:PersistentLevel.ms091_D-E");
     }
 
+    constexpr bool is_scream_strike_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
+    {
+        return world == L"/Game/Levels/mi/mi_04/mi_04.mi_04" &&
+               matinee == L"/Game/Cutscene/Localization/ja/mi/cutscene_mi04_mi358."
+                          L"cutscene_mi04_mi358:PersistentLevel.mi358";
+    }
+
     constexpr int travel_target_after_swap(int retained, int incoming, int sora, bool cinematic)
     {
         return cinematic ? retained : incoming == sora ? -1 : incoming;

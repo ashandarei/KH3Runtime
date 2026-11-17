@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/player/characters/character_idle.h"
@@ -111,7 +112,7 @@ namespace kh3ap::character_swap_effects
             auto* manager = object(object(kh02_current_viewport(), L"GameInstance"), L"m_UIManager");
             auto* controller = object(manager, L"m_pPlayerController");
             auto* pawn = object(controller, L"Pawn");
-            return pawn && object(pawn, L"Controller") == controller && kh02_actor_world(pawn) == kh02_current_world()
+            return pawn && object(pawn, L"Controller") == controller && actor_owning_world(pawn) == kh02_current_world()
                        ? pawn
                        : nullptr;
         }
@@ -533,7 +534,7 @@ namespace kh3ap::character_swap_effects
             }
             root(source);
             effect_template = make_uobject_weak(source);
-            pool_world = make_uobject_weak(kh02_actor_world(pawn));
+            pool_world = make_uobject_weak(actor_owning_world(pawn));
             auto* gameplay = kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics");
             for (size_t index = 0; index < slots.size(); ++index)
             {
@@ -618,7 +619,7 @@ namespace kh3ap::character_swap_effects
             capture_requested_until = {};
 #endif
             if (!enabled || !error.empty() || !is_uobject_valid_fast(pawn) || kh02_current_story_world() ||
-                kh02_actor_world(pawn) != pool_world.Get())
+                actor_owning_world(pawn) != pool_world.Get())
             {
                 ++skipped;
                 return false;
@@ -848,7 +849,7 @@ namespace kh3ap::character_swap_effects
                 return;
             }
             auto* pawn = current_pawn();
-            if (!pawn || kh02_current_story_world() || kh02_actor_world(pawn) != kh02_current_world())
+            if (!pawn || kh02_current_story_world() || actor_owning_world(pawn) != kh02_current_world())
             {
                 return;
             }

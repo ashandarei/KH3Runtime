@@ -3,12 +3,12 @@ void parse_camera()
 {
     if (adapter == Adapter::RooftopState)
     {
-        auto* receiver_world = kh02_actor_world(native_owner);
+        auto* receiver_world = actor_owning_world(native_owner);
         const auto receiver_class_name =
             is_uobject_valid_fast(native_owner) ? native_owner->GetClassPrivate()->GetName() : L"";
         if (!is_uobject_valid_fast(receiver_world) || receiver_world != story->gameplay.world.Get() ||
             receiver_world->GetPathName() != L"/Game/Maps/APKH02CastleTown/APKH02CastleTown.APKH02CastleTown" ||
-            kh02_actor_world(frame->Object) != receiver_world ||
+            actor_owning_world(frame->Object) != receiver_world ||
             !frame->Node->GetPathName().starts_with(L"/Game/Zevels/dw/dw_02/umap/dw_02_camera_ms200.") ||
             native_owner != story->gameplay.pawn.Get() ||
             (receiver_class_name != L"p_ex001_Pawn_C" && receiver_class_name != L"p_ex002_Pawn_C"))
@@ -19,7 +19,7 @@ void parse_camera()
     if (adapter == Adapter::LookStart || adapter == Adapter::LookEnd)
     {
         const auto caller_path = frame->Node->GetPathName();
-        auto* receiver_world = kh02_actor_world(native_owner);
+        auto* receiver_world = actor_owning_world(native_owner);
         const bool forest = is_uobject_valid_fast(receiver_world) && receiver_world == story->mirror.world.Get() &&
                             receiver_world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest" &&
                             (caller_path.starts_with(L"/Game/Zevels/dw/dw_08/umap/dw_08_camera_ms0110e.") ||
@@ -39,7 +39,7 @@ void parse_camera()
         const auto receiver_class_name =
             is_uobject_valid_fast(native_owner) ? native_owner->GetClassPrivate()->GetName() : L"";
         const bool audited_player_look =
-            (forest || depths || mirror_challenge) && kh02_actor_world(frame->Object) == receiver_world &&
+            (forest || depths || mirror_challenge) && actor_owning_world(frame->Object) == receiver_world &&
             (receiver_class_name == L"p_ex001_Pawn_C" || receiver_class_name == L"p_ex002_Pawn_C");
         if (!(stars && (receiver_class_name == L"p_ex001_Pawn_C" || receiver_class_name == L"p_ex002_Pawn_C") ||
               audited_player_look))
@@ -104,7 +104,7 @@ void execute_camera()
     {
         if (forward_aqua_look)
         {
-            if (adapter == Adapter::LookStart && target && kh02_actor_world(target) != kh02_actor_world(native_owner))
+            if (adapter == Adapter::LookStart && target && actor_owning_world(target) != actor_owning_world(native_owner))
             {
                 throw std::runtime_error("kh02_aqua_look_target_world");
             }
@@ -151,9 +151,9 @@ void execute_camera()
         // before the story tick replaces its cached pawn.
         auto* player_context = kh02_story_player(story->gameplay.pawn.Get());
         if (!is_uobject_valid_fast(player_context) || !is_uobject_valid_fast(native_owner) ||
-            kh02_actor_world(player_context) != story->gameplay.world.Get() ||
-            kh02_actor_world(frame->Object) != story->gameplay.world.Get() ||
-            kh02_actor_world(native_owner) != story->gameplay.world.Get())
+            actor_owning_world(player_context) != story->gameplay.world.Get() ||
+            actor_owning_world(frame->Object) != story->gameplay.world.Get() ||
+            actor_owning_world(native_owner) != story->gameplay.world.Get())
         {
             throw std::runtime_error("kh02_compat_camera_context");
         }

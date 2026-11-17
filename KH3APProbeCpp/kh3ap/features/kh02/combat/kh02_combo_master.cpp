@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_combo_master.h"
 #include "kh3ap/app/enums.h"
 #include "kh3ap/bridge/rewards/reconciliation.h"
@@ -33,7 +34,7 @@ namespace kh3ap
         {
             return true;
         }
-        if (!is_uobject_valid_fast(pawn) || kh02_actor_world(pawn) != world)
+        if (!is_uobject_valid_fast(pawn) || actor_owning_world(pawn) != world)
         {
             return false;
         }

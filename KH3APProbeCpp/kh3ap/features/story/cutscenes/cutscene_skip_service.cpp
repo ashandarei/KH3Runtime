@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "cutscene_skip_service.h"
 #include "cutscene_skip_transaction.h"
 #include "cutscene_skip_view.h"
@@ -219,7 +220,7 @@ namespace kh3ap
         {
             return std::nullopt;
         }
-        auto* world = kh02_actor_world(context);
+        auto* world = actor_owning_world(context);
         const auto type = native_cutscene_pause_type(world);
         if (type < 0 || type > 255)
         {

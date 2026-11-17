@@ -1,3 +1,4 @@
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/core/platform/game_build.h"
 #include "kh02_shared_unlocks.h"
@@ -38,7 +39,7 @@ namespace kh3ap::kh02rewards
             return std::nullopt;
         }
         auto* world = character_swap::current_hero() == hero ? kh02_current_world() : kh02_current_story_world();
-        if (!world || kh02_actor_world(hero) != world)
+        if (!world || actor_owning_world(hero) != world)
         {
             return std::nullopt;
         }

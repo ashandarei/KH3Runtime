@@ -28,7 +28,7 @@
 #include "kh3ap/features/kh02/story/kh02_story_targets.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_matinee_binding.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_cutscene_reflection.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/kh02/progress/kh02_progress_policy.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/actor_discovery.h"
@@ -362,7 +362,7 @@ namespace kh3ap
                  {"flags", Json::parse(source_flags.snapshot())},
                  {"compatibility_error", view.compat_error},
                  {"compatibility_warning", view.compat_warning},
-                 {"streams", kh02_stream_states(kh02_actor_world(pawn), L"/Game/Z")},
+                 {"streams", kh02_stream_states(actor_owning_world(pawn), L"/Game/Z")},
                  {"actors", Json::array()},
                  {"enemy_tables", Json::array()}};
         out["hud"] = Json::parse(hud.snapshot());

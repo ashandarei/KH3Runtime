@@ -3,7 +3,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
 
@@ -32,7 +32,7 @@ namespace kh3ap
             return;
         }
         auto* actor = mirror.Get();
-        if (!is_uobject_valid_fast(actor) || !is_uobject_valid_fast(world) || kh02_actor_world(actor) != world ||
+        if (!is_uobject_valid_fast(actor) || !is_uobject_valid_fast(world) || actor_owning_world(actor) != world ||
             world->GetPathName() != L"/Game/Maps/APKH02WorldWithin/APKH02WorldWithin.APKH02WorldWithin")
         {
             return;

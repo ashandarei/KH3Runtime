@@ -74,7 +74,7 @@ void execute_audio()
 {
     // Complete operand decoding and these receiver/ownership checks before the
     // optional execution boundary. A stale caller must never operate KH3 music.
-    auto* caller_world = kh02_actor_world(frame->Object);
+    auto* caller_world = actor_owning_world(frame->Object);
     if (!is_uobject_valid_fast(native_owner) ||
         native_owner->GetClassPrivate()->GetPathName() != L"/Script/TresGame.TresSoundStatics")
     {

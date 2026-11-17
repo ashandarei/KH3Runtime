@@ -3,7 +3,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/AActor.hpp>
@@ -167,7 +167,7 @@ namespace kh3ap
                       [world](const auto& item)
                       {
                           auto* actor = item.actor.Get();
-                          return !is_uobject_valid_fast(actor) || kh02_actor_world(actor) != world;
+                          return !is_uobject_valid_fast(actor) || actor_owning_world(actor) != world;
                       });
         for (auto& item : story_targets)
         {
@@ -229,7 +229,7 @@ namespace kh3ap
     {
         for (auto& item : story_targets)
         {
-            if (auto* actor = item.actor.Get(); is_uobject_valid_fast(actor) && kh02_actor_world(actor) == world &&
+            if (auto* actor = item.actor.Get(); is_uobject_valid_fast(actor) && actor_owning_world(actor) == world &&
                                                 actor->GetClassPrivate()->GetName() == L"g_dw_Gear_C" &&
                                                 flag(actor, L"bHidden") && !item.targets.empty())
             {

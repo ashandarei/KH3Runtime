@@ -1,7 +1,7 @@
 #include "kh02_collapse_presentation.h"
 #include "kh02_cutscene_reflection.h"
 #include "kh02_matinee_binding.h"
-#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include <cmath>
@@ -55,7 +55,7 @@ namespace kh3ap
             return;
         }
         if (!is_uobject_valid_fast(world) || collapse_world.Get() != world || !is_uobject_valid_fast(pawn) ||
-            kh02_actor_world(pawn) != world)
+            actor_owning_world(pawn) != world)
         {
             return;
         }
@@ -127,7 +127,7 @@ namespace kh3ap
                                           {"verified", collapse_binding_verified}};
             }
             if (playing && collapse_binding_verified && is_uobject_valid_fast(pawn) &&
-                kh02_actor_world(pawn) == kh02_actor_world(collapse) && pawn != event_aqua && !flag(pawn, L"bHidden"))
+                actor_owning_world(pawn) == actor_owning_world(collapse) && pawn != event_aqua && !flag(pawn, L"bHidden"))
             {
                 if (!is_uobject_valid_fast(collapse_hidden_hero.Get()))
                 {
@@ -175,7 +175,7 @@ namespace kh3ap
                     auto* event_pawn = event_aqua;
                     if (!collapse_binding_verified || !is_uobject_valid_fast(pawn) ||
                         !is_uobject_valid_fast(event_pawn) || !is_uobject_valid_fast(world) ||
-                        world != kh02_actor_world(pawn) || world != kh02_actor_world(event_pawn) ||
+                        world != actor_owning_world(pawn) || world != actor_owning_world(event_pawn) ||
                         world->GetPathName() != L"/Game/Maps/APKH02CastleTown/APKH02CastleTown.APKH02CastleTown" ||
                         collapse_hidden_hero.Get() != pawn)
                     {
@@ -247,7 +247,7 @@ namespace kh3ap
         collapse_binding_proof = Json::object();
         collapse_matinee = make_uobject_weak(matinee);
         collapse_script = make_uobject_weak(script);
-        collapse_world = make_uobject_weak(kh02_actor_world(matinee));
+        collapse_world = make_uobject_weak(actor_owning_world(matinee));
         view_cleanup_pending = true;
         view_cleanup_started = false;
         view_cleanup_proof = Json::object();
