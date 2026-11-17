@@ -6,7 +6,7 @@ using namespace kh3ap;
 
 int main()
 {
-    static_assert(runtime_quality_of_life_rules.size() == 2);
+    static_assert(runtime_quality_of_life_rules.size() == 7);
 
     constexpr auto& dark_baymax = runtime_quality_of_life_rules[0];
     static_assert(dark_baymax.feature_name == L"DarkBaymaxPhase1Skip");
@@ -62,5 +62,25 @@ int main()
             false,
             0,
             false));
+    for (size_t index = 2; index < 6; ++index)
+    {
+        const auto& piece = runtime_quality_of_life_rules[index];
+        assert(piece.slot_option == "skip_collecting_kairi_heart_pieces");
+        assert(piece.flag_name != L"gameflow_BT_DLC_07_KAIRI_05");
+        assert(should_apply_runtime_quality_of_life_rule(piece, true, 0, false));
+        assert(!should_apply_runtime_quality_of_life_rule(piece, false, 0, false));
+        assert(!should_apply_runtime_quality_of_life_rule(piece, true, 0, true));
+    }
+    constexpr auto& scala = runtime_quality_of_life_rules[6];
+    static_assert(scala.flag_name == L"gameflow_BT_DLC_07_BT_01");
+    for (const int value : {0, 1, 100, 109})
+    {
+        assert(should_apply_runtime_quality_of_life_rule(scala, true, value, false));
+        assert(!should_apply_runtime_quality_of_life_rule(scala, false, value, false));
+    }
+    for (const int value : {-1, 110, 120, 130, 9999})
+    {
+        assert(!should_apply_runtime_quality_of_life_rule(scala, true, value, false));
+    }
     return 0;
 }

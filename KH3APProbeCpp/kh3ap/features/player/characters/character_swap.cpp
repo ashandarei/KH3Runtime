@@ -882,7 +882,7 @@ namespace kh3ap::character_swap
             // the combat ally at the end of cinematic mode.
             const bool native_exit = is_uobject_valid_fast(matinee) && is_uobject_valid_fast(world) &&
                                      kh02_actor_world(matinee) == world &&
-                                     is_remind_area_c_exit_cinematic(world->GetPathName(),
+                                     is_remind_maze_exit_cinematic(world->GetPathName(),
                                                                     matinee->GetPathName());
             if (native_sora && session.travel_character_id >= 0 && cinematic_uses_sora(matinee))
             {
@@ -929,7 +929,7 @@ namespace kh3ap::character_swap
             }
             session.pending = true;
             session.cinematic_return_pending = true;
-            // The Area C transition is a level Matinee. Input readiness
+            // These maze exits are level Matinees. Input readiness
             // returns after the gameflow ends cinematic mode, without the
             // movie-class pause-menu notification that clears this hold.
             if (!native_exit)
@@ -2130,16 +2130,16 @@ namespace kh3ap::character_swap
         }
     }
 
-    void apply_stat_bonus(int hp_amount, int mp_amount)
+    void refresh_victory_bonuses()
     {
         auto* pawn = current_hero();
-        if (!pawn || session.pending || (hp_amount == 0 && mp_amount == 0))
+        if (!pawn || session.pending)
         {
             return;
         }
         try
         {
-            session.stats.add_bonus(pawn, hp_amount, mp_amount);
+            CharacterSwapStats::synchronize_bonuses(pawn);
         }
         catch (...)
         {

@@ -33,7 +33,7 @@ namespace kh3ap::character_swap
         auto apply_base(RC::Unreal::UObject* pawn) const -> void;
         void apply_shared_progression(RC::Unreal::UObject* pawn);
         auto synchronize_totals(RC::Unreal::UObject* pawn) const -> void;
-        auto add_bonus(RC::Unreal::UObject* pawn, int hp_amount, int mp_amount) -> void;
+        static void synchronize_bonuses(RC::Unreal::UObject* pawn);
         auto level() const -> int32_t
         {
             return sora_level;

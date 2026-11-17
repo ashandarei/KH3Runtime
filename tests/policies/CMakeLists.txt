@@ -35,6 +35,7 @@ set(KH3AP_PROBE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../KH3APProbeCpp)
 include("${KH3AP_PROBE_ROOT}/../cmake/kh3-json-dependency.cmake")
 
 set(_kh3_policy_tests
+    character_bonus_policy
     arm_pose_blend
     character_cinematic_policy
     cutscene_skip_transaction

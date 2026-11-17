@@ -2817,7 +2817,7 @@ namespace kh3ap::reconciliation
     {
         const auto id =
             request.request_id + L":persistent-reward:" + std::to_wstring(request.index);
-        const auto message = kh02rewards::reward_notice(request.grant_method, request.item_name);
+        const auto message = kh02rewards::reward_notice(request.item_name);
         enqueue(Job{.kind = "persistent_reward_notice",
                     .data = encode(
                         Json{{"id", wstring_to_utf8(id)}, {"message", wstring_to_utf8(message)}}),

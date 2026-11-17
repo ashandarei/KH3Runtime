@@ -51,7 +51,7 @@ namespace kh3ap
                     static_assert(sizeof(name)==sizeof(flag_names[index]));
                     std::memcpy(&flag_names[index],&name,sizeof(name));
                     watched.insert(flag_names[index]);
-                    if(rule.flag_kind==RuntimeQualityOfLifeFlagKind::IntegerTransition)integer=true;
+                    if(rule.flag_kind!=RuntimeQualityOfLifeFlagKind::BooleanEnable)integer=true;
                     else boolean=true;
                 }
                 flag_events.configure(std::move(watched));
@@ -102,14 +102,13 @@ namespace kh3ap
 
             settings_loaded = true;
             settings_failure_logged = false;
-            Output::send<LogLevel::Warning>(
-                    STR("[KH3APProbeCpp] NativeQualityOfLife seed options "
-                        "loaded {}={} {}={} source={}\n"),
-                    runtime_quality_of_life_rules[0].feature_name,
-                    rule_enabled[0] ? STR("true") : STR("false"),
-                    runtime_quality_of_life_rules[1].feature_name,
-                    rule_enabled[1] ? STR("true") : STR("false"),
-                    STR("installed_seed_pak"));
+            for (size_t index = 0; index < runtime_quality_of_life_rules.size(); ++index)
+            {
+                Output::send<LogLevel::Warning>(
+                        STR("[KH3APProbeCpp] NativeQualityOfLife seed option {}={} source=installed_seed_pak\n"),
+                        runtime_quality_of_life_rules[index].feature_name,
+                        rule_enabled[index] ? STR("true") : STR("false"));
+            }
             return true;
         }
 
@@ -286,8 +285,8 @@ namespace kh3ap
                 // Setter callbacks enqueue another observation for a later
                 // update; never process rules recursively inside a setter.
                 rule_pending[index]=false;
-                const bool complete=runtime_quality_of_life_rules[index].flag_kind ==
-                    RuntimeQualityOfLifeFlagKind::IntegerTransition
+                const bool complete=runtime_quality_of_life_rules[index].flag_kind !=
+                    RuntimeQualityOfLifeFlagKind::BooleanEnable
                     ? process_integer_rule(index) : process_boolean_rule(index);
                 if(!complete) {
                     rule_pending[index]=true;
