@@ -257,6 +257,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_swap_stats.cpp
     kh3ap/features/player/combat/character_attack_completion.cpp
     kh3ap/features/player/combat/character_union_cross.cpp
+    kh3ap/features/player/animation_pose.cpp
+    kh3ap/features/player/characters/character_cinematic_proportions.cpp
     kh3ap/features/player/characters/character_cinematic_binding.cpp
     kh3ap/features/player/characters/character_profile.cpp
     kh3ap/features/player/characters/character_pawn_pool.cpp

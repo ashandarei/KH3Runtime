@@ -2,6 +2,7 @@
 #include "kh3ap/hooks/native_detour_lifetime.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kairi_jump_arms.h"
+#include "kh3ap/features/player/animation_pose.h"
 #include "arm_pose_blend.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
@@ -37,14 +38,11 @@ namespace kh3ap::kairi_jump_arms
         constexpr std::array names{L"JumpNormalDownLoop", L"JumpHighStart", L"JumpHighRiseLoop",
                                    L"JumpDoubleFlightStart", L"JumpDoubleFlightRiseLoop",
                                    L"Land", L"LightLand", L"RollLand"};
-        // Audited shipping ABI. These are non-owning views; engine stack
-        // allocators and their destructors are never invoked by this module.
-        template<class T> struct ArrayView { T* data; int32_t count; int32_t capacity; };
-        using Transform = arm_pose_blend::Transform;
-        struct Pose { ArrayView<Transform> bones; const void* container; };
-        struct Curve { ArrayView<uint64_t> elements; const void* uids; bool initialized; };
-        struct Extraction { bool root_motion; float time; ArrayView<float> pose_curves; };
-        static_assert(sizeof(Transform) == 48 && sizeof(Pose) == 24 && sizeof(Curve) == 32 && sizeof(Extraction) == 24);
+        using animation_pose::ArrayView;
+        using animation_pose::Transform;
+        using animation_pose::Pose;
+        using animation_pose::Curve;
+        using animation_pose::Extraction;
 
         struct Motion
         {
@@ -82,10 +80,9 @@ namespace kh3ap::kairi_jump_arms
         std::atomic<void*> current_slot{};
         thread_local Binding* evaluating{};
         thread_local float evaluating_idle_time{-1.0f};
-        uint64_t original_slot{}, original_pose{};
-        std::unique_ptr<PLH::x64Detour> slot_hook, pose_hook;
+        uint64_t original_slot{};
+        std::unique_ptr<PLH::x64Detour> slot_hook;
         using EvaluateSlot = void (*)(void*, void*);
-        using EvaluatePose = void (*)(UObject*, Pose*, Curve*, const Extraction*, bool);
 
         UObject* object(UObject* owner, const wchar_t* field)
         {
@@ -129,8 +126,7 @@ namespace kh3ap::kairi_jump_arms
 
         void evaluate_pose(UObject* animation, Pose* pose, Curve* curve, const Extraction* context, bool force_raw)
         {
-            auto original = reinterpret_cast<EvaluatePose>(original_pose);
-            original(animation, pose, curve, context, force_raw);
+            auto original = &animation_pose::extract;
             auto* binding = evaluating;
             if (!binding) { return; }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -313,24 +309,16 @@ namespace kh3ap::kairi_jump_arms
 
         bool install()
         {
-            if (slot_hook && slot_hook->isHooked() && original_slot &&
-                pose_hook && pose_hook->isHooked() && original_pose) { return true; }
-            // Clear a partial installation before retrying. Failed unhooks keep
-            // their trampoline; never replace a detour still entered by native code.
-            const bool slot_released = release_native_detour(slot_hook);
-            const bool pose_released = release_native_detour(pose_hook);
-            if (!slot_released || !pose_released) { return false; }
-            if (!character_native::verify_sites({character_native::Site::animation_slot_evaluate,
-                                                 character_native::Site::animation_sequence_pose})) { return false; }
+            if (!animation_pose::install(animation_pose::Consumer::KairiArms, &evaluate_pose)) { return false; }
+            if (slot_hook && slot_hook->isHooked() && original_slot) { return true; }
+            if (!release_native_detour(slot_hook) ||
+                !character_native::verify_sites({character_native::Site::animation_slot_evaluate})) { return false; }
             const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-            pose_hook = std::make_unique<PLH::x64Detour>(base + character_native::rva(character_native::Site::animation_sequence_pose),
-                                                       reinterpret_cast<uintptr_t>(&evaluate_pose), &original_pose);
             slot_hook = std::make_unique<PLH::x64Detour>(base + character_native::rva(character_native::Site::animation_slot_evaluate),
                                                        reinterpret_cast<uintptr_t>(&evaluate_slot), &original_slot);
-            if (!pose_hook->hook() || !original_pose || !slot_hook->hook() || !original_slot)
+            if (!slot_hook->hook() || !original_slot)
             {
                 release_native_detour(slot_hook);
-                release_native_detour(pose_hook);
                 return false;
             }
             return true;

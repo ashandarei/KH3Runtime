@@ -1808,6 +1808,7 @@ namespace kh3ap::character_swap
 
     void notify_player_started()
     {
+        character_cinematic_binding::prune(player());
         betrayal_trap::notify_player_started();
         install_ascension_hooks();
         if (restored_selection_preload_pending)
@@ -1949,6 +1950,7 @@ namespace kh3ap::character_swap
 
     void notify_map_jump(UObject* source, std::wstring_view caller)
     {
+        character_cinematic_binding::release_all();
         betrayal_trap::cancel();
         if (trap.locked())
         {
@@ -1991,6 +1993,7 @@ namespace kh3ap::character_swap
         // as Olympus's statue break (he_03_camera_ms027). Those scenes can
         // require a temporary Sora handoff just like movie assets. Type 0
         // releases that hold regardless of the source's asset directory.
+        character_cinematic_binding::release_all();
         session.native_cinematic_world = {};
         if (ascension_locked())
         {
