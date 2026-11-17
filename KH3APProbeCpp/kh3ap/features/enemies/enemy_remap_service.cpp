@@ -194,6 +194,7 @@ namespace kh3ap
 
         if (!s_runtime_enemy_remap.boss.boss_class_replacements.empty())
         {
+            install_runtime_boss_defeat_observer();
             install_boss_hp_limits();
             install_terranort_controller_guard();
             install_boss_death_partner_guard();
@@ -316,6 +317,7 @@ namespace kh3ap
 
     auto RuntimeEnemyRemapService::process_pending_class_prewarm() -> void
     {
+        process_pending_runtime_boss_defeats();
         process_titan_arena_replacement(s_runtime_enemy_remap.boss.boss_enabled.load());
         process_pending_marshmallow_cutscene();
         process_pending_class_rebinds();

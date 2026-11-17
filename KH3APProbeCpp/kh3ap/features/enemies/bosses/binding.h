@@ -17,7 +17,7 @@ namespace kh3ap::enemy_remap_detail
     [[nodiscard]] auto is_runtime_boss_replacement_pawn(UObject* pawn)
             -> bool;
 
-    [[nodiscard]] auto resolve_and_bind_runtime_boss_pawn(UObject* pawn)
+    [[nodiscard]] auto resolve_and_bind_runtime_boss_pawn(UObject* pawn, bool allow_unbound_match = true)
             -> RuntimeBossEntityBinding;
 
     [[nodiscard]] auto resolve_tracked_runtime_boss_pawn(UObject* pawn)

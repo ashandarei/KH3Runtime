@@ -1,5 +1,6 @@
 #include "kh3ap/features/story/remind/remind_portal_route.h"
 #include "kh3ap/features/story/remind/yozora_return_route.h"
+#include "kh3ap/features/story/remind/remind_return_route.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
@@ -64,5 +65,14 @@ namespace kh3ap
         try_redirect_story_map_jump(stack, map_jump_function, caller, yozora_return_caller,
                 yozora_clear_map, yozora_clear_tag, yozora_return_map, yozora_return_tag,
                 0, L"YozoraVictoryReturn");
+    }
+
+    auto try_redirect_remind_return(
+            RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
+            std::wstring_view caller) -> void
+    {
+        try_redirect_story_map_jump(stack, map_jump_function, caller, remind_return_caller,
+                remind_clear_map, remind_clear_tag, remind_return_map, remind_return_tag,
+                0, L"ReMindVictoryReturn");
     }
 }

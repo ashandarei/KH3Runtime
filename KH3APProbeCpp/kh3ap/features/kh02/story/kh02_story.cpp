@@ -1585,6 +1585,12 @@ namespace kh3ap
         return kh02_story_player(nullptr);
     }
 
+    auto Kh02Story::defers_cutscene_skip(UObject* script, UObject* world) -> bool
+    {
+        auto* self = Impl::compat_instance;
+        return self && world == kh02_current_story_world() && self->movie_bridge.defers_cutscene_skip(script, world);
+    }
+
     void Kh02Story::refresh_sora_experience(UObject* pawn)
     {
         if (auto* self = Impl::compat_instance)

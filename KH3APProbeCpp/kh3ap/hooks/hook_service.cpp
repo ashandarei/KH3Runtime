@@ -31,6 +31,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/story/remind/remind_portal_route.h"
 #include "kh3ap/features/story/remind/yozora_return_route.h"
+#include "kh3ap/features/story/remind/remind_return_route.h"
 #include "kh3ap/features/player/state/sora_level_monitor_state.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/features/story/progression/story_progress_service.h"
@@ -460,6 +461,8 @@ namespace kh3ap
                 try_redirect_remind_scala_portal(callback_context.TheStack,
                                                  prepared->target_function, prepared->frame_name);
                 try_redirect_yozora_return(callback_context.TheStack,
+                                          prepared->target_function, prepared->frame_name);
+                try_redirect_remind_return(callback_context.TheStack,
                                           prepared->target_function, prepared->frame_name);
                 config.runtime_state.grant_state().item_grant_poll_state().disarm();
                 config.runtime_state.grant_state().pawn_state().reset();

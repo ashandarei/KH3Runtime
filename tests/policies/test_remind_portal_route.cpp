@@ -1,5 +1,6 @@
 #include "kh3ap/features/story/remind/remind_portal_route.h"
 #include "kh3ap/features/story/remind/yozora_return_route.h"
+#include "kh3ap/features/story/remind/remind_return_route.h"
 #include <cassert>
 #include <limits>
 #include <vector>
@@ -113,4 +114,37 @@ int main()
     assert(bytes == victory);
     assert(redirect_yozora_return_bytecode(yozora_return_caller, nullptr, victory.size(), 9,
             target, from_map, from_tag, to_map, to_tag) == RemindPortalRouteResult::rejected);
+
+    // Both ss_51 ending branches use EndSave/#ReMindClear/ByteConst(0).
+    // The same map is used by unrelated clears, which must remain untouched.
+    const auto remind_return = [&](std::vector<uint8_t>& script,
+                                    std::wstring_view caller = remind_return_caller) {
+        return redirect_remind_return_bytecode(caller, script.data(), script.size(), 9,
+            target, from_map, from_tag, to_map, to_tag);
+    };
+    bytes = victory;
+    assert(remind_return(bytes) == RemindPortalRouteResult::applied);
+    assert(bytes == expected);
+    assert(remind_return(bytes) == RemindPortalRouteResult::already_applied);
+    for (const auto caller : {yozora_return_caller, remind_portal_caller, std::wstring_view{}})
+    {
+        bytes = victory;
+        assert(remind_return(bytes, caller) == RemindPortalRouteResult::ignored);
+        assert(bytes == victory);
+    }
+    for (size_t i = 0; i < victory.size() - 1; ++i)
+    {
+        bytes = victory;
+        bytes[i] ^= 0x40;
+        const auto before = bytes;
+        assert(remind_return(bytes) == RemindPortalRouteResult::rejected);
+        assert(bytes == before);
+    }
+    for (size_t size = 0; size < victory.size() - 1; ++size)
+    {
+        bytes.assign(victory.begin(), victory.begin() + size);
+        const auto before = bytes;
+        assert(remind_return(bytes) == RemindPortalRouteResult::rejected);
+        assert(bytes == before);
+    }
 }

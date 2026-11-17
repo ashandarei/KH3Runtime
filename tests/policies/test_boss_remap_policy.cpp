@@ -241,15 +241,14 @@ int main()
     assert(!is_remind_armored_xehanort_finish(scala_entity, remind_armored_xehanort_class, L"kg_06_03_en_Group_01"));
     assert(!is_remind_armored_xehanort_finish(remind_entity, final_xehanort_class, L"kg_06_03_en_Group_01"));
     assert(!is_remind_armored_xehanort_finish(remind_entity, remind_armored_xehanort_class, L"kg_06_03_en_Group_02"));
-    for (const auto titan_class : {
-                 L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C",
-                 L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C"})
-    {
-        assert(is_titan_completion_action(titan_class, 99));
-        assert(!is_titan_completion_action(titan_class, 1));
-        assert(!is_titan_completion_action(titan_class, 100));
-    }
-    assert(!is_titan_completion_action(final_xehanort_class, 99));
-    assert(!is_titan_completion_action(L"", 99));
+    static_assert(native_boss_defeat_confirmed(1, 1));
+    static_assert(native_boss_defeat_confirmed(2, 2));
+    static_assert(native_boss_defeat_confirmed(2, 3));
+    static_assert(!native_boss_defeat_confirmed(0, 0));
+    static_assert(!native_boss_defeat_confirmed(0, 1));
+    static_assert(!native_boss_defeat_confirmed(-1, 1));
+    static_assert(!native_boss_defeat_confirmed(1, -1));
+    static_assert(!native_boss_defeat_confirmed(1, 0));
+    static_assert(!native_boss_defeat_confirmed(2, 1));
     std::cout << "Boss remap policies passed\n";
 }

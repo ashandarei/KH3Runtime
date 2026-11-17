@@ -4,6 +4,8 @@
 
 namespace kh3ap::enemy_remap_detail
 {
+    auto install_runtime_boss_defeat_observer() -> void;
+    auto process_pending_runtime_boss_defeats() -> void;
     auto register_level_entity_wipe_out_groups(
             UObject* level_entity,
             std::wstring_view level_entity_path) -> void;

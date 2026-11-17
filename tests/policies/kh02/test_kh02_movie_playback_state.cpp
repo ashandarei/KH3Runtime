@@ -7,6 +7,7 @@ int main()
     using Phase = State::Phase;
     State state;
     assert(!state.needs_tick());
+    assert(!state.preparing());
     bool rejected = false;
     try
     {
@@ -21,14 +22,17 @@ int main()
     {
         state.phase = phase;
         assert(state.needs_tick());
+        assert(state.preparing());
         state.reset_request();
         state.resume();
         assert(state.resume_requested);
     }
     state.phase = Phase::stream_playing;
+    assert(!state.preparing());
     state.resume();
     state.complete();
     assert(state.completed());
+    assert(!state.preparing());
     assert(!state.needs_tick());
     assert(state.name() == "completed");
     // Resource stop after real EOF must retain late WaitForVideoFinish behavior.
@@ -40,6 +44,8 @@ int main()
     state.phase = Phase::ready;
     state.stop();
     assert(state.phase == Phase::stopped && !state.needs_tick());
+    assert(!state.preparing());
     state.phase = Phase::error;
     assert(state.name() == "error" && !state.needs_tick());
+    assert(!state.preparing());
 }

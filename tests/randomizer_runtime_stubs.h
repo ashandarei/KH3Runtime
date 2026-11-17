@@ -52,6 +52,7 @@ namespace RC
             // Same serial-reuse model as the existing color lifetime tests.
             int serial{1};
             bool alive{true};
+            bool sora_ability_candidate{};
             std::wstring name{}, path{}, level{L"he_01"}, class_name{};
             std::unordered_map<std::wstring, std::wstring> assets{};
             std::wstring track{}, pending_track{};
@@ -110,6 +111,13 @@ namespace kh3ap
     using RC::Unreal::FWeakObjectPtr;
     inline auto is_uobject_valid_fast(UObject* object) -> bool { return object && object->alive; }
     inline auto is_uobject_valid_fast(RC::Unreal::UFunction*) -> bool { return true; }
+    struct RuntimeObjectResolver
+    {
+        static auto is_sora_ability_pawn_candidate(UObject* object) -> bool
+        {
+            return is_uobject_valid_fast(object) && object->sora_ability_candidate;
+        }
+    };
     inline auto make_uobject_weak(UObject* object) -> FWeakObjectPtr
     {
         FWeakObjectPtr result{};

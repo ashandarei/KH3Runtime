@@ -24,7 +24,11 @@ inline int native_reads{};
 bool try_query_native_workshop(NativeWorkshopSnapshot& result,void*){++native_reads;result=flags;return native_ready;}
 bool bit(const std::array<uint32_t,8>& words,int n){return (words[n/32]&(1u<<(n%32)))!=0;}
 struct Workshop {
-    struct Config {std::function<bool()> gameplay_ready=[] {return true;};std::function<bool(std::wstring_view)> owns_item=[](auto){return true;};} config;
+    struct Config {
+        std::function<bool()> gameplay_ready=[] {return true;};
+        std::function<bool(std::wstring_view)> owns_item=[](auto){return true;};
+        std::function<void()> levels_changed;
+    } config;
     struct Photos {bool ready=true;int calls{};bool update(bool){++calls;return ready;}}photo_requests;
     struct Check {std::wstring type,key,keyblade_token;int flag{};};
     std::vector<Check> checks{{L"synthesis",L"craft",L"",0},{L"photo_mission",L"photo",L"",1},{L"keyblade_upgrade",L"forge",L"key",2}};
@@ -89,11 +93,15 @@ int main(){using namespace kh3ap;
     Workshop w;w.tick();assert(native_reads==1&&w.completed.empty());
     for(int i=0;i<10000;++i){TestClock::time+=1s;w.tick();}
     assert(native_reads==1&&w.scopes==1&&w.photo_requests.calls==1);
+    int level_notifications = 0;
+    w.config.levels_changed = [&] { ++level_notifications; };
     flags.synthesis[0]=1;flags.photos[0]=2;flags.enhancements[0]=4;++w.mutations.value;
     w.write_ok=false;w.tick();assert(w.completed.size()==3&&w.dirty);
+    assert(level_notifications == 1);
     w.tick();assert(w.writes==1);TestClock::time+=250ms;w.write_ok=true;w.tick();assert(w.writes==2&&!w.dirty);
     const auto reads=native_reads;for(int i=0;i<1000;++i){TestClock::time+=1s;w.tick();}assert(native_reads==reads);
     ++pipe::incoming;w.tick();assert(native_reads==reads+1); // ownership/seed updates wake max-level checks
+    assert(level_notifications == 1); // idle, persistence retries and receipts do not invalidate levels
     const auto grant_reads=native_reads;
     // Receipt ingestion was already reconciled. A later successful native
     // setter/direct write must still wake us without a new pipe generation.
@@ -103,8 +111,10 @@ int main(){using namespace kh3ap;
     w.tick();assert(native_reads==grant_reads+2);
     notify_workshop_grant_applied(L"ultima_weapon_shard",L"KH3AP_ULTIMA_SHARD");
     w.tick();assert(native_reads==grant_reads+3);
+    assert(level_notifications == 4);
     notify_workshop_grant_applied(L"bp_tres_get_item",L"ITEM_POTION");
     w.tick();assert(native_reads==grant_reads+3);
+    assert(level_notifications == 4);
     w.photo_requests.ready=false;w.work.request();w.tick();auto calls=w.photo_requests.calls;
     w.tick();assert(w.photo_requests.calls==calls);TestClock::time+=250ms;w.photo_requests.ready=true;w.tick();
     Party p;p.tick_maintenance(TestClock::now());assert(p.nav_reads==1);

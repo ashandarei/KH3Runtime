@@ -62,6 +62,11 @@ namespace kh3ap
                    phase != Phase::error;
         }
 
+        auto preparing() const -> bool
+        {
+            return phase == Phase::decoding || phase == Phase::uploading || phase == Phase::ready;
+        }
+
         void reset_request()
         {
             resume_requested = false;
