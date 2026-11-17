@@ -350,6 +350,7 @@ namespace kh3ap::character_swap_assets
             {
                 assets.push_back({player_animation_support::kairi_idle_animation_set_path, false});
                 assets.push_back({player_animation_support::aqua_animation_set_path, false});
+                assets.push_back({player_animation_support::riku_animation_set_path, false});
                 assets.push_back({player_animation_support::kairi_attack_data_path, false});
             }
             selection_pending = true;

@@ -1257,6 +1257,96 @@ int main()
     complete_receipts(incoming_index, reconciliation::view()->epoch);
     reconciliation::stop();
     assert(!reconciliation::view()->delivery);
+    const auto loadouts_root = root / "loadouts";
+    std::filesystem::create_directory(loadouts_root);
+    std::ofstream(loadouts_root / "slot_data.json") << encode(chest_fixture::seed({converted, placed}));
+    Json loadout_input{{"schema", "kh3ap.receipt_catalog.v4"}, {"process_id", GetCurrentProcessId()},
+        {"seed_name", "test"}, {"slot", 1}, {"items", Json::array()}, {"server_checked_locations", Json::array()}};
+    reconciliation::start(loadouts_root);
+    reconciliation::observe("runtime_receipt_catalog.json", encode(loadout_input));
+    reconciliation::file_open(L"synthetic/KHIII_slot0.bin", GENERIC_READ, 900, 0);
+    assert(reconciliation::character_loadouts_for_load(reconciliation::epoch()));
+    // Equipment is captured at payload construction, committed only after a
+    // successful save, and restored from the selected slot across processes.
+    {
+        auto equipment = std::make_shared<character_loadouts::Snapshot>();
+        for (size_t i = 0; i < equipment->size(); ++i)
+        {
+            (*equipment)[i][0] = character_loadouts::identities[i][0];
+            (*equipment)[i][1] = character_loadouts::identities[i][1];
+            (*equipment)[i][4] = 1;
+        }
+        (*equipment)[0][0xd8] = 0x41; // Aqua accessory slot.
+        (*equipment)[11][0x118] = 0x02; // Kairi consumed-item slot identity.
+        const auto first = character_loadouts::from_json(character_loadouts::to_json(equipment));
+        std::vector<std::byte> live(character_loadouts::supplemental_offset +
+            character_loadouts::record_bytes * character_loadouts::identities.size(), std::byte{0x5a});
+        for (size_t i = 0; i < equipment->size(); ++i)
+        {
+            auto* record = live.data() + character_loadouts::supplemental_offset +
+                i * character_loadouts::record_bytes;
+            record[0] = std::byte{character_loadouts::identities[i][0]};
+            record[1] = std::byte{character_loadouts::identities[i][1]};
+        }
+        character_loadouts::restore(live.data(), *first);
+        assert(*character_loadouts::capture(live.data()) == *first);
+        for (size_t i = 0; i < equipment->size(); ++i)
+        {
+            assert(live[character_loadouts::supplemental_offset + i * character_loadouts::record_bytes +
+                character_loadouts::equipment_bytes] == std::byte{0x5a});
+        }
+        // A mismatched final destination must not partially overwrite earlier records.
+        live[character_loadouts::supplemental_offset + 13 * character_loadouts::record_bytes] = std::byte{0};
+        const auto mismatched = live;
+        bool destination_rejected = false;
+        try { character_loadouts::restore(live.data(), *equipment); }
+        catch (const std::exception&) { destination_rejected = true; }
+        assert(destination_rejected && live == mismatched);
+        reconciliation::capture_character_loadouts(first);
+        reconciliation::file_open(L"synthetic/KHIII_slot91.bin", GENERIC_WRITE, 910, 0);
+        reconciliation::file_closed(910, true);
+        (*equipment)[0][0xd8] = 0; // Unequipped is an authoritative empty slot.
+        reconciliation::capture_character_loadouts(equipment);
+        reconciliation::file_open(L"synthetic/KHIII_slot92.bin", GENERIC_WRITE, 920, 0);
+        reconciliation::file_closed(920, true);
+        reconciliation::file_open(L"synthetic/KHIII_slot91.bin", GENERIC_READ, 911, 0);
+        auto restored = reconciliation::character_loadouts_for_load(reconciliation::epoch());
+        assert(restored && restored->saved_character_loadouts && *restored->saved_character_loadouts == *first);
+        // A failed overwrite must retain slot 91, and cannot leak its snapshot
+        // into a later save that has no native construction boundary.
+        reconciliation::capture_character_loadouts(equipment);
+        reconciliation::file_open(L"synthetic/KHIII_slot91.bin", GENERIC_WRITE, 912, 0);
+        reconciliation::file_closed(912, false);
+        reconciliation::file_open(L"synthetic/KHIII_slot93.bin", GENERIC_WRITE, 930, 0);
+        reconciliation::file_closed(930, true);
+        reconciliation::auto_save_begin(0);
+        reconciliation::capture_character_loadouts(first);
+        reconciliation::file_open(L"synthetic/KHIII_slot0.bin", GENERIC_WRITE, 940, 0);
+        reconciliation::file_closed(940, true);
+        reconciliation::stop();
+        reconciliation::start(loadouts_root);
+        reconciliation::file_open(L"synthetic/KHIII_slot91.bin", GENERIC_READ, 913, 0);
+        restored = reconciliation::character_loadouts_for_load(reconciliation::epoch());
+        assert(restored && restored->saved_character_loadouts && *restored->saved_character_loadouts == *first);
+        reconciliation::file_open(L"synthetic/KHIII_slot92.bin", GENERIC_READ, 921, 0);
+        restored = reconciliation::character_loadouts_for_load(reconciliation::epoch());
+        assert(restored && restored->saved_character_loadouts && (*restored->saved_character_loadouts)[0][0xd8] == 0);
+        reconciliation::file_open(L"synthetic/KHIII_slot93.bin", GENERIC_READ, 931, 0);
+        restored = reconciliation::character_loadouts_for_load(reconciliation::epoch());
+        assert(restored && !restored->saved_character_loadouts);
+        // Invalid/partial records cannot cross the restore boundary.
+        auto invalid = character_loadouts::to_json(first);
+        invalid["records"][0] = "00";
+        bool rejected = false;
+        try { (void)character_loadouts::from_json(invalid); }
+        catch (const std::exception&) { rejected = true; }
+        assert(rejected);
+        reconciliation::observe("runtime_receipt_catalog.json", encode(loadout_input));
+        reconciliation::file_open(L"synthetic/KHIII_slot0.bin", GENERIC_READ, 932, 0);
+        const auto autosaved = reconciliation::character_loadouts_for_load(reconciliation::epoch());
+        assert(autosaved && autosaved->saved_character_loadouts && *autosaved->saved_character_loadouts == *first);
+    }
+    reconciliation::stop();
     std::filesystem::remove_all(root);
     std::cout << "Native delivery worker restore, repair bundles, delayed receipts, notifications and stale ACK tests passed\n";
 }

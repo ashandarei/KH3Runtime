@@ -252,6 +252,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/world/space/space_rewards.cpp
     kh3ap/features/world/space/space_battle_markers.cpp
     kh3ap/features/player/characters/character_swap.cpp
+    kh3ap/features/player/characters/character_loadouts.cpp
     kh3ap/features/player/characters/character_swap_stats.cpp
     kh3ap/features/player/combat/character_attack_completion.cpp
     kh3ap/features/player/combat/character_union_cross.cpp
@@ -269,6 +270,7 @@ add_library(${TARGET} SHARED
         kh3ap/features/player/movement/character_floating.cpp
     kh3ap/features/player/movement/character_traversal.cpp
     kh3ap/features/player/movement/kairi_glide.cpp
+    kh3ap/features/player/movement/kairi_jump_arms.cpp
     kh3ap/features/player/movement/character_rails.cpp
     kh3ap/features/player/combat/character_magic.cpp
     kh3ap/features/player/combat/character_style.cpp

@@ -34,6 +34,7 @@
 #include <condition_variable>
 #include <deque>
 #include <fstream>
+#include <future>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -82,6 +83,8 @@ namespace kh3ap::reconciliation
             bool success{};
             std::optional<kh02_progress::Update> kh02_update;
             std::optional<kh02_progress::Binding> kh02_reset;
+            character_loadouts::SnapshotPtr loadouts;
+            std::shared_ptr<std::promise<std::shared_ptr<const View>>> loadout_query;
 
             std::array<uint8_t, vbonus_observation_capacity> bonuses{};
         };
@@ -92,6 +95,7 @@ namespace kh3ap::reconciliation
             std::string at;
             bool correlated{};
             kh02_progress::SnapshotPtr kh02_progress;
+            character_loadouts::SnapshotPtr loadouts;
         };
         struct Catalog
         {
@@ -134,6 +138,8 @@ namespace kh3ap::reconciliation
             int64_t generation{}, processed_epoch{1};
             std::map<int64_t, Receipts> slots;
             kh02_progress::Bank kh02;
+            std::map<int64_t, character_loadouts::SnapshotPtr> loadout_slots;
+            character_loadouts::SnapshotPtr prepared_loadouts;
             std::map<int64_t, std::string> kh02_invalid_slots;
             std::string kh02_error;
             std::map<int64_t, Catalog> catalog;
@@ -342,6 +348,8 @@ namespace kh3ap::reconciliation
                     records.emplace_back(
                         Json{{"save_slot", slot},
                              {"saved_receipts", receipt_json(r)},
+                             {"character_loadouts", character_loadouts::to_json(
+                                 loadout_slots.contains(slot) ? loadout_slots.at(slot) : nullptr)},
                              {"kh02_progress",
                               kh02_progress::to_json(kh02.slots.contains(slot) ? kh02.slots.at(slot)
                                                                                : nullptr)}});
@@ -802,6 +810,10 @@ namespace kh3ap::reconciliation
                                             processed_epoch == current_epoch.load();
                 next->kh02_progress_revision = kh02.revision;
                 next->loaded_save_slot = loaded_slot;
+                if (loaded && loadout_slots.contains(loaded_slot))
+                {
+                    next->saved_character_loadouts = loadout_slots.at(loaded_slot);
+                }
                 next->kh02_progress = kh02.active;
                 next->kh02_progress_error = kh02_error;
                 next->kh02_ap_chests = kh02_ap_chests;
@@ -1499,6 +1511,7 @@ namespace kh3ap::reconciliation
                         throw std::runtime_error("invalid_journal_slot");
                     }
                     slots.emplace(slot, receipts(field(row, "saved_receipts")));
+                    loadout_slots.emplace(slot, character_loadouts::from_json(field(row, "character_loadouts")));
                     const auto& progress = field(row, "kh02_progress");
                     try
                     {
@@ -1830,6 +1843,7 @@ namespace kh3ap::reconciliation
 
             auto handle_save_load(const Job& job) -> EventDisposition
             {
+                prepared_loadouts.reset();
                 runtime_status.clear();
                 processed_epoch = job.epoch;
                 loaded_slot = job.slot;
@@ -1881,6 +1895,7 @@ namespace kh3ap::reconciliation
                 // later manual saves and repeated closes must not reuse an old
                 // request. An already-open save owns its independent snapshot.
                 pending_autosave.reset();
+                entry.loadouts = std::exchange(prepared_loadouts, {});
                 if (job.success)
                 {
                     saves.emplace(job.event, std::move(entry));
@@ -1904,8 +1919,10 @@ namespace kh3ap::reconciliation
                 }
                 const auto previous_slots = slots;
                 const auto previous_kh02_slots = kh02.slots;
+                const auto previous_loadout_slots = loadout_slots;
                 slots[saved.slot] = saved.snapshot;
                 kh02.slots[saved.slot] = saved.kh02_progress;
+                loadout_slots[saved.slot] = saved.loadouts;
                 try
                 {
                     commit();
@@ -1914,6 +1931,7 @@ namespace kh3ap::reconciliation
                 {
                     slots = previous_slots;
                     kh02.slots = previous_kh02_slots;
+                    loadout_slots = previous_loadout_slots;
                     throw;
                 }
                 if (saved.slot == 0)
@@ -1933,6 +1951,7 @@ namespace kh3ap::reconciliation
 
             auto handle_new_game(const Job& job) -> EventDisposition
             {
+                prepared_loadouts.reset();
                 runtime_status.clear();
                 pending_autosave.reset();
                 saves.clear();
@@ -2403,6 +2422,12 @@ namespace kh3ap::reconciliation
                 {
                     return handle_autosave_begin(job, mutated);
                 }
+                else if (job.kind == "character_loadouts")
+                {
+                    prepared_loadouts = job.epoch == processed_epoch && loaded && !dead
+                        ? job.loadouts : nullptr;
+                    return EventDisposition::Done;
+                }
                 else if (job.kind == "save_open")
                 {
                     return handle_save_open(job, mutated);
@@ -2421,6 +2446,13 @@ namespace kh3ap::reconciliation
 
             auto apply(const Job& job) -> void
             {
+                if (job.loadout_query && (initialized || !error.empty()))
+                {
+                    const auto published_view = snapshot.load();
+                    job.loadout_query->set_value(published_view->ready && published_view->epoch == job.epoch
+                        ? published_view : nullptr);
+                    return;
+                }
                 if (!error.empty())
                 {
                     return;
@@ -2664,6 +2696,21 @@ namespace kh3ap::reconciliation
     auto auto_save_begin(uint64_t filetime) -> void
     {
         enqueue(Job{.kind = "auto_begin", .time = filetime});
+    }
+    auto capture_character_loadouts(character_loadouts::SnapshotPtr equipment) -> void
+    {
+        enqueue(Job{.kind = "character_loadouts", .epoch = current_epoch.load(), .loadouts = std::move(equipment)});
+    }
+    auto character_loadouts_for_load(int64_t expected_epoch) -> std::shared_ptr<const View>
+    {
+        auto promise = std::make_shared<std::promise<std::shared_ptr<const View>>>();
+        auto future = promise->get_future();
+        enqueue(Job{.kind = "character_loadout_query", .epoch = expected_epoch, .loadout_query = promise});
+        if (future.wait_for(std::chrono::seconds{5}) != std::future_status::ready)
+        {
+            return {};
+        }
+        return future.get();
     }
     auto kh02_progress_update(kh02_progress::Snapshot progress, uint64_t revision,
                               std::wstring_view seed, int64_t player_slot) -> void

@@ -4,6 +4,7 @@
 #include "kh3ap/features/world/portals/gate_opener_policy.h"
 #include "kh3ap/features/kh02/progress/kh02_progress_state.h"
 #include "kh3ap/features/grants/delivery/item_delivery_catalog.h"
+#include "kh3ap/features/player/characters/character_loadout_state.h"
 #include <cstdint>
 #include <array>
 #include <filesystem>
@@ -39,6 +40,7 @@ namespace kh3ap::reconciliation
         kh02_progress::SnapshotPtr kh02_progress;
         std::string kh02_progress_error;
         std::set<std::wstring> kh02_ap_chests;
+        character_loadouts::SnapshotPtr saved_character_loadouts;
     };
     // Worker owns JSON decisions and durable randomizer metadata. Producers
     // pass values only; there is no timer, save-file inspection, or UObject.
@@ -49,6 +51,9 @@ namespace kh3ap::reconciliation
     auto open_gate(int portal, const View& expected) -> void;
     auto observe(std::string_view channel, std::string_view json) -> void;
     auto auto_save_begin(uint64_t filetime) -> void;
+    auto capture_character_loadouts(character_loadouts::SnapshotPtr snapshot) -> void;
+    // One bounded FIFO barrier at native load, never an idle/frame poll.
+    auto character_loadouts_for_load(int64_t expected_epoch) -> std::shared_ptr<const View>;
     auto kh02_progress_update(kh02_progress::Snapshot progress,uint64_t restore_revision,
         std::wstring_view seed,int64_t player_slot) -> void;
     auto kh02_progress_reset(uint64_t restore_revision, std::wstring_view seed, int64_t player_slot) -> void;

@@ -1986,6 +1986,26 @@
       "status": "matched_offline",
       "evidence": "2026-11-16: EGS live Default__TresAction1_e_he903_Vacuum vtable 0x7826420 identifies begin +0x3c8 and end +0x3d8, void(action*) ABI; MyCharPawn at +0x68. Native update consumes boss m_Player at +0xc70 before the grab/movie. Steam table 0x64acd80 paired by unique begin setup block and matching virtual slots; both bodies match offline including state initialization and end cleanup. Runtime swaps unsupported allies before suction, with exact current-world/possession guards and action-end lock release.",
       "live_steam_validated": false
+    },
+    {
+      "id": "animation_slot_evaluate",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/kairi_jump_arms.cpp",
+      "egs": {
+        "rva": "0x3cf84d0",
+        "bytes": "48895c2408574881eca00000000f29b4"
+      },
+      "steam": null,
+      "audit": "EGS live vtable and offline disassembly: FAnimNode_Slot Evaluate_AnyThread slot 3; UAnimSequence GetAnimationPose slot 88. Steam not enabled."
+    },
+    {
+      "id": "animation_sequence_pose",
+      "source": "KH3APProbeCpp/kh3ap/features/player/movement/kairi_jump_arms.cpp",
+      "egs": {
+        "rva": "0x44ba840",
+        "bytes": "48895c24184c894c2420488954241055"
+      },
+      "steam": null,
+      "audit": "EGS offline disassembly and call from GetAnimationPose vtable slot 88: UAnimSequence GetBonePose, including fifth force-raw argument and native compatible-skeleton remapping. Steam not enabled."
     }
   ],
   "remaining_requirements": [

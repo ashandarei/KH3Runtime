@@ -21,6 +21,7 @@
 #include "kh3ap/features/player/characters/character_swap_assets.h"
 #include "kh3ap/features/player/characters/character_swap_effects.h"
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
+#include "kh3ap/features/player/movement/kairi_jump_arms.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/movement/character_barrel_spin.h"
 #include "kh3ap/features/ingredients/ingredient_tracker.h"
@@ -1166,6 +1167,7 @@ namespace kh3ap
             << ",\"character_preload\":" << character_swap_assets::snapshot().dump()
             << ",\"character_effect\":" << character_swap_effects::snapshot().dump()
             << ",\"kairi_shining_hud\":" << kairi_shining_hud::snapshot().dump()
+            << ",\"kairi_jump_arms\":" << kairi_jump_arms::snapshot().dump()
             << ",\"character_pool\":" << character_pawn_pool::snapshot().dump()
             << ",\"character_aim\":" << character_shotlock::snapshot(player()).dump()
             << ",\"character_scope_probe\":" << scope_probe.dump()

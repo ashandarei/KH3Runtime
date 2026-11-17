@@ -131,6 +131,8 @@ namespace kh3ap::character_native
         mickey_hud_restore_mode,
         tornado_vacuum_begin,
         tornado_vacuum_end,
+        animation_slot_evaluate,
+        animation_sequence_pose,
         count
     };
 
@@ -263,6 +265,8 @@ namespace kh3ap::character_native
         Entry{0x18e3b74, 0x1577c20, std::string_view{"\xc7\x87\xbc\x01\x00\x00\x00\x00\x00\x00", 10}, std::string_view{"\xc7\x83\xbc\x01\x00\x00\x00\x00\x00\x00", 10}}, // mickey_hud_restore_mode
         Entry{0x1026a40, 0xda83b0, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x79\x68\x48\x8b", 16}, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x83\xec\x20\x48\x8b\x79\x68\x48\x8b", 16}}, // tornado_vacuum_begin
         Entry{0x1027330, 0xdadd90, std::string_view{"\x48\x89\x5c\x24\x10\x56\x48\x83\xec\x20\x48\x8b\x59\x68\x48\x8b", 16}, std::string_view{"\x48\x89\x5c\x24\x10\x56\x48\x83\xec\x20\x48\x8b\x59\x68\x48\x8b", 16}}, // tornado_vacuum_end
+        Entry{0x3cf84d0, 0, std::string_view{"\x48\x89\x5c\x24\x08\x57\x48\x81\xec\xa0\x00\x00\x00\x0f\x29\xb4", 16}, std::string_view{}}, // animation_slot_evaluate
+        Entry{0x44ba840, 0, std::string_view{"\x48\x89\x5c\x24\x18\x4c\x89\x4c\x24\x20\x48\x89\x54\x24\x10\x55", 16}, std::string_view{}}, // animation_sequence_pose
     };
     static_assert(entries.size() == static_cast<size_t>(Site::count));
 }

@@ -2,6 +2,7 @@
 
 #include "kh3ap/diagnostics/kh3_autosave_probe.h"
 #include "kh3ap/hooks/inventory/inventory_snapshot.h"
+#include "kh3ap/features/player/characters/character_loadouts.h"
 #include "kh3ap/hooks/frame_wait/kh3_frame_wait.h"
 #include "kh3ap/core/performance_build.h"
 #include "kh3ap/hooks/patches/kh3_expanded_save_slots_patch.h"
@@ -207,6 +208,7 @@ namespace kh3ap
                     config_.olympus_coliseum_save_completed_handler;
             config_.autosave_probe.install(std::move(autosave_config));
             inventory_snapshot::install();
+            character_loadouts::install();
 
             // The focus hooks are still only armed after gameplay controller
             // discovery; this call does not attach them on the title screen.
@@ -232,6 +234,7 @@ namespace kh3ap
             config_.game_thread_driver.uninstall_tick_hook();
             config_.autosave_probe.uninstall(reason);
             inventory_snapshot::uninstall();
+            character_loadouts::uninstall();
             config_.sqex_translucent_slice_view_guard_patch.uninstall(reason);
             config_.expanded_save_slots_patch.uninstall(reason);
             config_.signed_munny_patch.uninstall(reason);
