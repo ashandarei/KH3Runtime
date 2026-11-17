@@ -20,12 +20,7 @@ int main()
         const auto& entry = entries[index];
         assert((entry.egs_rva != 0) == !entry.egs_bytes.empty());
         assert((entry.steam_rva != 0) == !entry.steam_bytes.empty());
-        if (site == Site::animation_slot_evaluate || site == Site::animation_sequence_pose)
-        {
-            // The arms overlay is enabled only for the audited EGS evaluator ABI.
-            assert(rva(site, Build::Egs) && !rva(site, Build::Steam));
-        }
-        else if (site != Site::camp_roster && site != Site::camp_save_bank)
+        if (site != Site::camp_roster && site != Site::camp_save_bank)
         {
             assert(rva(site, Build::Egs) && rva(site, Build::Steam));
         }

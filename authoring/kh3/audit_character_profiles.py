@@ -82,21 +82,17 @@ def audit(manifest: dict, roots: dict[str, Path]) -> dict:
             result["sites"].append(dict(id=site["id"], storefront=storefront, rva=profile["rva"], bytes_match=matched))
             if not matched:
                 result["errors"].append(f"{storefront}:{site['id']}: recorded code bytes differ")
-            source = (REPO / site["source"]).read_text(encoding="utf-8")
             if site.get("runtime", True):
+                source = (REPO / site["source"]).read_text(encoding="utf-8")
                 if not re.search(rf"\bSite::{re.escape(site['id'])}\b", source):
                     result["errors"].append(f"{site['id']}: runtime source no longer binds the audited site")
-            elif not re.search(rf"\b0x0*{rva:x}\b", source, re.IGNORECASE):
-                result["errors"].append(f"{storefront}:{site['id']}: documentary address changed")
+            elif site.get("source"):
+                source = (REPO / site["source"]).read_text(encoding="utf-8")
+                if not re.search(rf"\b0x0*{rva:x}\b", source, re.IGNORECASE):
+                    result["errors"].append(f"{storefront}:{site['id']}: documentary address changed")
     if not RUNTIME_TABLE.exists() or RUNTIME_TABLE.read_text(encoding="utf-8") != render(manifest):
         result["errors"].append("runtime character profile differs from the audited manifest")
-    result["matched_offline"] = sum(site["status"] == "matched_offline" for site in manifest["sites"])
-    result["remaining"] = [dict(id=site["id"], status=site["status"]) for site in manifest["sites"]
-                           if site["status"] not in ("matched_offline", "platform_specific_hook")]
-    result["platform_specific_hooks"] = [site["id"] for site in manifest["sites"]
-                                         if site["status"] == "platform_specific_hook"]
     result["runtime_sites"] = sum(site.get("runtime", True) for site in manifest["sites"])
-    result["steam_live_validated"] = False
     if result["errors"]:
         result["status"] = "failed"
     return result
@@ -122,7 +118,7 @@ def main() -> int:
         args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     except (OSError, ValueError, KeyError, struct.error) as exc:
         parser.exit(1, f"{exc}\n")
-    print(json.dumps({key: result[key] for key in ("status", "matched_offline", "remaining", "errors")}))
+    print(json.dumps({key: result[key] for key in ("status", "runtime_sites", "errors")}))
     return int(result["status"] != "passed")
 
 

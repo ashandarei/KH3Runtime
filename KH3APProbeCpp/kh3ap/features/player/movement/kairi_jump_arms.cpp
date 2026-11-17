@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_profile.h"
+#include "kh3ap/hooks/native_detour_lifetime.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kairi_jump_arms.h"
 #include "arm_pose_blend.h"
@@ -60,9 +61,7 @@ namespace kh3ap::kairi_jump_arms
             std::mutex idle_mutex;
             std::array<Transform, max_bones> idle_pose{};
             std::array<bool, max_bones> idle_present{};
-            std::atomic<uint64_t> idle_captures{};
             std::atomic<bool> idle_refresh{true};
-            std::atomic<float> idle_capture_time{};
             size_t slot_offset{};
             std::vector<Motion> motions;
             std::array<bool, max_bones> arms{};
@@ -70,10 +69,14 @@ namespace kh3ap::kairi_jump_arms
             std::array<bool, max_bones> run_upper_body{};
             int bone_count{}, arm_count{}, upper_body_count{}, run_upper_body_count{};
             std::atomic<bool> unarmed{}, jumping{};
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            std::atomic<uint64_t> idle_captures{};
+            std::atomic<float> idle_capture_time{};
             std::atomic<uint64_t> blended{}, rejected{}, armed_samples{}, evaluations{};
             std::atomic<uint64_t> run_blended{}, run_armed_samples{};
             std::atomic<uint64_t> run_stop_blended{}, run_stop_recovered{};
             std::array<std::atomic<uint64_t>, names.size()> samples{};
+#endif
         };
         std::atomic<std::shared_ptr<Binding>> current;
         std::atomic<void*> current_slot{};
@@ -115,8 +118,10 @@ namespace kh3ap::kairi_jump_arms
                         binding->idle_pose[bone] = pose->bones.data[index];
                         binding->idle_present[bone] = true;
                     }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                     ++binding->idle_captures;
                     binding->idle_capture_time.store(time);
+#endif
                 }
                 binding->idle_refresh.store(false, std::memory_order_relaxed);
             }
@@ -128,7 +133,9 @@ namespace kh3ap::kairi_jump_arms
             original(animation, pose, curve, context, force_raw);
             auto* binding = evaluating;
             if (!binding) { return; }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             ++binding->evaluations;
+#endif
             if (animation == binding->landing_idle.Get())
             {
                 evaluating_idle_time = context->time;
@@ -141,8 +148,10 @@ namespace kh3ap::kairi_jump_arms
                 if (!motion.running) { binding->jumping.store(true, std::memory_order_relaxed); }
                 if (!binding->unarmed.load(std::memory_order_relaxed))
                 {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                     if (motion.running) { ++binding->run_armed_samples; }
                     else { ++binding->armed_samples; }
+#endif
                     return;
                 }
                 auto* donor = motion.donor.Get();
@@ -153,14 +162,18 @@ namespace kh3ap::kairi_jump_arms
                     curve->elements.count < 0 || curve->elements.count > max_curves ||
                     (curve->elements.count && !curve->elements.data) || !std::isfinite(context->time))
                 {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                     ++binding->rejected;
+#endif
                     return;
                 }
                 for (int i = 0; i < indices->count; ++i)
                 {
                     if (indices->data[i] >= binding->bone_count)
                     {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                         ++binding->rejected;
+#endif
                         return;
                     }
                 }
@@ -185,7 +198,9 @@ namespace kh3ap::kairi_jump_arms
                 original(donor, &donor_pose, &donor_curve, &donor_context, false);
                 if (donor_pose.bones.count != pose->bones.count || donor_pose.container != pose->container)
                 {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                     ++binding->rejected;
+#endif
                     return;
                 }
                 const float phase = std::clamp(context->time / motion.source_length, 0.0f, 1.0f);
@@ -205,7 +220,9 @@ namespace kh3ap::kairi_jump_arms
                             if (!binding->idle_present[bone])
                             {
                                 binding->idle_refresh.store(true, std::memory_order_relaxed);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                                 ++binding->rejected;
+#endif
                                 return;
                             }
                             relaxed_bones[index] = binding->idle_pose[bone];
@@ -235,9 +252,12 @@ namespace kh3ap::kairi_jump_arms
                          static_cast<size_t>(binding->bone_count)});
                 if (!applied)
                 {
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                     ++binding->rejected;
+#endif
                     return;
                 }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                 if (motion.running)
                 {
                     ++binding->run_blended;
@@ -252,6 +272,7 @@ namespace kh3ap::kairi_jump_arms
                     ++binding->samples[motion_index];
                     ++binding->blended;
                 }
+#endif
                 return;
             }
         }
@@ -292,20 +313,26 @@ namespace kh3ap::kairi_jump_arms
 
         bool install()
         {
-            if (slot_hook && pose_hook) { return true; }
-            if (character_native::build() != character_native::Build::Egs ||
-                !character_native::verify_sites({character_native::Site::animation_slot_evaluate,
+            if (slot_hook && slot_hook->isHooked() && original_slot &&
+                pose_hook && pose_hook->isHooked() && original_pose) { return true; }
+            // Clear a partial installation before retrying. Failed unhooks keep
+            // their trampoline; never replace a detour still entered by native code.
+            const bool slot_released = release_native_detour(slot_hook);
+            const bool pose_released = release_native_detour(pose_hook);
+            if (!slot_released || !pose_released) { return false; }
+            if (!character_native::verify_sites({character_native::Site::animation_slot_evaluate,
                                                  character_native::Site::animation_sequence_pose})) { return false; }
             const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-            if (!pose_hook)
-            {
-                pose_hook = std::make_unique<PLH::x64Detour>(base + character_native::rva(character_native::Site::animation_sequence_pose),
-                                                           reinterpret_cast<uintptr_t>(&evaluate_pose), &original_pose);
-                if (!pose_hook->hook() || !original_pose) { pose_hook.reset(); return false; }
-            }
+            pose_hook = std::make_unique<PLH::x64Detour>(base + character_native::rva(character_native::Site::animation_sequence_pose),
+                                                       reinterpret_cast<uintptr_t>(&evaluate_pose), &original_pose);
             slot_hook = std::make_unique<PLH::x64Detour>(base + character_native::rva(character_native::Site::animation_slot_evaluate),
                                                        reinterpret_cast<uintptr_t>(&evaluate_slot), &original_slot);
-            if (!slot_hook->hook() || !original_slot) { slot_hook.reset(); return false; }
+            if (!pose_hook->hook() || !original_pose || !slot_hook->hook() || !original_slot)
+            {
+                release_native_detour(slot_hook);
+                release_native_detour(pose_hook);
+                return false;
+            }
             return true;
         }
 
@@ -340,7 +367,6 @@ namespace kh3ap::kairi_jump_arms
 
     bool prepare(UObject* pawn, UObject* anim, UObject* donor_set, UObject* run_donor_set)
     {
-        if (character_native::build() != character_native::Build::Egs) { return true; }
         if (const auto bound = current.load(); bound && bound->pawn.Get() == pawn && bound->anim.Get() == anim) { return true; }
         auto binding = std::make_shared<Binding>();
         binding->motions.resize(names.size());

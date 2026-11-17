@@ -24,3 +24,27 @@ builds independent of the client and APWorld.
   for KH0.2 or `-style=file:clang-format.yaml` for other KH3 code, from this root.
 - Preserve MIT and third-party notices. Exclude game files, engine headers,
   local settings, credentials and dumps.
+
+## Character profiles
+
+[`authoring/kh3/character_profiles.json`](authoring/kh3/character_profiles.json)
+contains executable identities, native entry signatures and source bindings used
+by table generation and executable auditing. After an intentional profile edit:
+
+```powershell
+python authoring/kh3/generate_character_profiles.py
+python authoring/kh3/generate_character_profiles.py --check
+```
+
+For an optional passive audit, pass the selected installation path explicitly:
+
+```powershell
+python authoring/kh3/audit_character_profiles.py --egs-game-dir "$env:KH3_DIR" --output artifacts/character-audit.json
+```
+
+The audit reads the executable on disk without launching or attaching to KH3.
+If the path is only in `.env`, pass its value explicitly. Use `--steam-game-dir`
+only for explicitly selected Steam work. An offline signature match does not
+establish live gameplay compatibility. Character behavior changes also need
+live checks of the affected actions, returning to Sora and map transitions.
+Keep dated validation results in the change's test report, not this guide.
