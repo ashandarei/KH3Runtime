@@ -50,34 +50,21 @@ namespace kh3ap
 
         auto& monitor = config.sora_monitor;
         const uintptr_t pawn_address = reinterpret_cast<uintptr_t>(pawn);
+        UObject* const state_comp = config.sora_state_hooks.resolve_state_component(pawn);
+        if (!state_comp)
+        {
+            return false;
+        }
         if (monitor.cached_runtime_sora_pawn_address == pawn_address &&
             monitor.cached_runtime_sora_state_comp_valid &&
             monitor.cached_runtime_sora_current_state_valid &&
-            monitor.cached_runtime_sora_state_comp && monitor.cached_runtime_sora_current_state)
+            monitor.cached_runtime_sora_state_comp == state_comp &&
+            is_uobject_valid_fast(monitor.cached_runtime_sora_current_state))
         {
             return true;
         }
 
         const auto started_at = std::chrono::steady_clock::now();
-        UObject* const state_comp = read_object_property_in_chain(pawn, STR("MyStateComp"));
-        if (!state_comp || !kh3ap::is_uobject_valid_fast(state_comp))
-        {
-            return false;
-        }
-        UObject* state_comp_outer = nullptr;
-        try
-        {
-            state_comp_outer = state_comp->GetOuterPrivate();
-        }
-        catch (...)
-        {
-            state_comp_outer = nullptr;
-        }
-        if (state_comp_outer != pawn)
-        {
-            return false;
-        }
-
         FProperty* const current_state_property =
             state_comp->GetPropertyByNameInChain(STR("m_pCurrentState"));
         UObject* const current_state =
@@ -165,6 +152,10 @@ namespace kh3ap
         auto& monitor = config.sora_monitor;
         const uintptr_t active_pawn =
             reinterpret_cast<uintptr_t>(config.runtime_state.grant_state().pawn_state().object());
+        if (!bootstrap_sora_state_from_trusted_pawn(reinterpret_cast<UObject*>(active_pawn), source))
+        {
+            return false;
+        }
         const uintptr_t cached_pawn = monitor.cached_runtime_sora_pawn_address;
         const uintptr_t state_comp = monitor.cached_runtime_sora_state_comp_address;
         RuntimeSoraStateRevalidationSnapshot snapshot{
@@ -183,7 +174,7 @@ namespace kh3ap
                 snapshot.current_state =
                     try_read_process_u64(state_comp + runtime_sora_current_state_pointer_offset)
                         .value_or(0);
-                if (snapshot.current_state != 0)
+                if (is_uobject_valid_fast(reinterpret_cast<UObject*>(snapshot.current_state)))
                 {
                     snapshot.current_state_id = try_read_process_u8(
                         snapshot.current_state + runtime_sora_current_state_id_offset);

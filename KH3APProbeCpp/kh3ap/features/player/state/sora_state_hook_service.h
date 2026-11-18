@@ -60,6 +60,7 @@ namespace kh3ap
         auto uninstall_hooks() -> void;
         auto flush_current_state_events() -> void;
         auto flush_vanilla_level_events() -> void;
+        auto resolve_state_component(RC::Unreal::UObject* pawn) -> RC::Unreal::UObject*;
         auto mark_sidecar_dirty() -> void;
         auto process_sidecar(
                 std::chrono::steady_clock::time_point now,
