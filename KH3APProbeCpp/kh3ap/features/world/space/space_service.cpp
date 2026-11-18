@@ -226,7 +226,7 @@ namespace kh3ap
         auto& self = *active;
         const auto original = reinterpret_cast<Save>(self.save.original);
         const auto source = self.world_name();
-        if (!self.redirect(source, map.GetCharArray()) ||
+        if (!self.redirect(source, map.GetCharArray(), tag.GetCharArray()) ||
             self.save_menu_return.allows(source, map.GetCharArray(), tag.GetCharArray(),
                                          std::chrono::steady_clock::now()))
         {
@@ -282,6 +282,8 @@ namespace kh3ap
         auto& self = *active;
         const auto source = self.world_name();
         const auto target = map.ToString();
+        const auto start = tag.ToString();
+        const bool garden_return = self.redirect(source, target, start);
         // The overview may be inspected without a ship. Flight and world embark
         // require a delivered AP blueprint assigned to the destination zone.
         // Ordinary-world returns still use the existing Garden redirection.
@@ -292,7 +294,7 @@ namespace kh3ap
                 self.ships.reconcile(context, self.access);
             }
             const auto zone = space::flight_zone(target);
-            if (target.starts_with(L"/Game/Levels/gm/") && !self.redirect(source, target) &&
+            if (target.starts_with(L"/Game/Levels/gm/") && !garden_return &&
                 (zone < 0 || !self.can_travel(zone)))
             {
                 ++self.denied_landings;
@@ -306,7 +308,7 @@ namespace kh3ap
                 return false;
             }
         }
-        const bool explicit_return = self.save_menu_return.allows(source, target, tag.ToString(),
+        const bool explicit_return = self.save_menu_return.allows(source, target, start,
                                                                   std::chrono::steady_clock::now());
         if (!explicit_return)
         {
@@ -316,20 +318,20 @@ namespace kh3ap
         {
             self.space_journey = true;
         }
-        if (self.redirect(source, target) && !explicit_return)
+        if (garden_return && !explicit_return)
         {
             map = FName(space::garden.data(), FNAME_Add);
             tag = FName(space::garden_start.data(), FNAME_Add);
             ++self.redirected_jumps;
             Output::send<LogLevel::Warning>(
                 STR("[KH3APProbeCpp] Space hub return redirected source={} original_target={} "
-                    "destination=GoA_01\n"),
-                source, target);
+                    "original_tag={} destination=GoA_01 tag=NormalSpawn\n"),
+                source, target, start);
         }
         else if (space::is_space(source) || (self.space_journey && space::is_entry_scene(source)))
         {
             const auto code = space::destination_code(target);
-            const auto embark_code = space::world_embark_code(target, tag.ToString());
+            const auto embark_code = space::world_embark_code(target, start);
             if (!embark_code.empty() && !self.can_land(embark_code))
             {
                 ++self.denied_landings;

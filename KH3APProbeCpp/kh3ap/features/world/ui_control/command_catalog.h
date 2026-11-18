@@ -60,6 +60,8 @@ namespace kh3ap::ui_control_detail
         {L"garden_graveyard_travel", CommandKind::garden_travel, false, true, false},
         {L"battlegate_zero_inspect", CommandKind::garden_dialog, false, true, false},
         {L"battlegate_zero_enter", CommandKind::garden_dialog, false, true, false},
+        {L"scala_return_inspect", CommandKind::garden_dialog, false, true, false},
+        {L"scala_return_enter", CommandKind::garden_dialog, false, true, false},
         {L"garden_graveyard_story_open", CommandKind::dark_world_travel, false, true, false},
         {L"garden_graveyard_story_inspect", CommandKind::garden_dialog, false, true, false},
         {L"garden_graveyard_story_enter", CommandKind::garden_dialog, false, true, false},

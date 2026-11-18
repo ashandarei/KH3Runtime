@@ -324,11 +324,12 @@ namespace kh3ap
         const bool dark_world =
             command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter";
         const bool graveyard = command.starts_with(L"garden_graveyard_story_");
-        if (pawn_name != expected_pawn ||
-            pawn_name.find(dark_world || graveyard ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
-                                      : L"/Game/Levels/kg/kg_02/kg_02.") == std::wstring::npos)
+        const bool scala = command.starts_with(L"scala_return_");
+        const auto expected_map = dark_world || graveyard ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
+                                : scala ? L"/Game/Levels/bt/bt_01/bt_01." : L"/Game/Levels/kg/kg_02/kg_02.";
+        if (pawn_name != expected_pawn || pawn_name.find(expected_map) == std::wstring::npos)
         {
-            throw std::runtime_error("battlegate_zero_requires_normal_kg02_sora");
+            throw std::runtime_error("portal_dialog_requires_expected_world_and_pawn");
         }
         // Closed dialogs can remain alive until the next GC. Select
         // only the active dialog owned by this session's UI manager.
@@ -403,6 +404,8 @@ namespace kh3ap
         const bool chapter_menu = dark_world && text == L"Where would you like to go?" &&
                                   (rows == chapter || rows == cleared);
         const bool correct_text =
+            scala ? (text == L"Return to the Garden of Assemblage?" &&
+                     rows == std::vector<std::wstring>{L"No", L"Yes"}) :
             graveyard ? (text == L"Are you sure you want to visit Keyblade Graveyard?" && rows == original) :
             dark_world ? (chapter_menu || (text == L"Are you sure you want to visit Dark World?" &&
                                            rows == original))
@@ -432,7 +435,7 @@ namespace kh3ap
         }
         const auto dialog_id = field<int32_t>(choice, 0xa8);
         std::ostringstream evidence;
-        evidence << (graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,")
+        evidence << (scala ? "{\"world\":\"Scala ad Caelum\"," : graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,")
                  << "\"dialog_id\":" << dialog_id << ",\"text\":\"" << json_escape(text)
                  << "\",\"choices\":[";
         for (size_t i = 0; i < rows.size(); ++i)
@@ -445,9 +448,9 @@ namespace kh3ap
         }
         evidence << "]}";
         command_json = evidence.str();
-        if (command == L"garden_graveyard_story_inspect" || command == L"battlegate_zero_inspect" || command == L"garden_dark_world_inspect")
+        if (command.ends_with(L"_inspect"))
         {
-            finish(L"completed", L"battlegate_zero_choice_observed");
+            finish(L"completed", scala ? L"scala_return_choice_observed" : L"battlegate_zero_choice_observed");
             return;
         }
         const auto decide = base + kh02_native::rva(kh02_native::Site::garden_dialog_decide);
@@ -471,7 +474,7 @@ namespace kh3ap
         {
             throw std::runtime_error("battlegate_zero_selection_not_observed");
         }
-        finish(L"completed", L"battlegate_zero_yes_selected_verify_arrival");
+        finish(L"completed", scala ? L"scala_return_yes_selected_verify_arrival" : L"battlegate_zero_yes_selected_verify_arrival");
         return;
     }
 

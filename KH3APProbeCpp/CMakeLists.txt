@@ -437,6 +437,7 @@ add_library(${TARGET} SHARED
     kh3ap/app/state.cpp
     kh3ap/features/story/quality_of_life_service.cpp
     kh3ap/features/story/progression/story_progress_service.cpp
+    kh3ap/features/story/world_fixes/final_world_qol.cpp
     kh3ap/features/story/bootstrap/world_bootstrap_service.cpp
     kh3ap/features/story/bootstrap/world_bootstrap_calls.cpp
     kh3ap/features/story/bootstrap/proof_ui_lifecycle.cpp

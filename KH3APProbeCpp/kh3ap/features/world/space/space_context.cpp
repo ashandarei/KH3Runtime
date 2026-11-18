@@ -216,9 +216,9 @@ namespace kh3ap
     }
 
     bool RuntimeSpaceService::Impl::redirect(std::wstring_view source,
-                                             std::wstring_view target) const
+                                             std::wstring_view target, std::wstring_view tag) const
     {
-        return space::redirect_to_garden(source, target, space_journey);
+        return space::redirect_to_garden(source, target, space_journey, tag);
     }
 
     bool RuntimeSpaceService::Impl::can_land(std::wstring_view code) const

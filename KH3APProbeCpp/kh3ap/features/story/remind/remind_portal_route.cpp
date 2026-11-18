@@ -58,6 +58,25 @@ namespace kh3ap
                 1, L"ReMindScalaPortal");
     }
 
+    auto try_redirect_graveyard_scala_departure(
+            RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
+            std::wstring_view caller) -> void
+    {
+        try_redirect_story_map_jump(stack, map_jump_function, caller, graveyard_scala_caller,
+                vanilla_scala_map, vanilla_scala_tag, L"/Game/Levels/bt/bt_01/bt_99", vanilla_scala_tag,
+                graveyard_scala_fade, L"GraveyardScalaDeparture");
+    }
+
+    auto try_redirect_scala_return(
+            RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
+            std::wstring_view caller) -> void
+    {
+        constexpr auto start_tag = L"kg_02_Lv_Start_06";
+        try_redirect_story_map_jump(stack, map_jump_function, caller, scala_return_caller,
+                L"/Game/Levels/kg/kg_02/kg_02", start_tag, L"/Game/Levels/kg/kg_02/kg_99", start_tag,
+                1, L"ScalaGraveyardReturn");
+    }
+
     auto try_redirect_yozora_return(
             RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
             std::wstring_view caller) -> void

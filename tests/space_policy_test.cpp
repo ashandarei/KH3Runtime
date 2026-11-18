@@ -168,6 +168,18 @@ int main()
     assert(redirect_to_garden(L"/Game/Levels/ts/ts_01/ts_01", L"/Game/Levels/gm/gm_01/gm_01"));
     assert(!redirect_to_garden(L"/Game/Levels/gm/gm_01/gm_01", L"/Game/Levels/gm/gm_02/gm_02"));
     assert(!redirect_to_garden(garden, world_map));
+    constexpr std::wstring_view pooh_world = L"World /Game/Levels/po/po_01/po_01.po_01";
+    constexpr std::wstring_view twilight_town = L"/Game/Levels/tt/tt_01/tt_01";
+    for (const auto tag : {L"tt_01_Lv_Start_100", L"tt_01_Ev_Start_tt506"})
+    {
+        for (const bool journey : {false, true})
+        {
+            assert(redirect_to_garden(pooh_world, twilight_town, journey, tag));
+            assert(!redirect_to_garden(garden, twilight_town, journey, tag));
+            assert(!redirect_to_garden(pooh_world, garden, journey, tag));
+            assert(!redirect_to_garden(pooh_world, twilight_town, journey, L"tt_01_Lv_Save_01"));
+        }
+    }
     assert(!redirect_to_garden(L"", world_map));
     assert(!redirect_to_garden(L"/Game/Levels/kg/kg_01/kg_01", garden));
     // The stock Return to Garden save-point action still requests WM01.

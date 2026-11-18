@@ -465,6 +465,10 @@ namespace kh3ap
                 runtime_clear_current_player();
                 try_redirect_remind_scala_portal(callback_context.TheStack,
                                                  prepared->target_function, prepared->frame_name);
+                try_redirect_graveyard_scala_departure(callback_context.TheStack,
+                                                       prepared->target_function, prepared->frame_name);
+                try_redirect_scala_return(callback_context.TheStack,
+                                          prepared->target_function, prepared->frame_name);
                 try_redirect_yozora_return(callback_context.TheStack,
                                           prepared->target_function, prepared->frame_name);
                 try_redirect_remind_return(callback_context.TheStack,

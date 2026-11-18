@@ -62,6 +62,38 @@ int main()
     assert(patch(bytes, remind_portal_caller, 9, target + 1) == RemindPortalRouteResult::rejected);
     assert(bytes == original);
 
+    // Scala keeps the retail PlayerStart and fade when the return portal is confirmed.
+    const auto scala_return = [&](std::wstring_view caller) {
+        return redirect_map_jump_bytecode(caller, scala_return_caller, bytes.data(), bytes.size(), 9,
+                target, from_map, from_tag, to_map, from_tag, 1);
+    };
+    assert(scala_return(remind_portal_caller) == RemindPortalRouteResult::ignored);
+    assert(bytes == original);
+    assert(scala_return(scala_return_caller) == RemindPortalRouteResult::applied);
+    expected = original;
+    std::memcpy(expected.data() + 10, to_map.data(), sizeof(to_map));
+    assert(bytes == expected);
+    assert(scala_return(scala_return_caller) == RemindPortalRouteResult::already_applied);
+    assert(bytes == expected);
+
+    // The retail Graveyard main gameflow uses the same Scala start tag with fade 2.
+    const auto graveyard_departure = [&](std::wstring_view caller) {
+        return redirect_map_jump_bytecode(caller, graveyard_scala_caller, bytes.data(), bytes.size(), 9,
+                target, from_map, from_tag, to_map, from_tag, graveyard_scala_fade);
+    };
+    bytes = original;
+    assert(graveyard_departure(graveyard_scala_caller) == RemindPortalRouteResult::rejected);
+    assert(bytes == original);
+    bytes[bytes.size() - 3] = 2;
+    expected = bytes;
+    assert(graveyard_departure(remind_portal_caller) == RemindPortalRouteResult::ignored);
+    assert(bytes == expected);
+    std::memcpy(expected.data() + 10, to_map.data(), sizeof(to_map));
+    assert(graveyard_departure(graveyard_scala_caller) == RemindPortalRouteResult::applied);
+    assert(bytes == expected);
+    assert(graveyard_departure(graveyard_scala_caller) == RemindPortalRouteResult::already_applied);
+    assert(bytes == expected);
+
     // EGS ss_01_gameflow's victory exit is TresMapJump(EndSave,
     // #FalsusRexClear, ByteConst(0)). Its loss exit uses #FalsusRexBadEnd.
     auto victory = original;

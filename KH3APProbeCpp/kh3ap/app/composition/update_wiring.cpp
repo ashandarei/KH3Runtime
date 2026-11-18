@@ -40,6 +40,7 @@
 #include "kh3ap/features/tutorials/tutorial_skip_service.h"
 #include "kh3ap/features/story/minigames/union_cross_command_service.h"
 #include "kh3ap/features/story/minigames/union_cross_completion.h"
+#include "kh3ap/features/story/world_fixes/final_world_qol.h"
 #include "kh3ap/features/story/quality_of_life_service.h"
 #include "kh3ap/app/update_coordinator.h"
 #include "kh3ap/features/story/bootstrap/world_bootstrap_service.h"
@@ -169,6 +170,7 @@ namespace kh3ap
         const auto now = std::chrono::steady_clock::now();
         if (unreal_initialized)
         {
+            tick_final_world_qol(now, s_runtime_state);
             betrayal_trap::tick(now);
             m_shop_movie.tick();
             phase_trace.mark(STR("shop_movie"));

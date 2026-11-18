@@ -10,6 +10,7 @@
 #include <Unreal/FFrame.hpp>
 #include <Unreal/Hooks.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <UnrealDef.hpp>
@@ -26,6 +27,42 @@ namespace kh3ap
         constexpr auto max_battlegate_frame_depth = 4;
         constexpr auto hook_path = L"/Script/TresGame.TresGameBlueprintLibrary:IsGameCleared";
     } // namespace
+
+    bool enable_battle_portal_01_default(const UObjectBase* portal)
+    {
+        // The creation listener runs before the actor copies its archetype.
+        // Leave serialized per-instance overrides to the level loader.
+        auto* actor = static_cast<UObject*>(const_cast<UObjectBase*>(portal));
+        if (actor->HasAnyFlags(RF_ClassDefaultObject))
+        {
+            return false;
+        }
+        auto* klass = actor->GetClassPrivate();
+        std::wstring class_path;
+        if (!try_get_uobject_full_name_fast(klass, class_path) ||
+            class_path != L"BlueprintGeneratedClass /Game/Blueprints/Gimmick/ex/g_ex_battleportal/"
+                          L"g_ex_battleportal_01.g_ex_battleportal_01_C")
+        {
+            return false;
+        }
+        auto* defaults = klass->GetClassDefaultObject();
+        if (!is_uobject_valid_fast(defaults) || defaults->HasAnyFlags(RF_NeedLoad))
+        {
+            return false;
+        }
+        auto* property = defaults->GetPropertyByNameInChain(L"m_bAutoStartGimmick");
+        if (!property || !property->IsA<FBoolProperty>())
+        {
+            return false;
+        }
+        auto* auto_start = static_cast<FBoolProperty*>(property);
+        if (!auto_start->GetPropertyValueInContainer(defaults))
+        {
+            auto_start->SetPropertyValueInContainer(defaults, true);
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Battle Portal 01 auto-start enabled\n"));
+        }
+        return true;
+    }
 
     struct RuntimeBattlegateActivationService::Impl
     {
