@@ -17,6 +17,13 @@ namespace kh3ap
     inline constexpr auto remind_portal_tag = L"bt_08_Lv_Start_01";
     inline constexpr auto vanilla_scala_map = L"/Game/Levels/bt/bt_01/bt_01";
     inline constexpr auto vanilla_scala_tag = L"bt_01_Lv_Start_01";
+    inline constexpr std::wstring_view graveyard_scala_caller =
+            L"Function /Game/Levels/kg/kg_02/umap/kg_02_gameflow_Main."
+            L"kg_02_gameflow_Main_C:ExecuteUbergraph_kg_02_gameflow_Main";
+    inline constexpr uint8_t graveyard_scala_fade = 2;
+    inline constexpr std::wstring_view scala_return_caller =
+            L"Function /Game/Levels/bt/bt_01/umap/bt_01_gameflow."
+            L"bt_01_gameflow_C:ExecuteUbergraph_bt_01_gameflow";
 
     // UE4 script names contain comparison index, display index and number,
     // including in shipping builds whose ordinary FName only has two fields.
@@ -78,6 +85,12 @@ namespace kh3ap
     }
 
     auto try_redirect_remind_scala_portal(
+            RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
+            std::wstring_view caller) -> void;
+    auto try_redirect_scala_return(
+            RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
+            std::wstring_view caller) -> void;
+    auto try_redirect_graveyard_scala_departure(
             RC::Unreal::FFrame& stack, RC::Unreal::UFunction* map_jump_function,
             std::wstring_view caller) -> void;
 }

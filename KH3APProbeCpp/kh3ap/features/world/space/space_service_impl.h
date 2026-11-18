@@ -293,7 +293,7 @@ namespace kh3ap
 
         auto world() -> UObject*;
         auto world_name() -> std::wstring;
-        bool redirect(std::wstring_view source, std::wstring_view target) const;
+        bool redirect(std::wstring_view source, std::wstring_view target, std::wstring_view tag) const;
         bool can_land(std::wstring_view code) const;
         std::wstring_view actor_world(UObject* actor);
 

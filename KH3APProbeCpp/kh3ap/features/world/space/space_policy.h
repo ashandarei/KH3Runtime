@@ -308,8 +308,15 @@ namespace kh3ap::space
     }
 
     constexpr bool redirect_to_garden(std::wstring_view source, std::wstring_view target,
-                                      bool space_journey = false)
+                                      bool space_journey = false, std::wstring_view tag = {})
     {
+        // Retail 100 Acre Wood uses separate Twilight Town starts for the
+        // confirmed exit and the final story scene. Both return to the Garden.
+        if (source == L"World /Game/Levels/po/po_01/po_01.po_01" &&
+            target == L"/Game/Levels/tt/tt_01/tt_01")
+        {
+            return tag == L"tt_01_Lv_Start_100" || tag == L"tt_01_Ev_Start_tt506";
+        }
         // World endings target scene-only SF50, GM50, or YT50. Startup has already
         // completed the forest scenes. GM50 is a cinematic map, not a flight zone;
         // passing it to the ship guard rejects the jump after the story fade.

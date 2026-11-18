@@ -3,9 +3,17 @@
 #include <memory>
 #include <string_view>
 
+namespace RC::Unreal
+{
+    class UObjectBase;
+}
+
 namespace kh3ap
 {
     class RuntimeState;
+
+    inline constexpr auto battle_portal_01_class_name = L"g_ex_battleportal_01_C";
+    bool enable_battle_portal_01_default(const RC::Unreal::UObjectBase* portal);
 
     struct RuntimeBattlegateActivationConfig
     {
