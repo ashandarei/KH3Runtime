@@ -74,17 +74,19 @@ int main()
     assert(std::none_of(kg_boss_reveal_events.begin(), kg_boss_reveal_events.end(), [](const auto& event) {
         return event.name == L"kg_02_gameflow_REvt_Hide_ALL_Enemes" || event.name == L"ReceiveTick";
     }));
-    assert(needs_remind_ansem_phase_driver(remind_xigbar_class, L"Terranort"));
-    assert(!needs_remind_ansem_phase_driver(remind_xigbar_class, remind_xigbar_class));
-    assert(!needs_remind_ansem_phase_driver(remind_xigbar_class,
-        L"/Game/Blueprints/Enemy/e_ex305/e_ex305_Pawn.e_ex305_Pawn_C"));
-    assert(!needs_remind_ansem_phase_driver(L"other_arena", L"Terranort"));
-    assert(!needs_remind_ansem_phase_driver(remind_xigbar_class, L""));
-    assert(!remind_ansem_retreat_due(19.9f, 91));
-    assert(remind_ansem_retreat_due(20.0f, 100));
-    assert(remind_ansem_retreat_due(0.25f, 90));
-    assert(remind_ansem_retreat_due(5.0f, 1));
-    assert(!remind_ansem_retreat_due(0.0f, -1));
+    assert(needs_opening_ansem_phase_driver(remind_xigbar_class, L"Terranort"));
+    assert(needs_opening_ansem_phase_driver(base_xigbar_class, L"Larxene"));
+    assert(!needs_opening_ansem_phase_driver(L"other_arena", L"Terranort"));
+    assert(!needs_opening_ansem_phase_driver(remind_xigbar_class, remind_xigbar_class));
+    assert(!needs_opening_ansem_phase_driver(remind_xigbar_class, base_xigbar_class));
+    assert(!needs_opening_ansem_phase_driver(base_xigbar_class, remind_xigbar_class));
+    assert(!needs_opening_ansem_phase_driver(base_xigbar_class, base_xigbar_class));
+    assert(!needs_opening_ansem_phase_driver(remind_xigbar_class, L""));
+    assert(!opening_ansem_retreat_due(19.9f, 91));
+    assert(opening_ansem_retreat_due(20.0f, 100));
+    assert(opening_ansem_retreat_due(0.25f, 90));
+    assert(opening_ansem_retreat_due(5.0f, 1));
+    assert(!opening_ansem_retreat_due(0.0f, -1));
     const auto larxene = L"/Game/Blueprints/Enemy/e_ex309/e_ex309_Pawn.e_ex309_Pawn_C";
     const auto remind_larxene = L"/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C";
     assert(needs_larxene_solo_phase(L"marluxia_source", larxene));
@@ -93,6 +95,18 @@ int main()
     assert(!needs_larxene_solo_phase(remind_larxene, remind_larxene));
     assert(!needs_larxene_solo_phase(L"", larxene));
     assert(!needs_larxene_solo_phase(L"source", L"e_ex309_Pawn_C"));
+    constexpr std::wstring_view base_marluxia_pawn =
+        L"/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C";
+    constexpr std::wstring_view remind_marluxia =
+        L"/Game/Blueprints/Enemy/e_ex308_s10/e_ex308_Pawn_s10.e_ex308_Pawn_s10_C";
+    constexpr std::wstring_view area_c_boss =
+        L"/Game/Blueprints/Enemy/e_ex311/e_ex311_Pawn.e_ex311_Pawn_C";
+    assert(needs_xiii_solo_phase(area_c_boss, remind_marluxia));
+    assert(needs_xiii_solo_phase(area_c_boss, base_marluxia_pawn));
+    assert(needs_xiii_solo_phase(area_c_boss, remind_larxene));
+    assert(!needs_xiii_solo_phase(base_marluxia_pawn, remind_marluxia));
+    assert(!needs_xiii_solo_phase(remind_marluxia, remind_marluxia));
+    assert(!needs_xiii_solo_phase(L"", base_marluxia_pawn));
     assert(is_story_terranort_class(L"/Game/Blueprints/Enemy/e_ex325/e_ex325_Pawn.e_ex325_Pawn_C"));
     assert(is_story_terranort_class(L"/Game/Blueprints/Enemy/e_ex325_s0/e_ex325_Pawn_s0.e_ex325_Pawn_s0_C"));
     assert(is_story_terranort_class(L"/Game/Blueprints/Enemy/e_ex325_s10/e_ex325_Pawn_s10.e_ex325_Pawn_s10_C"));

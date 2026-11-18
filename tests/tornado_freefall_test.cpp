@@ -5,8 +5,9 @@
 #include <string>
 #include <string_view>
 
-struct UObject
+class RC::Unreal::UObject
 {
+public:
     UObject* world{};
     UObject* boss{};
     UObject* controller{};
@@ -22,6 +23,7 @@ struct UObject
     UObject* GetClassPrivate() { return type; }
     const std::wstring& GetName() const { return name; }
 };
+using RC::Unreal::UObject;
 UObject* world{};
 UObject* player{};
 UObject* alternate{};
@@ -31,7 +33,8 @@ bool fail_swap = false;
 int swaps = 0, native_calls = 0;
 UObject* native_player{};
 bool is_uobject_valid_fast(UObject* p) { return p && p->live; }
-UObject* actor_owning_world(UObject* p) { return p ? p->world : nullptr; }
+UObject* kh3ap::actor_owning_world(UObject* p) { return p ? p->world : nullptr; }
+using kh3ap::actor_owning_world;
 UObject* kh02_current_world() { return world; }
 bool tornado_world(UObject* p) { return p && p == world; }
 UObject* local_pawn() { return player; }
@@ -104,6 +107,15 @@ struct Kh02ReflectedCall
     }
     UObject* result() { return returned; }
 };
+namespace character_camera
+{
+    struct Call : Kh02ReflectedCall
+    {
+        Call(UObject* owner, const wchar_t* method)
+            : Kh02ReflectedCall(owner, method, "character camera", 128) {}
+    };
+    UObject* object(UObject* owner, const wchar_t* member) { return properties.read_object(owner, member); }
+}
 #include "tornado_freefall_under_test.h"
 
 int main()
@@ -181,7 +193,9 @@ int main()
     manager.view = &controller;
     camera_type.name = L"BP_TresCameraNormal_ex001_C";
     assert(!restore_camera_view(&sora)); // Ordinary field cameras are unchanged.
+    assert(character_camera::restore_active_view(&sora, {}) && manager.view == &camera && view_restores == 2);
     camera_type.name = L"BP_TresCameraHe903_C";
+    manager.view = &controller;
     camera.manager = nullptr;
     assert(!restore_camera_view(&sora)); // Do not steal another manager's camera.
     camera.manager = &manager;
@@ -190,5 +204,5 @@ int main()
     camera.world = world;
     controller.pawn = &riku;
     assert(!restore_camera_view(&sora));
-    assert(view_restores == 1);
+    assert(view_restores == 2);
 }

@@ -72,6 +72,26 @@ int main()
     assert(!is_remind_maze_exit_cinematic(L"/Game/Levels/kg/kg_02/kg_02.kg_02", saix_exit));
     assert(!is_remind_maze_exit_cinematic(remind_skein, L"ms081_C-D"));
     assert(!is_remind_maze_exit_cinematic(remind_skein, L"ms091_D-E"));
+    using kh3ap::character_swap::is_kg_area_b_camera;
+    using kh3ap::character_swap::is_kg_area_b_movie;
+    constexpr auto skein = L"/Game/Levels/kg/kg_02/kg_02.kg_02";
+    constexpr auto phase_three = L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms060."
+                                 L"kg_02_camera_ms060:PersistentLevel.ms060_Phase3_Short";
+    assert(is_kg_area_b_camera(skein, phase_three));
+    assert(!is_kg_area_b_camera(remind_skein, phase_three));
+    assert(is_kg_area_b_camera(skein,
+        L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms060."
+        L"kg_02_camera_ms060:PersistentLevel.ms060_Phase3_Retry_2"));
+    assert(!is_kg_area_b_camera(skein,
+        L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms050."
+        L"kg_02_camera_ms050:PersistentLevel.ms050_Phase3_Short"));
+    constexpr auto luxord_movie = L"/Game/Cutscene/Localization/ja/kg/cutscene_kg02_kg863."
+                                  L"cutscene_kg02_kg863:PersistentLevel.kg863";
+    assert(is_kg_area_b_movie(skein, luxord_movie));
+    assert(!is_kg_area_b_movie(remind_skein, luxord_movie));
+    assert(!is_kg_area_b_movie(skein,
+        L"/Game/Cutscene/Localization/ja/kg/cutscene_kg02_kg851."
+        L"cutscene_kg02_kg851:PersistentLevel.kg851"));
     using kh3ap::character_swap::collapse_sora_role_is_inactive;
     constexpr auto thebes = L"/Game/Levels/he/he_03/he_03.he_03";
     constexpr auto collapse_one = L"/Game/Levels/he/he_03/umap/he_03_camera_ms024s."

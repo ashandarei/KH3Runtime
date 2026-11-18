@@ -874,7 +874,7 @@ namespace kh3ap::enemy_remap_detail
         {
             initialize_master_xehanort_center(pawn, binding.level_entity);
             prepare_runtime_xemnas_center(pawn);
-            initialize_runtime_larxene_phase(pawn);
+            initialize_runtime_xiii_solo_phase(pawn);
         }
         if (*state_id == tres_state_appear &&
             !binding.new_actor)

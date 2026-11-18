@@ -13,6 +13,7 @@
 #include "kh3ap/features/colors/color_object_registry.h"
 #include "kh3ap/features/enemies/titan_object_registry.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_dm.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_queries.h"
 #include "kh3ap/features/moogle_shop/workshop_service.h"
 #include "kh3ap/features/story/world_fixes/final_world_guidance_bypass.h"
@@ -455,6 +456,8 @@ namespace kh3ap
         titan_objects::constructed(
             static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
         notify_master_ascension_created(
+            static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        observe_master_xehanort_dm_actor(
             static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
         notify_master_query_created(
             static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));

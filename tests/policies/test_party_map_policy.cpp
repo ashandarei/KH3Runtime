@@ -7,6 +7,20 @@ namespace
 {
     using namespace kh3ap;
 
+    static_assert(runtime_party_festival_dance_policy(
+        L"Level /Game/Levels/ra/ra_02/ra_02.ra_02:PersistentLevel", true) ==
+        RuntimePartyMapPolicy::solo);
+    // End, unload and travel must release the override without changing settings.
+    static_assert(runtime_party_festival_dance_policy(
+        L"Level /Game/Levels/ra/ra_02/ra_02.ra_02:PersistentLevel", false) ==
+        RuntimePartyMapPolicy::managed);
+    static_assert(runtime_party_festival_dance_policy(
+        L"Level /Game/Levels/ra/ra_01/ra_01.ra_01:PersistentLevel", true) ==
+        RuntimePartyMapPolicy::managed);
+    static_assert(runtime_party_festival_dance_policy(
+        L"Level /Game/Levels/ra/ra_020/ra_020.ra_020:PersistentLevel", true) ==
+        RuntimePartyMapPolicy::managed);
+
     void test_flash_tracer_context()
     {
         assert(runtime_party_is_flash_tracer_course_b_asset(

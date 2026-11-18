@@ -239,7 +239,7 @@ namespace kh3ap
         const bool cutscene_command =
             command == L"inspect" || command == L"skip_cutscene" || command == L"pause_cutscene" ||
             command == L"resume_cutscene" || command == L"garden_dark_world_travel" ||
-            command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter" ||
+            command.starts_with(L"garden_graveyard_story_") || command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter" ||
             (command == L"kh02_remote" &&
              (texture_action == L"portal_inspect" || texture_action == L"portal_interact" ||
               texture_action == L"portal_button"));

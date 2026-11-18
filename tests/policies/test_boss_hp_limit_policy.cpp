@@ -23,6 +23,10 @@ int main()
     assert(!luxord_native_defeat_observed(2, 1));
     assert(luxord_native_defeat_observed(1, 1));
     assert(luxord_native_defeat_observed(2, 2));
+    assert(!is_base_kg_area_b_post_luxord_phase(std::nullopt));
+    assert(!is_base_kg_area_b_post_luxord_phase(1200));
+    assert(is_base_kg_area_b_post_luxord_phase(1400));
+    assert(is_base_kg_area_b_post_luxord_phase(1600));
     assert(!luxord_partner_hp_floor_released(0, 0, false));
     assert(luxord_partner_hp_floor_released(0, 0, true));
     assert(!luxord_partner_hp_floor_released(1, 0, true));

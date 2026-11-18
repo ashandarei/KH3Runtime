@@ -6,8 +6,9 @@ namespace kh3ap::enemy_remap_detail
 {
     auto install_runtime_boss_phase_guard() -> void;
     auto install_grim_guardianess_mode_guard() -> void;
+    auto install_vanitas_clone_burst_center() -> void;
 
-    auto initialize_runtime_larxene_phase(UObject* pawn) -> void;
+    auto initialize_runtime_xiii_solo_phase(UObject* pawn) -> void;
 
     auto install_kg_replacement_reveal_guard() -> void;
 

@@ -1,4 +1,5 @@
 #include "kh3ap/features/player/characters/character_controller_input_policy.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_dm.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_unlocks.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
@@ -69,6 +70,7 @@ namespace kh3ap
         m_controller_preferences.install_once(
             m_goa_settings.status().legacy_controller_focus_enabled);
         m_experience_multiplier.install_once();
+        install_master_xehanort_dm_cleanup();
         m_enemy_remaps.install_once();
         m_party_members.install_once();
         m_colors.install_once();

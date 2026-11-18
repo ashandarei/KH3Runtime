@@ -18,6 +18,7 @@
 #include "kh3ap/app/enums.h"
 #include "kh3ap/features/enemies/experience_multiplier_service.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_dm.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_queries.h"
 #include "kh3ap/features/music/shuffle/bgm_shuffle_service.h"
 #include "kh3ap/features/music/now_playing/now_playing_overlay.h"
@@ -189,6 +190,11 @@ namespace kh3ap
                 {
                     m_player_context.refresh_controller_from_sora_event(pawn);
                 }
+                // Travel can publish the alternate's pawn under the loading cover,
+                // before its traversal setup is ready. Reconcile abilities again
+                // when that same pawn finishes its gameplay handoff.
+                s_runtime_controller_abilities.request_refresh(
+                    RuntimeControllerAbilityEvent::PawnChanged);
                 s_runtime_state.grant_state().item_grant_poll_state().delivery_wake_schedule().request();
             }
             // One shared identity revision drives gameplay consumers. This is
@@ -234,6 +240,7 @@ namespace kh3ap
         m_experience_multiplier.tick();
         phase_trace.mark(STR("experience_multiplier"));
         m_enemy_remaps.process_pending_class_prewarm();
+        process_pending_master_xehanort_dm_cleanup();
         process_pending_master_ascension_centers();
         process_pending_master_query_contexts();
         m_fun_heartless.tick();

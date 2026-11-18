@@ -5,7 +5,9 @@ set(tornado_freefall_source "${CMAKE_CURRENT_BINARY_DIR}/tornado_freefall_under_
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_custom_command(OUTPUT "${tornado_freefall_source}"
     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/generate_tornado_freefall_test.py" "${tornado_freefall_source}"
-    DEPENDS generate_tornado_freefall_test.py "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp"
+    DEPENDS generate_tornado_freefall_test.py
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/movement/character_floating.cpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../KH3APProbeCpp/kh3ap/features/player/characters/character_camera.cpp"
     VERBATIM)
 add_executable(tornado_freefall_test tornado_freefall_test.cpp "${tornado_freefall_source}")
 target_include_directories(tornado_freefall_test PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")

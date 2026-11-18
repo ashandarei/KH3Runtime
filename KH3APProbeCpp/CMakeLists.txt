@@ -117,7 +117,9 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/bosses/binding.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
+    kh3ap/features/enemies/bosses/vanitas_clone_burst.cpp
     kh3ap/features/enemies/bosses/master_xehanort_center.cpp
+    kh3ap/features/enemies/bosses/master_xehanort_dm.cpp
     kh3ap/features/enemies/bosses/master_xehanort_queries.cpp
     kh3ap/features/enemies/bosses/xemnas_center.cpp
     kh3ap/features/enemies/bosses/xigbar_field.cpp
@@ -272,6 +274,7 @@ add_library(${TARGET} SHARED
         kh3ap/features/player/movement/character_airstep.cpp
         kh3ap/features/player/movement/character_floating.cpp
     kh3ap/features/player/movement/character_traversal.cpp
+    kh3ap/features/player/characters/character_festival_dance.cpp
     kh3ap/features/player/movement/kairi_glide.cpp
     kh3ap/features/player/movement/kairi_jump_arms.cpp
     kh3ap/features/player/movement/character_rails.cpp
@@ -541,7 +544,7 @@ target_include_directories(${TARGET} PRIVATE
     "${stb_SOURCE_DIR}"
 )
 
-target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE kh3ap_json_headers kh3ap_vorbis)
+target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE asmjit kh3ap_json_headers kh3ap_vorbis)
 
 if(MSVC)
     # Favor smaller code while retaining the shipping /O2 optimization preset.

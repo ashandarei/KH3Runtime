@@ -3,6 +3,7 @@
 #include "kh3ap/features/player/characters/character_layout.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
+#include "kh3ap/features/player/characters/character_festival_dance.h"
 #include "kh3ap/features/player/movement/character_airstep.h"
 #include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/movement/character_rails.h"
@@ -54,6 +55,7 @@ namespace kh3ap::character_exploration
             bool needs_traversal{};
         };
         std::array shared_states{
+            SharedState{player_state_ids::festival_dance, L"/Script/TresGame.TresPlayerState_FestivalDance", {}, true},
             SharedState{player_state_ids::af_roller_coaster, L"/Script/TresGame.TresPlayerState_AFRollerCoaster", {}, true},
             SharedState{player_state_ids::af_viking_ship, L"/Script/TresGame.TresPlayerState_AFVikingShip", {}, true},
             SharedState{player_state_ids::fr_shield_guardian, L"/Script/TresGame.TresPlayerState_FRShieldGuardian", {}, true},
@@ -260,7 +262,8 @@ namespace kh3ap::character_exploration
 
     bool prepare()
     {
-        if (!character_airstep::initialize() || !character_floating::initialize() || !character_rails::initialize()) { return false; }
+        if (!character_airstep::initialize() || !character_floating::initialize() || !character_rails::initialize() ||
+            !character_festival_dance::initialize()) { return false; }
         if (lookup_hook && status_flags_hook)
         {
             return true;

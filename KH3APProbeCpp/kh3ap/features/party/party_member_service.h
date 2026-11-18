@@ -160,6 +160,7 @@ namespace kh3ap
         auto observe_set_friend_all(RC::Unreal::UObject* friend_manager) -> void;
         auto observe_controller_possess(RC::Unreal::UObject* controller) -> void;
         auto refresh_ship_control() -> void;
+        auto observe_festival_dance(RC::Unreal::UObject* manager, bool active) -> void;
         auto observe_can_battle(RC::Unreal::UObject* pawn, bool can_battle) -> void;
         auto refresh_unlocks_from_bridge() -> bool;
         auto unlock_choice(std::size_t choice) -> bool;
@@ -203,6 +204,7 @@ namespace kh3ap
         RC::Unreal::FWeakObjectPtr context_entry_pawn_{};
         RC::Unreal::FWeakObjectPtr ship_control_sora_{};
         bool ship_control_active_{};
+        RC::Unreal::FWeakObjectPtr festival_dance_manager_{};
         bool awaiting_entry_control_{};
         std::array<RC::Unreal::FWeakObjectPtr, party_catalog::custom_party_ai_definitions.size()>
             custom_party_assigned_pawns_{};

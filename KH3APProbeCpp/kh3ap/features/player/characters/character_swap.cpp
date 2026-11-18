@@ -38,6 +38,7 @@
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_crowd.h"
+#include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/features/player/movement/character_rails.h"
 #include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
@@ -631,6 +632,10 @@ namespace kh3ap::character_swap
                     session.party_handoff->finish(possessed);
                     session.party_handoff.reset();
                 }
+                if (id(possessed) == target)
+                {
+                    character_reactions::rebind_scripted_coaster(pawn, possessed);
+                }
                 character_shotlock::prepare_incoming_input(possessed);
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -885,19 +890,21 @@ namespace kh3ap::character_swap
             const bool scream_strike_exit = is_uobject_valid_fast(matinee) &&
                 is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
                 is_scream_strike_exit_cinematic(world->GetPathName(), matinee->GetPathName());
-            const bool native_sora = tornado_return || scream_strike_exit;
-            // These sequences move Sora across a labyrinth door. The
-            // authored position must reach the native pawn before we restore
-            // the combat ally at the end of cinematic mode.
-            const bool native_exit = is_uobject_valid_fast(matinee) && is_uobject_valid_fast(world) &&
-                                     actor_owning_world(matinee) == world &&
-                                     is_remind_maze_exit_cinematic(world->GetPathName(),
-                                                                    matinee->GetPathName());
+            const bool kg_area_b_movie = is_uobject_valid_fast(matinee) &&
+                is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
+                is_kg_area_b_movie(world->GetPathName(), matinee->GetPathName());
+            const bool native_sora = tornado_return || scream_strike_exit || kg_area_b_movie;
+            // Area B cameras and movies use Sora's authored performance.
+            // The normal post-Luxord camera can also fault with an alternate.
+            const bool native_level_matinee = is_uobject_valid_fast(matinee) &&
+                is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
+                (is_remind_maze_exit_cinematic(world->GetPathName(), matinee->GetPathName()) ||
+                 is_kg_area_b_camera(world->GetPathName(), matinee->GetPathName()));
             if (native_sora && session.travel_character_id >= 0 && cinematic_uses_sora(matinee))
             {
                 session.native_cinematic_world = make_uobject_weak(world);
             }
-            if (!native_sora && !native_exit && !ascension_locked() && session.travel_character_id >= 0 &&
+            if (!native_sora && !native_level_matinee && !ascension_locked() && session.travel_character_id >= 0 &&
                 cinematic_uses_sora(matinee) &&
                 character_cinematic_binding::can_bind(matinee))
             {
@@ -938,10 +945,9 @@ namespace kh3ap::character_swap
             }
             session.pending = true;
             session.cinematic_return_pending = true;
-            // These maze exits are level Matinees. Input readiness
-            // returns after the gameflow ends cinematic mode, without the
-            // movie-class pause-menu notification that clears this hold.
-            if (!native_exit)
+            // These level Matinees restore input through gameflow. The next
+            // readiness check can resume the ally without a movie notification.
+            if (!native_level_matinee)
             {
                 session.native_cinematic_world = make_uobject_weak(world);
             }
@@ -1078,48 +1084,50 @@ namespace kh3ap::character_swap
                     nullptr);
             }
             cinematic_hooks_installed = true;
-            UObjectGlobals::RegisterHook(
-                L"/Script/TresGame.TresGameBlueprintLibrary:TresDirectRideVehicle",
-                [](UnrealScriptFunctionCallableContext&, void*)
+            const auto prepare_scripted_ride = [](UnrealScriptFunctionCallableContext&, void*)
+            {
+                auto* pawn = player();
+                // Story movies can board a vehicle before gameplay resumes.
+                // Restore the retained hero before the ride captures its
+                // player; restoring afterward strands the hero on foot.
+                try
                 {
-                    auto* pawn = player();
-                    // Story movies can board a vehicle before gameplay resumes.
-                    // Restore the retained hero before the ride captures its
-                    // player; restoring afterward strands the hero on foot.
-                    try
+                    if (!session.pending && session.travel_character_id >= 0 &&
+                        sora_variant(pawn) && !ascension_locked() &&
+                        character_unlocks::available(session.travel_character_id))
                     {
-                        if (!session.pending && session.travel_character_id >= 0 &&
-                            sora_variant(pawn) && !ascension_locked() &&
-                            character_unlocks::available(session.travel_character_id))
+                        const auto local_player = make_uobject_weak(
+                            object(object(pawn, L"Controller"), L"Player"));
+                        if (begin(pawn, session.travel_character_id, true))
                         {
-                            const auto local_player = make_uobject_weak(
-                                object(object(pawn, L"Controller"), L"Player"));
-                            if (begin(pawn, session.travel_character_id, true))
-                            {
-                                pawn = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
-                            }
+                            pawn = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
                         }
-                        if (!owns_swap_pawn(pawn) || sora_variant(pawn) || id(pawn) == king_mickey_id)
-                        {
-                            return;
-                        }
-                        // The native queue needs these states even while the
-                        // cinematic still owns input or the swap is pending.
-                        const bool prepared = character_exploration::prepare_pawn(pawn) &&
-                                              character_traversal::prepare(pawn);
-                        RC::Output::send<RC::LogLevel::Normal>(
-                            STR("[KH3APProbeCpp] Character scripted vehicle prepared={} pawn={}\n"),
-                            prepared, pawn->GetName());
                     }
-                    catch (const std::exception& failure)
+                    if (!owns_swap_pawn(pawn) || sora_variant(pawn) || id(pawn) == king_mickey_id)
                     {
-                        RC::Output::send<RC::LogLevel::Warning>(
-                            STR("[KH3APProbeCpp] Character scripted vehicle preparation failed: {}\n"),
-                            std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
+                        return;
                     }
-                },
-                [](UnrealScriptFunctionCallableContext&, void*) {},
-                nullptr);
+                    // The native queue needs these states even while the
+                    // cinematic still owns input or the swap is pending.
+                    const bool prepared = character_exploration::prepare_pawn(pawn) &&
+                                          character_traversal::prepare(pawn);
+                    RC::Output::send<RC::LogLevel::Normal>(
+                        STR("[KH3APProbeCpp] Character scripted vehicle prepared={} pawn={}\n"),
+                        prepared, pawn->GetName());
+                }
+                catch (const std::exception& failure)
+                {
+                    RC::Output::send<RC::LogLevel::Warning>(
+                        STR("[KH3APProbeCpp] Character scripted vehicle preparation failed: {}\n"),
+                        std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
+                }
+            };
+            for (const auto* path : {L"/Script/TresGame.TresGameBlueprintLibrary:TresDirectRideVehicle",
+                                    L"/Script/TresGame.TresGameBlueprintLibrary:TresDirectBaymaxRide"})
+            {
+                UObjectGlobals::RegisterHook(path, prepare_scripted_ride,
+                    [](UnrealScriptFunctionCallableContext&, void*) {}, nullptr);
+            }
             UObjectGlobals::RegisterHook(
                 L"/Script/Engine.MatineeActor:Stop",
                 [](UnrealScriptFunctionCallableContext&, void*)
@@ -1619,6 +1627,7 @@ namespace kh3ap::character_swap
             // possession, but crowds must still follow the actual local pawn.
             character_crowd::rebind(pawn);
             character_rails::rebind_doors(session.outgoing_rail_pawn.Get(), pawn);
+            character_reactions::rebind_scripted_coaster(session.outgoing_rail_pawn.Get(), pawn);
             session.outgoing_rail_pawn = {};
             if (auto hp_break = std::exchange(session.hp_break, std::nullopt))
             {
@@ -1640,6 +1649,10 @@ namespace kh3ap::character_swap
                 show_commands.run();
             }
             combat_target_handoff::finish(pawn);
+            if (!session.cinematic_return_pending)
+            {
+                character_camera::restore_active_view(pawn);
+            }
             const bool restore_after_cinematic =
                 session.cinematic_return_pending && session.travel_character_id >= 0 &&
                 !ascension_locked();

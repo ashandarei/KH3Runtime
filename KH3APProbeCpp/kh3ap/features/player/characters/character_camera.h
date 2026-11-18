@@ -10,5 +10,6 @@ namespace kh3ap::character_camera
     void capture_sora(RC::Unreal::UObject *pawn, bool capture_field_height);
     void match_field_height(RC::Unreal::UObject *pawn);
     bool prepare(RC::Unreal::UObject *pawn);
+    bool restore_active_view(RC::Unreal::UObject* pawn, std::wstring_view camera_class = {});
     bool route(int controller, std::wstring_view key, int event, bool gamepad);
 } // namespace kh3ap::character_camera

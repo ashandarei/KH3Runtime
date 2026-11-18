@@ -4,6 +4,7 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/combat/kairi_ground_slam.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
@@ -215,52 +216,8 @@ namespace kh3ap::character_floating
 
     bool restore_camera_view(UObject* pawn)
     {
-        auto* world = actor_owning_world(pawn);
-        if (!is_uobject_valid_fast(pawn) || !tornado_world(world) || world != kh02_current_world())
-        {
-            return false;
-        }
-        auto* controller = properties.read_object(pawn, L"Controller");
-        auto* local = properties.read_object(controller, L"Player");
-        auto* manager = properties.read_object(controller, L"PlayerCameraManager");
-        if (properties.read_object(controller, L"Pawn") != pawn ||
-            properties.read_object(local, L"PlayerController") != controller ||
-            !is_uobject_valid_fast(manager) || actor_owning_world(manager) != world)
-        {
-            return false;
-        }
-        Kh02ReflectedCall active(manager, L"GetActiveCamera", "Tornado camera handoff", 256);
-        active.run();
-        auto* camera = active.result();
-        if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != world ||
-            camera->GetClassPrivate()->GetName() != L"BP_TresCameraHe903_C" ||
-            properties.read_object(camera, L"m_CameraManager") != manager ||
-            properties.read_object(camera, L"m_PlayerController") != controller)
-        {
-            return false;
-        }
-        Kh02ReflectedCall view(manager, L"GetActiveViewCamera", "Tornado camera handoff", 256);
-        view.run();
-        if (view.result() != controller)
-        {
-            return false;
-        }
-        // Reusing Sora's controller preserves the active arena-camera stack,
-        // but possession resets its rendered view to the controller. That
-        // unchanged stack does not select the camera again on the next tick.
-        // Reconcile only this mismatch; preserve native movies and other views.
-        Kh02ReflectedCall restore(controller, L"SetViewTargetWithBlend", "Tornado camera handoff", 256);
-        restore.object(L"NewViewTarget", camera);
-        restore.number(L"BlendTime", 0.0f);
-        restore.run();
-        view.run();
-        const bool restored = view.result() == camera;
-#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-        RC::Output::send<RC::LogLevel::Normal>(
-            STR("[KH3APProbeCpp] Tornado camera view restored={} pawn={} camera={}\n"),
-            restored, pawn->GetName(), camera->GetName());
-#endif
-        return restored;
+        return tornado_world(actor_owning_world(pawn)) &&
+               character_camera::restore_active_view(pawn, L"BP_TresCameraHe903_C");
     }
 
     bool allows_swap(UObject* pawn)

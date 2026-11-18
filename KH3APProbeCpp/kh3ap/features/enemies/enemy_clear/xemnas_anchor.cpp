@@ -1,5 +1,6 @@
 // Diagnostics-only, bounded experiment: bind the reference used by the native
 // GetCenterActor getter without loading the native arena or changing its geometry.
+#include "kh3ap/features/enemies/bosses/binding.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/features/enemies/bosses/xemnas_center.h"
@@ -85,7 +86,7 @@ namespace kh3ap
             throw std::runtime_error("xemnas_anchor_user_data_layout");
         if (*slot || *original)
             throw std::runtime_error("xemnas_anchor_requires_missing_native_reference");
-        const auto center = data_xemnas_center_location(boss);
+        const auto center = enemy_remap_detail::read_boss_arena_center(boss);
         if (!center)
             throw std::runtime_error("xemnas_anchor_center_layout");
         auto* klass = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/Engine.TargetPoint");

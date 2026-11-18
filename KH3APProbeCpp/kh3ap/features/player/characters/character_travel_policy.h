@@ -63,6 +63,35 @@ namespace kh3ap::character_swap
                            L"kg_02_camera_ms091:PersistentLevel.ms091_D-E");
     }
 
+    constexpr bool is_kg_area_b_camera(std::wstring_view world, std::wstring_view matinee)
+    {
+        return world == L"/Game/Levels/kg/kg_02/kg_02.kg_02" &&
+               matinee.starts_with(L"/Game/Levels/kg/kg_02/umap/kg_02_camera_ms060."
+                                   L"kg_02_camera_ms060:PersistentLevel.ms060_Phase");
+    }
+
+    constexpr bool is_kg_area_b_movie(std::wstring_view world, std::wstring_view matinee)
+    {
+        constexpr std::wstring_view localization = L"/Game/Cutscene/Localization/";
+        constexpr std::wstring_view movie_package = L"/kg/cutscene_kg02_";
+        constexpr std::wstring_view level = L":PersistentLevel.";
+        if (world != L"/Game/Levels/kg/kg_02/kg_02.kg_02" || !matinee.starts_with(localization))
+        {
+            return false;
+        }
+        matinee.remove_prefix(localization.size());
+        const auto package = matinee.find(L'/');
+        if (package == std::wstring_view::npos || !matinee.substr(package).starts_with(movie_package))
+        {
+            return false;
+        }
+        const auto scene = matinee.substr(package + movie_package.size(), 5);
+        const auto actor = matinee.rfind(level);
+        return scene.size() == 5 && scene.starts_with(L"kg86") && scene.back() >= L'1' &&
+               scene.back() <= L'6' && actor != std::wstring_view::npos &&
+               matinee.substr(actor + level.size()) == scene;
+    }
+
     constexpr bool is_scream_strike_exit_cinematic(std::wstring_view world, std::wstring_view matinee)
     {
         return world == L"/Game/Levels/mi/mi_04/mi_04.mi_04" &&

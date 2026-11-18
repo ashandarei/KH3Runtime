@@ -6,7 +6,9 @@
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/boss_remap_policy.h"
 #include "kh3ap/features/enemies/boss_profile.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/core/reflection/reflection_scalar.h"
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/UClass.hpp>
@@ -33,12 +35,15 @@ namespace kh3ap::enemy_remap_detail
     {
         constexpr auto grim_rising_task_memory_bytes = 0x28;
 
-        constexpr auto larxene_native_solo_phase = 3;
+        constexpr uint8_t xiii_native_solo_phase = 3;
         constexpr auto opening_boss_sample_interval_seconds = 0.25f;
+        constexpr auto base_opening_story_flag = 1000;
         constexpr auto remind_opening_story_flag = 1000;
         constexpr auto full_boss_hp_percent = 100;
         constexpr auto boss_hp_percent_scale = 100.0f;
         constexpr auto max_encounter_repair_groups = 512;
+        FName base_kg_area_a_phase3_event;
+        FName base_opening_ansem_class;
     } // namespace
 
     static auto is_tracked_randomized_grim_guardianess(UObject* pawn) -> bool
@@ -322,7 +327,7 @@ namespace kh3ap::enemy_remap_detail
         }
     }
 
-    static auto is_tracked_solo_larxene(UObject* pawn) -> bool
+    static auto uses_tracked_xiii_solo_phase(UObject* pawn) -> bool
     {
         if (!s_runtime_enemy_remap.active || !s_runtime_enemy_remap.boss.boss_enabled.load() ||
             !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(pawn->GetClassPrivate()))
@@ -330,7 +335,7 @@ namespace kh3ap::enemy_remap_detail
             return false;
         }
         const auto target = pawn->GetClassPrivate()->GetPathName();
-        if (!needs_larxene_solo_phase(L"source", target))
+        if (!needs_xiii_solo_phase(L"source", target))
         {
             return false;
         }
@@ -348,17 +353,17 @@ namespace kh3ap::enemy_remap_detail
             binding.level_entity_path);
         return source != s_runtime_enemy_remap.boss.tracking.remapped_boss_source_classes.end() &&
                replacement != s_runtime_enemy_remap.boss.tracking.remapped_boss_entities.end() &&
-               replacement->second == target && needs_larxene_solo_phase(source->second, target);
+               replacement->second == target && needs_xiii_solo_phase(source->second, target);
     }
 
     static auto notify_runtime_boss_phase(UObject* pawn, uint8_t phase) -> void
     {
-        if (phase < larxene_native_solo_phase && is_tracked_solo_larxene(pawn))
+        if (phase < xiii_native_solo_phase && uses_tracked_xiii_solo_phase(pawn))
         {
-            phase = larxene_native_solo_phase;
+            phase = xiii_native_solo_phase;
             if (!s_runtime_enemy_remap.boss.repairs.boss_phase_guard_logged.exchange(true))
             {
-                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Randomized Larxene arena phase "
+                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Randomized XIII arena phase "
                                                    "redirected to native solo phase pawn={}\n"),
                                                pawn->GetPathName());
             }
@@ -374,7 +379,7 @@ namespace kh3ap::enemy_remap_detail
                          s_runtime_enemy_remap.boss.boss_class_replacements.end(),
                          [](const auto& entry)
                          {
-                             return needs_larxene_solo_phase(entry.first, entry.second);
+                             return needs_xiii_solo_phase(entry.first, entry.second);
                          }))
         {
             return;
@@ -389,7 +394,7 @@ namespace kh3ap::enemy_remap_detail
             std::memcmp(reinterpret_cast<void*>(base + profile.phase_rva),
                         profile.phase_bytes.data(), profile.phase_bytes.size()))
         {
-            Output::send<LogLevel::Error>(STR("[KH3APProbeCpp] Larxene phase guard unavailable "
+            Output::send<LogLevel::Error>(STR("[KH3APProbeCpp] XIII phase guard unavailable "
                                               "reason=unrecognized_native_notify\n"));
             return;
         }
@@ -400,15 +405,15 @@ namespace kh3ap::enemy_remap_detail
         {
             s_runtime_enemy_remap.boss.repairs.boss_phase_guard = std::move(hook);
             Output::send<LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Larxene native phase guard installed storefront={} "
+                STR("[KH3APProbeCpp] XIII native phase guard installed storefront={} "
                     "scope=tracked_replacement\n"),
                 profile.steam ? STR("steam") : STR("egs"));
         }
     }
 
-    auto initialize_runtime_larxene_phase(UObject* pawn) -> void
+    auto initialize_runtime_xiii_solo_phase(UObject* pawn) -> void
     {
-        if (!is_tracked_solo_larxene(pawn))
+        if (!uses_tracked_xiii_solo_phase(pawn))
         {
             return;
         }
@@ -419,15 +424,74 @@ namespace kh3ap::enemy_remap_detail
         {
             return;
         }
-        uint8_t phase =
-            larxene_native_solo_phase; // Native phase IV has a complete independent attack set.
+        // Native phase IV is used when either boss fights without its partner.
+        uint8_t phase = xiii_native_solo_phase;
         pawn->ProcessEvent(function, &phase);
         Output::send<LogLevel::Normal>(
-            STR("[KH3APProbeCpp] Randomized Larxene initialized via native solo phase pawn={}\n"),
+            STR("[KH3APProbeCpp] Randomized XIII boss initialized via native solo phase pawn={}\n"),
             pawn->GetPathName());
     }
 
-    static auto reveal_kg_replacement_bosses(UObject* context, UFunction* function, void*) -> void
+    static void finish_base_kg_opening_ansem_retreat(UObject* enemy_level, UObject* enemy_script)
+    {
+        constexpr auto enemy_level_path =
+            L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_A.kg_02_enemy_Area_A:PersistentLevel";
+        if (enemy_level->GetPathName() != enemy_level_path)
+        {
+            return;
+        }
+
+        constexpr auto ansem_entity_path =
+            L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_A.kg_02_enemy_Area_A:PersistentLevel.e_ex316_Pawn_s1";
+        auto* entity = UObjectGlobals::StaticFindObject<UObject*>(nullptr, nullptr, ansem_entity_path);
+        auto* ansem = read_boss_owner_property(entity, level_entity_actor_property_name.data());
+        if (!ansem || entity->GetOuterPrivate() != enemy_level ||
+            !is_uobject_valid_fast(ansem->GetClassPrivate()) ||
+            ansem->GetClassPrivate()->GetPathName() !=
+                L"/Game/Blueprints/Enemy/e_ex316_s0/e_ex316_Pawn_s0.e_ex316_Pawn_s0_C" ||
+            read_boss_owner_property(ansem, pawn_level_entity_property_name.data()) != entity ||
+            try_read_int32_object_property(ansem, L"m_HitPoint").value_or(0) <= 0)
+        {
+            return;
+        }
+
+        constexpr auto gameflow_level_path =
+            L"/Game/Levels/kg/kg_02/umap/kg_02_gameflow_Area_A.kg_02_gameflow_Area_A:PersistentLevel";
+        auto* gameflow_level = UObjectGlobals::StaticFindObject<UObject*>(nullptr, nullptr, gameflow_level_path);
+        auto* gameflow_script = read_boss_owner_property(gameflow_level, L"LevelScriptActor");
+        auto* world = actor_owning_world(enemy_script);
+        if (!is_uobject_valid_fast(world) || !gameflow_script || actor_owning_world(gameflow_script) != world)
+        {
+            return;
+        }
+        const auto phase = read_boss_gameflow_flag(L"gameflow_KG_13_A");
+        if (phase != 1400 && phase != 1500)
+        {
+            return;
+        }
+
+        // A first defeat can send the randomized fight straight to phase 3.
+        // Use phase 1's authored retirement for the still-spawned opening group.
+        auto* vanish = gameflow_script->GetFunctionByNameInChain(L"VanishLevelEntities");
+        if (!vanish || vanish->GetParmsSize() <= 0)
+        {
+            return;
+        }
+        std::vector<std::byte> params(vanish->GetParmsSize());
+        if (!write_name_or_string_function_param(find_function_param_by_name(vanish, L"TargetGroup"),
+                                                params.data(), L"kg_02_en_AreaA_Group_01") ||
+            !write_integral_function_param(find_function_param_by_name(vanish, L"DisappearMode"), params.data(), 0) ||
+            !write_bool_function_param(find_function_param_by_name(vanish, L"SaveProperties"), params.data(), false))
+        {
+            return;
+        }
+        gameflow_script->ProcessEvent(vanish, params.data());
+        Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Base KG phase 3 retired opening Ansem group "
+                                          "phase={} actor_still_bound={}\n"),
+                                       *phase, read_boss_owner_property(entity, level_entity_actor_property_name.data()) != nullptr);
+    }
+
+    static auto repair_kg_boss_phase_handoff(UObject* context, UFunction* function, void*) -> void
     {
         auto& state = s_runtime_enemy_remap;
         // Engine dispatch owns these live arguments. Reject unrelated calls
@@ -436,9 +500,10 @@ namespace kh3ap::enemy_remap_detail
         {
             return;
         }
-        const auto event =
-            state.boss.repairs.kg_reveal_event_names.find(function->GetNamePrivate());
-        if (event == state.boss.repairs.kg_reveal_event_names.end())
+        const auto function_name = function->GetNamePrivate();
+        const bool area_a_phase3 = function_name == base_kg_area_a_phase3_event;
+        const auto event = state.boss.repairs.kg_reveal_event_names.find(function_name);
+        if (!area_a_phase3 && event == state.boss.repairs.kg_reveal_event_names.end())
         {
             return;
         }
@@ -452,6 +517,11 @@ namespace kh3ap::enemy_remap_detail
             if (!is_uobject_valid_fast(level) ||
                 read_boss_owner_property(level, L"LevelScriptActor") != context)
             {
+                return;
+            }
+            if (area_a_phase3)
+            {
+                finish_base_kg_opening_ansem_retreat(level, context);
                 return;
             }
             const auto level_path = level->GetPathName();
@@ -551,7 +621,7 @@ namespace kh3ap::enemy_remap_detail
         catch (...)
         {
             Output::send<LogLevel::Warning>(
-                STR("[KH3APProbeCpp] KG replacement reveal skipped reason=reflection_exception\n"));
+                STR("[KH3APProbeCpp] KG boss phase handoff repair skipped reason=reflection_exception\n"));
         }
     }
 
@@ -562,7 +632,8 @@ namespace kh3ap::enemy_remap_detail
             s_runtime_enemy_remap.boss.repairs.kg_reveal_event_names.emplace(
                 FName{event.name.data(), FNAME_Add}, event.area);
         }
-        Hook::RegisterProcessEventPostCallback(&reveal_kg_replacement_bosses);
+        base_kg_area_a_phase3_event = FName{L"kg_02_gameflow_REvt_BattleArea_A_SetPhase3", FNAME_Add};
+        Hook::RegisterProcessEventPostCallback(&repair_kg_boss_phase_handoff);
     }
 
     auto read_boss_gameflow_flag(std::wstring_view flag_name) -> std::optional<int64_t>
@@ -665,9 +736,14 @@ namespace kh3ap::enemy_remap_detail
         using Tick = void (*)(UObject*, float);
         reinterpret_cast<Tick>(state.boss.repairs.ansem_tick_trampoline)(pawn, delta_seconds);
         if (!state.active || !state.boss.boss_enabled.load() ||
-            !state.boss.repairs.opening_ansem_class || !is_uobject_valid_fast(pawn) ||
-            !is_uobject_valid_fast(pawn->GetClassPrivate()) ||
-            pawn->GetClassPrivate()->GetNamePrivate() != *state.boss.repairs.opening_ansem_class)
+            !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(pawn->GetClassPrivate()))
+        {
+            return;
+        }
+        const auto pawn_class = pawn->GetClassPrivate()->GetNamePrivate();
+        const bool base_kg = pawn_class == base_opening_ansem_class;
+        if (!base_kg && (!state.boss.repairs.opening_ansem_class ||
+                         pawn_class != *state.boss.repairs.opening_ansem_class))
         {
             return;
         }
@@ -690,24 +766,28 @@ namespace kh3ap::enemy_remap_detail
             return;
         }
         const float elapsed = std::exchange(state.boss.repairs.opening_sample_seconds, 0.0f);
-        constexpr auto level = L"/Game/Levels/kg_DLC/kg_05/umap/"
-                               L"kg_05_enemy_Area_A.kg_05_enemy_Area_A:PersistentLevel.";
-        const std::wstring xigbar_entity_path = std::wstring{level} + L"e_ex305_Pawn_s10_3";
+        const auto level = base_kg
+            ? L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_A.kg_02_enemy_Area_A:PersistentLevel."
+            : L"/Game/Levels/kg_DLC/kg_05/umap/kg_05_enemy_Area_A.kg_05_enemy_Area_A:PersistentLevel.";
+        const auto xigbar_slot = base_kg ? L"e_ex305_Pawn2" : L"e_ex305_Pawn_s10_3";
+        const auto riku_slot = base_kg ? L"e_ex313_Pawn2" : L"e_ex313_Pawn_s10_1";
+        const auto ansem_slot = base_kg ? L"e_ex316_Pawn_s1" : L"e_ex316_Pawn_s11_5";
         auto* entity = read_boss_owner_property(pawn, pawn_level_entity_property_name.data());
         if (!is_uobject_valid_fast(entity) ||
-            entity->GetPathName() != std::wstring{level} + L"e_ex316_Pawn_s11_5" ||
+            entity->GetPathName() != std::wstring{level} + ansem_slot ||
             read_boss_owner_property(entity, level_entity_actor_property_name.data()) != pawn)
         {
             return;
         }
         {
+            const std::wstring xigbar_entity_path = std::wstring{level} + xigbar_slot;
             std::lock_guard lock{state.boss.tracking.boss_state_mutex};
             const auto source =
                 state.boss.tracking.remapped_boss_source_classes.find(xigbar_entity_path);
             const auto target = state.boss.tracking.remapped_boss_entities.find(xigbar_entity_path);
             if (source == state.boss.tracking.remapped_boss_source_classes.end() ||
                 target == state.boss.tracking.remapped_boss_entities.end() ||
-                !needs_remind_ansem_phase_driver(source->second, target->second))
+                !needs_opening_ansem_phase_driver(source->second, target->second))
             {
                 return;
             }
@@ -720,14 +800,15 @@ namespace kh3ap::enemy_remap_detail
                             : nullptr;
         if (!is_uobject_valid_fast(current) ||
             current->GetName().find(L"Cinematic") != std::wstring::npos ||
-            read_boss_gameflow_flag(L"gameflow_KG_DLC_13_A") != remind_opening_story_flag ||
+            read_boss_gameflow_flag(base_kg ? L"gameflow_KG_13_A" : L"gameflow_KG_DLC_13_A") !=
+                (base_kg ? base_opening_story_flag : remind_opening_story_flag) ||
             !opening_player_has_control(pawn))
         {
             return;
         }
         state.boss.repairs.opening_battle_seconds += elapsed;
         int lowest_hp = opening_hp_percent(pawn);
-        for (const auto* name : {L"e_ex305_Pawn_s10_3", L"e_ex313_Pawn_s10_1"})
+        for (const auto* name : {xigbar_slot, riku_slot})
         {
             const auto path = std::wstring{level} + name;
             auto* partner_entity =
@@ -740,7 +821,7 @@ namespace kh3ap::enemy_remap_detail
                 read_boss_owner_property(partner_entity, level_entity_actor_property_name.data());
             lowest_hp = std::min(lowest_hp, opening_hp_percent(partner));
         }
-        if (!remind_ansem_retreat_due(state.boss.repairs.opening_battle_seconds, lowest_hp))
+        if (!opening_ansem_retreat_due(state.boss.repairs.opening_battle_seconds, lowest_hp))
         {
             return;
         }
@@ -765,8 +846,9 @@ namespace kh3ap::enemy_remap_detail
         state.boss.repairs.opening_retreat_dispatched = true;
         script->ProcessEvent(event, params.data());
         Output::send<LogLevel::Normal>(
-            STR("[KH3APProbeCpp] Re Mind opening Ansem retreat restored missing_driver=Xigbar "
+            STR("[KH3APProbeCpp] {} opening Ansem retreat restored missing_driver=Xigbar "
                 "battle_seconds={} lowest_hp_percent={} route=native_phase_event\n"),
+            base_kg ? L"Base KG" : L"Re Mind",
             state.boss.repairs.opening_battle_seconds, lowest_hp);
     }
 
@@ -777,7 +859,7 @@ namespace kh3ap::enemy_remap_detail
                          state.boss.boss_class_replacements.end(),
                          [](const auto& entry)
                          {
-                             return needs_remind_ansem_phase_driver(entry.first, entry.second);
+                             return needs_opening_ansem_phase_driver(entry.first, entry.second);
                          }))
         {
             return;
@@ -804,9 +886,10 @@ namespace kh3ap::enemy_remap_detail
             return;
         }
         state.boss.repairs.opening_ansem_class.emplace(STR("e_ex316_Pawn_s11_C"), FNAME_Add);
+        base_opening_ansem_class = FName{L"e_ex316_Pawn_s0_C", FNAME_Add};
         state.boss.repairs.ansem_phase_driver = std::move(hook);
         Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Opening Ansem phase driver installed "
-                                           "storefront={} scope=remind_area_a_missing_xigbar\n"),
+                                           "storefront={} scope=kg_area_a_missing_xigbar\n"),
                                        profile.steam ? STR("steam") : STR("egs"));
     }
 
