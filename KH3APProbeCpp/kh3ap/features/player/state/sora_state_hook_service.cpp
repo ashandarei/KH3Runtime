@@ -9,6 +9,7 @@
 #include "kh3ap/core/events/character_level_events.h"
 #include "kh3ap/features/player/state/shared_sora_progression.h"
 #include "kh3ap/core/objects/uobject_validity.h"
+#include "kh3ap/core/reflection/reflected_property_cache.h"
 
 #include "kh3ap/hooks/memory/kh3_memory_hooks.h"
 #include "kh3ap/features/grants/bad_status_helpers.h"
@@ -451,12 +452,11 @@ namespace kh3ap
 
             constexpr uintptr_t current_state_id_offset = 0x58;
             const uintptr_t cached_pawn_address = reinterpret_cast<uintptr_t>(cached_pawn);
-            bool cached_state_comp_for_pawn =
-                    config.monitor.cached_runtime_sora_state_comp_valid &&
-                    config.monitor.cached_runtime_sora_pawn_address == cached_pawn_address &&
-                    config.monitor.cached_runtime_sora_state_comp_address != 0;
-            uintptr_t cached_state_comp_address =
-                    config.monitor.cached_runtime_sora_state_comp_address;
+            auto* const active_component = resolve_state_component(cached_pawn);
+            if (!active_component)
+            {
+                return;
+            }
             const auto invalidate_cached_current_state_for_event =
                     [&](const RuntimeSoraLevelMonitorState::CurrentStateWritePolyhookEvent& event,
                         UObject* state_comp) {
@@ -484,8 +484,6 @@ namespace kh3ap
                         config.monitor.cached_runtime_sora_pawn_address = cached_pawn_address;
                         config.monitor.cached_runtime_sora_state_comp_address = event.state_comp;
                         config.monitor.cached_runtime_sora_current_state_address = event.new_state;
-                        cached_state_comp_for_pawn = true;
-                        cached_state_comp_address = event.state_comp;
                         if (should_log_event)
                         {
                             sidecar_update_pending = true;
@@ -506,34 +504,10 @@ namespace kh3ap
                 }
 
                 auto* const state_comp = reinterpret_cast<UObject*>(event.state_comp);
-                bool state_comp_real = true;
-                bool state_comp_matches_cached_pawn = false;
-                if (cached_state_comp_for_pawn)
+                if (state_comp != active_component)
                 {
-                    if (event.state_comp != cached_state_comp_address)
-                    {
-                        continue;
-                    }
-                    state_comp_matches_cached_pawn = true;
+                    continue;
                 }
-                else
-                {
-                    // A current-state write gives us a live component address.
-                    // Validate its raw Outer pointer instead of calling IsReal,
-                    // which walks UE4SS's global object array for every rejected
-                    // component during multi-character fights.
-                    const auto state_comp_outer = try_read_process_u64(
-                            event.state_comp +
-                            runtime_sora_state_comp_outer_offset);
-                    state_comp_real = state_comp_outer.has_value();
-                    state_comp_matches_cached_pawn =
-                            state_comp_outer.value_or(0) == cached_pawn_address;
-                    if (!state_comp_matches_cached_pawn)
-                    {
-                        continue;
-                    }
-                }
-
                 if (event.new_state == 0)
                 {
                     if (config.observe_cinematic_transition &&
@@ -559,8 +533,8 @@ namespace kh3ap
                         try_read_process_u8(observed_state_address + current_state_id_offset);
                 const std::optional<uint8_t> current_state_id =
                         try_read_process_u8(effective_state_address + current_state_id_offset);
-                const bool current_state_real = current_state_id.has_value();
-                if (!current_state_id.has_value())
+                const bool current_state_real = current_state_id.has_value() && is_uobject_valid_fast(current_state);
+                if (!current_state_real)
                 {
                     invalidate_cached_current_state_for_event(event, state_comp);
                     continue;
@@ -638,8 +612,6 @@ namespace kh3ap
                     request_music_update(MusicUpdate::Form);
                     sidecar_update_pending = true;
                 }
-                cached_state_comp_for_pawn = true;
-                cached_state_comp_address = event.state_comp;
 
                 if (runtime_sora_state_matches_kind(
                             RuntimeSoraStateKind::WallRun,
@@ -704,12 +676,10 @@ namespace kh3ap
                              << config.monitor.runtime_sora_wallrun_prewrite_replace_count;
                         json << ",\"effective_state\":\"0x" << std::hex
                              << effective_state_address << std::dec << "\"";
-                        json << ",\"state_comp_real\":"
-                             << (state_comp_real ? "true" : "false");
+                        json << ",\"state_comp_real\":true";
                         json << ",\"current_state_real\":"
                              << (current_state_real ? "true" : "false");
-                        json << ",\"state_comp_matches_cached_pawn\":"
-                             << (state_comp_matches_cached_pawn ? "true" : "false");
+                        json << ",\"state_comp_matches_cached_pawn\":true";
                         json << ",\"new_state_class\":\""
                              << json_escape(observed_state_class) << "\"";
                         json << ",\"state_class\":\"" << json_escape(state_class) << "\"";
@@ -912,6 +882,32 @@ namespace kh3ap
                             : state_class);
         }
 
+        auto resolve_state_component(UObject* pawn) -> UObject*
+        {
+            auto* component = state_properties.read_object(pawn, L"MyStateComp");
+            if (component && component->GetOuterPrivate() != pawn)
+            {
+                component = nullptr;
+            }
+            // A new pawn can reuse its predecessor's address during map entry.
+            // The old queue can even retain that address as its Outer after GC.
+            if (config.monitor.cached_runtime_sora_state_comp &&
+                (!component || component != config.monitor.cached_runtime_sora_state_comp ||
+                 bound_component.Get() != component))
+            {
+                RuntimeSoraStateRevalidationSnapshot stale{
+                        .active_pawn = reinterpret_cast<uintptr_t>(pawn),
+                        .cached_pawn = config.monitor.cached_runtime_sora_pawn_address,
+                        .state_comp = config.monitor.cached_runtime_sora_state_comp_address};
+                invalidate_cached_sora_state(stale, RuntimeSoraStateRevalidationResult::StateCompOwnerMismatch);
+            }
+            if (bound_component.Get() != component)
+            {
+                bound_component = make_uobject_weak(component);
+            }
+            return component;
+        }
+
         auto revalidate_cached_sora_state() -> void
         {
             auto& pawn_state = config.runtime_state.grant_state().pawn_state();
@@ -920,46 +916,26 @@ namespace kh3ap
                             ? reinterpret_cast<uintptr_t>(pawn_state.object())
                             : 0,
             };
+            auto* component = resolve_state_component(reinterpret_cast<UObject*>(snapshot.active_pawn));
+            snapshot.state_comp = reinterpret_cast<uintptr_t>(component);
+            if (component)
             {
-                std::lock_guard<std::mutex> lock{
-                        config.monitor.current_state_write_polyhook_event_mutex};
-                snapshot.cached_pawn =
-                        config.monitor.cached_runtime_sora_pawn_address;
-                snapshot.state_comp =
-                        config.monitor.cached_runtime_sora_state_comp_address;
-                snapshot.cached_current_state =
-                        config.monitor.cached_runtime_sora_current_state_address;
-                snapshot.cached_current_state_id =
-                        config.monitor.cached_runtime_sora_current_state_id;
-            }
-
-            if (snapshot.active_pawn != 0 &&
-                snapshot.cached_pawn != 0 &&
-                snapshot.state_comp != 0)
-            {
-                snapshot.state_comp_outer = static_cast<uintptr_t>(
-                        try_read_process_u64(
-                                snapshot.state_comp +
-                                runtime_sora_state_comp_outer_offset)
-                                .value_or(0));
-                if (snapshot.state_comp_outer == snapshot.active_pawn)
+                snapshot.cached_pawn = snapshot.active_pawn;
+                snapshot.state_comp_outer = snapshot.active_pawn;
+                auto* current = state_properties.read_object(component, L"m_pCurrentState");
+                snapshot.current_state = reinterpret_cast<uintptr_t>(current);
+                if (current)
                 {
-                    snapshot.current_state = static_cast<uintptr_t>(
-                            try_read_process_u64(
-                                    snapshot.state_comp +
-                                    runtime_sora_current_state_pointer_offset)
-                                    .value_or(0));
-                    if (snapshot.current_state != 0)
-                    {
-                        snapshot.current_state_id = try_read_process_u8(
-                                snapshot.current_state +
-                                runtime_sora_current_state_id_offset);
-                        snapshot.catalog_match =
-                                snapshot.current_state_id.has_value() &&
-                                lookup_runtime_sora_state_by_id(
-                                        *snapshot.current_state_id) != nullptr;
-                    }
+                    snapshot.current_state_id = try_read_process_u8(
+                            snapshot.current_state + runtime_sora_current_state_id_offset);
+                    snapshot.catalog_match = snapshot.current_state_id.has_value() &&
+                            lookup_runtime_sora_state_by_id(*snapshot.current_state_id) != nullptr;
                 }
+            }
+            {
+                std::lock_guard<std::mutex> lock{config.monitor.current_state_write_polyhook_event_mutex};
+                snapshot.cached_current_state = config.monitor.cached_runtime_sora_current_state_address;
+                snapshot.cached_current_state_id = config.monitor.cached_runtime_sora_current_state_id;
             }
 
             const auto result = classify_runtime_sora_state_revalidation(snapshot);
@@ -1098,6 +1074,8 @@ namespace kh3ap
             }
         }
 
+        ReflectedPropertyCache<8> state_properties;
+        FWeakObjectPtr bound_component;
         RuntimeSoraStateHookConfig config;
         uint64_t observed_experience_revision{};
         uint64_t observed_level_revision{};
@@ -1144,6 +1122,11 @@ namespace kh3ap
     auto RuntimeSoraStateHookService::flush_vanilla_level_events() -> void
     {
         impl_->flush_vanilla_level_events();
+    }
+
+    auto RuntimeSoraStateHookService::resolve_state_component(UObject* pawn) -> UObject*
+    {
+        return impl_->resolve_state_component(pawn);
     }
 
     auto RuntimeSoraStateHookService::mark_sidecar_dirty() -> void
