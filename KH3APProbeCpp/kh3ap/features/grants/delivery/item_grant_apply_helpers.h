@@ -44,6 +44,7 @@ namespace kh3ap
         RuntimeSoraCurrentStateCacheView sora_current_state_cache;
         std::function<void()> progressive_keyblade_level_applied{};
         bool auto_equip_essential_abilities{};
+        bool fast_death_link{};
     };
 
     auto make_runtime_item_grant_apply_deps(

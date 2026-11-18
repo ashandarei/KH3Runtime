@@ -300,6 +300,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/grants/grant_log_throttle_state.cpp
     kh3ap/features/grants/grant_pawn_state.cpp
     kh3ap/features/grants/grant_safety.cpp
+    kh3ap/features/grants/fast_deathlink.cpp
     kh3ap/features/grants/grant_state.cpp
     kh3ap/features/grants/grant_tokens.cpp
     kh3ap/app/enums.cpp

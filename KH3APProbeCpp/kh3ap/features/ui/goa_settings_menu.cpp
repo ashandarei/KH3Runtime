@@ -6,6 +6,7 @@
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/features/grants/battle_level/battle_level_sync_service.h"
+#include "kh3ap/features/grants/fast_deathlink.h"
 #include "kh3ap/features/enemies/experience_multiplier_math.h"
 #include "kh3ap/features/enemies/experience_multiplier_service.h"
 
@@ -174,7 +175,32 @@ namespace kh3ap
                                        STR("Open Archipelago gameplay and convenience settings.")};
         auto page = menu.page();
         character_swap::append_menu(page);
-        add_deathlink_options(page, std::move(bridge_dir));
+        page.submenu(
+            STR("deathlink_options"), STR("DeathLink"),
+            [&goa_settings, bridge_dir = std::move(bridge_dir)](RuntimeOptionsPageBuilder& deathlink)
+            {
+                add_deathlink_options(deathlink, bridge_dir);
+                deathlink.toggle(
+                    STR("fast_death_link"), STR("Fast DeathLink"),
+                    [&goa_settings]()
+                    {
+                        return goa_settings.fast_death_link();
+                    },
+                    [&goa_settings](bool enabled)
+                    {
+                        (void)goa_settings.set_fast_death_link(enabled);
+                    },
+                    &fast_deathlink::supported,
+                    []()
+                    {
+                        return std::wstring{STR("Shorten the animation before Game Over on received DeathLinks.")};
+                    });
+            },
+            {},
+            []()
+            {
+                return std::wstring{STR("Set death sharing, amnesty and Game Over speed.")};
+            });
         page.toggle(
             STR("auto_skip_cutscenes"), STR("Auto Skip Cutscenes"),
             [&goa_settings]()

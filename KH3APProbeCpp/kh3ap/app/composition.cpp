@@ -1,5 +1,6 @@
 #include "kh3ap/features/player/characters/character_controller_input_policy.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_dm.h"
+#include "kh3ap/features/grants/fast_deathlink.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_unlocks.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
@@ -104,6 +105,7 @@ namespace kh3ap
 
     auto RuntimeComposition::Impl::shutdown() -> void
     {
+        fast_deathlink::shutdown();
         m_ingredients.shutdown();
         kh3ap::pipe::stop();
     }

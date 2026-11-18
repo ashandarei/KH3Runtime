@@ -25,7 +25,7 @@ namespace kh3ap
 
     auto try_call_bp_tres_start_game_over(
             RC::Unreal::UObject* world_context_object,
-            bool play_dead_se,
+            bool fast_death_link,
             RuntimeState& runtime_state,
             std::wstring_view bp_tres_start_game_over_path,
             std::wstring_view blueprint_library_default_object_path,
