@@ -8,6 +8,7 @@
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
@@ -188,6 +189,61 @@ namespace kh3ap::character_camera
         }
         *field->ContainerPtrToValuePtr<UObject *>(pawn) = private_asset;
         return true;
+    }
+
+    bool restore_active_view(RC::Unreal::UObject* pawn, std::wstring_view camera_class)
+    {
+        using namespace RC::Unreal;
+        auto* world = actor_owning_world(pawn);
+        if (!is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(world) || world != kh02_current_world())
+        {
+            return false;
+        }
+        auto* controller = object(pawn, L"Controller");
+        auto* local = object(controller, L"Player");
+        auto* manager = object(controller, L"PlayerCameraManager");
+        if (object(controller, L"Pawn") != pawn || object(local, L"PlayerController") != controller ||
+            !is_uobject_valid_fast(manager) || actor_owning_world(manager) != world)
+        {
+            return false;
+        }
+        try
+        {
+            Call view(manager, L"GetActiveViewCamera");
+            view.run();
+            if (view.result() != controller)
+            {
+                return false;
+            }
+            Call active(manager, L"GetActiveCamera");
+            active.run();
+            auto* camera = active.result();
+            if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != world ||
+                (!camera_class.empty() && camera->GetClassPrivate()->GetName() != camera_class) ||
+                object(camera, L"m_CameraManager") != manager ||
+                object(camera, L"m_PlayerController") != controller)
+            {
+                return false;
+            }
+            // A pooled controller keeps its camera stack. Possession can reset
+            // the rendered target to the controller without changing that stack.
+            Call restore(controller, L"SetViewTargetWithBlend");
+            restore.object(L"NewViewTarget", camera);
+            restore.number(L"BlendTime", 0.0f);
+            restore.run();
+            view.run();
+            const bool restored = view.result() == camera;
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] Character camera view restored={} pawn={} camera={}\n"),
+                restored, pawn->GetName(), camera->GetName());
+#endif
+            return restored;
+        }
+        catch (const std::exception&)
+        {
+            return false;
+        }
     }
 
     bool route(int controller, std::wstring_view key, int event, bool gamepad)

@@ -214,6 +214,17 @@ namespace kh3ap
     inline constexpr int runtime_party_dark_baymax_start = 710;
     inline constexpr int runtime_party_dark_baymax_end = 900;
 
+    [[nodiscard]] constexpr auto runtime_party_festival_dance_policy(
+        std::wstring_view level_name, bool active_manager_in_current_world) -> RuntimePartyMapPolicy
+    {
+        // The manager survives the dance's cinematic/paired-action state changes.
+        // Its event-scoped identity must belong to the current town world.
+        return active_manager_in_current_world &&
+                       level_name.find(L"/Game/Levels/ra/ra_02/") != std::wstring_view::npos
+                   ? RuntimePartyMapPolicy::solo
+                   : RuntimePartyMapPolicy::managed;
+    }
+
     inline constexpr std::wstring_view runtime_party_flash_tracer_course_b_asset =
         L"/Game/Levels/bx/bx_02/umap/bx_02_FlashTracer_Minigame02.bx_02_FlashTracer_Minigame02";
 

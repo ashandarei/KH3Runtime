@@ -90,6 +90,15 @@ int main() {
     assert(defaults.map_icon_options == 63 && defaults.map_overlay_enabled);
     assert(defaults.song_display);
     assert(!defaults.auto_skip_cutscenes);
+    assert(!defaults.fast_death_link);
+    const auto fast_death_link = read_runtime_ui_seed_defaults(
+        JsonObject{R"({"fast_death_link":1})"});
+    assert(fast_death_link.fast_death_link);
+    assert(apply_saved_map_ui_options(JsonObject{"{}"}, fast_death_link).fast_death_link);
+    assert(!apply_saved_map_ui_options(
+        JsonObject{R"({"fast_death_link":false})"}, fast_death_link).fast_death_link);
+    assert(apply_saved_map_ui_options(
+        JsonObject{R"({"fast_death_link":true})"}, defaults).fast_death_link);
     for (const bool enabled : {false, true}) {
         const auto seed_skip = read_runtime_ui_seed_defaults(
             JsonObject{json::write(json::Value{{"auto_skip_cutscenes", enabled ? 1 : 0}})});

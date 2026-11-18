@@ -73,6 +73,7 @@ namespace kh3ap
             bool song_display{true};
             bool auto_equip_essential_abilities{true};
             bool auto_skip_cutscenes{};
+            bool fast_death_link{};
             int32_t combat_ally_id{-1};
             uint32_t map_icon_options{map_icon_defaults};
             bool loaded{};
@@ -129,6 +130,7 @@ namespace kh3ap
             result.map_overlay_enabled = seed_ui.map_overlay_enabled;
             result.song_display = seed_ui.song_display;
             result.auto_skip_cutscenes = seed_ui.auto_skip_cutscenes;
+            result.fast_death_link = seed_ui.fast_death_link;
             result.auto_equip_essential_abilities = seed_ui.auto_equip_essential_abilities;
             result.map_icon_options = seed_ui.map_icon_options;
             const auto defaults = result;
@@ -179,6 +181,7 @@ namespace kh3ap
             result.map_overlay_enabled = saved_ui.map_overlay_enabled;
             result.song_display = saved_ui.song_display;
             result.auto_skip_cutscenes = saved_ui.auto_skip_cutscenes;
+            result.fast_death_link = saved_ui.fast_death_link;
             result.auto_equip_essential_abilities = saved_ui.auto_equip_essential_abilities;
             result.map_icon_options = saved_ui.map_icon_options;
             // Read-only compatibility with the retired seed-scoped preference.
@@ -381,6 +384,7 @@ namespace kh3ap
         map_overlay_enabled_.store(persisted.map_overlay_enabled);
         song_display_.store(persisted.song_display);
         auto_skip_cutscenes_.store(persisted.auto_skip_cutscenes);
+        fast_death_link_.store(persisted.fast_death_link);
         combat_ally_id_.store(persisted.combat_ally_id);
         auto_equip_essential_abilities_.store(persisted.auto_equip_essential_abilities);
         map_icon_options_.store(persisted.map_icon_options);
@@ -439,6 +443,7 @@ namespace kh3ap
             .song_display = song_display(),
             .auto_equip_essential_abilities = auto_equip_essential_abilities(),
             .auto_skip_cutscenes = auto_skip_cutscenes(),
+            .fast_death_link = fast_death_link(),
             .combat_ally_id = combat_ally_id(),
             .map_icon_options = map_icon_options(),
             .loaded_from_disk = loaded_from_disk_.load(),
@@ -536,6 +541,12 @@ namespace kh3ap
     auto RuntimeGoaSettingsService::set_auto_equip_essential_abilities(bool enabled) -> bool
     {
         auto_equip_essential_abilities_.store(enabled);
+        return persist_settings();
+    }
+
+    auto RuntimeGoaSettingsService::set_fast_death_link(bool enabled) -> bool
+    {
+        fast_death_link_.store(enabled);
         return persist_settings();
     }
 
@@ -639,6 +650,7 @@ namespace kh3ap
              << ",\n"
              << "  \"map_overlay_enabled\": " << (snapshot.map_overlay_enabled ? "true" : "false")
              << ",\n"
+             << "  \"fast_death_link\": " << (snapshot.fast_death_link ? "true" : "false") << ",\n"
              << "  \"auto_skip_cutscenes\": " << (snapshot.auto_skip_cutscenes ? "true" : "false") << ",\n"
              << "  \"song_display\": " << (snapshot.song_display ? "true" : "false") << ",\n"
              << "  \"auto_equip_essential_abilities\": "

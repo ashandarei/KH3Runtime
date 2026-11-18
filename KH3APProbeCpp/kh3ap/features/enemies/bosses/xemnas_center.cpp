@@ -62,36 +62,6 @@ namespace kh3ap
         return actor;
     }
 
-    auto data_xemnas_center_location(UObject* pawn) -> std::optional<std::array<float, 3>>
-    {
-        std::array<float, 3> center{};
-        auto* function = pawn->GetFunctionByNameInChain(L"GetCenterLocation");
-        auto* result = is_uobject_valid_fast(function)
-                           ? find_function_param_by_name(function, L"ReturnValue")
-                           : nullptr;
-        if (!result || !result->IsA<FStructProperty>() ||
-            result->GetElementSize() != sizeof(center) || result->GetOffset_Internal() != 0 ||
-            function->GetParmsSize() != sizeof(center))
-        {
-            return std::nullopt;
-        }
-        auto* structure = static_cast<FStructProperty*>(result)->GetStruct();
-        if (!is_uobject_valid_fast(structure) || structure->GetName() != L"Vector")
-        {
-            return std::nullopt;
-        }
-        pawn->ProcessEvent(function, center.data());
-        if (!std::all_of(center.begin(), center.end(),
-                         [](float value)
-                         {
-                             return std::isfinite(value) && std::abs(value) <= 10000000.0f;
-                         }))
-        {
-            return std::nullopt;
-        }
-        return center;
-    }
-
     namespace
     {
         struct CenterBinding
@@ -182,7 +152,7 @@ namespace kh3ap
             return;
         }
         const auto original = data_xemnas_center_actor(pawn);
-        const auto center = data_xemnas_center_location(pawn);
+        const auto center = read_boss_arena_center(pawn);
         auto* owner = static_cast<AActor*>(pawn);
         auto* level = owner->GetLevel();
         auto* klass = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr,

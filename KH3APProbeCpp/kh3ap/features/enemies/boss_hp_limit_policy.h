@@ -17,7 +17,13 @@ namespace kh3ap
 
     inline constexpr std::wstring_view base_kg_area_b_entity_prefix =
         L"/Game/Levels/kg/kg_02/umap/kg_02_enemy_Area_B.kg_02_enemy_Area_B:PersistentLevel.";
+    inline constexpr int32_t base_kg_area_b_post_luxord_phase = 1400;
     inline constexpr int32_t base_kg_area_b_solo_phase = 1600;
+
+    [[nodiscard]] inline auto is_base_kg_area_b_post_luxord_phase(std::optional<int64_t> phase) -> bool
+    {
+        return phase == base_kg_area_b_post_luxord_phase || phase == base_kg_area_b_solo_phase;
+    }
 
     // Luxord's card game must finish before either of his two arena partners
     // can die. Otherwise their source death script skips the card-game phase.
@@ -58,11 +64,11 @@ namespace kh3ap
     }
 
     [[nodiscard]] inline auto luxord_partner_hp_floor_released(
-        int32_t spawns, int32_t kills, bool entered_solo_phase) -> bool
+        int32_t spawns, int32_t kills, bool post_luxord_checkpoint) -> bool
     {
-        // Area B Retry loads the solo checkpoint without respawning Luxord.
+        // Both the two-boss Retry and the solo Retry omit Luxord entirely.
         return luxord_native_defeat_observed(spawns, kills) ||
-               (entered_solo_phase && spawns == 0 && kills == 0);
+               (post_luxord_checkpoint && spawns == 0 && kills == 0);
     }
 
     enum class BossHpLimitKind

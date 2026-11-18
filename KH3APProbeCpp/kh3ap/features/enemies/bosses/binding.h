@@ -31,4 +31,7 @@ namespace kh3ap::enemy_remap_detail
     [[nodiscard]] auto tracked_boss_source_class(
             std::wstring_view level_entity_path)
             -> std::optional<std::wstring>;
+
+    [[nodiscard]] auto read_boss_arena_center(UObject* pawn)
+            -> std::optional<std::array<float, 3>>;
 }

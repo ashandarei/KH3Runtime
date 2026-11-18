@@ -84,22 +84,6 @@ namespace kh3ap
             return result;
         }
 
-        auto arena_center(UObject* pawn) -> std::optional<MasterArenaCenter>
-        {
-            auto* function = pawn->GetFunctionByNameInChain(L"GetCenterLocation");
-            auto* result = is_uobject_valid_fast(function)
-                               ? find_function_param_by_name(function, L"ReturnValue")
-                               : nullptr;
-            if (!vector_property(result) || function->GetParmsSize() != sizeof(MasterArenaCenter) ||
-                result->GetOffset_Internal() != 0)
-            {
-                return std::nullopt;
-            }
-            MasterArenaCenter center{};
-            pawn->ProcessEvent(function, center.data());
-            return translated_master_arena_center(center, MasterArenaCenter{});
-        }
-
         auto trace_wall_distance(UObject* mesh, const MasterArenaCenter& start,
                                  const MasterArenaCenter& end) -> std::optional<float>
         {
@@ -436,7 +420,7 @@ namespace kh3ap
             return;
         }
         auto* world = owning_world(pawn);
-        const auto center = arena_center(pawn);
+        const auto center = read_boss_arena_center(pawn);
         if (!is_uobject_valid_fast(world) || !center || !translate(pawn, *center))
         {
             Output::send<LogLevel::Error>(STR("[KH3APProbeCpp] Master Xehanort center unavailable "

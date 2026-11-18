@@ -39,6 +39,7 @@ namespace kh3ap
         bool song_display{true};
         bool auto_equip_essential_abilities{true};
         bool auto_skip_cutscenes{};
+        bool fast_death_link{};
         int32_t combat_ally_id{-1};
         uint32_t map_icon_options{map_icon_defaults};
         bool loaded_from_disk{};
@@ -78,6 +79,8 @@ namespace kh3ap
         [[nodiscard]] auto form_themes_enabled() const -> bool { return form_themes_enabled_.load(); }
         auto set_map_overlay_enabled(bool enabled) -> bool;
         [[nodiscard]] auto map_overlay_enabled() const -> bool { return map_overlay_enabled_.load(); }
+        auto set_fast_death_link(bool enabled) -> bool;
+        [[nodiscard]] auto fast_death_link() const -> bool { return fast_death_link_.load(); }
         auto set_auto_skip_cutscenes(bool enabled) -> bool;
         [[nodiscard]] auto auto_skip_cutscenes() const -> bool { return auto_skip_cutscenes_.load(); }
         auto set_combat_ally_id(int32_t player_id) -> bool;
@@ -118,6 +121,7 @@ namespace kh3ap
         std::atomic_bool map_overlay_enabled_{true};
         std::atomic_bool song_display_{true};
         std::atomic_bool auto_skip_cutscenes_{};
+        std::atomic_bool fast_death_link_{};
         std::atomic_int32_t combat_ally_id_{-1};
         std::atomic_bool auto_equip_essential_abilities_{true};
         std::atomic_uint32_t map_icon_options_{map_icon_defaults};

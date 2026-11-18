@@ -3,6 +3,7 @@
 #include "kh3ap/diagnostics/kh3_autosave_probe.h"
 #include "kh3ap/hooks/inventory/inventory_snapshot.h"
 #include "kh3ap/features/player/characters/character_loadouts.h"
+#include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/hooks/frame_wait/kh3_frame_wait.h"
 #include "kh3ap/core/performance_build.h"
 #include "kh3ap/hooks/patches/kh3_expanded_save_slots_patch.h"
@@ -209,6 +210,7 @@ namespace kh3ap
             config_.autosave_probe.install(std::move(autosave_config));
             inventory_snapshot::install();
             character_loadouts::install();
+            character_reactions::install_graveyard_events();
 
             // The focus hooks are still only armed after gameplay controller
             // discovery; this call does not attach them on the title screen.
@@ -233,6 +235,7 @@ namespace kh3ap
             config_.object_observations.uninstall();
             config_.game_thread_driver.uninstall_tick_hook();
             config_.autosave_probe.uninstall(reason);
+            character_reactions::uninstall_graveyard_events();
             inventory_snapshot::uninstall();
             character_loadouts::uninstall();
             config_.sqex_translucent_slice_view_guard_patch.uninstall(reason);

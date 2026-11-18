@@ -191,6 +191,20 @@ namespace kh3ap
                 observe_can_battle(context.Context, result != 0);
             },
             nullptr);
+        // Keep the override through the dance's intro, paired performances and
+        // results. Pawn states can change during those sequences; the owning
+        // manager's lifecycle is authoritative for both story and revisit play.
+        for (const auto& [path, active] : {
+                 std::pair{L"/Script/TresGame.TresRaFestivalDanceManager:SetDanceStart", true},
+                 std::pair{L"/Script/TresGame.TresRaFestivalDanceManager:SetDanceEnd", false}})
+        {
+            UObjectGlobals::RegisterHook(
+                path, [](UnrealScriptFunctionCallableContext&, void*) {},
+                [this, active](UnrealScriptFunctionCallableContext& context, void*)
+                {
+                    observe_festival_dance(context.Context, active);
+                }, nullptr);
+        }
         hook_installed_ =
             (set_friend_all_hook_ids_.first != 0 || set_friend_all_hook_ids_.second != 0) &&
             (controller_possess_hook_ids_.first != 0 || controller_possess_hook_ids_.second != 0) &&

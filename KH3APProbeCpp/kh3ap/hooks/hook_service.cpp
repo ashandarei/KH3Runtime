@@ -4,6 +4,7 @@
 #include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/features/music/events/music_update_events.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 
@@ -29,6 +30,7 @@
 #include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/features/player/context/player_context_service.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/features/enemies/bosses/master_xehanort_dm.h"
 #include "kh3ap/features/story/remind/remind_portal_route.h"
 #include "kh3ap/features/story/remind/yozora_return_route.h"
 #include "kh3ap/features/story/remind/remind_return_route.h"
@@ -342,6 +344,8 @@ namespace kh3ap
                     std::chrono::steady_clock::now(), map_root);
                 if (!*special_battle_mode)
                 {
+                    notify_master_xehanort_battle_ended(
+                        config.runtime_state.grant_state().pawn_state().object());
                     config.player_context.clear_special_battle_recovery_pending();
                 }
                 if (changed)
@@ -456,6 +460,7 @@ namespace kh3ap
 
             if (phase == HookPhase::Pre)
             {
+                character_reactions::graveyard_portal_jump(prepared->frame_name.find(L"/Game/Maps/GardenOfAssemblage/uasset/Textures/Portals/Portal_Base") != std::wstring::npos ? get_frame_object(callback_context.TheStack) : nullptr);
                 character_swap::notify_map_jump(prepared->context, prepared->frame_name);
                 runtime_clear_current_player();
                 try_redirect_remind_scala_portal(callback_context.TheStack,

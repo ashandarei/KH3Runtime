@@ -17,6 +17,17 @@ namespace kh3ap::character_cinematic_binding
         return type == L"TresInterpTrackVisibility" || type == L"TresInterpTrackWeaponControl";
     }
 
+    constexpr bool proportion_animation_track(std::wstring_view type)
+    {
+        // Component and weapon tracks have their own receiving meshes. They
+        // must not inherit the player's skeletal retargeting policy.
+        return type == L"TresInterpTrackFullBodyAnimation" ||
+               type == L"TresInterpTrackSlotAnimation" ||
+               type == L"TresInterpTrackFaceAnimation" ||
+               type == L"TresInterpTrackEyeAnimation" ||
+               type == L"TresInterpTrackLipAnimation";
+    }
+
     constexpr bool can_share_player_roles(std::wstring_view scene,
                                           std::span<const PlayerRole> roles)
     {

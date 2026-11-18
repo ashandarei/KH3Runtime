@@ -1,5 +1,6 @@
 #include "kh3ap/features/grants/delivery/item_call_helpers.h"
 #include "kh3ap/bridge/session/deathlink_policy.h"
+#include "kh3ap/features/grants/fast_deathlink.h"
 
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_call_helpers.h"
@@ -467,7 +468,7 @@ namespace kh3ap
 
     auto try_call_bp_tres_start_game_over(
             UObject* world_context_object,
-            bool play_dead_se,
+            bool fast_death_link,
             RuntimeState& runtime_state,
             std::wstring_view bp_tres_start_game_over_path,
             std::wstring_view blueprint_library_default_object_path,
@@ -567,7 +568,7 @@ namespace kh3ap
         {
             if (bool* const play_dead_se_value = play_dead_se_property->ContainerPtrToValuePtr<bool>(params))
             {
-                *play_dead_se_value = play_dead_se;
+                *play_dead_se_value = false;
             }
         }
         const auto params_written_at = std::chrono::steady_clock::now();
@@ -575,19 +576,24 @@ namespace kh3ap
         if (debug_logging)
         {
             Output::send<LogLevel::Verbose>(
-                    STR("[KH3APProbeCpp] Calling BP_TresStartGameOver kind=GAMEOVER_KIND_NORMAL | self={} | world={} | play_dead_se={}\n"),
+                    STR("[KH3APProbeCpp] Calling BP_TresStartGameOver kind=GAMEOVER_KIND_NORMAL | self={} | world={} | fast={}\n"),
                     format_object_debug_name(self_object),
                     format_object_debug_name(world_context_object),
-                    play_dead_se ? STR("true") : STR("false"));
+                    fast_death_link);
         }
 
         std::chrono::steady_clock::time_point process_event_started_at{};
         std::chrono::steady_clock::time_point process_event_returned_at{};
         {
             const RuntimeGrantInternalCallDepth::Scope internal_call_scope{};
+            const auto fast = fast_death_link && fast_deathlink::arm(world_context_object);
             process_event_started_at = std::chrono::steady_clock::now();
             self_object->ProcessEvent(function_object, params);
             process_event_returned_at = std::chrono::steady_clock::now();
+            if (fast)
+            {
+                fast_deathlink::confirm();
+            }
         }
         Output::send<LogLevel::Warning>(
                 STR("[KH3APProbeCpp] DeathLinkGameOverProfile function_us={} self_us={} validate_us={} allocate_us={} signature_us={} write_us={} dispatch_us={} wrapper_us={} total_us={} params_size={}\n"),

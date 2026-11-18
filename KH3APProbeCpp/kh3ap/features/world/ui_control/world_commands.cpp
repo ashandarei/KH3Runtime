@@ -323,8 +323,9 @@ namespace kh3ap
     {
         const bool dark_world =
             command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter";
+        const bool graveyard = command.starts_with(L"garden_graveyard_story_");
         if (pawn_name != expected_pawn ||
-            pawn_name.find(dark_world ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
+            pawn_name.find(dark_world || graveyard ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
                                       : L"/Game/Levels/kg/kg_02/kg_02.") == std::wstring::npos)
         {
             throw std::runtime_error("battlegate_zero_requires_normal_kg02_sora");
@@ -402,6 +403,7 @@ namespace kh3ap
         const bool chapter_menu = dark_world && text == L"Where would you like to go?" &&
                                   (rows == chapter || rows == cleared);
         const bool correct_text =
+            graveyard ? (text == L"Are you sure you want to visit Keyblade Graveyard?" && rows == original) :
             dark_world ? (chapter_menu || (text == L"Are you sure you want to visit Dark World?" &&
                                            rows == original))
                        : text.find(L"<b(on)>Battlegate 0 - Difficulty ") == 0 &&
@@ -430,7 +432,7 @@ namespace kh3ap
         }
         const auto dialog_id = field<int32_t>(choice, 0xa8);
         std::ostringstream evidence;
-        evidence << (dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,")
+        evidence << (graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,")
                  << "\"dialog_id\":" << dialog_id << ",\"text\":\"" << json_escape(text)
                  << "\",\"choices\":[";
         for (size_t i = 0; i < rows.size(); ++i)
@@ -443,7 +445,7 @@ namespace kh3ap
         }
         evidence << "]}";
         command_json = evidence.str();
-        if (command == L"battlegate_zero_inspect" || command == L"garden_dark_world_inspect")
+        if (command == L"garden_graveyard_story_inspect" || command == L"battlegate_zero_inspect" || command == L"garden_dark_world_inspect")
         {
             finish(L"completed", L"battlegate_zero_choice_observed");
             return;
@@ -481,7 +483,10 @@ namespace kh3ap
         {
             throw std::runtime_error("dark_world_portal_requires_idle_garden_player");
         }
-        auto* portal = frozen_garden_portal(L"gameflow_DW");
+        const bool graveyard = command == L"garden_graveyard_story_open";
+        if (graveyard && selection_game_flag(L"gameflow_KG") != 0)
+            throw std::runtime_error("graveyard_story_zero_required");
+        auto* portal = frozen_garden_portal(graveyard ? L"gameflow_KG" : L"gameflow_DW");
         UiProbeCall interact(portal, L"BndEvt__TresReactor_K2Node_ComponentBoundEvent_0_"
                                      L"TresReactorDoCommandSignature__DelegateSignature");
         if (!write_object_function_param(
@@ -494,7 +499,7 @@ namespace kh3ap
         }
         std::ostringstream evidence;
         evidence << "{\"portal\":\"" << json_escape(portal->GetPathName())
-                 << "\",\"story_flag\":\"gameflow_DW\"}";
+                 << "\",\"story_flag\":\"" << (graveyard ? "gameflow_KG" : "gameflow_DW") << "\"}";
         command_json = evidence.str();
         interact.run();
         dispatched = true;

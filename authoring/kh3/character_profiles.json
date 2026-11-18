@@ -1610,6 +1610,30 @@
         "rva": "0x1702f70",
         "bytes": "488bc45541564157488d68a14881ecb000000048c745"
       }
+    },
+    {
+      "id": "festival_dance_update",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_festival_dance.cpp",
+      "egs": {
+        "rva": "0x1672f50",
+        "bytes": "48897c242055488bec4883ec60488b4168488bf9"
+      },
+      "steam": {
+        "rva": "0x1378e30",
+        "bytes": "48897c242055488bec4883ec50488b4168488bf9"
+      }
+    },
+    {
+      "id": "hud_command_hide",
+      "source": "KH3APProbeCpp/kh3ap/features/player/characters/character_festival_dance.cpp",
+      "egs": {
+        "rva": "0x1995350",
+        "bytes": "40534883ec2080b9e9090000000fb6c2488bd974"
+      },
+      "steam": {
+        "rva": "0x161e470",
+        "bytes": "40534883ec2080b9e9090000000fb6c2488bd974"
+      }
     }
   ]
 }

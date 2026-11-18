@@ -17,8 +17,6 @@ namespace kh3ap
     // The native GetCenterActor reads this slot from the current level entity.
     auto data_xemnas_center_slot(RC::Unreal::UObject* entity) -> RC::Unreal::UObject**;
     auto data_xemnas_center_actor(RC::Unreal::UObject* pawn) -> std::optional<RC::Unreal::UObject*>;
-    auto data_xemnas_center_location(RC::Unreal::UObject* pawn)
-        -> std::optional<std::array<float, 3>>;
 
     namespace enemy_remap_detail
     {

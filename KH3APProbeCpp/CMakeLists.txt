@@ -117,7 +117,9 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/bosses/binding.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
+    kh3ap/features/enemies/bosses/vanitas_clone_burst.cpp
     kh3ap/features/enemies/bosses/master_xehanort_center.cpp
+    kh3ap/features/enemies/bosses/master_xehanort_dm.cpp
     kh3ap/features/enemies/bosses/master_xehanort_queries.cpp
     kh3ap/features/enemies/bosses/xemnas_center.cpp
     kh3ap/features/enemies/bosses/xigbar_field.cpp
@@ -257,6 +259,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_swap_stats.cpp
     kh3ap/features/player/combat/character_attack_completion.cpp
     kh3ap/features/player/combat/character_union_cross.cpp
+    kh3ap/features/player/animation_pose.cpp
+    kh3ap/features/player/characters/character_cinematic_proportions.cpp
     kh3ap/features/player/characters/character_cinematic_binding.cpp
     kh3ap/features/player/characters/character_profile.cpp
     kh3ap/features/player/characters/character_pawn_pool.cpp
@@ -270,6 +274,7 @@ add_library(${TARGET} SHARED
         kh3ap/features/player/movement/character_airstep.cpp
         kh3ap/features/player/movement/character_floating.cpp
     kh3ap/features/player/movement/character_traversal.cpp
+    kh3ap/features/player/characters/character_festival_dance.cpp
     kh3ap/features/player/movement/kairi_glide.cpp
     kh3ap/features/player/movement/kairi_jump_arms.cpp
     kh3ap/features/player/movement/character_rails.cpp
@@ -295,6 +300,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/grants/grant_log_throttle_state.cpp
     kh3ap/features/grants/grant_pawn_state.cpp
     kh3ap/features/grants/grant_safety.cpp
+    kh3ap/features/grants/fast_deathlink.cpp
     kh3ap/features/grants/grant_state.cpp
     kh3ap/features/grants/grant_tokens.cpp
     kh3ap/app/enums.cpp
@@ -539,7 +545,7 @@ target_include_directories(${TARGET} PRIVATE
     "${stb_SOURCE_DIR}"
 )
 
-target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE kh3ap_json_headers kh3ap_vorbis)
+target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE asmjit kh3ap_json_headers kh3ap_vorbis)
 
 if(MSVC)
     # Favor smaller code while retaining the shipping /O2 optimization preset.

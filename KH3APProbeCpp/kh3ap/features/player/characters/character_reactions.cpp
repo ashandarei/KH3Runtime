@@ -1,4 +1,8 @@
 #include "kh3ap/core/objects/actor_owning_world.h"
+#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include <limits>
+#include <cstring>
+#include <Unreal/FFrame.hpp>
 #include "character_reactions.h"
 #include "character_reaction_policy.h"
 #include "character_swap.h"
@@ -8,12 +12,16 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
+#include <Unreal/AActor.hpp>
 #include <Unreal/UClass.hpp>
+#include <Unreal/UFunction.hpp>
 #include <Unreal/UScriptStruct.hpp>
 #include <Unreal/FString.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
+#include <Unreal/Property/FMulticastDelegateProperty.hpp>
+#include <DynamicOutput/DynamicOutput.hpp>
 #include <stdexcept>
 
 namespace kh3ap::character_reactions
@@ -22,6 +30,14 @@ namespace kh3ap::character_reactions
     namespace
     {
         FWeakObjectPtr sora_defaults;
+        constexpr auto graveyard = L"/Game/Levels/kg/kg_01/kg_01.kg_01";
+        constexpr auto remote_event = L"/Script/TresGame.TresGameBlueprintLibrary:RemoteEvent";
+        constexpr auto enemy_type = L"/Game/Levels/kg/kg_01/umap/kg_01_enemy_01.kg_01_enemy_01_C";
+        constexpr auto camera_type = L"/Game/Levels/kg/kg_01/umap/kg_01_camera_ms011.kg_01_camera_ms011_C";
+        constexpr auto flow_type = L"/Game/Levels/kg/kg_01/umap/kg_01_gameflow.kg_01_gameflow_C";
+        std::pair<int, int> event_hooks{};
+        bool graveyard_portal_pending{};
+        FWeakObjectPtr score_logged[2];
 
         template<class T>
         void fill_tuning(UObject* pawn, UObject* source, const wchar_t* name, const wchar_t* kind)
@@ -48,6 +64,118 @@ namespace kh3ap::character_reactions
             return property && property->IsA<FBoolProperty>() &&
                    static_cast<FBoolProperty*>(property)->GetPropertyValueInContainer(owner) == wanted;
         }
+    }
+
+    void rebind_scripted_coaster(UObject* outgoing, UObject* incoming)
+    {
+        auto* world = actor_owning_world(incoming);
+        if (!is_uobject_valid_fast(world) || world->GetPathName() != graveyard) { return; }
+        auto* controller = object(incoming, L"Controller");
+        auto* player = object(controller, L"Player");
+        if (object(player, L"PlayerController") != controller || !controller || object(controller, L"Pawn") != incoming) { return; }
+        auto* field = incoming->GetPropertyByNameInChain(L"OnPlayerSpecificAction");
+        if (!field || !field->IsA<FMulticastDelegateProperty>() || field->GetElementSize() != sizeof(FMulticastScriptDelegate)) { return; }
+        auto& listeners = field->ContainerPtrToValuePtr<FMulticastScriptDelegate>(incoming)->InvocationList;
+        const FName callback(L"ReceivePlayerSpecificAction_Copy", FNAME_Add);
+        auto bind = [&](UObject* script) {
+            if (!is_uobject_valid_fast(script) || actor_owning_world(script) != world) { return false; }
+            const auto type = script->GetClassPrivate()->GetPathName();
+            if (type != enemy_type && type != camera_type) { return false; }
+            if (!listeners.ContainsByPredicate([&](const auto& entry) { return entry.Object.Get() == script && entry.FunctionName == callback; }))
+            {
+                listeners.Add(FScriptDelegate{make_uobject_weak(script), callback});
+                RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Graveyard coaster bound {} to {}\n"), script->GetName(), incoming->GetName());
+            }
+            return true;
+        };
+        if (outgoing != incoming && is_uobject_valid_fast(outgoing) && actor_owning_world(outgoing) == world &&
+            outgoing->GetPropertyByNameInChain(L"OnPlayerSpecificAction") == field)
+        {
+            auto& old = field->ContainerPtrToValuePtr<FMulticastScriptDelegate>(outgoing)->InvocationList;
+            for (int i = old.Num() - 1; i >= 0; --i)
+            {
+                if (old[i].FunctionName == callback && bind(old[i].Object.Get())) { old.RemoveAt(i); }
+            }
+        }
+        for (const auto* package : {L"/Game/Levels/kg/kg_01/umap/kg_01_enemy_01", L"/Game/Levels/kg/kg_01/umap/kg_01_camera_ms011"})
+        {
+            Kh02ReflectedCall stream(L"/Script/Engine.Default__GameplayStatics", L"GetStreamingLevel", "graveyard_coaster", 128);
+            stream.object(L"WorldContextObject", incoming);
+            stream.name(L"PackageName", package);
+            stream.run();
+            bind(object(object(stream.result(), L"LoadedLevel"), L"LevelScriptActor"));
+        }
+    }
+
+    void graveyard_portal_jump(UObject* portal)
+    {
+        const auto story = is_uobject_valid_fast(portal) ? try_read_object_name_property(portal, L"FinishedFlagName") : std::nullopt;
+        graveyard_portal_pending = story && _wcsicmp(story->c_str(), L"gameflow_KG") == 0;
+        if (graveyard_portal_pending)
+            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Graveyard Garden portal departure\n"));
+    }
+
+    void install_graveyard_events()
+    {
+        event_hooks = UObjectGlobals::RegisterHook(remote_event, [](UnrealScriptFunctionCallableContext& context, void*) {
+            // The native thunk runs with the calling Blueprint's frame. Its locals
+            // are not RemoteEvent parameters. Read only the literal (Self, Name)
+            // operands used by this encounter; leave Code untouched for the game.
+            const auto& frame = reinterpret_cast<const FFrame_50_AndBelow&>(context.TheStack);
+            if (!frame.Code || !is_uobject_valid_fast(frame.Node)) { return; }
+            const auto& code = frame.Node->GetScript();
+            constexpr size_t operand_size = 15;
+            const auto begin = reinterpret_cast<uintptr_t>(code.GetData());
+            const auto pos = reinterpret_cast<uintptr_t>(frame.Code);
+            if (code.Num() < operand_size || pos < begin || pos - begin > code.Num() - operand_size ||
+                frame.Code[0] != 0x17 || frame.Code[1] != 0x21 || frame.Code[14] != 0x16) { return; }
+            uint32_t script_name[3];
+            std::memcpy(script_name, frame.Code + 2, sizeof(script_name));
+            const uint32_t native_name[]{script_name[0], script_name[2]};
+            FName event;
+            static_assert(sizeof(event) == sizeof(native_name));
+            std::memcpy(&event, native_name, sizeof(event));
+            static const FName kill(L"kg_01_enemy_01_REvt_Gage", FNAME_Add), crowd(L"kg_01enemy_REvt_VFX_GageDown", FNAME_Add),
+                retry_intro(L"kg_01_gameflow_REvt_Battle_01_RetryCamera_Start", FNAME_Add);
+            if (event != kill && event != crowd && event != retry_intro) { return; }
+            auto* script = frame.Object;
+            if (!is_uobject_valid_fast(script) || script->GetClassPrivate() != frame.Node->GetOuterPrivate()) { return; }
+            auto* world = actor_owning_world(script);
+            if (!is_uobject_valid_fast(world) || world->GetPathName() != graveyard) { return; }
+            if (event != retry_intro)
+            {
+                if (script->GetClassPrivate()->GetPathName() != enemy_type) { return; }
+                auto* field = script->GetPropertyByNameInChain(event == kill ? L"kg_01_GageDown" : L"kg_01_VFXGageDown");
+                if (!field || field->GetClass().GetName() != L"IntProperty" || field->GetElementSize() != sizeof(int32_t)) { return; }
+                auto& points = *field->ContainerPtrToValuePtr<int32_t>(script);
+                if (points > 0 && points <= std::numeric_limits<int32_t>::max() / 2)
+                {
+                    points *= 2;
+                    auto& logged = score_logged[event == kill ? 0 : 1];
+                    if (logged.Get() != script)
+                    {
+                        logged = make_uobject_weak(script);
+                        RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Graveyard {} points {} -> {}\n"), event.ToString(), points / 2, points);
+                    }
+                }
+                return;
+            }
+            if (!graveyard_portal_pending || script->GetClassPrivate()->GetPathName() != flow_type) { return; }
+            auto* marker = object(script, L"TresPlayerStart_Retry01_ExecuteUbergraph_kg_01_gameflow_RefProperty");
+            if (!marker || marker->GetOuterPrivate() != script->GetOuterPrivate()) { return; }
+            Kh02ReflectedCall capture(script, L"CreateRetryPoint", "graveyard_retry", 128);
+            capture.object(L"RetryPoint", marker);
+            capture.boolean(L"WhiteFade", false);
+            graveyard_portal_pending = false;
+            capture.run();
+            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Graveyard portal checkpoint requested at {}\n"), marker->GetName());
+        }, [](UnrealScriptFunctionCallableContext&, void*) {}, nullptr);
+    }
+
+    void uninstall_graveyard_events()
+    {
+        UObjectGlobals::UnregisterHook(remote_event, event_hooks);
+        graveyard_portal_pending = false;
     }
 
     void capture_sora(UObject* pawn)

@@ -7,6 +7,8 @@
 #include "kh3ap/app/state.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/core/objects/uobject_validity.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
+#include "kh3ap/core/objects/uobject_weak.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FScriptArray.hpp>
@@ -301,6 +303,35 @@ namespace kh3ap
             sora_pawn->GetFullName());
     }
 
+    auto RuntimePartyMemberService::observe_festival_dance(UObject* manager, bool active) -> void
+    {
+        auto* level = persistent_level_for(resolve_party_player());
+        if (!is_uobject_valid_fast(manager) || !is_uobject_valid_fast(level) ||
+            actor_owning_world(manager) != level->GetOuterPrivate() ||
+            level->GetFullName().find(L"/Game/Levels/ra/ra_02/") == std::wstring::npos)
+        {
+            return;
+        }
+        if (active)
+        {
+            festival_dance_manager_ = make_uobject_weak(manager);
+        }
+        else if (festival_dance_manager_.Get() == manager)
+        {
+            festival_dance_manager_ = {};
+        }
+        else
+        {
+            return;
+        }
+        // Reconciliation cancels an outstanding custom spawn while retaining
+        // the user's choices and random pair for the end of the minigame.
+        request_reconcile(active ? L"Festival dance started" : L"Festival dance ended", false);
+        next_reconcile_attempt_ = std::chrono::steady_clock::now();
+        Output::send<LogLevel::Normal>(
+            STR("[KH3APProbeCpp] Festival dance party override active={}\n"), active);
+    }
+
     auto RuntimePartyMemberService::effective_map_policy(UObject* level) const
         -> RuntimePartyMapPolicy
     {
@@ -309,6 +340,12 @@ namespace kh3ap
             return RuntimePartyMapPolicy::managed;
         }
         const std::wstring level_name = level->GetFullName();
+        if (runtime_party_festival_dance_policy(
+                level_name, actor_owning_world(festival_dance_manager_.Get()) == level->GetOuterPrivate()) ==
+            RuntimePartyMapPolicy::solo)
+        {
+            return RuntimePartyMapPolicy::solo;
+        }
         if (ship_control_active_ && level_name.find(L"/Game/Levels/ca/") != std::wstring_view::npos)
         {
             const auto settings = effective_settings();

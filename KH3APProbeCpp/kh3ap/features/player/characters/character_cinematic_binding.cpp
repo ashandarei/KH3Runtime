@@ -1,6 +1,7 @@
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_cinematic_binding.h"
 #include "kh3ap/features/player/characters/character_cinematic_policy.h"
+#include "character_cinematic_proportions.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_matinee_binding.h"
@@ -12,11 +13,15 @@
 #include <Unreal/NameTypes.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
+#include <Unreal/UScriptStruct.hpp>
 #include <Unreal/TArray.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <algorithm>
 #include <array>
 #include <vector>
+#include <memory>
+#include <stdexcept>
 
 namespace kh3ap::character_cinematic_binding
 {
@@ -30,6 +35,7 @@ namespace kh3ap::character_cinematic_binding
         {
             FWeakObjectPtr matinee, group, pawn, original_actor, world;
             FName original_tag;
+            character_cinematic_proportions::Lease proportions;
         };
         std::vector<Binding> bindings;
         constexpr auto hero_tag = L"KH3AP_CinematicAlternate";
@@ -199,6 +205,84 @@ namespace kh3ap::character_cinematic_binding
             return result;
         }
 
+        void collect_animations(UObject* group, std::vector<UObject*>& animations)
+        {
+            auto* field = group->GetPropertyByNameInChain(L"InterpTracks");
+            auto* inner = field && field->IsA<FArrayProperty>()
+                              ? static_cast<FArrayProperty*>(field)->GetInner() : nullptr;
+            if (!inner || inner->GetClass().GetName() != L"ObjectProperty" ||
+                inner->GetElementSize() != sizeof(UObject*))
+            {
+                throw std::runtime_error("cinematic_proportions_tracks_layout");
+            }
+            auto* tracks = field->ContainerPtrToValuePtr<TArray<UObject*>>(group);
+            if (tracks->Num() < 0 || tracks->Num() > maximum_cinematic_groups)
+            {
+                throw std::runtime_error("cinematic_proportions_tracks_count");
+            }
+            for (auto* track : *tracks)
+            {
+                if (!is_uobject_valid_fast(track))
+                {
+                    throw std::runtime_error("cinematic_proportions_stale_track");
+                }
+                if (!proportion_animation_track(track->GetClassPrivate()->GetName()))
+                {
+                    continue;
+                }
+                auto* keys = track->GetPropertyByNameInChain(L"Keys");
+                auto* key = keys && keys->IsA<FArrayProperty>()
+                                ? static_cast<FArrayProperty*>(keys)->GetInner() : nullptr;
+                auto* schema = key && key->IsA<FStructProperty>()
+                                   ? static_cast<FStructProperty*>(key)->GetStruct() : nullptr;
+                auto* asset = is_uobject_valid_fast(schema)
+                                  ? find_struct_field_by_name(schema, L"AnimAsset") : nullptr;
+                if (!asset || asset->GetClass().GetName() != L"ObjectProperty" ||
+                    asset->GetElementSize() != sizeof(UObject*) || key->GetElementSize() <= 0 ||
+                    asset->GetOffset_Internal() < 0 ||
+                    asset->GetOffset_Internal() + sizeof(UObject*) > key->GetElementSize())
+                {
+                    throw std::runtime_error("cinematic_proportions_key_layout");
+                }
+                auto* values = keys->ContainerPtrToValuePtr<FScriptArray>(track);
+                if (values->Num() < 0 || values->Num() > 4096)
+                {
+                    throw std::runtime_error("cinematic_proportions_key_count");
+                }
+                for (int index = 0; index < values->Num(); ++index)
+                {
+                    auto* value = static_cast<std::byte*>(values->GetData()) + index * key->GetElementSize();
+                    auto* animation = *asset->ContainerPtrToValuePtr<UObject*>(value);
+                    if (!animation)
+                    {
+                        continue; // An authored stop/empty key has no pose.
+                    }
+                    if (!is_uobject_valid_fast(animation))
+                    {
+                        throw std::runtime_error("cinematic_proportions_stale_animation");
+                    }
+                    if (std::find(animations.begin(), animations.end(), animation) == animations.end())
+                    {
+                        animations.push_back(animation);
+                    }
+                }
+            }
+        }
+
+        void publish_proportions()
+        {
+            std::vector<character_cinematic_proportions::Lease> plans;
+            for (const auto& binding : bindings)
+            {
+                if (binding.proportions && binding.matinee.Get() && binding.group.Get() && binding.pawn.Get() && binding.world.Get() &&
+                    std::find(plans.begin(), plans.end(), binding.proportions) == plans.end())
+                {
+                    plans.push_back(binding.proportions);
+                }
+            }
+            character_cinematic_proportions::publish(std::move(plans));
+        }
+
         void remove_unused_tag(UObject* pawn)
         {
             if (std::any_of(bindings.begin(), bindings.end(),
@@ -261,6 +345,9 @@ namespace kh3ap::character_cinematic_binding
                       });
         bindings.reserve(bindings.size() + plan.size());
         old_pawns.reserve(old_pawns.size() + plan.size());
+        std::vector<UObject*> animations;
+        for (const auto& item : plan) { collect_animations(item.group, animations); }
+        const auto proportions = character_cinematic_proportions::prepare(pawn, animations);
         const FName target(hero_tag, FNAME_Add);
         tags->AddUnique(target);
         for (const auto& item : plan)
@@ -275,12 +362,16 @@ namespace kh3ap::character_cinematic_binding
             {
                 bindings.push_back({make_uobject_weak(matinee), make_uobject_weak(item.group),
                                     make_uobject_weak(pawn), make_uobject_weak(*item.slot),
-                                    make_uobject_weak(actor_owning_world(pawn)), *item.tag});
+                                    make_uobject_weak(actor_owning_world(pawn)), *item.tag, proportions});
             }
-            else if (found->pawn.Get() != pawn)
+            else
             {
-                old_pawns.push_back(found->pawn);
-                found->pawn = make_uobject_weak(pawn);
+                if (found->pawn.Get() != pawn)
+                {
+                    old_pawns.push_back(found->pawn);
+                    found->pawn = make_uobject_weak(pawn);
+                }
+                found->proportions = proportions;
             }
             *item.tag = target;
             *item.slot = pawn;
@@ -289,9 +380,10 @@ namespace kh3ap::character_cinematic_binding
         {
             remove_unused_tag(old.Get());
         }
+        publish_proportions();
         RC::Output::send<RC::LogLevel::Normal>(
-            STR("[KH3APProbeCpp] CharacterCinematic bound scene={} pawn={} roles={}\n"),
-            matinee->GetName(), pawn->GetName(), plan.size());
+            STR("[KH3APProbeCpp] CharacterCinematic bound scene={} pawn={} roles={} proportion_sequences={}\n"),
+            matinee->GetName(), pawn->GetName(), plan.size(), animations.size());
         return true;
     }
 
@@ -330,5 +422,28 @@ namespace kh3ap::character_cinematic_binding
             iterator = bindings.erase(iterator);
             remove_unused_tag(pawn);
         }
+        publish_proportions();
+    }
+
+    void prune(UObject* current_pawn)
+    {
+        // Existing player-start notifications cover travel and same-world
+        // Retry. No UObject discovery or timer is needed while scenes are idle.
+        for (;;)
+        {
+            const auto stale = std::find_if(bindings.begin(), bindings.end(),
+                [current_pawn](const Binding& binding)
+                {
+                    return !binding.matinee.Get() || !binding.group.Get() ||
+                           binding.pawn.Get() != current_pawn || binding.world.Get() != kh02_current_world();
+                });
+            if (stale == bindings.end()) { break; }
+            release(stale->matinee.Get());
+        }
+    }
+
+    void release_all()
+    {
+        while (!bindings.empty()) { release(bindings.front().matinee.Get()); }
     }
 } // namespace kh3ap::character_cinematic_binding

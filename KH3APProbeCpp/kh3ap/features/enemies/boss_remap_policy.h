@@ -64,20 +64,22 @@ namespace kh3ap
         return false;
     }
 
+    inline constexpr std::wstring_view base_xigbar_class =
+        L"/Game/Blueprints/Enemy/e_ex305/e_ex305_Pawn.e_ex305_Pawn_C";
     inline constexpr std::wstring_view remind_xigbar_class =
         L"/Game/Blueprints/Enemy/e_ex305_s10/e_ex305_Pawn_s10.e_ex305_Pawn_s10_C";
-    [[nodiscard]] inline auto needs_remind_ansem_phase_driver(std::wstring_view source,
-                                                              std::wstring_view replacement) -> bool
+    [[nodiscard]] inline auto needs_opening_ansem_phase_driver(std::wstring_view source,
+                                                               std::wstring_view replacement) -> bool
     {
-        return source == remind_xigbar_class && !replacement.empty() &&
-               replacement != remind_xigbar_class &&
-               replacement != L"/Game/Blueprints/Enemy/e_ex305/e_ex305_Pawn.e_ex305_Pawn_C";
+        return (source == base_xigbar_class || source == remind_xigbar_class) &&
+               !replacement.empty() && replacement != base_xigbar_class &&
+               replacement != remind_xigbar_class;
     }
 
     // Xigbar's native phase-I driver: the cooked pawn overrides battle time
     // to 20 seconds and inherits its 90-percent HP threshold. Opening Ansem
     // only retreats; this does not complete either remaining boss slot.
-    [[nodiscard]] inline auto remind_ansem_retreat_due(float battle_seconds, int lowest_hp_percent)
+    [[nodiscard]] inline auto opening_ansem_retreat_due(float battle_seconds, int lowest_hp_percent)
         -> bool
     {
         return battle_seconds >= boss_encounter_min_progress_seconds ||
@@ -92,6 +94,21 @@ namespace kh3ap
                 replacement ==
                     L"/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C");
     }
+
+    [[nodiscard]] inline auto needs_xiii_solo_phase(std::wstring_view source,
+                                                    std::wstring_view replacement) -> bool
+    {
+        constexpr std::wstring_view marluxia =
+            L"/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C";
+        constexpr std::wstring_view remind_marluxia =
+            L"/Game/Blueprints/Enemy/e_ex308_s10/e_ex308_Pawn_s10.e_ex308_Pawn_s10_C";
+        return needs_larxene_solo_phase(source, replacement) ||
+               (!source.empty() && source != marluxia && source != remind_marluxia &&
+                (replacement == marluxia || replacement == remind_marluxia));
+    }
+
+    inline constexpr std::wstring_view data_vanitas_class =
+        L"/Game/Blueprints/Enemy/e_ex360/e_ex360_Pawn.e_ex360_Pawn_C";
 
     // Tower mode requires Corona's tower/warp actors; randomized pawns use
     // their native normal-mode attacks instead.

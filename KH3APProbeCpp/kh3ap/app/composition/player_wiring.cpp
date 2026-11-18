@@ -55,6 +55,7 @@ namespace kh3ap
             {
                 auto deps = runtime_item_grant_apply_deps(context_summary);
                 deps.auto_equip_essential_abilities = m_goa_settings.auto_equip_essential_abilities();
+                deps.fast_death_link = m_goa_settings.fast_death_link();
                 deps.party_member_unlock =
                     [this](std::wstring_view token, UObject* sora, std::wstring* failure)
                 {

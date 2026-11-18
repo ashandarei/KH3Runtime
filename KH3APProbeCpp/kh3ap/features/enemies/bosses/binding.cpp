@@ -3,11 +3,14 @@
 #include "kh3ap/features/enemies/level_entity_remap.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/FProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
+#include <Unreal/UScriptStruct.hpp>
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 
 using namespace RC;
@@ -15,6 +18,37 @@ using namespace RC::Unreal;
 
 namespace kh3ap::enemy_remap_detail
 {
+    auto read_boss_arena_center(UObject* pawn) -> std::optional<std::array<float, 3>>
+    {
+        if (!is_uobject_valid_fast(pawn))
+        {
+            return std::nullopt;
+        }
+        std::array<float, 3> center{};
+        auto* function = pawn->GetFunctionByNameInChain(L"GetCenterLocation");
+        auto* result = is_uobject_valid_fast(function)
+                           ? find_function_param_by_name(function, L"ReturnValue")
+                           : nullptr;
+        if (!result || !result->IsA<FStructProperty>() ||
+            result->GetElementSize() != sizeof(center) || result->GetOffset_Internal() != 0 ||
+            function->GetParmsSize() != sizeof(center))
+        {
+            return std::nullopt;
+        }
+        auto* structure = static_cast<FStructProperty*>(result)->GetStruct();
+        if (!is_uobject_valid_fast(structure) || structure->GetName() != L"Vector")
+        {
+            return std::nullopt;
+        }
+        pawn->ProcessEvent(function, center.data());
+        if (!std::all_of(center.begin(), center.end(), [](float coordinate)
+            { return std::isfinite(coordinate) && std::abs(coordinate) <= 10000000.0f; }))
+        {
+            return std::nullopt;
+        }
+        return center;
+    }
+
     namespace
     {
         constexpr auto boss_binding_observation_log_limit = 64;

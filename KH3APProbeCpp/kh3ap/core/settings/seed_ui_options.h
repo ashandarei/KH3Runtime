@@ -24,6 +24,7 @@ struct RuntimeUiSeedDefaults {
     bool song_display{true};
     bool auto_equip_essential_abilities{true};
     bool auto_skip_cutscenes{};
+    bool fast_death_link{};
     uint32_t map_icon_options{map_icon_defaults};
     int32_t battle_level_offset{};
     std::array<std::size_t, 4> mom{};
@@ -32,6 +33,7 @@ inline auto read_runtime_ui_seed_defaults(const JsonObject& slot) -> RuntimeUiSe
     RuntimeUiSeedDefaults result;
     result.map_overlay_enabled = slot.int64_field("map_overlay_enabled").value_or(1) != 0;
     result.song_display = slot.int64_field("song_display").value_or(1) != 0;
+    result.fast_death_link = seed_bool_option(slot, "fast_death_link");
     result.auto_skip_cutscenes = seed_bool_option(slot, "auto_skip_cutscenes");
     result.auto_equip_essential_abilities = slot.int64_field("auto_equip_essential_abilities").value_or(1) != 0;
     for (const auto& [key, option] : std::array{
@@ -67,6 +69,7 @@ inline auto apply_saved_map_ui_options(const JsonObject& saved, RuntimeUiSeedDef
         -> RuntimeUiSeedDefaults {
     defaults.map_overlay_enabled = saved.bool_field("map_overlay_enabled").value_or(defaults.map_overlay_enabled);
     defaults.song_display = saved.bool_field("song_display").value_or(defaults.song_display);
+    defaults.fast_death_link = saved.bool_field("fast_death_link").value_or(defaults.fast_death_link);
     defaults.auto_skip_cutscenes = saved.bool_field("auto_skip_cutscenes").value_or(defaults.auto_skip_cutscenes);
     defaults.auto_equip_essential_abilities = saved.bool_field("auto_equip_essential_abilities").value_or(defaults.auto_equip_essential_abilities);
     for (const auto& [key, option] : std::array{

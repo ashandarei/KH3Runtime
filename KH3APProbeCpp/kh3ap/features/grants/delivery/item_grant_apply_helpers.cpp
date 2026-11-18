@@ -538,7 +538,10 @@ namespace kh3ap
             else if (request.grant_method == STR("bp_tres_start_game_over"))
             {
                 applied = try_call_bp_tres_start_game_over(
-                    world_context_object, false, deps.runtime_state,
+                    world_context_object,
+                    deps.fast_death_link && (request.action_kind == L"deathlink_game_over" ||
+                                            request.action_kind == L"manual_game_over"),
+                    deps.runtime_state,
                     deps.bp_tres_start_game_over_path,
                     deps.tres_game_blueprint_library_default_object_path, deps.debug_logging,
                     &candidate_failure);
