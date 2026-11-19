@@ -5,6 +5,7 @@
 #include "kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.h"
 #include "kh3ap/features/story/world_fixes/rapunzel_hair_approach.h"
 #include "kh3ap/features/story/world_fixes/olympus_intro_camera.h"
+#include "kh3ap/features/story/world_fixes/lump_of_horror_retry.h"
 #include "kh3ap/features/story/progression/battlegate_activation_service.h"
 #include "kh3ap/features/story/world_fixes/olympus_collapse_camera.h"
 #include "kh3ap/features/story/world_fixes/graveyard_backtracking.h"
@@ -134,6 +135,7 @@ namespace kh3ap
             {&rapunzel_swing_camera_class_name_, runtime_rapunzel_swing_camera_class, true},
             {&rapunzel_hair_approach_class_name_, runtime_rapunzel_hair_approach_class, true},
             {&olympus_intro_camera_class_name_, runtime_olympus_intro_camera_class, true},
+            {&monstropolis_factory_gameflow_class_name_, L"mi_04_gameflow_C", true},
             {&battle_portal_01_class_name_, battle_portal_01_class_name, true},
             {&olympus_collapse_camera_class_name_, runtime_olympus_collapse_camera_class, true},
             {&olympus_collapse_gameflow_class_name_, runtime_olympus_collapse_gameflow_class, true},
@@ -597,6 +599,11 @@ namespace kh3ap
         if (fname_equals(*class_name, rapunzel_hair_approach_class_name_))
         {
             return try_apply_rapunzel_hair_approach(
+                static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
+        }
+        if (fname_equals(*class_name, monstropolis_factory_gameflow_class_name_))
+        {
+            return try_apply_lump_of_horror_retry(
                 static_cast<RC::Unreal::UObject*>(const_cast<RC::Unreal::UObjectBase*>(object)));
         }
         if (fname_equals(*class_name, olympus_intro_camera_class_name_))

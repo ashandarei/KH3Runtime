@@ -136,6 +136,7 @@ namespace kh3ap
         RC::Unreal::FName rapunzel_swing_camera_class_name_{};
         RC::Unreal::FName rapunzel_hair_approach_class_name_{};
         RC::Unreal::FName olympus_intro_camera_class_name_{};
+        RC::Unreal::FName monstropolis_factory_gameflow_class_name_{};
         RC::Unreal::FName battle_portal_01_class_name_{};
         RC::Unreal::FName olympus_collapse_camera_class_name_{};
         RC::Unreal::FName olympus_collapse_gameflow_class_name_{};

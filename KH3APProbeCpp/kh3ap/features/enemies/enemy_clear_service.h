@@ -31,6 +31,8 @@ namespace kh3ap
         explicit RuntimeEnemyClearService(RuntimeEnemyClearConfig config);
         ~RuntimeEnemyClearService();
         void tick();
+        // One-shot replay at the next natural jump of the explicitly selected boss.
+        static void stage_requested_tram_xion_jump(RC::Unreal::UObject* boss);
         // Diagnostic New Game lease: protect each possessed opening pawn before
         // control handoff, restoring on Garden arrival or the bounded deadline.
         static bool arm_opening_protection(int seconds);

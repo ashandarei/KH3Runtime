@@ -123,6 +123,9 @@ namespace kh3ap
         int64_t anchor_expires{};
         std::string anchor_snapshot{"null"};
         void accept_xemnas_anchor(UObject* pawn, const std::string& text);
+        RC::Unreal::FWeakObjectPtr tram_fall_boss;
+        int64_t tram_fall_deadline{};
+        void accept_tram_xion_fall(UObject* pawn, const std::string& text);
         void restore_xemnas_anchor();
         void tick_xemnas_anchor();
         // Agent-only experiment. The supported EGS native getter copies this

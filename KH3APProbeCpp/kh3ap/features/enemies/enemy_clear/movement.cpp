@@ -1,8 +1,11 @@
 #include <array>
 #include <chrono>
 #include "kh3ap/core/platform/game_build.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
+#include "kh3ap/features/enemies/bosses/tram_xion_jump.h"
+#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
 
@@ -240,6 +243,55 @@ namespace kh3ap
         transform_captured = true;
         finish(L"completed", L"transform_snapshot");
         return;
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_tram_xion_fall(UObject* pawn, const std::string& text)
+    {
+        const auto selected = JsonFieldReader::string_field(text, "actor").value_or(L"");
+        enumerate(pawn);
+        std::erase_if(targets, [&](const Target& target) { return target.name != selected; });
+        if (protected_sora.Get() != pawn || protection_expires <= unix_ms() || targets.size() != 1 ||
+            targets.front().hp_before <= 0)
+        {
+            throw std::runtime_error("tram_fall_requires_protected_player_and_exact_living_target");
+        }
+        auto* boss = targets.front().actor.Get();
+        if (!tram_xion_entity(boss))
+        {
+            throw std::runtime_error("tram_fall_requires_data_xion_in_tram_common");
+        }
+        tram_fall_boss = make_uobject_weak(boss);
+        tram_fall_deadline = std::min<int64_t>(protection_expires, unix_ms() + 30000);
+        finish(L"completed", L"tram_xion_next_jump_armed");
+    }
+
+    void RuntimeEnemyClearService::stage_requested_tram_xion_jump(UObject* boss)
+    {
+        auto* self = Impl::instance;
+        if (!self || !self->tram_fall_deadline || self->tram_fall_boss.Get() != boss)
+        {
+            return;
+        }
+        const auto deadline = self->tram_fall_deadline;
+        self->tram_fall_deadline = 0;
+        self->tram_fall_boss = {};
+        auto* player = self->protected_sora.Get();
+        if (!player || unix_ms() >= std::min(deadline, self->protection_expires) ||
+            self->controlled_combat_pawn() != player || actor_world(player) != self->protected_world.Get() ||
+            actor_owning_world(boss) != actor_owning_world(player))
+        {
+            return;
+        }
+        // Reproduce only the position at jump entry. The game selected the
+        // state and owns all subsequent movement and AI transitions.
+        Kh02ReflectedCall move(boss, L"K2_SetActorLocation", "tram_xion_fixture", 512);
+        move.vector(L"NewLocation", 1974.9742f, 6687.584f, 414.0048f);
+        move.boolean(L"bTeleport", true);
+        move.run();
+        if (!move.boolean_result())
+        {
+            throw std::runtime_error("tram_fall_fixture_position_rejected");
+        }
     }
 
     void RuntimeEnemyClearService::Impl::accept_boss_center(UObject* pawn, const std::string& text)

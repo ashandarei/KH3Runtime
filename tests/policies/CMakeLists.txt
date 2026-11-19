@@ -39,6 +39,7 @@ set(_kh3_policy_tests
     arm_pose_blend
     character_cinematic_policy
     cutscene_skip_transaction
+    lump_of_horror_retry
     chest_journal
     player_identity
     ui_input_event

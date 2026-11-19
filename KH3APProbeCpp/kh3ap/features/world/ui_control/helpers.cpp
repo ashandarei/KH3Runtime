@@ -57,14 +57,18 @@ namespace kh3ap::ui_control_detail
         set.object(L"WorldContextObject", pawn);
         set.boolean(L"bPaused", paused);
         set.run();
-        Kh02ReflectedCall read(library, L"IsGamePaused", "cutscene_pause",
-                               max_cutscene_pause_parameter_bytes);
-        read.object(L"WorldContextObject", pawn);
-        read.run();
-        if (read.boolean_result() != paused)
+        if (engine_pause_active(pawn) != paused)
         {
             throw std::runtime_error("cutscene_engine_pause_not_observed");
         }
+    }
+    bool engine_pause_active(UObject* pawn)
+    {
+        Kh02ReflectedCall read(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
+                               "engine_pause", max_cutscene_pause_parameter_bytes);
+        read.object(L"WorldContextObject", pawn);
+        read.run();
+        return read.boolean_result();
     }
     void remote_texture_screenshot(UObject* pawn)
     {

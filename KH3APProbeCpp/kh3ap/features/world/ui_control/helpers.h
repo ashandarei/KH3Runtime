@@ -28,6 +28,7 @@ namespace kh3ap::ui_control_detail
     };
 
     void cutscene_engine_pause(UObject* pawn, bool paused);
+    bool engine_pause_active(UObject* pawn);
     void remote_texture_screenshot(UObject* pawn);
     int flight_hp(UObject* pawn);
     void damage_flight(UObject* pawn, UObject* controller);

@@ -3,6 +3,7 @@
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
 #include "kh3ap/features/enemies/bosses/xemnas_center.h"
+#include "kh3ap/features/enemies/bosses/tram_xion_jump.h"
 #include "kh3ap/features/enemies/bosses/hp_limits.h"
 #include "kh3ap/features/enemies/boss_remap_policy.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -851,6 +852,10 @@ namespace kh3ap::enemy_remap_detail
                 function,
                 params,
                 STR("inStateID"));
+        if (state_id == 43) // TSID_STATE_NAVLINK_JUMP
+        {
+            observe_tram_xion_jump(pawn);
+        }
         const bool completion_action = state_id == 99;
         if (!state_id.has_value() ||
             (*state_id != tres_state_appear &&
