@@ -8,6 +8,7 @@ int main()
 {
     using namespace kh3ap::ui_control_detail;
     constexpr std::array steam_commands{L"kh02_remote",
+                                        L"garden_dark_world_travel",
                                         L"garden_dark_world_inspect",
                                         L"garden_dark_world_enter",
                                         L"kh02_voice_inspect",

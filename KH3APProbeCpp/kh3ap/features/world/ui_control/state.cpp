@@ -238,7 +238,7 @@ namespace kh3ap
         pause_ready = field<uint8_t>(pause, native_ui::panel_ready_offset) != 0;
         const bool cutscene_command =
             command == L"inspect" || command == L"skip_cutscene" || command == L"pause_cutscene" ||
-            command == L"resume_cutscene" || command == L"garden_dark_world_travel" ||
+            command == L"resume_cutscene" || command == L"resume_gameplay" || command == L"garden_dark_world_travel" ||
             command.starts_with(L"garden_graveyard_story_") || command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter" ||
             (command == L"kh02_remote" &&
              (texture_action == L"portal_inspect" || texture_action == L"portal_interact" ||

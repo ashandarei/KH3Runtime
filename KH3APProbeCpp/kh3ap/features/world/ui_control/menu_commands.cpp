@@ -463,13 +463,28 @@ namespace kh3ap
     void RuntimeUiControlService::Impl::advance_cutscene()
     {
         auto* pause = pause_ref.Get();
+        const bool gameplay_resume = command == L"resume_gameplay";
+        const bool resume = gameplay_resume || command == L"resume_cutscene";
+        if (gameplay_resume && (pawn_name != expected_pawn || config.game_over_active() ||
+                                pause_type != 0 || (pause_open && menu_type != 0)))
+        {
+            finish(L"error", L"expected_gameplay_pause_unavailable");
+            return;
+        }
         if (dispatched)
         {
-            if (command == L"resume_cutscene")
+            if (resume)
             {
                 if (!pause_open)
                 {
-                    cutscene_engine_pause(cutscene_pawn(), false);
+                    if (gameplay_resume && (!config.gameplay_ready() || engine_pause_active(cutscene_pawn())))
+                    {
+                        return;
+                    }
+                    if (!gameplay_resume)
+                    {
+                        cutscene_engine_pause(cutscene_pawn(), false);
+                    }
                     finish(L"completed", L"native_resume_observed");
                 }
                 return;
@@ -488,14 +503,14 @@ namespace kh3ap
             finish(L"error", L"pawn_changed");
             return;
         }
-        if (pause_type != 1)
+        if (!gameplay_resume && pause_type != 1)
         {
             finish(L"error", L"cutscene_pause_not_available");
             return;
         }
-        if (command == L"resume_cutscene" && !pause_open)
+        if (resume && !pause_open)
         {
-            finish(L"error", L"cutscene_not_paused");
+            finish(L"error", gameplay_resume ? L"gameplay_not_paused" : L"cutscene_not_paused");
             return;
         }
         if (!pause_open)
@@ -521,7 +536,7 @@ namespace kh3ap
             }
             return;
         }
-        if (menu_type != 1)
+        if (menu_type != (gameplay_resume ? 0 : 1))
         {
             finish(L"error", L"unexpected_pause_menu");
             return;
@@ -544,7 +559,6 @@ namespace kh3ap
         // its real button and enabled predicate, then the same
         // semantic Decide event as the menu. Animation completion owns
         // the skip delegate; never synthesize its OnCallback notification.
-        const bool resume = command == L"resume_cutscene";
         auto* button =
             field<UObject*>(pause, resume ? pause_resume_button_offset : pause_other_button_offset);
         if (!is_uobject_valid_fast(button))

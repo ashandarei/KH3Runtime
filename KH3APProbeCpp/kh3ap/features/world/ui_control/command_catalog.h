@@ -67,7 +67,7 @@ namespace kh3ap::ui_control_detail
         {L"garden_graveyard_story_enter", CommandKind::garden_dialog, false, true, false},
         {L"garden_dark_world_inspect", CommandKind::garden_dialog, true, true, false},
         {L"garden_dark_world_enter", CommandKind::garden_dialog, true, true, false},
-        {L"garden_dark_world_travel", CommandKind::dark_world_travel, false, true, false},
+        {L"garden_dark_world_travel", CommandKind::dark_world_travel, true, true, false},
         {L"computer_space_test", CommandKind::computer_space, false, true, false},
         {L"space_dialogue_test", CommandKind::space_dialogue, false, false, false},
         {L"tutorial_test", CommandKind::tutorial, false, false, false},
@@ -94,6 +94,7 @@ namespace kh3ap::ui_control_detail
         {L"skip_cutscene", CommandKind::cutscene, true, true, false},
         {L"pause_cutscene", CommandKind::cutscene, false, true, false},
         {L"resume_cutscene", CommandKind::cutscene, false, true, false},
+        {L"resume_gameplay", CommandKind::cutscene, false, true, false},
     });
     [[nodiscard]] constexpr const CommandDefinition* find_command(std::wstring_view name) noexcept
     {

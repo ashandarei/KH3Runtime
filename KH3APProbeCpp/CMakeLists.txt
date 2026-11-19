@@ -119,6 +119,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
     kh3ap/features/enemies/bosses/vanitas_clone_burst.cpp
     kh3ap/features/enemies/bosses/master_xehanort_center.cpp
+    kh3ap/features/enemies/bosses/tram_xion_jump.cpp
     kh3ap/features/enemies/bosses/master_xehanort_dm.cpp
     kh3ap/features/enemies/bosses/master_xehanort_queries.cpp
     kh3ap/features/enemies/bosses/xemnas_center.cpp
@@ -237,6 +238,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.cpp
     kh3ap/features/story/world_fixes/rapunzel_hair_approach.cpp
     kh3ap/features/story/world_fixes/olympus_intro_camera.cpp
+    kh3ap/features/story/world_fixes/lump_of_horror_retry.cpp
     kh3ap/features/story/world_fixes/olympus_collapse_camera.cpp
     kh3ap/features/story/world_fixes/festival_dance_story_service.cpp
     kh3ap/features/story/minigames/union_cross_command_service.cpp

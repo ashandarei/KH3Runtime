@@ -4,6 +4,8 @@
 #include <optional>
 #include "kh3ap/features/party/party_test_service.h"
 #include "kh3ap/features/party/party_member_service.h"
+#include "kh3ap/features/player/context/current_player.h"
+#include "kh3ap/features/world/garden_return/garden_return_service.h"
 #include "kh3ap/features/enemies/enemy_clear_service.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
@@ -169,6 +171,14 @@ namespace kh3ap
 
         bool same_gameplay()
         {
+            // Friend selections originate in camp. Its pause can invalidate the
+            // gameplay-ready cache while the session still owns the same pawn.
+            if (command == L"set_friend_choice" && !session.empty() &&
+                RuntimeGardenReturnService::camp_menu_open())
+            {
+                auto* const owner = session_pawn.Get();
+                return is_uobject_valid_fast(owner) && runtime_current_player_pawn() == owner;
+            }
             auto* const pawn = config.playable_sora();
             const bool observing_arrival = command == L"observe_arrival" || command == L"restore";
             return (observing_arrival ? config.control_ready() : config.gameplay_ready()) && pawn &&
@@ -328,7 +338,25 @@ namespace kh3ap
                 report(L"completed", L"ordinary_friend_damage_dispatched");
                 return;
             }
-            if (command == L"configure" || command == L"burst")
+            if (command == L"set_friend_choice")
+            {
+                const auto slot = JsonFieldReader::int64_field(*text, "friend_slot");
+                const auto choice = JsonFieldReader::int64_field(*text, "choice");
+                if (!slot || (*slot != 1 && *slot != 2) || !choice || *choice < 0 ||
+                    config.party.status().randomization_enabled)
+                {
+                    fail(L"invalid_party_options", false);
+                    return;
+                }
+                accepted = config.party.set_friend_choice(static_cast<int32_t>(*slot),
+                                                          static_cast<size_t>(*choice));
+                if (accepted && !JsonFieldReader::bool_field(*text, "wait_for_slots").value_or(true))
+                {
+                    report(L"completed", L"menu_choice_submitted");
+                    return;
+                }
+            }
+            else if (command == L"configure" || command == L"burst")
             {
                 const auto first = JsonFieldReader::int64_field(*text, "first");
                 const auto second = JsonFieldReader::int64_field(*text, "second");

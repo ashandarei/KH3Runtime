@@ -24,6 +24,7 @@ namespace kh3ap
             L"/Game/Zlueprints/Enemy/e_dw402_s0/DataTable/e_dw402_BaseDataTable_s0.e_dw402_BaseDataTable_s0",
             L"/Game/Zlueprints/Enemy/e_dw401/DataTable/e_dw401_BaseDataTable.e_dw401_BaseDataTable",
             L"/Game/Zlueprints/Enemy/e_ex004/DataTable/e_ex004_BaseDataTable.e_ex004_BaseDataTable",
+            L"/Game/Zlueprints/Enemy/e_ex005/DataTable/e_ex005_BaseDataTable.e_ex005_BaseDataTable",
             L"/Game/Zlueprints/Enemy/e_ex016/DataTable/e_ex016_BaseDataTable.e_ex016_BaseDataTable",
             L"/Game/Zlueprints/Enemy/e_dw405/DataTable/e_dw405_BaseDataTable.e_dw405_BaseDataTable",
             L"/Game/Zlueprints/Enemy/e_dw405_s1/DataTable/e_dw405_BaseDataTable_s1.e_dw405_BaseDataTable_s1",
