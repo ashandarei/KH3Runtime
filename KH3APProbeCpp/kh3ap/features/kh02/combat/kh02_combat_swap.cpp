@@ -25,9 +25,12 @@
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/objects/uobject_weak.h"
+#include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
+#include <Unreal/AActor.hpp>
+#include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/UScriptStruct.hpp>
@@ -145,6 +148,42 @@ namespace kh3ap
             {
             }
         };
+
+        void refresh_tunnel_mirrors(UObject* pawn)
+        {
+            auto* world = kh02_current_story_world();
+            if (!is_uobject_valid_fast(world) ||
+                world->GetPathName() != L"/Game/Maps/APKH02Mirrors/APKH02Tunnel.APKH02Tunnel")
+            {
+                return;
+            }
+            auto* mirror_class = UObjectGlobals::StaticFindObject<UClass*>(
+                nullptr, nullptr, L"/Game/Zlueprints/Gimmick/g_MirrorStaticBase.g_MirrorStaticBase_C");
+            for (auto* mirror : find_live_actors_of_class(pawn, mirror_class, 64))
+            {
+                auto* trigger = try_read_reflected_object_property_value(mirror, L"ActivateTrigger");
+                auto* in_range = mirror->GetPropertyByNameInChain(L"temp_InBound");
+                if (!is_uobject_valid_fast(trigger) || !in_range || !in_range->IsA<FBoolProperty>() ||
+                    static_cast<FBoolProperty*>(in_range)->GetPropertyValueInContainer(mirror))
+                {
+                    continue;
+                }
+                Call overlap(trigger, L"IsOverlappingActor");
+                overlap.object(L"Other", pawn);
+                overlap.run();
+                if (overlap.boolean_result())
+                {
+                    // The departing pawn can end its overlap after the incoming pawn entered.
+                    // Let the original handler restore capture and notify the puzzle platforms.
+                    Call enter(mirror, L"BndEvt__ActivateTrigger_K2Node_ComponentBoundEvent_19_"
+                                       L"ComponentBeginOverlapSignature__DelegateSignature");
+                    enter.object(L"OverlappedComponent", trigger);
+                    enter.object(L"OtherActor", pawn);
+                    enter.object(L"OtherComp", try_read_reflected_object_property_value(pawn, L"CapsuleComponent"));
+                    enter.run();
+                }
+            }
+        }
 
         template <class T> auto field(void* object, size_t offset) -> T
         {
@@ -1993,6 +2032,7 @@ namespace kh3ap
                 return std::nullopt;
             }
             incoming = make_uobject_weak(pawn);
+            refresh_tunnel_mirrors(pawn);
             combo_until = std::max(combo_until, now + combo_grace);
             attack_input_until = combo_until;
             queued = false;

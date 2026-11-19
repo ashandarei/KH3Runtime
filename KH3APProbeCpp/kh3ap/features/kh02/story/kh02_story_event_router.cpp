@@ -35,6 +35,7 @@ namespace kh3ap
         const FName begin{L"ReceiveBeginPlay", FNAME_Add};
         const FName corridor_execution{L"ExecuteUbergraph_dw_05_gameflow", FNAME_Add};
         const FName forest_resume_start{L"dw_08_Persistent_REvt_dw_08LevelStart_dw024", FNAME_Add};
+        const FName forest_rail_landing{L"K2Node_MatineeController_9_Close", FNAME_Add};
         const FName islands_battle_start{L"dw_10_gameflow_Msn_DEVILWAVE_Start", FNAME_Add};
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const FName hub_execution{L"ExecuteUbergraph_dw_03_gameflow", FNAME_Add};
@@ -102,6 +103,7 @@ namespace kh3ap
             const bool islands_start = event_name == islands_battle_start;
             const bool corridor_resume = event_name == corridor_execution;
             const bool forest_resume = event_name == forest_resume_start;
+            const bool rail_landing = event_name == forest_rail_landing;
             const bool overlap_changed =
                 std::find(overlap_events.begin(), overlap_events.end(), event_name) != overlap_events.end();
             const bool forest_end =
@@ -114,9 +116,23 @@ namespace kh3ap
             // Reuse this listener for target notifications. Only mark
             // dirty here; inspect final state after the call returns.
             if ((!begin_play && !overlap_changed && !forest_end && !entrance_end && !target_changed &&
-                 !corridor_resume && !forest_resume && !islands_start) ||
+                 !corridor_resume && !forest_resume && !islands_start && !rail_landing) ||
                 !is_uobject_valid_fast(object))
             {
+                return;
+            }
+            if (rail_landing)
+            {
+                auto* world = actor_owning_world(object);
+                if (is_uobject_valid_fast(world) && world == mirror.world.Get() &&
+                    world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest" &&
+                    object->GetPathName().starts_with(L"/Game/Zevels/dw/dw_08/umap/dw_08_camera_ms0130.") &&
+                    object->GetClassPrivate()->GetName() == L"dw_08_camera_ms0130_C")
+                {
+                    // ms130a moves Aqua into the encounter volume before its Enemy and Briere cues.
+                    // Its final movement key and this player start share the same landing point.
+                    mirror.forest_handoff.enqueue(world, L"dw_08_Lv_Retry_03");
+                }
                 return;
             }
             if (islands_start)

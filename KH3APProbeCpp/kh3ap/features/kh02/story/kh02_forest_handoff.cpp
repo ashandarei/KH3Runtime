@@ -4,6 +4,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
+#include <Unreal/UClass.hpp>
 #include <stdexcept>
 
 namespace kh3ap
@@ -50,14 +51,18 @@ namespace kh3ap
                 {
                     throw std::runtime_error("kh02_forest_finish_world");
                 }
-                // The source normally animates its playable Aqua to this
-                // point. Our event Aqua is separate from Sora. Use the
-                // source's own Skip endpoint after a real natural ending;
-                // native Skip already performs its own warp.
+                const bool rail_landing = tag == L"dw_08_Lv_Retry_03";
+                if (rail_landing && pawn->GetClassPrivate()->GetName() != L"p_ex001_Pawn_C")
+                {
+                    forest_finish_world = {};
+                    return std::nullopt;
+                }
+                // Retain the rail camera while Sora crosses the arena's streaming volume.
+                // The story movies use their authored Skip endpoints after a natural ending.
                 ReflectedCall warp(pawn, L"WarpToTaggedPlayerStart");
                 warp.name(L"InTag", tag.c_str());
-                warp.boolean(L"bResetCamera", true);
-                warp.boolean(L"bStateClear", true);
+                warp.boolean(L"bResetCamera", !rail_landing);
+                warp.boolean(L"bStateClear", !rail_landing);
                 warp.run();
                 if (!warp.boolean_result())
                 {
