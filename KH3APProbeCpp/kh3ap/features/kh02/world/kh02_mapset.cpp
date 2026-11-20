@@ -1,5 +1,5 @@
 #include "kh02_mapset.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/compatibility/kh02_compatibility_operands.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
@@ -15,7 +15,7 @@ namespace kh3ap
     {
         constexpr size_t parameter_limit_bytes = 2'048;
         constexpr int32_t terminal_linkage = -1;
-        Kh02ReflectedCall apply(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresApplyMapSet",
+        ReflectedFunctionCall apply(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresApplyMapSet",
                                 "kh02_mapset", parameter_limit_bytes);
         apply.object(L"WorldContextObject", context);
         apply.object(L"MapSet", mapset);

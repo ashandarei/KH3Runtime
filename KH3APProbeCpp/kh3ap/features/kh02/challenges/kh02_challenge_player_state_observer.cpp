@@ -1,7 +1,7 @@
 #include "kh02_challenge_player_state_observer.h"
 #include "kh02_challenge_actor_state.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
@@ -59,7 +59,7 @@ namespace kh3ap
     auto Kh02ChallengePlayerStateObserver::sample(UObject* pawn) -> int
     {
         constexpr size_t location_parameter_limit_bytes = 64;
-        Kh02ReflectedCall location(pawn, L"K2_GetActorLocation", "kh02_challenge", location_parameter_limit_bytes);
+        ReflectedFunctionCall location(pawn, L"K2_GetActorLocation", "kh02_challenge", location_parameter_limit_bytes);
         location.run();
         return ice_slide.sample(location.result_vector());
     }

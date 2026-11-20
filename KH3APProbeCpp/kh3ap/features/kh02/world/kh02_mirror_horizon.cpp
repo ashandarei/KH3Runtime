@@ -3,7 +3,7 @@
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/AActor.hpp>
 
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
@@ -18,10 +18,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };

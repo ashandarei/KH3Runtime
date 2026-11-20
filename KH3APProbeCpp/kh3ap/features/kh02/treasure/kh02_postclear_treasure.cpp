@@ -1,6 +1,6 @@
 #include "kh02_postclear_treasure.h"
 #include "kh02_postclear_treasure_policy.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -40,7 +40,7 @@ namespace kh3ap
         if (!requested)
         {
             package = target;
-            Kh02ReflectedCall find(library, L"GetStreamingLevel", "kh02_postclear_treasure", parameter_limit_bytes);
+            ReflectedFunctionCall find(library, L"GetStreamingLevel", "kh02_postclear_treasure", parameter_limit_bytes);
             find.object(L"WorldContextObject", pawn);
             find.name(L"PackageName", package.c_str());
             find.run();
@@ -49,7 +49,7 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_postclear_treasure_host_layer_missing");
             }
-            Kh02ReflectedCall load(library, L"LoadStreamLevel", "kh02_postclear_treasure", parameter_limit_bytes);
+            ReflectedFunctionCall load(library, L"LoadStreamLevel", "kh02_postclear_treasure", parameter_limit_bytes);
             load.object(L"WorldContextObject", pawn);
             load.name(L"LevelName", package.c_str());
             load.boolean(L"bMakeVisibleAfterLoad", true);
@@ -78,7 +78,7 @@ namespace kh3ap
         auto* level = stream.Get();
         if (is_uobject_valid_fast(level))
         {
-            Kh02ReflectedCall visible(level, L"IsLevelVisible", "kh02_postclear_treasure", parameter_limit_bytes);
+            ReflectedFunctionCall visible(level, L"IsLevelVisible", "kh02_postclear_treasure", parameter_limit_bytes);
             visible.run();
             ready = visible.boolean_result();
         }

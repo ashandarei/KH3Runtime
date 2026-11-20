@@ -35,6 +35,13 @@ namespace kh3ap
         return static_cast<int>(id);
     }
 
+    constexpr bool is_alternate_keyblade_wielder(int id)
+    {
+        return id == player_id_value(PlayerId::Aqua) || id == player_id_value(PlayerId::Kairi) ||
+               id == player_id_value(PlayerId::Riku) || id == player_id_value(PlayerId::RikuKH29) ||
+               id == player_id_value(PlayerId::Roxas);
+    }
+
     // The contiguous SORA_KH3 through SORA_KH1 block. Special factory IDs
     // (tutorial, Hundred Acre Wood and others) are outside this range.
     constexpr bool is_standard_sora_player_id(int id)

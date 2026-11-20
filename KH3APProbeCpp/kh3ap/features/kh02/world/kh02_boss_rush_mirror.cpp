@@ -2,7 +2,7 @@
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
@@ -42,7 +42,7 @@ namespace kh3ap
         // revisits should reveal the mirror immediately without that flash.
         // Keep Zodiac queries/objective 43 tied to the actual chest journal.
         constexpr std::size_t parameter_limit_bytes = 64;
-        Kh02ReflectedCall start(actor, L"StartGimmick", "kh02_boss_rush_mirror", parameter_limit_bytes);
+        ReflectedFunctionCall start(actor, L"StartGimmick", "kh02_boss_rush_mirror", parameter_limit_bytes);
         start.boolean(L"ActivateGimmick", true);
         start.boolean(L"Reset", true);
         start.boolean(L"PlayAnimation", false);

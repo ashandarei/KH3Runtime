@@ -7,7 +7,7 @@
 #include "kh02_mickey_link.h"
 #include "kh3ap/features/kh02/core/kh02_context_refresh.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/core/kh02_localization.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
@@ -385,7 +385,7 @@ namespace kh3ap
             // The final boss offers a situation command on the controller;
             // Mickey's generic Aqua offer path always substitutes Wayfinder.
             auto* controller = party_native::read_object_like_property(pawn, L"Controller");
-            Kh02ReflectedCall offer(controller, L"NotifySetActionCommand", "kh02_link_offer",
+            ReflectedFunctionCall offer(controller, L"NotifySetActionCommand", "kh02_link_offer",
                                     reflected_parameter_limit_bytes);
             offer.integer(L"inCommand", light_chain_command);
             offer.number(L"inTimer", diagnostic_offer_seconds);

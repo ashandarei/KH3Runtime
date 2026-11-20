@@ -79,10 +79,10 @@ bool loading_closed = true;
 bool game_paused = false;
 bool native_call_failed = false;
 bool runtime_sora_control_ready(UObject*) { return control_ready; }
-struct Kh02ReflectedCall
+struct ReflectedFunctionCall
 {
     std::wstring_view method;
-    Kh02ReflectedCall(const wchar_t*, const wchar_t* method, const char*, size_t) : method(method) {}
+    ReflectedFunctionCall(const wchar_t*, const wchar_t* method, const char*, size_t) : method(method) {}
     void object(const wchar_t*, UObject*) {}
     void run() { if (native_call_failed) { throw std::runtime_error("native call failed"); } }
     bool boolean_result() { return method == L"IsGamePaused" ? game_paused : loading_closed; }

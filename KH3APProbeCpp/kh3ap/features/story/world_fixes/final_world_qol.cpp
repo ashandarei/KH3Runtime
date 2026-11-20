@@ -10,7 +10,7 @@
 #include "kh3ap/core/settings/pak_seed_settings.h"
 #include "kh3ap/core/settings/seed_slot_options.h"
 #include "kh3ap/features/grants/delivery/item_call_helpers.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 
 #include "kh3ap/features/player/context/current_player.h"
@@ -162,7 +162,7 @@ namespace kh3ap
             auto* stream = visit.stream.Get();
             if (!is_uobject_valid_fast(stream))
             {
-                Kh02ReflectedCall find(gameplay, L"GetStreamingLevel", "final_world_qol", parameter_limit);
+                ReflectedFunctionCall find(gameplay, L"GetStreamingLevel", "final_world_qol", parameter_limit);
                 find.object(L"WorldContextObject", world);
                 find.name(L"PackageName", L"ew_28_ENV");
                 find.run();
@@ -170,7 +170,7 @@ namespace kh3ap
                 if (!is_uobject_valid_fast(stream) || stream->GetOuterPrivate() != world) return false;
                 visit.stream = make_uobject_weak(stream);
             }
-            Kh02ReflectedCall visible(stream, L"IsLevelVisible", "final_world_qol", parameter_limit);
+            ReflectedFunctionCall visible(stream, L"IsLevelVisible", "final_world_qol", parameter_limit);
             visible.run();
             return visible.boolean_result();
         }
@@ -204,17 +204,17 @@ namespace kh3ap
                     }
                 }
                 if (!is_uobject_valid_fast(fragment) || actor_owning_world(fragment) != world) return;
-                Kh02ReflectedCall location(pawn, L"K2_GetActorLocation", "final_world_qol", parameter_limit);
+                ReflectedFunctionCall location(pawn, L"K2_GetActorLocation", "final_world_qol", parameter_limit);
                 location.run();
                 const auto [x, y, z] = location.result_vector();
-                Kh02ReflectedCall move(fragment, L"K2_SetActorLocation", "final_world_qol", parameter_limit);
+                ReflectedFunctionCall move(fragment, L"K2_SetActorLocation", "final_world_qol", parameter_limit);
                 move.vector(L"NewLocation", x, y, z);
                 move.boolean(L"bSweep", false);
                 move.boolean(L"bTeleport", true);
                 move.run();
                 return;
             }
-            Kh02ReflectedCall send(settings::s_tres_game_blueprint_library_default_object_path.data(),
+            ReflectedFunctionCall send(settings::s_tres_game_blueprint_library_default_object_path.data(),
                 L"RemoteEvent", "final_world_qol", parameter_limit);
             send.object(L"WorldContextObject", pawn);
             send.name(L"EventName", star_portal_reaction);
@@ -242,7 +242,7 @@ namespace kh3ap
                 visit.next = now + lich_departure_delay;
                 return;
             }
-            Kh02ReflectedCall open(gameplay, L"OpenLevel", "final_world_qol", parameter_limit);
+            ReflectedFunctionCall open(gameplay, L"OpenLevel", "final_world_qol", parameter_limit);
             open.object(L"WorldContextObject", world);
             open.name(L"LevelName", L"/Game/Levels/ew/ew_27/ew_27");
             open.boolean(L"bAbsolute", true);

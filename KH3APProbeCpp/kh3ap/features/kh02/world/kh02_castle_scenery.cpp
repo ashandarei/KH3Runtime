@@ -2,7 +2,7 @@
 #include "kh02_castle_scenery_plan.h"
 #include "kh3ap/features/kh02/story/kh02_story_flags.h"
 #include "kh02_mapset.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/bridge/utilities.h"
 #include <utility>
@@ -31,9 +31,9 @@ namespace kh3ap
             ++request_id;
             applied.push_back(to_utf8(command));
         }
-        Kh02ReflectedCall check_gears(gimmick, L"dw_02_gameflow_REvt_CheckGear", "kh02_story", parameter_limit_bytes);
+        ReflectedFunctionCall check_gears(gimmick, L"dw_02_gameflow_REvt_CheckGear", "kh02_story", parameter_limit_bytes);
         check_gears.run();
-        Kh02ReflectedCall show(gimmick, L"dw_02_gameflow_REvt_showGear", "kh02_story", parameter_limit_bytes);
+        ReflectedFunctionCall show(gimmick, L"dw_02_gameflow_REvt_showGear", "kh02_story", parameter_limit_bytes);
         show.run();
         loading_proof["restored_scenery"] = std::move(applied);
     }

@@ -9,7 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <utility>
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
 
@@ -22,10 +22,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -53,7 +53,7 @@ namespace kh3ap
     auto kh02_native_flags() -> Json
     {
         Json result = Json::object();
-        auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         for (const auto* key : {L"gameflow_DW", L"gameflow_DW_GEAR_GETCOUNT"})
         {
             ReflectedCall read(library, L"GetGameFlag");

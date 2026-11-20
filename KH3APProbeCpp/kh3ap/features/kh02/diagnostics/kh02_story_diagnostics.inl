@@ -37,7 +37,7 @@ auto diagnostic_command(UObject* pawn, std::wstring_view action) -> std::optiona
         {
             throw std::runtime_error("kh02_experience_requires_playable_aqua");
         }
-        ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+        ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
         paused.object(L"WorldContextObject", pawn);
         paused.run();
         if (paused.boolean_result())
@@ -64,7 +64,7 @@ auto diagnostic_command(UObject* pawn, std::wstring_view action) -> std::optiona
             query.run();
             return read_function_int_param(query.function, query.parameters.data(), L"ReturnValue").value_or(-1);
         };
-        ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+        ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
         paused.object(L"WorldContextObject", pawn);
         paused.run();
         const auto maximum = read_stat(L"GetMaxHitPoint");

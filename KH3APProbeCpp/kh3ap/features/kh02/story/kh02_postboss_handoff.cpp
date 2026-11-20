@@ -34,7 +34,7 @@ namespace kh3ap
         {
             return false;
         }
-        ReflectedCall travel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall travel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresMapJump");
         travel.name(L"MapName", L"/Game/Maps/APKH02WorldWithin/APKH02WorldWithin");
         travel.name(L"TargetTag", L"APKH02MirrorStart");

@@ -6,9 +6,21 @@ namespace kh3ap::enemy_remap_detail
 {
     auto install_runtime_boss_phase_guard() -> void;
     auto install_grim_guardianess_mode_guard() -> void;
+    void install_yozora_high_voltage_center();
+    void install_yozora_keyblade_steal();
+    bool release_yozora_climax_camera(UObject* camera);
+    void preload_yozora_rooftop(UObject* pawn);
+    bool enter_yozora_rooftop(UObject* pawn);
+    bool uses_yozora_rooftop(UObject* pawn);
+    void open_yozora_rooftop_shot(UObject* pawn, UObject* sphere);
+    void close_yozora_rooftop(UObject* pawn);
+    void update_yozora_rooftop();
+    bool initialize_yozora_gravity_sphere(UObject* sphere);
+    void update_yozora_gravity_effects();
     auto install_vanitas_clone_burst_center() -> void;
 
     auto initialize_runtime_xiii_solo_phase(UObject* pawn) -> void;
+    void initialize_replacement_movement_center(UObject* pawn, const RuntimeBossEntityBinding& binding);
 
     auto install_kg_replacement_reveal_guard() -> void;
 

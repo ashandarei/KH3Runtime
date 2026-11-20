@@ -80,7 +80,7 @@ namespace kh3ap
         begin.object(L"WorldContextObject", pawn);
         // KH3's menu actor supplies the capture's native visibility/update
         // context. A generic SceneCapture2D remains blank in the paused camp.
-        begin.object(L"ActorClass", kh02_require_loaded_object(L"/Script/TresGame.TresUIActor"));
+        begin.object(L"ActorClass", require_loaded_object(L"/Script/TresGame.TresUIActor"));
         begin.integer(L"CollisionHandlingOverride", always_spawn_collision_handling);
         begin.spawn_transform();
         begin.run();
@@ -133,7 +133,7 @@ namespace kh3ap
         {
             Call spawn_light(gameplay, L"BeginDeferredActorSpawnFromClass");
             spawn_light.object(L"WorldContextObject", pawn);
-            spawn_light.object(L"ActorClass", kh02_require_loaded_object(L"/Script/Engine.DirectionalLight"));
+            spawn_light.object(L"ActorClass", require_loaded_object(L"/Script/Engine.DirectionalLight"));
             spawn_light.integer(L"CollisionHandlingOverride", always_spawn_collision_handling);
             spawn_light.spawn_transform();
             spawn_light.run();
@@ -181,7 +181,7 @@ namespace kh3ap
             throw std::runtime_error("Missing Aqua preview widget host");
         }
         FStaticConstructObjectParameters construct(
-            static_cast<UClass*>(kh02_require_loaded_object(L"/Script/UMG.Image")), tree);
+            static_cast<UClass*>(require_loaded_object(L"/Script/UMG.Image")), tree);
         construct.SetFlags = RF_Transient;
         auto* widget = UObjectGlobals::StaticConstructObject(construct);
         if (!is_uobject_valid_fast(widget))

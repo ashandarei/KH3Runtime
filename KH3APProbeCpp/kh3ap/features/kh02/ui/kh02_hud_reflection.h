@@ -1,6 +1,6 @@
 #pragma once
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UScriptStruct.hpp>
@@ -16,10 +16,10 @@ namespace kh3ap::kh02hud_detail
     constexpr int minimum_copied_row_bytes = 16;
     constexpr int maximum_copied_row_bytes = 256;
 
-    struct Call : Kh02ReflectedCall
+    struct Call : ReflectedFunctionCall
     {
         Call(const wchar_t* owner_path, const wchar_t* method)
-            : Kh02ReflectedCall(owner_path, method, "kh02_hud", reflected_parameter_limit_bytes)
+            : ReflectedFunctionCall(owner_path, method, "kh02_hud", reflected_parameter_limit_bytes)
         {
         }
 

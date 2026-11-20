@@ -3,7 +3,7 @@
 #include <Unreal/UFunction.hpp>
 #include <Unreal/TArray.hpp>
 
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
@@ -21,10 +21,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -51,7 +51,7 @@ namespace kh3ap
             if (!first_castle_intro && !entry_retry && arrival_owned)
             {
                 auto* fn = script->GetFunctionByNameInChain(L"ExecuteUbergraph_dw_02_gameflow");
-                auto* kismet = kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary");
+                auto* kismet = require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary");
                 auto* delay = is_uobject_valid_fast(kismet) ? kismet->GetFunctionByNameInChain(L"Delay") : nullptr;
                 if (is_uobject_valid_fast(fn) && is_uobject_valid_fast(delay))
                 {
@@ -70,7 +70,7 @@ namespace kh3ap
             if (first_castle_intro)
             {
                 ReflectedCall challenges(
-                    kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"), L"RemoteEvent");
+                    require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"), L"RemoteEvent");
                 challenges.object(L"WorldContextObject", script);
                 challenges.name(L"EventName", L"dw_02_gameflow_REvt_Challenge_Open_LevelStart");
                 challenges.run();

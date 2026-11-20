@@ -9,7 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <utility>
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh02_aliases.h"
 #include "kh3ap/features/kh02/challenges/kh02_challenge_ids.h"
 #include "kh3ap/features/kh02/challenges/kh02_challenge_enum.h"
@@ -24,7 +24,7 @@ namespace kh3ap
 
     void kh02_register_compatibility_enums(Kh02NativeAliases& aliases)
     {
-        auto* enum_library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* enum_library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         auto* enum_outer = enum_library->GetClassPrivate()->GetOuterPrivate();
         if (!is_uobject_valid_fast(enum_outer) || enum_outer->GetPathName() != L"/Script/TresGame")
         {

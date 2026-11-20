@@ -1,4 +1,5 @@
 #include "kh3ap/features/enemies/bosses/binding.h"
+#include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/titan_arena.h"
 #include "kh3ap/features/enemies/level_entity_remap.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -247,6 +248,10 @@ namespace kh3ap::enemy_remap_detail
 
         if (binding.repaired || binding.new_actor)
         {
+            if (binding.new_actor)
+            {
+                initialize_replacement_movement_center(pawn, binding);
+            }
             notify_titan_arena_binding(binding.level_entity_path);
             const uint32_t observation =
                     s_runtime_enemy_remap.boss.tracking.boss_binding_observation_count

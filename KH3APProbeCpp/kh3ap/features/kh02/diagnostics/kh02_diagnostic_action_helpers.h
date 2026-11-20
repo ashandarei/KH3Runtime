@@ -2,7 +2,7 @@
 #include "kh3ap/features/player/player_ids.h"
 #include "kh02_diagnostic_actions.h"
 #include "kh02_runtime_inspection.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_cutscene_reflection.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -41,10 +41,10 @@ namespace kh3ap::kh02diagnostic_detail
     constexpr int sora_player_id = player_id_value(PlayerId::Sora);
     constexpr int aqua_player_id = player_id_value(PlayerId::Aqua);
 
-    struct ReflectedCall : Kh02ReflectedCall
+    struct ReflectedCall : ReflectedFunctionCall
     {
         ReflectedCall(UObject* owner, const wchar_t* method)
-            : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+            : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
         {
         }
     };

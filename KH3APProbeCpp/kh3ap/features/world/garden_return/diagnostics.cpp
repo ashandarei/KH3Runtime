@@ -47,7 +47,7 @@
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #endif
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include "kh3ap/core/input/runtime_controller_input.h"
@@ -368,7 +368,7 @@ namespace kh3ap
         }
         else
         {
-            Kh02ReflectedCall paused(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
+            ReflectedFunctionCall paused(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
                                      "saved_alternate_return", max_camp_pause_parameter_bytes);
             paused.object(L"WorldContextObject", pawn);
             paused.run();
@@ -378,7 +378,7 @@ namespace kh3ap
             }
             else
             {
-                Kh02ReflectedCall change(library(), L"BP_TresGameChangePlayer",
+                ReflectedFunctionCall change(library(), L"BP_TresGameChangePlayer",
                                          "saved_alternate_return", max_camp_pause_parameter_bytes);
                 change.object(L"WorldContextObject", pawn);
                 change.integer(L"InKind", sora_player_id);
@@ -399,7 +399,7 @@ namespace kh3ap
         }
         else
         {
-            Kh02ReflectedCall capture(L"/Script/Engine.Default__KismetSystemLibrary",
+            ReflectedFunctionCall capture(L"/Script/Engine.Default__KismetSystemLibrary",
                                       L"ExecuteConsoleCommand", "character_capture",
                                       max_character_capture_parameter_bytes);
             capture.object(L"WorldContextObject", pawn);
@@ -460,7 +460,7 @@ namespace kh3ap
             }
             else
             {
-                Kh02ReflectedCall select(controller, L"BP_NotifySetActionCommand1", "ship_chart",
+                ReflectedFunctionCall select(controller, L"BP_NotifySetActionCommand1", "ship_chart",
                                          max_ship_chart_parameter_bytes);
                 select.integer(L"inCommand", player_action_command_value(PlayerActionCommand::CHECK));
                 select.number(L"inTimer", 1.0f);

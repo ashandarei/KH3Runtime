@@ -13,7 +13,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/events/character_level_events.h"
 #include "kh3ap/core/objects/actor_discovery.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -150,7 +150,7 @@ namespace kh3ap
                             {
                                 continue;
                             }
-                            Kh02ReflectedCall hp(enemy, L"GetHitPoint", "kh02_challenge", 16);
+                            ReflectedFunctionCall hp(enemy, L"GetHitPoint", "kh02_challenge", 16);
                             hp.run();
                             auto* value = hp.param(L"ReturnValue");
                             if (!value || value->GetClass().GetName() != L"IntProperty" || value->GetElementSize() != 4)

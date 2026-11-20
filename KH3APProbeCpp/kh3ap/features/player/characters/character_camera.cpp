@@ -7,7 +7,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
@@ -34,10 +34,10 @@ namespace kh3ap::character_camera
         float sora_target_height{};
         ReflectedPropertyCache<64> properties;
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(RC::Unreal::UObject *owner, const wchar_t *method)
-                : Kh02ReflectedCall(owner, method, "character_camera", 128)
+                : ReflectedFunctionCall(owner, method, "character_camera", 128)
             {
             }
         };

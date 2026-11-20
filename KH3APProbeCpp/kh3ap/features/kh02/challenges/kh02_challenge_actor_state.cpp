@@ -1,5 +1,5 @@
 #include "kh02_challenge_actor_state.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
 
@@ -32,7 +32,7 @@ namespace kh3ap
         }
         // TresProj_MagicBlizzard adds this tag to each generated rail.
         // Ordinary forest rails use the same native actor class.
-        Kh02ReflectedCall query(rail, L"ActorHasTag", "kh02_challenge", rail_query_parameter_limit_bytes);
+        ReflectedFunctionCall query(rail, L"ActorHasTag", "kh02_challenge", rail_query_parameter_limit_bytes);
         query.name(L"Tag", L"BlizzardRail");
         query.run();
         return query.boolean_result();

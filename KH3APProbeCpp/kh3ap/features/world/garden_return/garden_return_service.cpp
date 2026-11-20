@@ -43,7 +43,7 @@
 #include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/core/input/runtime_player_control.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/bridge/transport/request_file_watcher.h"
@@ -238,7 +238,7 @@ namespace kh3ap
             // Close command submenus before the factory discards the outgoing
             // HUD state. This chapter uses its own factory instead of the
             // ordinary character-swap path, which already performs this reset.
-            Kh02ReflectedCall reset_commands(owner, L"TresUI_ResetHudCommandState",
+            ReflectedFunctionCall reset_commands(owner, L"TresUI_ResetHudCommandState",
                                              "kh02_character_swap", max_camp_reflected_parameter_bytes);
             reset_commands.run();
             character_style::capture(pawn, id);

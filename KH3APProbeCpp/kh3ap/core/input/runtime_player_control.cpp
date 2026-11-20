@@ -1,6 +1,6 @@
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/features/player/player_state_ids.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
 #include <Unreal/UObject.hpp>
@@ -18,7 +18,7 @@ namespace kh3ap
 
         int64_t integer(UObject* object, const wchar_t* name)
         {
-            Kh02ReflectedCall call(object, name, "player_control",
+            ReflectedFunctionCall call(object, name, "player_control",
                                    max_player_control_parameter_bytes);
             auto* property = call.param(L"ReturnValue");
             const auto kind = property->GetClass().GetName();
@@ -39,7 +39,7 @@ namespace kh3ap
 
         bool boolean(UObject* object, const wchar_t* name)
         {
-            Kh02ReflectedCall call(object, name, "player_control",
+            ReflectedFunctionCall call(object, name, "player_control",
                                    max_player_control_parameter_bytes);
             const RuntimeGrantInternalCallDepth::Scope scope{};
             call.run();

@@ -158,7 +158,7 @@ void execute_travel()
         {
             kh02_prepare_castle_boss_streams(story->gameplay.world.Get(), story->source_flags, story->encounter_proof);
         }
-        ReflectedCall apply(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall apply(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                             L"TresApplyMapSet");
         apply.object(L"WorldContextObject", frame->Object);
         apply.object(L"MapSet", mapset);

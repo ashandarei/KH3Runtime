@@ -1,6 +1,7 @@
 #include "master_xehanort_center.h"
 #include "master_xehanort_center_policy.h"
 #include "master_xehanort_queries.h"
+#include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/bosses/binding.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -37,17 +38,23 @@ namespace kh3ap
         std::mutex owners_mutex;
         std::vector<ArenaOwner> owners;
         std::atomic<bool> has_owners{};
+        constexpr auto xion_class = L"/Game/Blueprints/Enemy/e_ex359/e_ex359_Pawn.e_ex359_Pawn_C";
+        constexpr auto final_brake = L"/Game/Blueprints/Enemy/e_ex359/BT/e_ex359_Attack9_FinalBrake_Start_DT.e_ex359_Attack9_FinalBrake_Start_DT_C";
         FName ascension_name{};
         FName master_name{};
         FName dark_shooting_name{};
+        FName force_camera_name{};
+        FName gravity_sphere_name{};
+        std::atomic<bool> randomized_yozora{};
         std::atomic<bool> configured{};
         constexpr size_t max_owners = 32;
         using Clock = std::chrono::steady_clock;
+        enum class ArenaObject { Ascension, DarkShooting, YozoraCamera, YozoraGravitySphere };
         struct PendingAscension
         {
             FWeakObjectPtr actor;
             Clock::time_point deadline, next_attempt;
-            bool action{};
+            ArenaObject kind{};
         };
         std::mutex pending_mutex;
         std::vector<PendingAscension> pending;
@@ -56,6 +63,9 @@ namespace kh3ap
         using PostInitProperties = void (*)(UObject*);
         std::atomic<PostInitProperties> original_dark_shooting_post_init{};
         std::unique_ptr<RuntimeBossHpLimitOverride> dark_shooting_post_init_override;
+
+        std::atomic<PostInitProperties> original_final_brake{};
+        std::unique_ptr<RuntimeBossHpLimitOverride> final_brake_override;
 
         auto vector_property(FProperty* field) -> bool
         {
@@ -205,7 +215,7 @@ namespace kh3ap
                 return false;
             }
             Output::send<LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Master Xehanort arena center actor={} field={} "
+                STR("[KH3APProbeCpp] Boss arena center actor={} field={} "
                     "before=({},{},{}) after=({},{},{}) source=GetCenterLocation "
                     "authored_offset=({},{},{}) instance_only=true polling=false\n"),
                 actor->GetPathName(), property_name, (*before)[0], (*before)[1], (*before)[2],
@@ -299,10 +309,40 @@ namespace kh3ap
             (void)initialize_dark_shooting(state);
         }
 
-        auto install_dark_shooting_post_init() -> bool
+        void final_brake_post_init(UObject* state)
         {
-            auto* klass = UObjectGlobals::StaticFindObject<UClass*>(
-                nullptr, nullptr, L"/Script/TresGame.TresAttack3_e_ex367_DarkShooting");
+            original_final_brake.load(std::memory_order_acquire)(state);
+            if (!is_uobject_valid_fast(state) ||
+                state->HasAnyFlags(
+                    static_cast<EObjectFlags>(RF_ClassDefaultObject | RF_ArchetypeObject)) ||
+                state->GetClassPrivate()->GetPathName() != final_brake)
+            {
+                return;
+            }
+            auto* outer = state->GetOuterPrivate();
+            for (size_t depth = 0; depth < 8 && is_uobject_valid_fast(outer); ++depth)
+            {
+                if (outer->GetClassPrivate()->GetPathName() == xion_class)
+                {
+                    const auto binding = resolve_tracked_runtime_boss_pawn(outer);
+                    const auto source = tracked_boss_source_class(binding.level_entity_path);
+                    const auto center = read_boss_arena_center(outer);
+                    if (binding.level_entity && source && *source != xion_class && center)
+                    {
+                        translate(state, *center, L"m_vWorldMoveLocation");
+                    }
+                    return;
+                }
+                outer = outer->GetOuterPrivate();
+            }
+        }
+
+        auto install_action_post_init(const wchar_t* native_class, PostInitProperties replacement,
+                                      std::atomic<PostInitProperties>& original,
+                                      std::unique_ptr<RuntimeBossHpLimitOverride>& installed)
+            -> bool
+        {
+            auto* klass = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, native_class);
             auto* defaults =
                 is_uobject_valid_fast(klass) ? klass->GetClassDefaultObject() : nullptr;
             const auto slot = UObject::VTableLayoutMap.find(L"PostInitProperties");
@@ -337,7 +377,7 @@ namespace kh3ap
             auto hook = std::make_unique<RuntimeBossHpLimitOverride>();
             hook->slot = cell;
             hook->original = *cell;
-            hook->replacement = reinterpret_cast<void*>(&dark_shooting_post_init);
+            hook->replacement = reinterpret_cast<void*>(replacement);
             PLH::MemAccessor memory{};
             PLH::MemoryProtector protection{reinterpret_cast<uint64_t>(cell), sizeof(*cell),
                                             PLH::ProtFlag::R | PLH::ProtFlag::W, memory};
@@ -345,14 +385,13 @@ namespace kh3ap
             {
                 return false;
             }
-            original_dark_shooting_post_init.store(reinterpret_cast<PostInitProperties>(*cell),
-                                                   std::memory_order_release);
+            original.store(reinterpret_cast<PostInitProperties>(*cell), std::memory_order_release);
             *cell = hook->replacement;
-            dark_shooting_post_init_override = std::move(hook);
+            installed = std::move(hook);
             Output::send<LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Master Xehanort Dark Shooting initialization installed "
+                STR("[KH3APProbeCpp] {} initialization installed "
                     "vtable_offset=0x{:X} scope=exact_action_instance polling=false\n"),
-                slot->second);
+                native_class, slot->second);
             return true;
         }
     } // namespace
@@ -508,14 +547,26 @@ namespace kh3ap
 
     void notify_master_ascension_created(UObject* actor)
     {
-        if (!configured.load(std::memory_order_acquire) || !actor || !actor->GetClassPrivate() ||
-            (actor->GetClassPrivate()->GetNamePrivate() != ascension_name &&
-             actor->GetClassPrivate()->GetNamePrivate() != dark_shooting_name) ||
-            actor->HasAnyFlags(
-                static_cast<EObjectFlags>(RF_ClassDefaultObject | RF_ArchetypeObject)))
+        const bool master_active = configured.load(std::memory_order_acquire);
+        const bool yozora_active = randomized_yozora.load(std::memory_order_acquire);
+        if ((!master_active && !yozora_active) || !actor || !actor->GetClassPrivate())
         {
             return;
         }
+        const auto name = actor->GetClassPrivate()->GetNamePrivate();
+        ArenaObject kind;
+        if (yozora_active && name == force_camera_name)
+            kind = ArenaObject::YozoraCamera;
+        else if (yozora_active && name == gravity_sphere_name)
+            kind = ArenaObject::YozoraGravitySphere;
+        else if (master_active && name == dark_shooting_name)
+            kind = ArenaObject::DarkShooting;
+        else if (master_active && name == ascension_name)
+            kind = ArenaObject::Ascension;
+        else
+            return;
+        if (actor->HasAnyFlags(static_cast<EObjectFlags>(RF_ClassDefaultObject | RF_ArchetypeObject)))
+            return;
         auto weak = make_uobject_weak(actor);
         if (weak.Get() != actor)
         {
@@ -526,15 +577,13 @@ namespace kh3ap
         {
             return;
         }
-        pending.push_back({weak,
-                           Clock::now() + std::chrono::seconds(2),
-                           {},
-                           actor->GetClassPrivate()->GetNamePrivate() == dark_shooting_name});
+        pending.push_back({weak, Clock::now() + std::chrono::seconds(2), {}, kind});
         pending_count.store(pending.size(), std::memory_order_release);
     }
 
     void process_pending_master_ascension_centers()
     {
+        update_yozora_gravity_effects();
         if (!pending_count.load(std::memory_order_acquire))
         {
             return;
@@ -558,8 +607,19 @@ namespace kh3ap
                           {
                               return false;
                           }
-                          if (entry.action ? initialize_dark_shooting(actor)
-                                           : initialize_master_ascension_center(actor))
+                          if (entry.kind == ArenaObject::YozoraCamera)
+                          {
+                              if (release_yozora_climax_camera(actor) || now >= entry.deadline)
+                                  return true;
+                              entry.next_attempt = now + std::chrono::milliseconds(16);
+                              return false;
+                          }
+                          if (entry.kind == ArenaObject::YozoraGravitySphere)
+                          {
+                              return initialize_yozora_gravity_sphere(actor) || now >= entry.deadline;
+                          }
+                          if (entry.kind == ArenaObject::DarkShooting ? initialize_dark_shooting(actor)
+                                                                      : initialize_master_ascension_center(actor))
                           {
                               return true;
                           }
@@ -592,6 +652,31 @@ namespace kh3ap
     void enemy_remap_detail::install_master_xehanort_center_support()
     {
         const auto& replacements = s_runtime_enemy_remap.boss.boss_class_replacements;
+        if (!randomized_yozora.load() && std::any_of(replacements.begin(), replacements.end(),
+                [](const auto& pair) {
+                    return pair.second == L"/Game/Blueprints/Enemy/e_ex781/e_ex781_Pawn.e_ex781_Pawn_C" &&
+                           pair.first != pair.second;
+                }))
+        {
+            force_camera_name = FName{L"TresCameraForceLockon", FNAME_Add};
+            gravity_sphere_name = FName{L"e_ex781_GravitySphere_C", FNAME_Add};
+            randomized_yozora.store(true, std::memory_order_release);
+        }
+        if (!final_brake_override && std::any_of(replacements.begin(), replacements.end(),
+                                                 [](const auto& pair)
+                                                 {
+                                                     return pair.second == xion_class &&
+                                                            pair.first != pair.second;
+                                                 }))
+        {
+            if (!install_action_post_init(L"/Script/TresGame.TresAttack9_e_ex359_FinalBrake_Start",
+                                          &final_brake_post_init, original_final_brake,
+                                          final_brake_override))
+            {
+                Output::send<LogLevel::Warning>(
+                    STR("[KH3APProbeCpp] Data Xion Final Brake initialization unavailable\n"));
+            }
+        }
         if (!std::any_of(replacements.begin(), replacements.end(),
                          [](const auto& pair)
                          {
@@ -603,7 +688,9 @@ namespace kh3ap
         ascension_name = FName{L"e_ex367_AscensionPawn_C", FNAME_Add};
         master_name = FName{L"e_ex367_Pawn_C", FNAME_Add};
         dark_shooting_name = FName{L"e_ex367_Attack3_DarkShooting_TD_C", FNAME_Add};
-        if (!install_dark_shooting_post_init())
+        if (!install_action_post_init(L"/Script/TresGame.TresAttack3_e_ex367_DarkShooting",
+                                      &dark_shooting_post_init, original_dark_shooting_post_init,
+                                      dark_shooting_post_init_override))
         {
             Output::send<LogLevel::Error>(
                 STR("[KH3APProbeCpp] Master Xehanort Dark Shooting initialization unavailable "

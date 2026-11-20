@@ -9,7 +9,7 @@
 #include "kh02_cosmetic_items.h"
 #include "kh02_cosmetic_policy.h"
 #include "kh02_costume_preview.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"

@@ -1,5 +1,4 @@
-#include "kh02_reflected_call.h"
-#include <Unreal/Property/FArrayProperty.hpp>
+#include "reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/named_function_cache.h"
@@ -30,7 +29,7 @@ namespace kh3ap
         }
     }
 
-    auto kh02_require_loaded_object(const wchar_t* path) -> UObject*
+    auto require_loaded_object(const wchar_t* path) -> UObject*
     {
         // Native script classes and CDOs are used repeatedly during movie and
         // cutscene presentation. Keep weak identities, never a retained world.
@@ -67,41 +66,8 @@ namespace kh3ap
         return object;
     }
 
-    auto kh02_native_material_slot(UObject* mesh, int index) -> UObject**
-    {
-        auto* p = mesh->GetPropertyByNameInChain(L"m_OverrideMaterials");
-        if (!p || !p->IsA<FArrayProperty>() || p->GetElementSize() != 16)
-        {
-            throw std::runtime_error("kh02_story_material_cache");
-        }
-        auto* inner = static_cast<FArrayProperty*>(p)->GetInner();
-        if (!inner || inner->GetClass().GetName() != L"ObjectProperty" || inner->GetElementSize() != sizeof(UObject*))
-        {
-            throw std::runtime_error("kh02_story_material_cache_type");
-        }
-
-        struct Array
-        {
-            UObject** data;
-            int32_t count, capacity;
-        };
-
-        auto* a = p->ContainerPtrToValuePtr<Array>(mesh);
-        // The native parameter cache is initialized lazily. If absent, the game
-        // will build it from the renderer's already-adapted material instances.
-        if (a->count == 0 && a->capacity >= 0)
-        {
-            return nullptr;
-        }
-        if (a->count != 11 || a->capacity < a->count || !a->data || index < 0 || index >= a->count)
-        {
-            throw std::runtime_error("kh02_story_material_cache_bounds");
-        }
-        return a->data + index;
-    }
-
-    Kh02ReflectedCall::Kh02ReflectedCall(UObject* target, const wchar_t* method, const char* context,
-                                         size_t max_parameter_bytes)
+    ReflectedFunctionCall::ReflectedFunctionCall(UObject* target, const wchar_t* method, const char* context,
+                                                 size_t max_parameter_bytes)
         : owner(target), function(resolve_call_function(target, method)),
           context_(context)
     {
@@ -112,23 +78,23 @@ namespace kh3ap
         parameters.resize(function->GetParmsSize());
     }
 
-    Kh02ReflectedCall::Kh02ReflectedCall(const wchar_t* path, const wchar_t* method, const char* context,
-                                         size_t max_parameter_bytes)
-        : Kh02ReflectedCall(kh02_require_loaded_object(path), method, context, max_parameter_bytes)
+    ReflectedFunctionCall::ReflectedFunctionCall(const wchar_t* path, const wchar_t* method, const char* context,
+                                                 size_t max_parameter_bytes)
+        : ReflectedFunctionCall(require_loaded_object(path), method, context, max_parameter_bytes)
     {
     }
 
-    void Kh02ReflectedCall::fail(const char* operation, const wchar_t* parameter) const
+    void ReflectedFunctionCall::fail(const char* operation, const wchar_t* parameter) const
     {
         throw std::runtime_error(context_ + ":" + operation + ":" + to_utf8(parameter));
     }
 
-    auto Kh02ReflectedCall::param(const wchar_t* name) -> FProperty*
+    auto ReflectedFunctionCall::param(const wchar_t* name) -> FProperty*
     {
         return find_function_param_by_name(function, name);
     }
 
-    void Kh02ReflectedCall::object(const wchar_t* name, UObject* value)
+    void ReflectedFunctionCall::object(const wchar_t* name, UObject* value)
     {
         auto* property = param(name);
         if (property && property->GetClass().GetName() == L"ClassProperty" &&
@@ -147,7 +113,7 @@ namespace kh3ap
         }
     }
 
-    void Kh02ReflectedCall::boolean(const wchar_t* name, bool value)
+    void ReflectedFunctionCall::boolean(const wchar_t* name, bool value)
     {
         if (!write_bool_function_param(param(name), parameters.data(), value))
         {
@@ -155,7 +121,7 @@ namespace kh3ap
         }
     }
 
-    void Kh02ReflectedCall::integer(const wchar_t* name, int value)
+    void ReflectedFunctionCall::integer(const wchar_t* name, int value)
     {
         if (!write_integral_function_param(param(name), parameters.data(), value))
         {
@@ -163,7 +129,7 @@ namespace kh3ap
         }
     }
 
-    void Kh02ReflectedCall::name(const wchar_t* name, const wchar_t* value)
+    void ReflectedFunctionCall::name(const wchar_t* name, const wchar_t* value)
     {
         auto* property = param(name);
         if (!property || property->GetClass().GetName() != L"NameProperty" ||
@@ -174,7 +140,7 @@ namespace kh3ap
         *property->ContainerPtrToValuePtr<FName>(parameters.data()) = FName(value, FNAME_Add);
     }
 
-    void Kh02ReflectedCall::number(const wchar_t* name, float value)
+    void ReflectedFunctionCall::number(const wchar_t* name, float value)
     {
         auto* property = param(name);
         if (!property || property->GetClass().GetName() != L"FloatProperty" || property->GetElementSize() != 4)
@@ -184,7 +150,7 @@ namespace kh3ap
         *property->ContainerPtrToValuePtr<float>(parameters.data()) = value;
     }
 
-    void Kh02ReflectedCall::string(const wchar_t* name, const std::wstring& value)
+    void ReflectedFunctionCall::string(const wchar_t* name, const std::wstring& value)
     {
         struct StringView
         {
@@ -204,7 +170,7 @@ namespace kh3ap
         std::memcpy(property->ContainerPtrToValuePtr<void>(parameters.data()), &view, sizeof(view));
     }
 
-    void Kh02ReflectedCall::numbers(const wchar_t* name, std::initializer_list<float> values)
+    void ReflectedFunctionCall::numbers(const wchar_t* name, std::initializer_list<float> values)
     {
         auto* property = param(name);
         if (!property || property->GetClass().GetName() != L"StructProperty" ||
@@ -216,17 +182,17 @@ namespace kh3ap
                     values.size() * sizeof(float));
     }
 
-    void Kh02ReflectedCall::vector(const wchar_t* name, float x, float y, float z)
+    void ReflectedFunctionCall::vector(const wchar_t* name, float x, float y, float z)
     {
         numbers(name, {x, y, z});
     }
 
-    void Kh02ReflectedCall::vector2(const wchar_t* name, float x, float y)
+    void ReflectedFunctionCall::vector2(const wchar_t* name, float x, float y)
     {
         numbers(name, {x, y});
     }
 
-    void Kh02ReflectedCall::spawn_transform(float x, float y, float z)
+    void ReflectedFunctionCall::spawn_transform(float x, float y, float z)
     {
         auto* property = param(L"SpawnTransform");
         // Shipping KH3 uses this float Transform layout even when the UE4SS
@@ -240,17 +206,17 @@ namespace kh3ap
         std::memcpy(property->ContainerPtrToValuePtr<void>(parameters.data()), values, sizeof(values));
     }
 
-    void Kh02ReflectedCall::run()
+    void ReflectedFunctionCall::run()
     {
         owner->ProcessEvent(function, parameters.empty() ? nullptr : parameters.data());
     }
 
-    auto Kh02ReflectedCall::result() -> UObject*
+    auto ReflectedFunctionCall::result() -> UObject*
     {
         return try_read_function_object_param(function, parameters.data(), L"ReturnValue");
     }
 
-    auto Kh02ReflectedCall::boolean_result(const wchar_t* name) -> bool
+    auto ReflectedFunctionCall::boolean_result(const wchar_t* name) -> bool
     {
         auto* property = param(name);
         if (!property || property->GetClass().GetName() != L"BoolProperty")
@@ -260,7 +226,7 @@ namespace kh3ap
         return static_cast<FBoolProperty*>(property)->GetPropertyValueInContainer(parameters.data());
     }
 
-    auto Kh02ReflectedCall::result_vector() -> std::array<float, 3>
+    auto ReflectedFunctionCall::result_vector() -> std::array<float, 3>
     {
         auto* property = param(L"ReturnValue");
         std::array<float, 3> result{};

@@ -9,7 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <utility>
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include <chrono>
 #include <cmath>
@@ -23,10 +23,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -45,7 +45,7 @@ namespace kh3ap
         {
             return;
         }
-        auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         ReflectedCall status(library, hide ? L"TresUI_HideHudStatus" : L"TresUI_ShowHudStatus");
         status.run();
         ReflectedCall minimap(library, L"TresUI_SetEnableNaviMap");
@@ -61,7 +61,7 @@ namespace kh3ap
 
     auto Kh02IntroPresentation::fade(UObject* pawn) -> Json
     {
-        auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         // DW009's original fade track and its skipped BPTresStartFadeIn
         // branch own layer zero. Inspect that layer only.
         ReflectedCall amount(library, L"BPTresGetFadeAmount");
@@ -105,7 +105,7 @@ namespace kh3ap
                 // DW009 normally chains into another cinematic. Its Skip
                 // exit can retire the script while retaining cinematic
                 // control. Balance the host's entry only after retirement.
-                ReflectedCall end(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                ReflectedCall end(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                   L"TresEndCinematicMode");
                 end.object(L"WorldContextObject", pawn);
                 end.run();
@@ -116,7 +116,7 @@ namespace kh3ap
             if (cleanup["before"]["amount"].get<float>() > completed_fade_tolerance ||
                 cleanup["before"]["changing"].get<bool>())
             {
-                ReflectedCall cancel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                ReflectedCall cancel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                      L"BPTresCancelFade");
                 cancel.object(L"WorldContextObject", pawn);
                 cancel.integer(L"InLayer", intro_fade_layer);

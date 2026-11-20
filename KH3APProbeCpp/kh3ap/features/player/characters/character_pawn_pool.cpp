@@ -7,7 +7,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/AActor.hpp>
 #include <Unreal/UClass.hpp>
@@ -84,10 +84,10 @@ namespace kh3ap::character_pawn_pool
         };
         thread_local Operation* operation{};
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "character_pawn_pool", 512)
+                : ReflectedFunctionCall(owner, method, "character_pawn_pool", 512)
             {
             }
         };

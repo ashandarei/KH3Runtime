@@ -51,7 +51,7 @@ namespace kh3ap
     {
         if (ending_subtitle_index >= 0)
         {
-            ReflectedCall close(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall close(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                 L"TresUI_CloseSubtitle");
             close.run();
             ending_subtitle_index = -1;
@@ -83,7 +83,7 @@ namespace kh3ap
         ending_matinee_held = false;
         ending_subtitle_keys.clear();
         ending_subtitle_namespace.clear();
-        ReflectedCall language(kh02_require_loaded_object(L"/Script/Engine.Default__KismetInternationalizationLibrary"),
+        ReflectedCall language(require_loaded_object(L"/Script/Engine.Default__KismetInternationalizationLibrary"),
                                L"GetCurrentLanguage");
         language.run();
         const auto selected_language = subtitle_string(language.param(L"ReturnValue"), language.parameters.data());
@@ -243,7 +243,7 @@ namespace kh3ap
         {
             return;
         }
-        ReflectedCall open(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall open(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                            L"TresUI_OpenSubtitle");
         auto* text_property = open.param(L"Text");
         if (!text_property || !text_property->IsA<FStructProperty>() ||

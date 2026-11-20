@@ -202,6 +202,7 @@ namespace kh3ap
             install_master_xehanort_center_support();
             install_grim_guardianess_mode_guard();
             install_vanitas_clone_burst_center();
+            install_yozora_high_voltage_center();
             install_opening_ansem_phase_driver();
             install_runtime_xigbar_field_support();
             install_kg_replacement_reveal_guard();

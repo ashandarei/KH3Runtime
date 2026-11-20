@@ -1,5 +1,5 @@
 #pragma once
-#include "kh02_call_parameters.h"
+#include "kh3ap/core/reflection/reflected_call_parameters.h"
 #include <array>
 #include <cstddef>
 #include <initializer_list>
@@ -16,22 +16,20 @@ namespace RC::Unreal
 
 namespace kh3ap
 {
-    auto kh02_require_loaded_object(const wchar_t* path) -> RC::Unreal::UObject*;
-
-    auto kh02_native_material_slot(RC::Unreal::UObject* mesh, int index) -> RC::Unreal::UObject**;
+    auto require_loaded_object(const wchar_t* path) -> RC::Unreal::UObject*;
 
     // One synchronous, game-thread call. The owner and reflected properties are
     // used only during this stack lifetime; callers retain weak pointers between
     // frames. Borrowed FString parameters keep their backing strings here.
-    class Kh02ReflectedCall
+    class ReflectedFunctionCall
     {
       public:
-        Kh02ReflectedCall(RC::Unreal::UObject* owner, const wchar_t* method, const char* context,
-                          size_t max_parameter_bytes);
-        Kh02ReflectedCall(const wchar_t* owner_path, const wchar_t* method, const char* context,
-                          size_t max_parameter_bytes);
-        Kh02ReflectedCall(const Kh02ReflectedCall&) = delete;
-        auto operator=(const Kh02ReflectedCall&) -> Kh02ReflectedCall& = delete;
+        ReflectedFunctionCall(RC::Unreal::UObject* owner, const wchar_t* method, const char* context,
+                              size_t max_parameter_bytes);
+        ReflectedFunctionCall(const wchar_t* owner_path, const wchar_t* method, const char* context,
+                              size_t max_parameter_bytes);
+        ReflectedFunctionCall(const ReflectedFunctionCall&) = delete;
+        auto operator=(const ReflectedFunctionCall&) -> ReflectedFunctionCall& = delete;
 
         auto param(const wchar_t* name) -> RC::Unreal::FProperty*;
         void object(const wchar_t* name, RC::Unreal::UObject* value);
@@ -51,7 +49,7 @@ namespace kh3ap
 
         RC::Unreal::UObject* owner;
         RC::Unreal::UFunction* function;
-        Kh02CallParameters parameters;
+        ReflectedCallParameters parameters;
 
       private:
         [[noreturn]] void fail(const char* operation, const wchar_t* parameter = L"") const;

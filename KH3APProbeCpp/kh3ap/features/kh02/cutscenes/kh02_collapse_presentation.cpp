@@ -23,7 +23,7 @@ namespace kh3ap
 
         auto source_fade(UObject* pawn) -> Json
         {
-            auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+            auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
             ReflectedCall amount(library, L"BPTresGetFadeAmount");
             amount.object(L"WorldContextObject", pawn);
             amount.integer(L"InLayer", collapse_fade_layer);
@@ -66,10 +66,10 @@ namespace kh3ap
         {
             return;
         }
-        auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         ReflectedCall closed(library, L"TresUI_IsClosedLoadingScreen");
         closed.run();
-        ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+        ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
         paused.object(L"WorldContextObject", pawn);
         paused.run();
         if (!closed.boolean_result() || paused.boolean_result())

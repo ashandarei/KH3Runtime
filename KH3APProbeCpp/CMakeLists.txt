@@ -115,6 +115,11 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/level_entity_remap.cpp
     kh3ap/features/enemies/cinematic_visibility.cpp
     kh3ap/features/enemies/bosses/binding.cpp
+    kh3ap/features/enemies/bosses/king_of_toys_center.cpp
+    kh3ap/features/enemies/bosses/yozora_high_voltage.cpp
+    kh3ap/features/enemies/bosses/yozora_keyblade_steal.cpp
+    kh3ap/features/enemies/bosses/yozora_rooftop.cpp
+    kh3ap/features/enemies/bosses/yozora_gravity_sphere.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
     kh3ap/features/enemies/bosses/vanitas_clone_burst.cpp
@@ -387,6 +392,7 @@ add_library(${TARGET} SHARED
     kh3ap/hooks/blocking_ui/blocking_ui_focus_service.cpp
     kh3ap/hooks/blocking_ui/blocking_ui_hook_service.cpp
     kh3ap/hooks/blocking_ui/blocking_ui_state.cpp
+    kh3ap/core/reflection/reflected_function_call.cpp
     kh3ap/core/reflection/reflection_core.cpp
     kh3ap/diagnostics/reflection/reflection_inspection.cpp
     kh3ap/core/reflection/reflection_values.cpp

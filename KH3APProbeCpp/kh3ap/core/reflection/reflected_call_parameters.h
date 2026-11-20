@@ -10,7 +10,7 @@ namespace kh3ap
 {
     // Each reflected call owns its scratch storage, including nested ProcessEvent
     // calls. Larger records retain the same dynamically sized behavior.
-    class Kh02CallParameters
+    class ReflectedCallParameters
     {
       public:
         static constexpr size_t inline_capacity = 256;
@@ -19,9 +19,9 @@ namespace kh3ap
         static constexpr size_t native_alignment = 16;
         static constexpr size_t alignment_padding = native_alignment - 1;
 
-        Kh02CallParameters() = default;
-        Kh02CallParameters(const Kh02CallParameters&) = delete;
-        auto operator=(const Kh02CallParameters&) -> Kh02CallParameters& = delete;
+        ReflectedCallParameters() = default;
+        ReflectedCallParameters(const ReflectedCallParameters&) = delete;
+        auto operator=(const ReflectedCallParameters&) -> ReflectedCallParameters& = delete;
 
         void resize(size_t size)
         {

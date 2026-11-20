@@ -1,6 +1,6 @@
 #include "kh02_portal_loading.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/world/loading_runtime.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -106,7 +106,7 @@ namespace kh3ap
 
     void Kh02PortalLoading::prepare_travel()
     {
-        Kh02ReflectedCall type(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresUI_SetLoadingScreenType",
+        ReflectedFunctionCall type(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresUI_SetLoadingScreenType",
                                "portal_loading", 8);
         type.integer(L"Type", 1);
         type.run();
@@ -124,7 +124,7 @@ namespace kh3ap
     {
         if (travel_prepared)
         {
-            Kh02ReflectedCall type(L"/Script/TresGame.Default__TresGameBlueprintLibrary",
+            ReflectedFunctionCall type(L"/Script/TresGame.Default__TresGameBlueprintLibrary",
                                    L"TresUI_SetLoadingScreenType", "portal_loading", 8);
             type.integer(L"Type", 0);
             type.run();

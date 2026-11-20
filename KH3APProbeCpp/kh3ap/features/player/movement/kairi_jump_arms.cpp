@@ -5,7 +5,7 @@
 #include "kh3ap/features/player/animation_pose.h"
 #include "arm_pose_blend.h"
 #include "kh3ap/features/player/player_animation_support.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
@@ -326,7 +326,7 @@ namespace kh3ap::kairi_jump_arms
 
         FName bone_name(UObject* mesh, int index)
         {
-            Kh02ReflectedCall call(mesh, L"GetBoneName", "Kairi arm bones", 128);
+            ReflectedFunctionCall call(mesh, L"GetBoneName", "Kairi arm bones", 128);
             call.integer(L"BoneIndex", index);
             call.run();
             return *call.param(L"ReturnValue")->ContainerPtrToValuePtr<FName>(call.parameters.data());
@@ -380,7 +380,7 @@ namespace kh3ap::kairi_jump_arms
             }
         }
         if (!binding->slot_offset) { throw std::runtime_error("kairi_jump_slot_missing"); }
-        Kh02ReflectedCall count(mesh, L"GetNumBones", "Kairi arm bones", 128);
+        ReflectedFunctionCall count(mesh, L"GetNumBones", "Kairi arm bones", 128);
         count.run();
         binding->bone_count = *count.param(L"ReturnValue")->ContainerPtrToValuePtr<int>(count.parameters.data());
         if (binding->bone_count <= 0 || binding->bone_count > max_bones) { throw std::runtime_error("kairi_jump_bone_count"); }
@@ -390,7 +390,7 @@ namespace kh3ap::kairi_jump_arms
         for (int index = 0; index < binding->bone_count; ++index)
         {
             const auto name = bone_name(mesh, index).ToString();
-            Kh02ReflectedCall parent(mesh, L"GetParentBone", "Kairi arm parent", 128);
+            ReflectedFunctionCall parent(mesh, L"GetParentBone", "Kairi arm parent", 128);
             parent.name(L"BoneName", name.c_str());
             parent.run();
             const auto parent_name = parent.param(L"ReturnValue")->ContainerPtrToValuePtr<FName>(parent.parameters.data())->ToString();

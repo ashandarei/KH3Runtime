@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cstring>
 #include <string>
+#include <span>
 #include <vector>
 
 namespace kh3ap
@@ -29,15 +30,32 @@ namespace kh3ap
             L"e_ex367_EQ_MapCenterCameraRotPos_Q",   L"e_ex367_EQ_MapCenterPos_Q",
             L"e_ex367_EQ_MapCenterRotPos_Q"};
         constexpr std::array<size_t, 7> expected_refs{2, 2, 2, 1, 2, 2, 2};
-        std::array<FName, 7> query_fnames{};
-        FName query_class_name{};
-        std::atomic<bool> configured{}, activated{};
-        std::atomic<uint64_t> revision{1};
-        uint64_t seen_revision{};
-        using Clock = std::chrono::steady_clock;
-        Clock::time_point deadline{}, next_attempt{};
-        bool unfinished{};
+        constexpr std::array<const wchar_t*, 5> yozora_queries{
+            L"e_ex781_EQ_AttaackToCenterPos_Q", L"e_ex781_EQ_CameraRotPosInMap_Q",
+            L"e_ex781_EQ_CameraRotPosInMustMap_Q", L"e_ex781_EQ_MapCenterCameraRotSidePos_Q",
+            L"e_ex781_EQ_MapCenterPos_Q"};
+        constexpr std::array<size_t, 5> yozora_counts{4, 2, 2, 3, 2};
 
+        constexpr std::array<const wchar_t*, 3> vanitas_queries{
+            L"e_ex360_EQ_AirWarpGround_Q", L"e_ex360_EQ_AirWarp_Q",
+            L"e_ex360_EQ_PS3D_KBCloneBurst_Circle"};
+        constexpr std::array<size_t, 3> vanitas_counts{2, 2, 2};
+        using Clock = std::chrono::steady_clock;
+        struct QueryGroup
+        {
+            const wchar_t* folder;
+            std::span<const wchar_t* const> names;
+            std::span<const size_t> counts;
+            std::vector<FName> fnames;
+            std::atomic<bool> configured{}, activated{};
+            std::atomic<uint64_t> revision{1};
+            uint64_t seen_revision{};
+            Clock::time_point deadline{}, next_attempt{};
+            bool unfinished{};
+        };
+        QueryGroup master{L"e_ex367", query_names, expected_refs};
+        QueryGroup yozora{L"e_ex781", yozora_queries, yozora_counts};
+        QueryGroup vanitas{L"e_ex360", vanitas_queries, vanitas_counts};
         auto owned_by(UObject* node, UObject* root) -> bool
         {
             for (size_t depth = 0; depth < 16 && is_uobject_valid_fast(node); ++depth)
@@ -114,15 +132,22 @@ namespace kh3ap
                 references +=
                     patch_reference(node->GetPropertyByNameInChain(name), node, zero, center);
             }
-            auto* direction = node->GetPropertyByNameInChain(L"ArcDirection");
-            if (direction && direction->GetClass().GetName() == L"StructProperty")
+            for (const auto* key : {L"ArcDirection", L"LineA", L"LineB"})
             {
-                auto* structure = static_cast<FStructProperty*>(direction)->GetStruct();
-                // Rotation is deliberately left alone: a fixed yaw is not
-                // a world-space point. Only the LineFrom location moves.
-                if (is_uobject_valid_fast(structure))
+                auto* direction = node->GetPropertyByNameInChain(key);
+                if (!direction || !direction->IsA<FStructProperty>())
                 {
-                    references += patch_reference(find_struct_field_by_name(structure, L"LineFrom"),
+                    continue;
+                }
+                auto* structure = static_cast<FStructProperty*>(direction)->GetStruct();
+                if (!is_uobject_valid_fast(structure))
+                {
+                    continue;
+                }
+                // Only location endpoints use the arena center. Keep authored rotations.
+                for (const auto* endpoint : {L"LineFrom", L"LineTo"})
+                {
+                    references += patch_reference(find_struct_field_by_name(structure, endpoint),
                                                   direction->ContainerPtrToValuePtr<void>(node),
                                                   zero, center);
                 }
@@ -141,7 +166,7 @@ namespace kh3ap
             return references;
         }
 
-        auto patch_loaded_queries() -> bool
+        auto patch_loaded_queries(const QueryGroup& group) -> bool
         {
             auto* zero = UObjectGlobals::StaticFindObject<UClass*>(
                 nullptr, nullptr, L"/Script/TresGame.TresEnvQueryContext_NullLocation");
@@ -153,96 +178,133 @@ namespace kh3ap
             }
             bool complete = true;
             size_t total = 0;
-            for (size_t index = 0; index < query_names.size(); ++index)
+            for (size_t index = 0; index < group.names.size(); ++index)
             {
-                const std::wstring name{query_names[index]};
-                const auto path = L"/Game/Blueprints/Enemy/e_ex367/EQS/" + name + L"." + name;
+                const std::wstring name{group.names[index]};
+                const auto path = std::wstring{L"/Game/Blueprints/Enemy/"} + group.folder +
+                                  L"/EQS/" + name + L"." + name;
                 auto* query = find_loaded_runtime_asset(path);
                 if (!is_uobject_valid_fast(query) ||
-                    query->GetClassPrivate()->GetNamePrivate() != query_class_name)
+                    query->GetClassPrivate()->GetNamePrivate() != FName{L"EnvQuery", FNAME_Find})
                 {
                     complete = false;
                     continue;
                 }
                 const auto count = patch_node(query, query, zero, center, 0);
                 total += count;
-                complete = complete && count == expected_refs[index];
+                complete = complete && count == group.counts[index];
             }
             if (complete)
             {
-                Output::send<LogLevel::Normal>(
-                    STR("[KH3APProbeCpp] Master Xehanort query centers bound "
-                        "assets=7 location_refs={} "
-                        "context=TresEnvQueryContext_XIIIL_CenterLocation "
-                        "rotation_contexts_preserved=true scope=master_query_templates "
-                        "polling=false\n"),
-                    total);
+                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] {} arena query centers bound "
+                                                   "assets={} location_refs={}\n"),
+                                               group.folder, group.names.size(), total);
             }
             return complete;
         }
     } // namespace
 
+    static void configure(QueryGroup& group)
+    {
+        if (group.configured.load(std::memory_order_acquire))
+        {
+            return;
+        }
+        for (const auto* name : group.names)
+        {
+            group.fnames.emplace_back(name, FNAME_Add);
+        }
+        group.configured.store(true, std::memory_order_release);
+    }
+
     void configure_master_query_contexts()
     {
-        query_class_name = FName{L"EnvQuery", FNAME_Add};
-        for (size_t index = 0; index < query_names.size(); ++index)
-        {
-            query_fnames[index] = FName{query_names[index], FNAME_Add};
-        }
-        configured.store(true, std::memory_order_release);
+        configure(master);
     }
 
     void notify_master_query_created(UObject* object)
     {
-        if (!configured.load(std::memory_order_acquire) || !object || !object->GetClassPrivate() ||
+        if (!master.configured.load(std::memory_order_acquire) &&
+            !yozora.configured.load(std::memory_order_acquire) &&
+            !vanitas.configured.load(std::memory_order_acquire))
+        {
+            return;
+        }
+        static const FName query_class_name{L"EnvQuery", FNAME_Add};
+        if (!object || !object->GetClassPrivate() ||
             object->GetClassPrivate()->GetNamePrivate() != query_class_name)
         {
             return;
         }
         const auto name = object->GetNamePrivate();
-        for (const auto& expected : query_fnames)
+        for (auto* group : {&master, &yozora, &vanitas})
         {
-            if (name == expected)
+            if (!group->configured.load(std::memory_order_acquire))
             {
-                revision.fetch_add(1, std::memory_order_release);
-                return;
+                continue;
+            }
+            for (const auto& expected : group->fnames)
+            {
+                if (name == expected)
+                {
+                    group->revision.fetch_add(1, std::memory_order_release);
+                    return;
+                }
             }
         }
     }
 
-    void activate_master_query_contexts()
+    static void process(QueryGroup& group)
     {
-        activated.store(true, std::memory_order_release);
-        process_pending_master_query_contexts();
-    }
-
-    void process_pending_master_query_contexts()
-    {
-        if (!activated.load(std::memory_order_acquire))
+        if (!group.activated.load(std::memory_order_acquire))
         {
             return;
         }
-        const auto current = revision.load(std::memory_order_acquire);
-        if (!unfinished && current == seen_revision)
+        const auto current = group.revision.load(std::memory_order_acquire);
+        if (!group.unfinished && current == group.seen_revision)
         {
             return;
         }
         const auto now = Clock::now();
-        if (current != seen_revision)
+        if (current != group.seen_revision)
         {
-            seen_revision = current;
-            unfinished = true;
-            deadline = now + std::chrono::seconds(2);
-            next_attempt = now;
+            group.seen_revision = current;
+            group.unfinished = true;
+            group.deadline = now + std::chrono::seconds(2);
+            group.next_attempt = now;
         }
-        if (now < next_attempt)
+        if (now < group.next_attempt)
         {
             return;
         }
-        if (patch_loaded_queries() || now >= deadline)
-        {
-            unfinished = false;
-        }
-        next_attempt = now + std::chrono::milliseconds(100);
+        group.unfinished = !patch_loaded_queries(group) && now < group.deadline;
+        group.next_attempt = now + std::chrono::milliseconds(100);
+    }
+
+    void activate_master_query_contexts()
+    {
+        master.activated.store(true, std::memory_order_release);
+        process(master);
+    }
+
+    void activate_yozora_query_contexts()
+    {
+        configure(yozora);
+        yozora.activated.store(true, std::memory_order_release);
+        process(yozora);
+    }
+
+    void activate_vanitas_query_contexts()
+    {
+        configure(vanitas);
+        vanitas.activated.store(true, std::memory_order_release);
+        process(vanitas);
+    }
+
+    void process_pending_master_query_contexts()
+    {
+        process(master);
+        process(yozora);
+        process(vanitas);
     }
 } // namespace kh3ap

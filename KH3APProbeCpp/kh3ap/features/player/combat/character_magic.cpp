@@ -8,7 +8,7 @@
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_call_helpers.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/player/player_animation_support.h"
@@ -537,7 +537,7 @@ namespace kh3ap::character_magic
         // SetMagicPoint ignores writes during recharge. Use the native charge
         // transition first, preserving the other bits in the same flag byte.
         set_charge(pawn, false, 0.0f);
-        Kh02ReflectedCall call(pawn, L"SetMagicPoint", "character_magic",
+        ReflectedFunctionCall call(pawn, L"SetMagicPoint", "character_magic",
                                max_magic_call_parameter_bytes);
         call.integer(L"InMP", std::clamp(meter.mp, 0, integer(pawn, L"GetMaxMagicPoint")));
         call.run();
@@ -624,6 +624,30 @@ namespace kh3ap::character_magic
         {
             return false;
         }
+        std::optional<MagicUnit> dual_shot;
+        if (index == roxas_meter)
+        {
+            // FireMagic resolves the projectile from this command row even when
+            // the equipment's separate CrossShoot projectile entry is present.
+            auto* authored = find_loaded_runtime_asset(
+                L"/Game/Blueprints/Player/p_ex007/p_ex007_MagicSet.p_ex007_MagicSet");
+            if (!authored)
+            {
+                return false;
+            }
+            for (const auto& unit : *units(authored))
+            {
+                if (unit.command == player_action_command_value(PlayerActionCommand::S_CROSSSHOOT))
+                {
+                    dual_shot = unit;
+                    break;
+                }
+            }
+            if (!dual_shot || !is_uobject_valid_fast(dual_shot->asset0))
+            {
+                throw std::runtime_error("roxas_dual_shot_magic_unit_missing");
+            }
+        }
         prepare_damage(pawn);
         FStaticConstructObjectParameters parameters(source->GetClassPrivate(), equipment);
         parameters.SetFlags = RF_Transient;
@@ -640,6 +664,10 @@ namespace kh3ap::character_magic
             {
                 destination->Add(unit);
             }
+        }
+        if (dual_shot)
+        {
+            destination->Add(*dual_shot);
         }
         auto* field = properties.resolve_object(equipment, L"m_MagicSet");
         if (!field)

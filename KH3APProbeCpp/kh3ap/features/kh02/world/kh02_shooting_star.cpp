@@ -1,5 +1,5 @@
 #include "kh02_shooting_star.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -30,10 +30,10 @@ namespace kh3ap
         constexpr std::size_t native_name_bytes = sizeof(FName);
         static_assert(native_name_bytes == sizeof(uint64_t));
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };

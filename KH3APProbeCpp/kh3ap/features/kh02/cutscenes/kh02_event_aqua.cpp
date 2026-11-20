@@ -6,7 +6,7 @@
 #include <Unreal/AActor.hpp>
 #include <Unreal/UClass.hpp>
 
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include <Unreal/UObject.hpp>
@@ -21,10 +21,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -54,7 +54,7 @@ namespace kh3ap
                 }
                 return false;
             }
-            ReflectedCall begin(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
+            ReflectedCall begin(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
                                 L"BeginDeferredActorSpawnFromClass");
             begin.object(L"WorldContextObject", pawn);
             begin.object(L"ActorClass", event_class);
@@ -68,7 +68,7 @@ namespace kh3ap
             }
             // Resolve by reflection: this game's SpawnTransform is aligned
             // to offset 16; UE4SS's generic wrapper mispacks Finish's field.
-            ReflectedCall finish(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
+            ReflectedCall finish(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
                                  L"FinishSpawningActor");
             finish.object(L"Actor", actor);
             finish.spawn_transform();

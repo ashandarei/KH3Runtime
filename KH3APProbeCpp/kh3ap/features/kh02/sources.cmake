@@ -119,7 +119,7 @@ target_sources(${TARGET} PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/story/kh02_story_targets.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/world/kh02_forest_visibility.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/story/kh02_story_music.cpp"
-    "${CMAKE_CURRENT_LIST_DIR}/core/kh02_reflected_call.cpp"
+    "${CMAKE_CURRENT_LIST_DIR}/core/kh02_native_material_slot.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/ui/kh02_information_queue.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/core/kh02_mesh_buffer_lease.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/world/kh02_mapset.cpp"

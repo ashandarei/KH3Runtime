@@ -15,7 +15,7 @@
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/characters/character_swap.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -74,8 +74,13 @@ namespace kh3ap::character_idle
             weapon_hook, idle_update_hook;
         FWeakObjectPtr kairi_owner, kairi_instance, kairi_requested_owner;
         FWeakObjectPtr kairi_queue, kairi_pose_notify, kairi_idle_asset;
-        FWeakObjectPtr kairi_run_pose_notify, kairi_run_pose_asset;
-        size_t kairi_pose_notify_slot{};
+        struct RunPoseCompletion
+        {
+            FWeakObjectPtr notify;
+            FWeakObjectPtr animation;
+        };
+        RunPoseCompletion kairi_run_pose, roxas_run_pose;
+        size_t pose_notify_slot{};
         int kairi_current_state_offset{}, kairi_state_id_offset{};
         FWeakObjectPtr roxas_owner, roxas_instance, roxas_queue;
         int roxas_current_state_offset{}, roxas_state_id_offset{};
@@ -146,9 +151,9 @@ namespace kh3ap::character_idle
 
         }
 
-        void prepare_kairi_run_pose(UObject* animation)
+        RunPoseCompletion run_pose_completion(UObject* animation)
         {
-            auto* notifies = animation->GetPropertyByNameInChain(L"Notifies");
+            auto* notifies = is_uobject_valid_fast(animation) ? animation->GetPropertyByNameInChain(L"Notifies") : nullptr;
             auto* inner = notifies && notifies->IsA<FArrayProperty>()
                               ? static_cast<FArrayProperty*>(notifies)->GetInner() : nullptr;
             auto* schema = inner && inner->IsA<FStructProperty>()
@@ -157,12 +162,12 @@ namespace kh3ap::character_idle
             if (!notify_field || notify_field->GetClass().GetName() != L"ObjectProperty" ||
                 notify_field->GetElementSize() != sizeof(UObject*))
             {
-                throw std::runtime_error("kairi_run_pose_notify_layout");
+                throw std::runtime_error("run_pose_notify_layout");
             }
             auto* events = notifies->ContainerPtrToValuePtr<FScriptArray>(animation);
             if (events->Num() < 0 || events->Num() > 256)
             {
-                throw std::runtime_error("kairi_run_pose_notify_count");
+                throw std::runtime_error("run_pose_notify_count");
             }
             for (int index = 0; index < events->Num(); ++index)
             {
@@ -173,12 +178,10 @@ namespace kh3ap::character_idle
                 auto* pose = notify->GetPropertyByNameInChain(L"m_LastAnimPose");
                 if (pose && pose->GetElementSize() == 1 && *pose->ContainerPtrToValuePtr<uint8_t>(notify) == 1)
                 {
-                    kairi_run_pose_notify = make_uobject_weak(notify);
-                    kairi_run_pose_asset = make_uobject_weak(animation);
-                    return;
+                    return {make_uobject_weak(notify), make_uobject_weak(animation)};
                 }
             }
-            throw std::runtime_error("kairi_run_pose_notify_missing");
+            throw std::runtime_error("run_pose_notify_missing");
         }
 
         void prepare_kairi_movement(UObject* anim, UObject* source, TArray<UObject*>& sets)
@@ -236,7 +239,7 @@ namespace kh3ap::character_idle
                 player_animation_support::allow_animation_skeleton(anim, borrowed[index].asset);
                 if (!native_run) { use_reference_translations(borrowed[index].asset); }
             }
-            prepare_kairi_run_pose(borrowed[kairi_movement.size() - 1].asset);
+            kairi_run_pose = run_pose_completion(borrowed[kairi_movement.size() - 1].asset);
             kairi_idle_break = FName(L"IdleBreakN", FNAME_Add);
             kairi_weapon_break = FName(L"IdleBreakW", FNAME_Add);
             kairi_aqua_idle_break = FName(L"AP_KairiIdleBreakN", FNAME_Add);
@@ -288,17 +291,24 @@ namespace kh3ap::character_idle
                        : nullptr;
         }
 
-        void prepare_kairi_pose_completion(UObject* idle_set)
+        void complete_run_pose(UObject* pawn, const RunPoseCompletion& pose)
         {
-            auto* notify = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_LastAnimPose");
-            auto* voice = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_PlayVoice");
-            auto* pose = is_uobject_valid_fast(notify) ? notify->GetPropertyByNameInChain(L"m_LastAnimPose") : nullptr;
-            if (!pose || pose->GetElementSize() != 1 || *pose->ContainerPtrToValuePtr<uint8_t>(notify) != 0 ||
-                !is_uobject_valid_fast(voice) ||
-                notify->GetClassPrivate()->GetName() != L"TresAnimNotify_LastAnimPose" ||
-                voice->GetClassPrivate()->GetName() != L"TresAnimNotify_PlayVoice")
+            auto* notify = pose.notify.Get();
+            auto* animation = pose.animation.Get();
+            auto* mesh = object(pawn, L"MyMesh");
+            if (notify && animation && mesh)
             {
-                throw std::runtime_error("kairi_idle_pose_notify_layout");
+                const auto table = *reinterpret_cast<uintptr_t**>(notify);
+                reinterpret_cast<void (*)(UObject*, UObject*, UObject*)>(table[pose_notify_slot])(notify, mesh, animation);
+            }
+        }
+
+        void prepare_pose_notify_slot()
+        {
+            auto* voice = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_PlayVoice");
+            if (!is_uobject_valid_fast(voice) || voice->GetClassPrivate()->GetName() != L"TresAnimNotify_PlayVoice")
+            {
+                throw std::runtime_error("pose_notify_slot_unavailable");
             }
             // Locate UAnimNotify::Notify through the already verified PlayVoice
             // implementation. Both classes inherit the same virtual slot; do not
@@ -309,10 +319,26 @@ namespace kh3ap::character_idle
             size_t matches{};
             for (size_t index = 0; index < 128; ++index)
             {
-                if (table[index] == address) { kairi_pose_notify_slot = index; ++matches; }
+                if (table[index] == address) { pose_notify_slot = index; ++matches; }
             }
+            if (matches != 1)
+            {
+                throw std::runtime_error("pose_notify_slot_unavailable");
+            }
+        }
+
+        void prepare_kairi_pose_completion(UObject* idle_set)
+        {
+            auto* notify = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_LastAnimPose");
+            auto* pose = is_uobject_valid_fast(notify) ? notify->GetPropertyByNameInChain(L"m_LastAnimPose") : nullptr;
+            if (!pose || pose->GetElementSize() != 1 || *pose->ContainerPtrToValuePtr<uint8_t>(notify) != 0 ||
+                notify->GetClassPrivate()->GetName() != L"TresAnimNotify_LastAnimPose")
+            {
+                throw std::runtime_error("kairi_idle_pose_notify_layout");
+            }
+            prepare_pose_notify_slot();
             auto* field = idle_set->GetPropertyByNameInChain(L"Anims");
-            if (matches != 1 || !field || !field->IsA<FArrayProperty>() ||
+            if (!field || !field->IsA<FArrayProperty>() ||
                 static_cast<FArrayProperty*>(field)->GetInner()->GetElementSize() != sizeof(player_animation_support::AnimationEntry))
             {
                 throw std::runtime_error("kairi_idle_pose_notify_unavailable");
@@ -432,6 +458,20 @@ namespace kh3ap::character_idle
 #endif
             if (anim == roxas_instance.Get())
             {
+                static const FName run_start_normal(L"RunStartN", FNAME_Add);
+                static const FName run_start_weapon(L"RunStartW", FNAME_Add);
+                static const FName run_start_battle(L"RunStartB", FNAME_Add);
+                if (name == run_start_normal || name == run_start_weapon || name == run_start_battle)
+                {
+                    auto* pawn = roxas_owner.Get();
+                    if (pawn && character_swap::owns_swap_pawn(pawn) && !in_battle(pawn))
+                    {
+                        // All three starts use Roxas's battle stride. Mark that pose
+                        // on entry so Run goes straight to his loop without playing
+                        // Sora's RunBattleStartW to complete the stance change.
+                        complete_run_pose(pawn, roxas_run_pose);
+                    }
+                }
                 const auto selected = effective_animation_name(anim, name);
                 if (selected != name)
                 {
@@ -457,15 +497,7 @@ namespace kh3ap::character_idle
                         // the normal start/loop event so the next Run update
                         // keeps moving without inserting the weapon gesture.
                         // This changes the pose latch, not battle mode.
-                        auto* notify = kairi_run_pose_notify.Get();
-                        auto* asset = kairi_run_pose_asset.Get();
-                        auto* mesh = object(pawn, L"MyMesh");
-                        if (notify && asset && mesh)
-                        {
-                            const auto table = *reinterpret_cast<uintptr_t**>(notify);
-                            reinterpret_cast<void (*)(UObject*, UObject*, UObject*)>(table[kairi_pose_notify_slot])(
-                                notify, mesh, asset);
-                        }
+                        complete_run_pose(pawn, kairi_run_pose);
                     }
                     // Preserve the native playback name. Run compares it on
                     // subsequent updates; an alias here restarts the motion
@@ -496,7 +528,7 @@ namespace kh3ap::character_idle
                             // Deliver that native completion event without its
                             // weapon gesture, or Idle requests dismissal forever.
                             const auto table = *reinterpret_cast<uintptr_t**>(notify);
-                            reinterpret_cast<void (*)(UObject*, UObject*, UObject*)>(table[kairi_pose_notify_slot])(
+                            reinterpret_cast<void (*)(UObject*, UObject*, UObject*)>(table[pose_notify_slot])(
                                 notify, mesh, asset);
                         }
                     }
@@ -529,7 +561,7 @@ namespace kh3ap::character_idle
             {
                 return;
             }
-            Kh02ReflectedCall play(pawn, L"BP_AnimPlayAnimset", "Character exploration idle",
+            ReflectedFunctionCall play(pawn, L"BP_AnimPlayAnimset", "Character exploration idle",
                                    max_animation_parameter_bytes);
             play.name(L"InAnimName", L"IdleB");
             play.name(L"InSlotNodeName", L"FullBody");
@@ -850,6 +882,9 @@ namespace kh3ap::character_idle
                 throw std::runtime_error("roxas_idle_animation_missing");
             }
         }
+        prepare_pose_notify_slot();
+        roxas_run_pose = run_pose_completion(find_loaded_runtime_asset(
+            L"/Game/Character/pc/p_ex001/anm/rt/body/1013.1013")); // RunBattleStartW
         prepare_roxas_face(anim);
         roxas_current_state_offset = current->GetOffset_Internal();
         roxas_state_id_offset = state_id->GetOffset_Internal();
@@ -865,7 +900,7 @@ namespace kh3ap::character_idle
         // The native pawn may have started NO_1_EL before our ownership was
         // bound. Restart that baseline once; later native requests resolve
         // through the private facial set, without a face-update timer.
-        Kh02ReflectedCall face(anim, L"SQEX_FaceAnimPlay", "Roxas default face", 256);
+        ReflectedFunctionCall face(anim, L"SQEX_FaceAnimPlay", "Roxas default face", 256);
         face.name(L"InAnimName", L"NO_1_EL");
         face.number(L"InBlendInTime", 0.1f);
         face.boolean(L"InLoop", true);
@@ -993,7 +1028,7 @@ namespace kh3ap::character_idle
         {
             return false;
         }
-        Kh02ReflectedCall change(pawn, L"SetBattleMode", "Character idle battle validation",
+        ReflectedFunctionCall change(pawn, L"SetBattleMode", "Character idle battle validation",
                                  max_animation_parameter_bytes);
         change.boolean(L"InEnable", enabled);
         change.run();

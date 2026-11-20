@@ -1,6 +1,6 @@
 #include "kh02_movie_probe.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
@@ -173,7 +173,7 @@ namespace kh3ap
         {
             return;
         }
-        Kh02ReflectedCall playing(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedFunctionCall playing(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                   L"TresUI_IsPlayingVideo", "kh02_story", reflected_parameter_limit_bytes);
         playing.run();
         const bool is_playing = playing.boolean_result();

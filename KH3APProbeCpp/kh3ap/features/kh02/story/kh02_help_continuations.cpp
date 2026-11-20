@@ -1,5 +1,5 @@
 #include "kh02_help_continuations.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
@@ -48,7 +48,7 @@ namespace kh3ap
             {
                 continue;
             }
-            Kh02ReflectedCall resume(target, continuation.execution.ToString().c_str(), "kh02_story",
+            ReflectedFunctionCall resume(target, continuation.execution.ToString().c_str(), "kh02_story",
                                      reflected_parameter_limit_bytes);
             if (resume.function->GetParmsSize() != linkage_parameter_bytes || continuation.linkage < 0 ||
                 continuation.linkage >= resume.function->GetScript().Num())

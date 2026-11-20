@@ -19,7 +19,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include <Unreal/FMemory.hpp>
@@ -154,7 +154,7 @@ namespace kh3ap::character_shotlock
 
         UObject* active_camera(UObject* manager, const wchar_t* getter)
         {
-            Kh02ReflectedCall call(manager, getter, "character_shotlock",
+            ReflectedFunctionCall call(manager, getter, "character_shotlock",
                                    max_shotlock_getter_parameter_bytes);
             call.run();
             return call.result();
@@ -1032,7 +1032,7 @@ namespace kh3ap::character_shotlock
         if (kind == riku_player_id)
         {
             if (!prepare_riku_damage(pawn)) { return false; }
-            Kh02ReflectedCall enable(pawn, L"BP_SetEnableShootLockModeForRIKU",
+            ReflectedFunctionCall enable(pawn, L"BP_SetEnableShootLockModeForRIKU",
                                      "character_shotlock", max_shotlock_pause_parameter_bytes);
             enable.boolean(L"IsOn", true);
             enable.run();

@@ -3,7 +3,7 @@
 #include "kh02_challenge_defs.h"
 #include "kh02_challenge_ids.h"
 #include "kh02_challenge_policy.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include <Unreal/UObject.hpp>
@@ -20,10 +20,10 @@ namespace kh3ap
         constexpr int challenge_key_digits = 3;
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -33,7 +33,7 @@ namespace kh3ap
     {
         try
         {
-            ReflectedCall find(kh02_require_loaded_object(L"/Script/Engine.Default__KismetTextLibrary"),
+            ReflectedCall find(require_loaded_object(L"/Script/Engine.Default__KismetTextLibrary"),
                                L"FindTextInLocalizationTable");
             find.string(L"Namespace", L"kh02_menu.camp_challenge");
             const auto digits = std::to_wstring(number);

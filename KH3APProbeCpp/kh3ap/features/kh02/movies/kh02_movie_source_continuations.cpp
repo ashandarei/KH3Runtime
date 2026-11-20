@@ -1,5 +1,5 @@
 #include "kh02_movie_source_continuations.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
@@ -19,10 +19,10 @@ namespace kh3ap
         constexpr std::size_t continuation_parameter_limit_bytes = 512;
         constexpr std::string_view gear_movie_prefix = "Rebellis02/gear_";
 
-        struct ContinuationCall : Kh02ReflectedCall
+        struct ContinuationCall : ReflectedFunctionCall
         {
             ContinuationCall(UObject* target, const wchar_t* function)
-                : Kh02ReflectedCall(target, function, "movie_bridge", continuation_parameter_limit_bytes)
+                : ReflectedFunctionCall(target, function, "movie_bridge", continuation_parameter_limit_bytes)
             {
             }
         };

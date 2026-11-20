@@ -1,5 +1,5 @@
 #include "kh3ap/core/objects/actor_owning_world.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <limits>
 #include <cstring>
 #include <Unreal/FFrame.hpp>
@@ -99,7 +99,7 @@ namespace kh3ap::character_reactions
         }
         for (const auto* package : {L"/Game/Levels/kg/kg_01/umap/kg_01_enemy_01", L"/Game/Levels/kg/kg_01/umap/kg_01_camera_ms011"})
         {
-            Kh02ReflectedCall stream(L"/Script/Engine.Default__GameplayStatics", L"GetStreamingLevel", "graveyard_coaster", 128);
+            ReflectedFunctionCall stream(L"/Script/Engine.Default__GameplayStatics", L"GetStreamingLevel", "graveyard_coaster", 128);
             stream.object(L"WorldContextObject", incoming);
             stream.name(L"PackageName", package);
             stream.run();
@@ -163,7 +163,7 @@ namespace kh3ap::character_reactions
             if (!graveyard_portal_pending || script->GetClassPrivate()->GetPathName() != flow_type) { return; }
             auto* marker = object(script, L"TresPlayerStart_Retry01_ExecuteUbergraph_kg_01_gameflow_RefProperty");
             if (!marker || marker->GetOuterPrivate() != script->GetOuterPrivate()) { return; }
-            Kh02ReflectedCall capture(script, L"CreateRetryPoint", "graveyard_retry", 128);
+            ReflectedFunctionCall capture(script, L"CreateRetryPoint", "graveyard_retry", 128);
             capture.object(L"RetryPoint", marker);
             capture.boolean(L"WhiteFade", false);
             graveyard_portal_pending = false;

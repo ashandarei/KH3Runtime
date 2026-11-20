@@ -9,7 +9,7 @@ namespace RC::Unreal
 }
 namespace kh3ap
 {
-    class Kh02ReflectedCall;
+    class ReflectedFunctionCall;
 }
 namespace kh3ap::character_party
 {
@@ -26,7 +26,7 @@ namespace kh3ap::character_party
         ~Handoff();
         Handoff(const Handoff &) = delete;
         Handoff &operator=(const Handoff &) = delete;
-        void run_factory(Kh02ReflectedCall &change);
+        void run_factory(ReflectedFunctionCall &change);
         void finish(RC::Unreal::UObject *incoming);
 
       private:

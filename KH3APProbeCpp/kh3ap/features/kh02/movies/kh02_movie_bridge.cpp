@@ -15,7 +15,7 @@
 #include "kh3ap/features/kh02/transport/kh02_asset_companion.h"
 #include "kh02/story_movie_metadata.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
@@ -54,10 +54,10 @@ namespace kh3ap
         constexpr double minimum_movie_fps = 20;
         constexpr double maximum_movie_fps = 60;
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "movie_bridge", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "movie_bridge", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -389,7 +389,7 @@ namespace kh3ap
                     return;
                 }
             }
-            Call pause_state(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+            Call pause_state(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
             pause_state.object(L"WorldContextObject", context);
             pause_state.run();
             const bool should_pause = pause_state.boolean_result();

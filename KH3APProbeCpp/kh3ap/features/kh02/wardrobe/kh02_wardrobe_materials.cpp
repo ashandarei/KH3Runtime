@@ -1,4 +1,5 @@
 #include "kh02_wardrobe_materials.h"
+#include "kh3ap/features/kh02/core/kh02_native_material_slot.h"
 #include "kh02_wardrobe_reflection.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh02_wardrobe_assets.h"

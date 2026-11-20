@@ -1,6 +1,6 @@
 #include "tram_xion_jump.h"
 #include "kh3ap/features/enemies/bosses/binding.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -37,7 +37,7 @@ namespace kh3ap
             // footprint, with 10 cm of edge clearance and 2 cm above the feet.
             constexpr float radius = 40.f;
             constexpr float center_height = radius + 2.f;
-            Kh02ReflectedCall trace(L"/Script/Engine.Default__KismetSystemLibrary",
+            ReflectedFunctionCall trace(L"/Script/Engine.Default__KismetSystemLibrary",
                                     L"SphereTraceSingleByProfile", "tram_xion_ground", 512);
             trace.object(L"WorldContextObject", pawn);
             trace.vector(L"Start", position[0], position[1], position[2] + center_height);
@@ -73,7 +73,7 @@ namespace kh3ap
 
         bool has_nearby_navigation(UObject* pawn, const Position& position)
         {
-            Kh02ReflectedCall nav(L"/Script/Engine.Default__NavigationSystem", L"K2_ProjectPointToNavigation",
+            ReflectedFunctionCall nav(L"/Script/Engine.Default__NavigationSystem", L"K2_ProjectPointToNavigation",
                                   "tram_xion_navigation", 128);
             nav.object(L"WorldContextObject", pawn);
             nav.vector(L"Point", position[0], position[1], position[2]);
@@ -84,7 +84,7 @@ namespace kh3ap
 
         Position vector_result(UObject* pawn, const wchar_t* method)
         {
-            Kh02ReflectedCall call(pawn, method, "tram_xion_jump", 16);
+            ReflectedFunctionCall call(pawn, method, "tram_xion_jump", 16);
             call.run();
             return call.result_vector();
         }
@@ -125,7 +125,7 @@ namespace kh3ap
                 return;
             }
             const auto rotation = vector_result(pawn, L"K2_GetActorRotation");
-            Kh02ReflectedCall teleport(pawn, L"K2_TeleportTo", "tram_xion_jump", 32);
+            ReflectedFunctionCall teleport(pawn, L"K2_TeleportTo", "tram_xion_jump", 32);
             teleport.vector(L"DestLocation", plaza[0], plaza[1], plaza[2]);
             teleport.numbers(L"DestRotation", {rotation[0], rotation[1], rotation[2]});
             teleport.run();

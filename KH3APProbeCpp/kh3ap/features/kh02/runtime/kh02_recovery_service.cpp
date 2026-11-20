@@ -1,7 +1,7 @@
 #include "kh02_recovery_service.h"
 #include "kh02_recovery_state.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/grants/messages/ap_message_param_storage.h"
 #include <Unreal/UObject.hpp>
@@ -38,8 +38,8 @@ namespace kh3ap
 
         void show_recovery_notice()
         {
-            auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
-            Kh02ReflectedCall notice(library, L"TresUI_OpenInformation", "kh02_recovery_notice",
+            auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+            ReflectedFunctionCall notice(library, L"TresUI_OpenInformation", "kh02_recovery_notice",
                                      recovery_notice_max_parameter_bytes);
             if (!write_tres_loc_text_function_param(notice.param(L"InformationText"), notice.parameters.data(),
                                                     recovery_notice_text, recovery_notice_storage))
@@ -48,7 +48,7 @@ namespace kh3ap
             }
             notice.boolean(L"AutoClose", true);
             notice.number(L"OptionalDisplayTime", recovery_notice_display_seconds);
-            Kh02ReflectedCall clear(library, L"TresUI_ClearInformationTextCache", "kh02_recovery_notice",
+            ReflectedFunctionCall clear(library, L"TresUI_ClearInformationTextCache", "kh02_recovery_notice",
                                     recovery_notice_max_parameter_bytes);
             clear.run();
             std::vector<std::byte> retained_parameters(notice.parameters.data(),
