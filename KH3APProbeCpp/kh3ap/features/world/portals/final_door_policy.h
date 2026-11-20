@@ -16,11 +16,19 @@ namespace kh3ap::final_door
         {L"gameflow_CA", 9999, false}, {L"gameflow_BX", 9999, false},
         {L"gameflow_VBONUS_067_dw_001", 1, true},
     }};
+    constexpr bool valid_requirements(int required_hearts, int required_worlds)
+    {
+        return required_hearts >= minimum_required_hearts &&
+               required_hearts <= maximum_required_hearts && required_worlds >= 0 &&
+               required_worlds <= maximum_required_worlds;
+    }
+    constexpr int remaining(int collected, int required)
+    {
+        return collected <= 0 ? required : collected < required ? required - collected : 0;
+    }
     constexpr bool enabled(bool ready, int hearts, int required_hearts, int completed, int required_worlds)
     {
-        return ready && required_hearts >= minimum_required_hearts &&
-               required_hearts <= maximum_required_hearts && required_worlds >= 0 &&
-               required_worlds <= maximum_required_worlds && hearts >= required_hearts &&
-               completed >= required_worlds;
+        return ready && valid_requirements(required_hearts, required_worlds) &&
+               hearts >= required_hearts && completed >= required_worlds;
     }
 }

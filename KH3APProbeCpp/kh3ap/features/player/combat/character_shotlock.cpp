@@ -10,6 +10,7 @@
 #include "kh3ap/features/player/combat/character_shotlock.h"
 #include "kh3ap/features/player/combat/character_attack_completion.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
@@ -604,6 +605,15 @@ namespace kh3ap::character_shotlock
             // engine-owned destruction of its by-value FKey temporary.
             const bool held = reinterpret_cast<bool (*)(UObject*, Key*)>(base + input_key_down_rva)(
                 controller, &key);
+            // Sora reads this edge after the PC keyboard and controller mappings run.
+            static const FName camera_name(L"Gamepad_Special_Left", FNAME_Add);
+            static const auto camera_pressed = reinterpret_cast<bool (*)(UObject*, Key*)>(
+                base + character_native::rva(character_native::Site::input_key_just_pressed));
+            Key camera_key{camera_name};
+            if (camera_pressed(controller, &camera_key))
+            {
+                character_camera::request(pawn);
+            }
             const int phase = *reinterpret_cast<int*>(reinterpret_cast<std::byte*>(controller) +
                                                       aim_phase_offset);
             if (phase == 0 && character_traversal::ready(pawn) && runtime_sora_control_ready(pawn))
@@ -691,6 +701,7 @@ namespace kh3ap::character_shotlock
                                                  character_native::Site::roxas_input_update,
                                                  character_native::Site::shared_shotlock_update,
                                                  character_native::Site::input_key_down,
+                                                 character_native::Site::input_key_just_pressed,
                                                  character_native::Site::shotlock_capability}))
             {
                 return false;

@@ -747,6 +747,10 @@ namespace kh3ap
                 deps.controller_unlock_deps.controller_abilities.request_refresh(RuntimeControllerAbilityEvent::Grant);
             }
             const bool show_info = RuntimeGrantTokens::effective_show_info(request);
+            if (request.runtime_token == L"KEY_ITEM17")
+            {
+                RuntimePortalService::notify_heart_piece_received();
+            }
             // Blueprint stock also drives travel and the lock panel. Refresh
             // it after Sora grants and silent save replays, independently of
             // whether a space item banner is shown.

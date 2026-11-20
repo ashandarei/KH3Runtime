@@ -17,6 +17,7 @@ public:
     static void on_map_jump_canceled();
     // Game-thread receipt/lifecycle signals; no timed ownership refresh.
     static void notify_party_member_received();
+    static void notify_heart_piece_received();
     static void notify_context_ready();
     static auto gate_opener_menu() -> std::wstring;
     static auto use_gate_opener(int portal) -> bool;
