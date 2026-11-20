@@ -36,6 +36,7 @@
 #include <Unreal/GameplayStatics.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
 #include <set>
 #include <sstream>
@@ -278,6 +279,168 @@ namespace kh3ap
         bool final_subscribed{}, final_pending{true};
         std::shared_ptr<const reconciliation::View> final_view;
         std::optional<bool> final_enabled;
+        FWeakObjectPtr marked_material, shown_mark;
+        std::optional<int> desired_worlds, displayed_worlds;
+        using Clock = std::chrono::steady_clock;
+        Clock::time_point counter_next_check{}, counter_load_deadline{};
+
+        void update_world_counter(Clock::time_point now)
+        {
+            if (desired_worlds == displayed_worlds || travel_pending || !garden_active ||
+                now < counter_next_check)
+            {
+                return;
+            }
+            auto* actor = final_actor.Get();
+            auto* counter = actor ? object_property(actor, L"APWorldsCounter") : nullptr;
+            if (!counter)
+            {
+                counter_next_check = Clock::time_point::max();
+                throw std::runtime_error("final_door_counter_component");
+            }
+            if (!desired_worlds)
+            {
+                Call hide(counter, L"SetTemplate");
+                hide.object_arg(L"NewTemplate", nullptr);
+                hide.run();
+                counter_load_deadline = {};
+                displayed_worlds.reset();
+                return;
+            }
+
+            // Use the same Cascade effect and digit parameter as Sora's Death Sentence.
+            constexpr auto effect_path =
+                L"/Game/Effects/dlc02/enemy/e_ex357/par/ve_ex357_dth_num.ve_ex357_dth_num";
+            if (!object_property(counter, L"Template"))
+            {
+                auto* effect = find_loaded_runtime_asset(effect_path);
+                if (!effect)
+                {
+                    if (counter_load_deadline == Clock::time_point{})
+                    {
+                        if (!request_runtime_asset_load(actor, effect_path, nullptr, 0x504f52d0))
+                        {
+                            counter_next_check = Clock::time_point::max();
+                            throw std::runtime_error("final_door_counter_load_request");
+                        }
+                        counter_load_deadline = now + std::chrono::seconds(20);
+                    }
+                    if (now >= counter_load_deadline)
+                    {
+                        counter_next_check = Clock::time_point::max();
+                        throw std::runtime_error("final_door_counter_load_timeout");
+                    }
+                    counter_next_check = now + std::chrono::milliseconds(100);
+                    return;
+                }
+                Call assign(counter, L"SetTemplate");
+                assign.object_arg(L"NewTemplate", effect);
+                assign.run();
+            }
+
+            const auto parameter = [counter](const wchar_t* name, float value)
+            {
+                Call set(counter, L"SetFloatParameter");
+                if (!write_name_or_string_function_param(set.field(L"ParameterName"), set.data.data(), name) ||
+                    !write_float_function_param(set.field(L"Param"), set.data.data(), value))
+                {
+                    throw std::runtime_error("final_door_counter_parameter");
+                }
+                set.run();
+            };
+            parameter(L"num", static_cast<float>(*desired_worlds));
+            parameter(L"num_col", *desired_worlds > 0 ? 1.f : 0.f);
+            if (!displayed_worlds)
+            {
+                Call activate(counter, L"ActivateSystem");
+                activate.run();
+            }
+            displayed_worlds = desired_worlds;
+        }
+
+        void restore_heart_surface(UObject* actor)
+        {
+            if (is_uobject_valid_fast(actor))
+            {
+                auto* stock = object_property(actor, L"APOriginalHeartSurface");
+                auto* mesh = object_property(actor, L"MyMesh");
+                if (stock && mesh)
+                {
+                    set_material(mesh, stock);
+                    auto* saved = actor->GetPropertyByNameInChain(L"APOriginalHeartSurface");
+                    *saved->ContainerPtrToValuePtr<UObject*>(actor) = nullptr;
+                }
+            }
+            shown_mark = {};
+            marked_material = {};
+        }
+
+        void show_portal_mark(UObject* actor, int remaining)
+        {
+            if (!remaining)
+            {
+                restore_heart_surface(actor);
+                return;
+            }
+            auto* defaults = actor->GetClassPrivate()->GetClassDefaultObject();
+            auto* property = defaults->GetPropertyByNameInChain(L"APHeartMarks");
+            if (!property || !property->IsA<FArrayProperty>() ||
+                static_cast<FArrayProperty*>(property)->GetInner()->GetElementSize() != sizeof(UObject*))
+            {
+                return;
+            }
+            const auto& marks = *property->ContainerPtrToValuePtr<TArray<UObject*>>(defaults);
+            if (remaining > marks.Num() || !is_uobject_valid_fast(marks[remaining - 1]))
+            {
+                return;
+            }
+            auto* mesh = object_property(actor, L"MyMesh");
+            auto* mid = marked_material.Get();
+            if (!is_uobject_valid_fast(mid))
+            {
+                auto* surface = object_property(defaults, L"APHeartSurfaceMaterial");
+                auto* saved = actor->GetPropertyByNameInChain(L"APOriginalHeartSurface");
+                if (!surface || !mesh || !saved || saved->GetClass().GetName() != L"ObjectProperty" ||
+                    saved->GetElementSize() != sizeof(UObject*))
+                {
+                    return;
+                }
+
+                Call current(mesh, L"GetMaterial");
+                current.index();
+                current.run();
+                auto* applied = try_read_function_object_param(current.function, current.data.data(), L"ReturnValue");
+                if (!is_uobject_valid_fast(applied)) return;
+                if (object_property(applied, L"Parent") == surface)
+                {
+                    // The same actor can survive a canceled map transition.
+                    mid = applied;
+                }
+                else
+                {
+                    // The actor retains its original MID through GC and canceled
+                    // travel, and releases it naturally when its level unloads.
+                    auto* stock = saved->ContainerPtrToValuePtr<UObject*>(actor);
+                    *stock = applied;
+                    Call create(mesh, L"CreateDynamicMaterialInstance");
+                    create.index();
+                    create.object_arg(L"SourceMaterial", surface);
+                    create.run();
+                    mid = try_read_function_object_param(create.function, create.data.data(), L"ReturnValue");
+                    if (!is_uobject_valid_fast(mid) || object_property(mid, L"Parent") != surface)
+                    {
+                        restore_heart_surface(actor);
+                        throw std::runtime_error("final_door_heart_surface");
+                    }
+                }
+                marked_material = make_uobject_weak(mid);
+            }
+            auto* mark = marks[remaining - 1];
+            if (shown_mark.Get() == mark) return;
+            texture(mid, L"Mark_Texture", mark);
+            shown_mark = make_uobject_weak(mark);
+        }
+
         void bind_final_door(UObject* context)
         {
             if (!final_subscribed)
@@ -313,6 +476,10 @@ namespace kh3ap
                 return;
             }
             final_actor = make_uobject_weak(actors[0]);
+            desired_worlds.reset();
+            displayed_worlds.reset();
+            counter_next_check = {};
+            counter_load_deadline = {};
             final_enabled.reset();
             final_pending = true;
         }
@@ -422,6 +589,7 @@ namespace kh3ap
             static_cast<FBoolProperty*>(gate)->SetPropertyValueInContainer(actor, enabled);
             if (!final_enabled || *final_enabled != enabled)
             {
+                restore_heart_surface(actor);
                 Call change(actor, L"IsEnabled");
                 change.run();
                 final_enabled = enabled;
@@ -447,6 +615,13 @@ namespace kh3ap
                 write_text_file_atomic_verified(access.bridge / L"runtime_final_door.json",
                                                 state.str());
             }
+            const bool show = ready && final_door::valid_requirements(access.heart_piece_count,
+                                                                       access.worlds_required);
+            const int remaining = show ? final_door::remaining(hearts, access.heart_piece_count) : 0;
+            desired_worlds = show && !enabled
+                ? std::optional{final_door::remaining(completed, access.worlds_required)}
+                : std::nullopt;
+            show_portal_mark(actor, remaining);
         }
 
         std::function<UObject*()> pawn;
@@ -605,7 +780,17 @@ namespace kh3ap
         }
         void clear(bool restore_materials = true)
         {
+            if (restore_materials && marked_material.Get())
+            {
+                restore_heart_surface(final_actor.Get());
+            }
+            shown_mark = {};
+            marked_material = {};
             final_actor = FWeakObjectPtr{};
+            desired_worlds.reset();
+            displayed_worlds.reset();
+            counter_next_check = {};
+            counter_load_deadline = {};
             final_enabled.reset();
             final_pending = true;
             for (auto& e : entries)
@@ -680,7 +865,7 @@ namespace kh3ap
                 departing_world = make_uobject_weak(current_world());
             }
             travel_pending = true;
-            if (!entries.empty() || !canvases.empty() || !portraits.empty())
+            if (marked_material.Get() || !entries.empty() || !canvases.empty() || !portraits.empty())
             {
                 RC::Output::send<RC::LogLevel::Normal>(
                     STR("[KH3APProbeCpp] Party portals releasing before map jump actors={} "
@@ -1635,7 +1820,7 @@ namespace kh3ap
                      std::wstring::npos) ||
                 static_cast<AActor*>(context)->GetWorld() != world)
             {
-                if (!entries.empty() || !canvases.empty() || !portraits.empty())
+                if (marked_material.Get() || !entries.empty() || !canvases.empty() || !portraits.empty())
                 {
                     clear(false);
                 }
@@ -1839,6 +2024,7 @@ namespace kh3ap
                     refresh_context();
                 }
                 update_final_door();
+                update_world_counter(now);
                 if (travel_pending || !garden_active || entries.empty() || now < next_animation)
                 {
                     return;
@@ -1991,6 +2177,13 @@ namespace kh3ap
         if (Impl::instance)
         {
             Impl::instance->access_refresh_pending = true;
+        }
+    }
+    void RuntimePortalService::notify_heart_piece_received()
+    {
+        if (Impl::instance)
+        {
+            Impl::instance->final_pending = true;
         }
     }
     void RuntimePortalService::notify_context_ready()

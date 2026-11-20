@@ -47,6 +47,13 @@ namespace kh3ap::character_camera
             return properties.read_object(owner, field);
         }
 
+        int player_id(RC::Unreal::UObject* pawn)
+        {
+            auto* id = properties.resolve(pawn, L"m_PlayerUniqueID");
+            return id && id->GetElementSize() == sizeof(uint8_t)
+                       ? *id->ContainerPtrToValuePtr<uint8_t>(pawn) : -1;
+        }
+
         auto *camera_class_field(RC::Unreal::UObject *load_asset)
         {
             auto *field = properties.resolve(load_asset, L"PlayerCameraHoldCamera");
@@ -108,14 +115,8 @@ namespace kh3ap::character_camera
     void match_field_height(RC::Unreal::UObject *pawn)
     {
         using namespace RC::Unreal;
-        auto *id = properties.resolve(pawn, L"m_PlayerUniqueID");
-        if (!id || id->GetElementSize() != sizeof(uint8_t))
-        {
-            return;
-        }
-        const auto player_id = *id->ContainerPtrToValuePtr<uint8_t>(pawn);
-        if ((player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Roxas) &&
-             player_id != static_cast<uint8_t>(player_animation_support::PlayerId::Kairi)) ||
+        const auto id = player_id(pawn);
+        if ((id != player_id_value(PlayerId::Roxas) && id != player_id_value(PlayerId::Kairi)) ||
             !character_swap::owns_swap_pawn(pawn) || !height_world.Get() ||
             actor_owning_world(pawn) != height_world.Get())
         {
@@ -147,7 +148,7 @@ namespace kh3ap::character_camera
         RC::Output::send<RC::LogLevel::Normal>(
             STR("[KH3APProbeCpp] CharacterCameraHeight player={} sora_target={} socket={} "
                 "offset={}\n"),
-            player_id, sora_target_height, original_height,
+            id, sora_target_height, original_height,
             target_offset[2]);
 #endif
     }
@@ -246,6 +247,28 @@ namespace kh3ap::character_camera
         }
     }
 
+    bool request(RC::Unreal::UObject* pawn)
+    {
+        if (!character_swap::owns_swap_pawn(pawn) || !character_traversal::ready(pawn) ||
+            !player_animation_support::supported_skeleton_layout() || !prepare(pawn))
+        {
+            return false;
+        }
+        const auto image = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        const auto method = (*reinterpret_cast<uintptr_t**>(pawn))[request_camera_virtual_slot / sizeof(uintptr_t)];
+        if (method != image + request_camera_rva ||
+            !character_native::verify_sites({character_native::Site::request_camera}))
+        {
+            return false;
+        }
+        const bool accepted = reinterpret_cast<bool (*)(RC::Unreal::UObject*)>(method)(pawn);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+        RC::Output::send<RC::LogLevel::Normal>(
+            STR("[KH3APProbeCpp] Character camera request pawn={} accepted={}\n"), pawn->GetName(), accepted);
+#endif
+        return accepted;
+    }
+
     bool route(int controller, std::wstring_view key, int event, bool gamepad)
     {
         if (!gamepad || key != L"Gamepad_Special_Left")
@@ -258,29 +281,8 @@ namespace kh3ap::character_camera
                 return true;
             }
             auto *pawn = character_swap::current_hero();
-            if (!character_swap::owns_swap_pawn(pawn) || !character_traversal::ready(pawn) ||
-                !player_animation_support::supported_skeleton_layout() || !prepare(pawn))
-            {
-                return false;
-            }
-            const auto image = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
-            const auto method = (*reinterpret_cast<uintptr_t **>(
-                pawn))[request_camera_virtual_slot / sizeof(uintptr_t)];
-            if (method != image + request_camera_rva ||
-                !character_native::verify_sites({character_native::Site::request_camera}))
-            {
-                return false;
-            }
-            // The alternate controllers omit Sora's camera binding. Use the
-            // shared owning request, retaining its story unlock, pause, battle,
-            // movement, input and temporary stop-camera eligibility checks.
-            const bool accepted = reinterpret_cast<bool (*)(RC::Unreal::UObject *)>(method)(pawn);
-#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            RC::Output::send<RC::LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Character camera request pawn={} accepted={}\n"),
-                pawn->GetName(), accepted);
-#endif
-            return accepted;
+            // Roxas handles the mapped press in his gameplay input update.
+            return player_id(pawn) != player_id_value(PlayerId::Roxas) && request(pawn);
         });
     }
 } // namespace kh3ap::character_camera

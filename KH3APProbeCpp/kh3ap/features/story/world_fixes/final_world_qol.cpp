@@ -34,6 +34,7 @@ namespace kh3ap
     {
         using Clock = std::chrono::steady_clock;
         constexpr int star_area_goal = 12;
+        constexpr int main_area_goal = 333;
         constexpr size_t fragment_actor_limit = 16384;
         constexpr auto fragment_class =
             L"/Game/Blueprints/Gimmick/ew/g_ew_heartsora/g_ew_heartsora_01.g_ew_heartsora_01_C";
@@ -51,7 +52,7 @@ namespace kh3ap
         constexpr size_t parameter_limit = 2048;
         std::once_flag pickup_hook;
 
-        enum class Task { idle, enter_main_area, pull_fragment, finish_collection, complete_missions, depart };
+        enum class Task { idle, enter_main_area, pull_fragment, complete_missions, depart };
         struct Visit
         {
             FWeakObjectPtr world;
@@ -115,23 +116,26 @@ namespace kh3ap
             }
             if (action != pickup || !in_collection_story()) return;
 
-            if (name == main_area)
-            {
-                // Let HMCount score this pickup normally. On the next update request
-                // the story clear, which bypasses the 111-point battlegate camera.
-                if (visit.task == Task::pull_fragment && script == visit.mission.Get())
-                    schedule_collection(Task::finish_collection);
-                return;
-            }
-            auto* field = script->GetPropertyByNameInChain(L"HeartCount");
+            const bool main_pickup = name == main_area;
+            if (main_pickup && (visit.task != Task::pull_fragment || script != visit.mission.Get())) return;
+            auto* field = script->GetPropertyByNameInChain(main_pickup ? L"Heart" : L"HeartCount");
             if (!field || field->GetClass().GetName() != L"IntProperty" ||
                 field->GetElementSize() != sizeof(int32_t)) return;
             auto& score = *field->ContainerPtrToValuePtr<int32_t>(script);
-            if (score < 0 || score >= star_area_goal) return;
-            visit.star_pickup = true;
+            if (score < 0) return;
+            if (main_pickup)
+            {
+                // HMCount adds one, awards the 222 and 333 victory bonuses in order,
+                // then clears the mission after its reward handling finishes.
+                visit.task = Task::idle;
+            }
+            const int goal = main_pickup ? main_area_goal : star_area_goal;
+            if (score >= goal) return;
+            if (!main_pickup) visit.star_pickup = true;
             RC::Output::send<RC::LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Faster Sora Collection star pickup: {} -> {}\n"), score, star_area_goal);
-            score = star_area_goal - 1;
+                STR("[KH3APProbeCpp] Faster Sora Collection {} pickup: {} -> {}\n"),
+                main_pickup ? STR("main") : STR("star"), score, goal);
+            score = goal - 1;
         }
 
         void enter_world(UObject* world, RuntimeState& runtime)
@@ -210,30 +214,14 @@ namespace kh3ap
                 move.run();
                 return;
             }
-            if (visit.task == Task::finish_collection)
-            {
-                auto* mission = visit.mission.Get();
-                if (!is_uobject_valid_fast(mission) || actor_owning_world(mission) != world) return;
-                auto* score = mission->GetPropertyByNameInChain(L"Heart");
-                if (!score || score->GetClass().GetName() != L"IntProperty" || score->GetElementSize() != sizeof(int32_t))
-                    return;
-                const auto collected = *score->ContainerPtrToValuePtr<int32_t>(mission);
-                if (collected < 1) return;
-                Kh02ReflectedCall close(settings::s_tres_game_blueprint_library_default_object_path.data(),
-                    L"TresUI_CloseMissionCounter", "final_world_qol", parameter_limit);
-                close.run();
-                RC::Output::send<RC::LogLevel::Normal>(
-                    STR("[KH3APProbeCpp] Faster Sora Collection finishing after {} main-area pickup(s)\n"), collected);
-            }
-            const auto* event = visit.task == Task::enter_main_area ? star_portal_reaction : L"HMClear";
             Kh02ReflectedCall send(settings::s_tres_game_blueprint_library_default_object_path.data(),
                 L"RemoteEvent", "final_world_qol", parameter_limit);
             send.object(L"WorldContextObject", pawn);
-            send.name(L"EventName", event);
+            send.name(L"EventName", star_portal_reaction);
             visit.task = Task::idle;
             send.run();
             RC::Output::send<RC::LogLevel::Normal>(
-                STR("[KH3APProbeCpp] Faster Sora Collection sent {} handled={}\n"), event, send.boolean_result());
+                STR("[KH3APProbeCpp] Faster Sora Collection sent {} handled={}\n"), star_portal_reaction, send.boolean_result());
         }
 
         void advance_lich(UObject* world, RuntimeState& runtime, Clock::time_point now)

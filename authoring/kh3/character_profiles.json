@@ -737,6 +737,18 @@
       }
     },
     {
+      "id": "input_key_just_pressed",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
+      "egs": {
+        "rva": "0x49e9f80",
+        "bytes": "4889542410574883ec4048c7442420feffffff"
+      },
+      "steam": {
+        "rva": "0x4445000",
+        "bytes": "4889542410574883ec4048c7442420feffffff"
+      }
+    },
+    {
       "id": "shotlock_capability",
       "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shotlock.cpp",
       "egs": {
@@ -1553,7 +1565,7 @@
     },
     {
       "id": "animation_sequence_pose",
-      "source": "KH3APProbeCpp/kh3ap/features/player/movement/kairi_jump_arms.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/animation_pose.cpp",
       "egs": {
         "rva": "0x44ba840",
         "bytes": "48895c24184c894c2420488954241055"
