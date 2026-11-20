@@ -263,7 +263,7 @@ namespace kh3ap::randomization
                     continue;
                 }
                 const std::string source = group.at("path");
-                std::string replacement =
+                const std::string group_replacement =
                     group.at("boss") == true
                         ? groups[boss_lookup.at(i)].at("path").get<std::string>()
                         : lookup.at(source);
@@ -283,14 +283,19 @@ namespace kh3ap::randomization
                     }
                 }
                 const size_t package = index(packages, group.at("package"));
+                // Air Soldiers stay invisible in Appear at the Accessway's Flame Core entrances.
+                const bool accessway_flame_core =
+                    packages[package] == "/Game/Levels/mi/mi_03/umap/mi_03_enemy_01.mi_03_enemy_01:PersistentLevel" &&
+                    source == "/Game/Blueprints/Enemy/e_ex003/e_ex003_Pawn.e_ex003_Pawn_C";
                 for (const std::string actor : group.at("actors"))
                 {
-                    if (!chaos_pool.empty())
-                    {
-                        replacement = chaos_pool[chaos_rng.next(chaos_pool.size())];
-                    }
+                    const std::string& replacement = chaos_pool.empty() ? group_replacement
+                        : chaos_pool[chaos_rng.next(chaos_pool.size())];
+                    const bool use_original = accessway_flame_core &&
+                        replacement == "/Game/Blueprints/Enemy/e_ex010/e_ex010_Pawn.e_ex010_Pawn_C";
+                    const size_t class_index = index(classes, use_original ? source : replacement);
                     entries.push_back(std::to_string(package) + "|" + actor + "|" +
-                                      std::to_string(index(classes, replacement)));
+                                      std::to_string(class_index));
                 }
             }
             return Json{{"enemy_runtime_format_version", enemy_runtime_format_version},

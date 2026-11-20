@@ -6,9 +6,12 @@ namespace kh3ap::enemy_remap_detail
 {
     auto install_runtime_boss_phase_guard() -> void;
     auto install_grim_guardianess_mode_guard() -> void;
+    void install_yozora_high_voltage_center();
+    bool release_yozora_climax_camera(UObject* camera);
     auto install_vanitas_clone_burst_center() -> void;
 
     auto initialize_runtime_xiii_solo_phase(UObject* pawn) -> void;
+    void initialize_replacement_movement_center(UObject* pawn, const RuntimeBossEntityBinding& binding);
 
     auto install_kg_replacement_reveal_guard() -> void;
 

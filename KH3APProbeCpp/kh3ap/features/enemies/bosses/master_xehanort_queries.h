@@ -8,5 +8,7 @@ namespace kh3ap
     void configure_master_query_contexts();
     void notify_master_query_created(RC::Unreal::UObject* object);
     void activate_master_query_contexts();
+    void activate_yozora_query_contexts();
+    void activate_vanitas_query_contexts();
     void process_pending_master_query_contexts();
 } // namespace kh3ap

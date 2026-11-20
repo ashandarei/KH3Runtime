@@ -115,6 +115,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/enemies/level_entity_remap.cpp
     kh3ap/features/enemies/cinematic_visibility.cpp
     kh3ap/features/enemies/bosses/binding.cpp
+    kh3ap/features/enemies/bosses/king_of_toys_center.cpp
+    kh3ap/features/enemies/bosses/yozora_high_voltage.cpp
     kh3ap/features/enemies/bosses/completion.cpp
     kh3ap/features/enemies/bosses/encounter_repairs.cpp
     kh3ap/features/enemies/bosses/vanitas_clone_burst.cpp

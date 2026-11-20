@@ -48,4 +48,19 @@ static_assert(!is_intro_reveal_entity(ice_labyrinth_intro_camera,
     L"/Game/Levels/fz/fz_02/umap/fz_02_enemy_icicle_02.fz_02_enemy_icicle_02:PersistentLevel.e_ex114_Pawn_1"));
 static_assert(!is_intro_reveal_entity(ice_labyrinth_intro_camera,
     L"/Game/Levels/bx/bx_02/umap/bx_02_enemy_13.bx_02_enemy_13:PersistentLevel.e_ex093_Pawn2"));
+constexpr std::wstring_view second_enemy =
+    L"/Game/Levels/fz/fz_02/umap/fz_02_enemy_icicle_02.fz_02_enemy_icicle_02:PersistentLevel.e_ex114_Pawn_15";
+constexpr std::wstring_view third_enemy =
+    L"/Game/Levels/fz/fz_02/umap/fz_02_enemy_icicle_03.fz_02_enemy_icicle_03:PersistentLevel.e_ex114_Pawn524";
+constexpr std::wstring_view fourth_enemy =
+    L"/Game/Levels/fz/fz_02/umap/fz_02_enemy_icicle_04.fz_02_enemy_icicle_04:PersistentLevel.e_ex114_Pawn162";
+static_assert(is_intro_reveal_entity(ice_labyrinth_second_intro_camera, second_enemy));
+static_assert(is_intro_reveal_entity(ice_labyrinth_third_intro_camera, third_enemy));
+static_assert(is_intro_reveal_entity(ice_labyrinth_fourth_intro_camera, fourth_enemy));
+static_assert(!is_intro_reveal_entity(ice_labyrinth_intro_camera, second_enemy));
+static_assert(!is_intro_reveal_entity(ice_labyrinth_second_intro_camera, third_enemy));
+static_assert(!is_intro_reveal_entity(ice_labyrinth_third_intro_camera, fourth_enemy));
+static_assert(!is_intro_reveal_entity(ice_labyrinth_fourth_intro_camera, third_enemy));
+static_assert(!is_intro_reveal_entity(ice_labyrinth_fourth_intro_camera,
+    L"/Game/Levels/fz/fz_02/umap/fz_02_enemy_icicle_04.fz_02_enemy_icicle_04:PersistentLevel.e_ex114_Pawn_1"));
 int main() {}
