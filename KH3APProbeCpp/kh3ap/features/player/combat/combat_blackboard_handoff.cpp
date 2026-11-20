@@ -2,7 +2,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/AActor.hpp>
 #include <Unreal/GameplayStatics.hpp>
@@ -64,7 +64,7 @@ namespace kh3ap::combat_blackboard_handoff
         }
         UObject* value(UObject* board, const std::wstring& name)
         {
-            Kh02ReflectedCall query(board, L"GetValueAsObject", "swap blackboard", 256);
+            ReflectedFunctionCall query(board, L"GetValueAsObject", "swap blackboard", 256);
             query.name(L"KeyName", name.c_str());
             query.run();
             auto* result = query.param(L"ReturnValue");
@@ -85,7 +85,7 @@ namespace kh3ap::combat_blackboard_handoff
                 const auto* getter = is_actor ? L"IsActorTickEnabled" : L"IsComponentTickEnabled";
                 const auto* setter = is_actor ? L"SetActorTickEnabled" : L"SetComponentTickEnabled";
                 if (!target->GetFunctionByNameInChain(getter) || !target->GetFunctionByNameInChain(setter)) return;
-                Kh02ReflectedCall query(target, getter, "swap tick capture", 256);
+                ReflectedFunctionCall query(target, getter, "swap tick capture", 256);
                 query.run();
                 if (query.boolean_result()) ticks.push_back({make_uobject_weak(target), is_actor});
             };
@@ -171,7 +171,7 @@ namespace kh3ap::combat_blackboard_handoff
             {
                 auto* target = entry.object.Get();
                 if (!target) continue;
-                Kh02ReflectedCall hold(target, entry.actor ? L"SetActorTickEnabled" : L"SetComponentTickEnabled", "swap AI hold", 256);
+                ReflectedFunctionCall hold(target, entry.actor ? L"SetActorTickEnabled" : L"SetComponentTickEnabled", "swap AI hold", 256);
                 hold.boolean(L"bEnabled", false);
                 entry.suspended = true;
                 hold.run();
@@ -216,7 +216,7 @@ namespace kh3ap::combat_blackboard_handoff
             if (!board) continue;
             auto* current = value(board, key.name);
             if (current == incoming || (is_uobject_valid_fast(current) && current != source.Get())) continue;
-            Kh02ReflectedCall set(board, L"SetValueAsObject", "swap blackboard", 256);
+            ReflectedFunctionCall set(board, L"SetValueAsObject", "swap blackboard", 256);
             set.name(L"KeyName", key.name.c_str());
             set.object(L"ObjectValue", incoming);
             set.run();
@@ -238,7 +238,7 @@ namespace kh3ap::combat_blackboard_handoff
             if (!target) continue;
             try
             {
-                Kh02ReflectedCall restore(target, entry->actor ? L"SetActorTickEnabled" : L"SetComponentTickEnabled", "swap AI release", 256);
+                ReflectedFunctionCall restore(target, entry->actor ? L"SetActorTickEnabled" : L"SetComponentTickEnabled", "swap AI release", 256);
                 restore.boolean(L"bEnabled", true);
                 restore.run();
             }

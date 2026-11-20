@@ -9,7 +9,7 @@
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh02/runtime_metadata.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
@@ -86,7 +86,7 @@ namespace kh3ap
             }
             const auto* tag_text = returned->ContainerPtrToValuePtr<FString>(get_tag.parameters.data())->GetCharArray();
             arrival_tag = tag_text ? tag_text : L"";
-            auto* start_type = static_cast<UClass*>(kh02_require_loaded_object(L"/Script/TresGame.TresPlayerStart"));
+            auto* start_type = static_cast<UClass*>(require_loaded_object(L"/Script/TresGame.TresPlayerStart"));
             TArray<AActor*> starts;
             UGameplayStatics::GetAllActorsOfClass(pawn, start_type, starts);
             Table areas(find_loaded_runtime_asset(L"/Game/System/DataTable/TresAreaNameTable.TresAreaNameTable"),

@@ -1,5 +1,5 @@
 #pragma once
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
@@ -34,15 +34,15 @@ namespace kh3ap::kh02preview_detail
 
     inline constexpr std::array<PreviewLight, 2> preview_lights{{{3.0f, -25.0f, 160.0f}, {1.0f, -10.0f, 250.0f}}};
 
-    struct Call : Kh02ReflectedCall
+    struct Call : ReflectedFunctionCall
     {
         Call(UObject* owner, const wchar_t* method)
-            : Kh02ReflectedCall(owner, method, "Aqua preview", reflected_parameter_limit_bytes)
+            : ReflectedFunctionCall(owner, method, "Aqua preview", reflected_parameter_limit_bytes)
         {
         }
 
         Call(const wchar_t* owner, const wchar_t* method)
-            : Kh02ReflectedCall(owner, method, "Aqua preview", reflected_parameter_limit_bytes)
+            : ReflectedFunctionCall(owner, method, "Aqua preview", reflected_parameter_limit_bytes)
         {
         }
     };

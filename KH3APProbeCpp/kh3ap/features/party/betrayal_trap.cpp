@@ -5,7 +5,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/grants/grant_safety.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/colors/color_events.h"
@@ -313,14 +313,14 @@ namespace kh3ap::betrayal_trap
         }
         UObject* read_controller_target(UObject* controller)
         {
-            Kh02ReflectedCall call(controller, L"GetMyTarget", "betrayal controller target", 64);
+            ReflectedFunctionCall call(controller, L"GetMyTarget", "betrayal controller target", 64);
             call.run();
             return call.result();
         }
 
         UObject* read_blackboard_target(UObject* board)
         {
-            Kh02ReflectedCall call(board, L"GetValueAsObject", "betrayal blackboard target", 64);
+            ReflectedFunctionCall call(board, L"GetValueAsObject", "betrayal blackboard target", 64);
             call.name(L"KeyName", L"TargetActor");
             call.run();
             return call.result();
@@ -337,13 +337,13 @@ namespace kh3ap::betrayal_trap
         {
             if (auto* controller = companion.controller.Get())
             {
-                Kh02ReflectedCall call(controller, L"SetMyTarget", "betrayal target", 64);
+                ReflectedFunctionCall call(controller, L"SetMyTarget", "betrayal target", 64);
                 call.object(L"inNewMyTarget", target);
                 call.run();
             }
             if (auto* board = companion.board.Get())
             {
-                Kh02ReflectedCall call(board, L"SetValueAsObject", "betrayal blackboard", 64);
+                ReflectedFunctionCall call(board, L"SetValueAsObject", "betrayal blackboard", 64);
                 call.name(L"KeyName", L"TargetActor");
                 call.object(L"ObjectValue", board_target);
                 call.run();
@@ -426,7 +426,7 @@ namespace kh3ap::betrayal_trap
             auto* movement = properties.read_object(actor, L"MyMovement");
             if (movement && properties.read_object(movement, L"m_HomingTargetActor") != target)
             {
-                Kh02ReflectedCall call(actor, L"BP_SetHomingTarget", "betrayal projectile target",
+                ReflectedFunctionCall call(actor, L"BP_SetHomingTarget", "betrayal projectile target",
                                        64);
                 call.object(L"InTarget", target);
                 call.run();
@@ -446,7 +446,7 @@ namespace kh3ap::betrayal_trap
                 }
                 if (!it->owned)
                 {
-                    Kh02ReflectedCall owner(actor, L"GetBattleOwner", "betrayal projectile owner",
+                    ReflectedFunctionCall owner(actor, L"GetBattleOwner", "betrayal projectile owner",
                                             64);
                     owner.run();
                     auto* source = owner.result();
@@ -555,7 +555,7 @@ namespace kh3ap::betrayal_trap
                 {
                     try
                     {
-                        Kh02ReflectedCall destroy(actor, L"K2_DestroyActor",
+                        ReflectedFunctionCall destroy(actor, L"K2_DestroyActor",
                                                   "betrayal projectile cleanup", 64);
                         destroy.run();
                     }
@@ -981,7 +981,7 @@ namespace kh3ap::betrayal_trap
         };
         const auto hp = [](UObject* pawn)
         {
-            Kh02ReflectedCall call(pawn, L"GetHitPoint", "betrayal hp", 64);
+            ReflectedFunctionCall call(pawn, L"GetHitPoint", "betrayal hp", 64);
             call.run();
             return *call.param(L"ReturnValue")->ContainerPtrToValuePtr<int>(call.parameters.data());
         };

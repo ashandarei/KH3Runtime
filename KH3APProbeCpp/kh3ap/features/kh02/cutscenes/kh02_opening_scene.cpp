@@ -83,7 +83,7 @@ namespace kh3ap
         }
         if (!is_uobject_valid_fast(stream.Get()))
         {
-            ReflectedCall load(kh02_require_loaded_object(L"/Script/Engine.Default__LevelStreamingKismet"),
+            ReflectedCall load(require_loaded_object(L"/Script/Engine.Default__LevelStreamingKismet"),
                                L"LoadLevelInstance");
             const std::wstring level = opening_scene_path;
             load.object(L"WorldContextObject", pawn);
@@ -214,7 +214,7 @@ namespace kh3ap
         // The host has already entered gameplay. Restore the original
         // cinematic owner'level_stream player/cockpit/input gate before DW009.
         // Retirement cleanup balances this mode before gameplay resumes.
-        ReflectedCall cinematic(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall cinematic(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                 L"TresStartCinematicMode");
         cinematic.object(L"WorldContextObject", pawn);
         for (const auto* flag : {L"bHidePlayer", L"bHideCockpit", L"bDisableMove", L"bPlayerStateClear",
@@ -227,7 +227,7 @@ namespace kh3ap
         {
             // Match the original DW009 dispatcher: leave field music
             // stopped, then let real source completions select the cues.
-            ReflectedCall sound_mode(kh02_require_loaded_object(L"/Script/TresGame.Default__TresSoundStatics"),
+            ReflectedCall sound_mode(require_loaded_object(L"/Script/TresGame.Default__TresSoundStatics"),
                                      L"TresSoundMode_End");
             sound_mode.integer(L"mode", 0);
             sound_mode.run();

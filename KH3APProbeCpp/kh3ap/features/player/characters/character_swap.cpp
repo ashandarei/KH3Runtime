@@ -58,7 +58,7 @@
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/features/ui/options_menu.h"
@@ -274,16 +274,16 @@ namespace kh3ap::character_swap
 #endif
         }
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "character_swap",
+                : ReflectedFunctionCall(owner, method, "character_swap",
                                     max_character_swap_parameter_bytes)
             {
             }
 
             Call(const wchar_t* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "character_swap",
+                : ReflectedFunctionCall(owner, method, "character_swap",
                                     max_character_swap_parameter_bytes)
             {
             }

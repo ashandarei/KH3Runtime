@@ -10,7 +10,7 @@
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UClass.hpp>
 #include "kh3ap/features/kh02/progress/kh02_progress_policy.h"
 #include "kh3ap/bridge/rewards/reconciliation.h"
@@ -336,9 +336,9 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_health_fixture_requires_garden_sora");
             }
-            Kh02ReflectedCall state(pawn, L"GetStateID", "kh02_health_fixture", 4096);
-            Kh02ReflectedCall maximum(pawn, L"GetMaxHitPoint", "kh02_health_fixture", 4096);
-            Kh02ReflectedCall before(pawn, L"GetHitPoint", "kh02_health_fixture", 4096);
+            ReflectedFunctionCall state(pawn, L"GetStateID", "kh02_health_fixture", 4096);
+            ReflectedFunctionCall maximum(pawn, L"GetMaxHitPoint", "kh02_health_fixture", 4096);
+            ReflectedFunctionCall before(pawn, L"GetHitPoint", "kh02_health_fixture", 4096);
             state.run();
             maximum.run();
             before.run();
@@ -350,7 +350,7 @@ namespace kh3ap
                 throw std::runtime_error("kh02_health_fixture_requires_idle_sora");
             }
             const auto target_hp = garden_health_recovery ? *max_hp : *max_hp / 2;
-            Kh02ReflectedCall health(pawn, L"SetHitPoint", "kh02_health_fixture", 4096);
+            ReflectedFunctionCall health(pawn, L"SetHitPoint", "kh02_health_fixture", 4096);
             health.integer(L"InHP", target_hp);
             health.run();
             before.run();

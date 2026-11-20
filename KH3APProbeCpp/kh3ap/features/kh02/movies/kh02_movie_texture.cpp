@@ -1,6 +1,6 @@
 #include "kh02_movie_texture.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "shared/kh02/kh02_movie_shared.h"
@@ -41,7 +41,7 @@ namespace kh3ap
     {
         using namespace RC::Unreal;
         auto* base = image();
-        auto* type = static_cast<UClass*>(kh02_require_loaded_object(L"/Script/Engine.Texture2DDynamic"));
+        auto* type = static_cast<UClass*>(require_loaded_object(L"/Script/Engine.Texture2DDynamic"));
         if (!is_uobject_valid_fast(owner))
         {
             throw std::runtime_error("movie_texture_owner");

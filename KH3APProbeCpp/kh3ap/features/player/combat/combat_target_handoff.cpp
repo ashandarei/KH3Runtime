@@ -4,7 +4,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -41,7 +41,7 @@ namespace kh3ap::combat_target_handoff
         }
         UObject* target(UObject* controller)
         {
-            Kh02ReflectedCall get(controller, L"GetMyTarget", "combat target handoff", 256);
+            ReflectedFunctionCall get(controller, L"GetMyTarget", "combat target handoff", 256);
             get.run();
             return try_read_function_object_param(get.function, get.parameters.data(), L"ReturnValue");
         }
@@ -185,7 +185,7 @@ namespace kh3ap::combat_target_handoff
                 continue;
             }
             if (current && current != source.Get()) continue;
-            Kh02ReflectedCall set(ai, L"SetMyTarget", "combat target handoff", 256);
+            ReflectedFunctionCall set(ai, L"SetMyTarget", "combat target handoff", 256);
             set.object(L"inNewMyTarget", incoming);
             set.run();
             if (target(ai) == incoming) ++controller_count;

@@ -1,6 +1,6 @@
 #include "kh02_movie_surface.h"
 #include "kh02_movie_texture.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/ui/embedded_movie_resource.h"
@@ -25,9 +25,9 @@ namespace kh3ap
                                                   L"/Script/ScaleformUI.GFxObject:Invoke",
                                                   L"/Script/ScaleformUI.GFxObject:SetMemberValue"};
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
-            Call(UObject* owner, const wchar_t* method) : Kh02ReflectedCall(owner, method, "movie_surface", 128) {}
+            Call(UObject* owner, const wchar_t* method) : ReflectedFunctionCall(owner, method, "movie_surface", 128) {}
         };
 
         void visible(UObject* player, bool value)
@@ -49,8 +49,8 @@ namespace kh3ap
     {
         stop();
         context_ = make_uobject_weak(context);
-        auto* asset_class = static_cast<UClass*>(kh02_require_loaded_object(L"/Script/ScaleformUI.SwfMovie"));
-        auto* placeholder = kh02_require_loaded_object(L"/Engine/EngineResources/DefaultTexture.DefaultTexture");
+        auto* asset_class = static_cast<UClass*>(require_loaded_object(L"/Script/ScaleformUI.SwfMovie"));
+        auto* placeholder = require_loaded_object(L"/Engine/EngineResources/DefaultTexture.DefaultTexture");
         FStaticConstructObjectParameters asset_parameters(asset_class, placeholder->GetOuterPrivate());
         asset_parameters.SetFlags = static_cast<EObjectFlags>(RF_Transient | RF_Public);
         auto* asset = UObjectGlobals::StaticConstructObject(asset_parameters);
@@ -67,7 +67,7 @@ namespace kh3ap
         {
             throw std::runtime_error("movie_surface_resource");
         }
-        Call create_target(kh02_require_loaded_object(L"/Script/Engine.Default__KismetRenderingLibrary"),
+        Call create_target(require_loaded_object(L"/Script/Engine.Default__KismetRenderingLibrary"),
                            L"CreateRenderTarget2D");
         create_target.object(L"WorldContextObject", context);
         create_target.integer(L"Width", 1920);
@@ -95,7 +95,7 @@ namespace kh3ap
         references->ContainerPtrToValuePtr<TArray<UObject*>>(asset)->Add(placeholder);
         auto* texture = create_kh02_movie_texture(asset);
         texture_ = make_uobject_weak(texture);
-        auto* library = kh02_require_loaded_object(L"/Script/ScaleformUI.Default__GFxMoviePlayer");
+        auto* library = require_loaded_object(L"/Script/ScaleformUI.Default__GFxMoviePlayer");
         FStaticConstructObjectParameters player_parameters(library->GetClassPrivate(), asset);
         player_parameters.SetFlags = RF_Transient;
         auto* configured = UObjectGlobals::StaticConstructObject(player_parameters);
@@ -150,7 +150,7 @@ namespace kh3ap
     void Kh02MovieSurface::upload(std::span<const uint8_t> pixels)
     {
         upload_kh02_movie_texture(texture_.Get(), pixels);
-        auto* rendering = kh02_require_loaded_object(L"/Script/Engine.Default__KismetRenderingLibrary");
+        auto* rendering = require_loaded_object(L"/Script/Engine.Default__KismetRenderingLibrary");
         Call begin(rendering, L"BeginDrawCanvasToRenderTarget");
         begin.object(L"WorldContextObject", context_.Get());
         begin.object(L"TextureRenderTarget", target_.Get());

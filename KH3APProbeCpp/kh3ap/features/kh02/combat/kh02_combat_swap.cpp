@@ -19,7 +19,7 @@
 #include "kh3ap/core/events/world_context_events.h"
 #include "kh02_swing_hit_history.h"
 #include "kh3ap/features/kh02/challenges/kh02_damage_event_decoder.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/core/input/runtime_player_control.h"
@@ -139,12 +139,12 @@ namespace kh3ap
         const uintptr_t air_jump_available_rva = character_native::rva(character_native::Site::air_jump_available);
         const uintptr_t set_air_jump_available_rva = character_native::rva(character_native::Site::set_air_jump_available);
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
-            Call(UObject* owner, const wchar_t* method) : Kh02ReflectedCall(owner, method, "kh02_combat_swap", 256) {}
+            Call(UObject* owner, const wchar_t* method) : ReflectedFunctionCall(owner, method, "kh02_combat_swap", 256) {}
 
             Call(const wchar_t* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_combat_swap", 256)
+                : ReflectedFunctionCall(owner, method, "kh02_combat_swap", 256)
             {
             }
         };

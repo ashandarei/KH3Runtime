@@ -1,5 +1,5 @@
 #include "kh3ap/core/objects/actor_owning_world.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/player/context/current_player.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -84,10 +84,10 @@ namespace kh3ap
         if (!pawn || !runtime_sora_control_ready(pawn)) { return nullptr; }
         try
         {
-            Kh02ReflectedCall loading(L"/Script/TresGame.Default__TresGameBlueprintLibrary",
+            ReflectedFunctionCall loading(L"/Script/TresGame.Default__TresGameBlueprintLibrary",
                                      L"TresUI_IsClosedLoadingScreen", "current_player", 4096);
             loading.run();
-            Kh02ReflectedCall paused(L"/Script/Engine.Default__GameplayStatics",
+            ReflectedFunctionCall paused(L"/Script/Engine.Default__GameplayStatics",
                                     L"IsGamePaused", "current_player", 4096);
             paused.object(L"WorldContextObject", pawn);
             paused.run();

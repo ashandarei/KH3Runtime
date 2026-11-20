@@ -3,7 +3,7 @@
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
 #include "kh02_runtime_inspection.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_intro_presentation.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/story/kh02_arrival_presentation.h"
 #include "kh3ap/core/reflection/reflection_core.h"
@@ -67,7 +67,7 @@ namespace kh3ap::kh02_mirror_transition_diagnostics
                         record["player_id"] = *id->ContainerPtrToValuePtr<uint8_t>(hero);
                     }
                 }
-                Kh02ReflectedCall paused(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
+                ReflectedFunctionCall paused(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
                                          "kh02_mirror_trace", 64);
                 paused.object(L"WorldContextObject", script);
                 paused.run();

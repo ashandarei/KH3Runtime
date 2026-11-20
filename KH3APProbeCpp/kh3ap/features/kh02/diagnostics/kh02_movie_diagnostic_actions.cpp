@@ -27,7 +27,7 @@ namespace kh3ap
         {
             throw std::runtime_error("kh02_movie_fixture_during_collapse");
         }
-        auto* library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         if (action == Action::FlowMoviePrepare || action == Action::FlowMoviePrepareStory ||
             action == Action::FlowMovieControl)
         {

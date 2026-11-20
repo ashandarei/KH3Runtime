@@ -1,5 +1,5 @@
 #include "kh02_ending_voice.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -70,7 +70,7 @@ namespace kh3ap
         if (!is_uobject_valid_fast(attenuation))
         {
             auto* attenuation_class =
-                static_cast<UClass*>(kh02_require_loaded_object(L"/Script/Engine.SoundAttenuation"));
+                static_cast<UClass*>(require_loaded_object(L"/Script/Engine.SoundAttenuation"));
             FStaticConstructObjectParameters parameters(attenuation_class, attenuation_class->GetOuterPrivate());
             parameters.SetFlags = static_cast<EObjectFlags>(RF_Public | RF_Transient);
             attenuation = UObjectGlobals::StaticConstructObject(parameters);

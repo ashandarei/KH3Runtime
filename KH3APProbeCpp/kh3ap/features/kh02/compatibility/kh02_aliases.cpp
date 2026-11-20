@@ -1,5 +1,5 @@
 #include "kh02_aliases.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/bridge/utilities.h"
@@ -28,7 +28,7 @@ namespace kh3ap
     void Kh02NativeAliases::add(const wchar_t* owner_path, const wchar_t* name, const wchar_t* prototype_path,
                                 Thunk thunk)
     {
-        auto* owner = kh02_require_loaded_object(owner_path);
+        auto* owner = require_loaded_object(owner_path);
         const std::wstring_view prototype(prototype_path);
         const auto separator = prototype.find(L':');
         if (!owner->IsA<UClass>() || separator == std::wstring_view::npos)
@@ -38,7 +38,7 @@ namespace kh3ap
         auto* cls = static_cast<UClass*>(owner);
         const std::wstring prototype_owner(prototype.substr(0, separator));
         const std::wstring prototype_name(prototype.substr(separator + 1));
-        auto* signature_owner = kh02_require_loaded_object(prototype_owner.c_str());
+        auto* signature_owner = require_loaded_object(prototype_owner.c_str());
         if (!signature_owner->IsA<UClass>())
         {
             throw std::runtime_error("kh02_compat_signature_owner_class");

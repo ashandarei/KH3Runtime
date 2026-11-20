@@ -2,7 +2,7 @@
 #include "kh02_portal.h"
 #include "kh3ap/features/kh02/transport/kh02_asset_companion.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/story/kh02_arrival_presentation.h"
 #include "kh3ap/features/kh02/ui/kh02_portal_loading.h"
 #include "kh3ap/core/objects/actor_discovery.h"
@@ -51,10 +51,10 @@ namespace kh3ap
         constexpr auto goa = L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01";
         constexpr int dark_portal_id = 8;
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_portal", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_portal", reflected_parameter_limit_bytes)
             {
             }
         };

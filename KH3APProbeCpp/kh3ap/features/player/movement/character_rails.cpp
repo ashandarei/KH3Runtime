@@ -14,7 +14,7 @@
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/input/runtime_player_control.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/FMemory.hpp>
@@ -254,7 +254,7 @@ namespace kh3ap::character_rails
                 {
                     return true;
                 }
-                Kh02ReflectedCall paused(L"/Script/Engine.Default__GameplayStatics",
+                ReflectedFunctionCall paused(L"/Script/Engine.Default__GameplayStatics",
                                          L"IsGamePaused", "rail_input",
                                          max_rail_input_parameter_bytes);
                 paused.object(L"WorldContextObject", pawn);

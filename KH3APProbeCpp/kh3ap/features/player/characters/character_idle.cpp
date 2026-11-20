@@ -15,7 +15,7 @@
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/characters/character_swap.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -561,7 +561,7 @@ namespace kh3ap::character_idle
             {
                 return;
             }
-            Kh02ReflectedCall play(pawn, L"BP_AnimPlayAnimset", "Character exploration idle",
+            ReflectedFunctionCall play(pawn, L"BP_AnimPlayAnimset", "Character exploration idle",
                                    max_animation_parameter_bytes);
             play.name(L"InAnimName", L"IdleB");
             play.name(L"InSlotNodeName", L"FullBody");
@@ -900,7 +900,7 @@ namespace kh3ap::character_idle
         // The native pawn may have started NO_1_EL before our ownership was
         // bound. Restart that baseline once; later native requests resolve
         // through the private facial set, without a face-update timer.
-        Kh02ReflectedCall face(anim, L"SQEX_FaceAnimPlay", "Roxas default face", 256);
+        ReflectedFunctionCall face(anim, L"SQEX_FaceAnimPlay", "Roxas default face", 256);
         face.name(L"InAnimName", L"NO_1_EL");
         face.number(L"InBlendInTime", 0.1f);
         face.boolean(L"InLoop", true);
@@ -1028,7 +1028,7 @@ namespace kh3ap::character_idle
         {
             return false;
         }
-        Kh02ReflectedCall change(pawn, L"SetBattleMode", "Character idle battle validation",
+        ReflectedFunctionCall change(pawn, L"SetBattleMode", "Character idle battle validation",
                                  max_animation_parameter_bytes);
         change.boolean(L"InEnable", enabled);
         change.run();

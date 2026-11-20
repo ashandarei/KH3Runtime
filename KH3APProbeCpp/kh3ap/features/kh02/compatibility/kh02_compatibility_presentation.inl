@@ -120,7 +120,7 @@ void execute_presentation()
         {
             throw std::runtime_error("kh02_compat_close_context");
         }
-        ReflectedCall close(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall close(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                             L"TresUI_CloseWindow");
         close.integer(L"WindowHandle", integer_argument);
         close.object(L"WorldContextObject", player_context);

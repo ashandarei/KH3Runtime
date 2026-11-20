@@ -10,7 +10,7 @@
 #include "kh3ap/features/kh02/core/kh02_data_table.h"
 #include "kh02_tide_balance.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/actor_discovery.h"
@@ -47,10 +47,10 @@ namespace kh3ap
 
         using Table = Kh02EnemyStatTable;
 
-        struct BattleLevelCall : Kh02ReflectedCall
+        struct BattleLevelCall : ReflectedFunctionCall
         {
             BattleLevelCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_battle_profile", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_battle_profile", reflected_parameter_limit_bytes)
             {
             }
         };

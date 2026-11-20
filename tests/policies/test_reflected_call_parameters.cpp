@@ -1,4 +1,4 @@
-#include "kh3ap/features/kh02/core/kh02_call_parameters.h"
+#include "kh3ap/core/reflection/reflected_call_parameters.h"
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -32,17 +32,17 @@ void operator delete(void* pointer, std::size_t) noexcept
 
 int main()
 {
-    using kh3ap::Kh02CallParameters;
-    static_assert(Kh02CallParameters::native_alignment == 16);
-    static_assert(alignof(Kh02CallParameters) >= 16);
-    Kh02CallParameters outer;
+    using kh3ap::ReflectedCallParameters;
+    static_assert(ReflectedCallParameters::native_alignment == 16);
+    static_assert(alignof(ReflectedCallParameters) >= 16);
+    ReflectedCallParameters outer;
     assert(outer.empty());
     assert(outer.data() == nullptr);
 
     // All supported small records must be initialized and correctly aligned,
     // with no allocation in the synchronous reflected-call path.
     const auto small_allocations_before = allocations;
-    for (size_t size = 1; size <= Kh02CallParameters::inline_capacity; ++size)
+    for (size_t size = 1; size <= ReflectedCallParameters::inline_capacity; ++size)
     {
         outer.resize(size);
         assert(outer.size() == size);
@@ -57,7 +57,7 @@ int main()
 
     // A nested engine callback must not overwrite the outer call's parameters.
     {
-        Kh02CallParameters nested;
+        ReflectedCallParameters nested;
         nested.resize(64);
         nested.data()[0] = std::byte{0x42};
         assert(outer.data()[0] == std::byte{0xff});
@@ -87,7 +87,7 @@ int main()
     struct alignas(16) PrefixedCall
     {
         uint64_t prefix{};
-        Kh02CallParameters parameters;
+        ReflectedCallParameters parameters;
     } prefixed;
 
     for (const size_t size : {64, 257, 511, 4096})
@@ -116,7 +116,7 @@ int main()
     const auto inline_before = allocations;
     for (size_t iteration = 0; iteration < 10000; ++iteration)
     {
-        Kh02CallParameters local;
+        ReflectedCallParameters local;
         local.resize(64);
         local.data()[iteration % local.size()] = std::byte{0x7f};
         assert(local.data()[iteration % local.size()] == std::byte{0x7f});

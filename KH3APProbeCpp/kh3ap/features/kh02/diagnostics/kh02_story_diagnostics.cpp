@@ -1,4 +1,5 @@
 #include "kh02_story_diagnostics.h"
+#include "kh3ap/features/kh02/core/kh02_native_material_slot.h"
 #include "kh02_runtime_inspection.h"
 #include "kh3ap/features/kh02/story/kh02_castle_gameplay_session.h"
 #include "kh3ap/features/kh02/challenges/kh02_challenge_log.h"
@@ -59,10 +60,10 @@ namespace kh3ap
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
         constexpr int actor_scan_limit = 16'384;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -132,7 +133,7 @@ namespace kh3ap
         result["music"] = music.snapshot();
         result["collapse"] = cutscenes.collapse_snapshot();
         result["fade_layers"] = Json::array();
-        auto* fade_library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* fade_library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         for (const int layer : {0, 1})
         {
             ReflectedCall amount(fade_library, L"BPTresGetFadeAmount");
@@ -182,7 +183,7 @@ namespace kh3ap
                      {"mesh_visible", is_uobject_valid_fast(mesh) && flag(mesh, L"bVisible")}});
             }
         }
-        auto* video_library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+        auto* video_library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
         ReflectedCall playing(video_library, L"TresUI_IsPlayingVideo");
         playing.run();
         ReflectedCall empty(video_library, L"TresUI_IsEmptyVideoSlot");
@@ -388,7 +389,7 @@ namespace kh3ap
         out["music"] = music.snapshot();
         if (is_uobject_valid_fast(pawn))
         {
-            ReflectedCall battle(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall battle(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"TresIsSpecialBattleMode");
             battle.run();
             out["special_battle_mode_active"] = battle.boolean_result();

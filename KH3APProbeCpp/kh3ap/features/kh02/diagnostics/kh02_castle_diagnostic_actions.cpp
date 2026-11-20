@@ -64,7 +64,7 @@ namespace kh3ap
             }
             if (action == Action::FlowReturnTitle)
             {
-                ReflectedCall title(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                ReflectedCall title(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                     L"BP_GotoTitle");
                 title.object(L"WorldContextObject", pawn);
                 title.integer(L"InFadeKind", 1);
@@ -73,7 +73,7 @@ namespace kh3ap
             }
             // Exercise world replacement without portal/startup preparation.
             // This leaves the story bank intact and never writes a save slot.
-            ReflectedCall travel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall travel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"TresMapJump");
             travel.name(L"MapName", L"/Game/Maps/APKH02CastleTown/APKH02CastleTown");
             travel.name(L"TargetTag", L"APKH02CastleStart");
@@ -114,7 +114,7 @@ namespace kh3ap
                 {
                     for (const float offset_y : {-800.f, -400.f, 0.f, 400.f, 800.f})
                     {
-                        ReflectedCall trace(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+                        ReflectedCall trace(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                             L"LineTraceSingle");
                         trace.object(L"WorldContextObject", pawn);
                         trace.vector(L"Start", center[0] + offset_x, center[1] + offset_y, center[2] + 6000.f);
@@ -167,7 +167,7 @@ namespace kh3ap
                     const float approach = action == Action::FlowCastleTriggerTouch ? 0.f : approach_distance;
                     const float x = center[0] - forward[0] * approach;
                     const float y = center[1] - forward[1] * approach;
-                    ReflectedCall trace(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+                    ReflectedCall trace(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                         L"LineTraceSingle");
                     trace.object(L"WorldContextObject", pawn);
                     trace.vector(L"Start", x, y, center[2] + floor_trace_half_height);
@@ -219,7 +219,7 @@ namespace kh3ap
             overlap.run();
             ReflectedCall player(pawn, L"SqEX_IsObjTypePlayer");
             player.run();
-            ReflectedCall local(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall local(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                 L"IsLocalTresPlayerPawnBase");
             local.object(L"Actor", pawn);
             local.run();
@@ -321,7 +321,7 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_castle_test_character_context");
             }
-            ReflectedCall change(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall change(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"BP_TresGameChangePlayer");
             change.object(L"WorldContextObject", pawn);
             change.integer(L"InKind", requested_kind);
@@ -741,7 +741,7 @@ namespace kh3ap
         }
         else if (action == Action::FlowCapture)
         {
-            ReflectedCall capture(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+            ReflectedCall capture(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                   L"ExecuteConsoleCommand");
             capture.object(L"WorldContextObject", pawn);
             capture.string(L"Command", L"Shot showui");
@@ -794,7 +794,7 @@ namespace kh3ap
             counts["hp"] = read_stat(L"GetHitPoint");
             for (const auto* item : {L"ITEM_POTION", L"ITEM_ETHER"})
             {
-                ReflectedCall query(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                ReflectedCall query(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                     L"BP_TresGetBackyardItemNum");
                 query.object(L"WorldContextObject", pawn);
                 query.name(L"InItemKeyName", item);

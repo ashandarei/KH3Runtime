@@ -5,7 +5,7 @@
 #include "kh3ap/features/enemies/enemy_clear/service_impl.h"
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/features/enemies/bosses/tram_xion_jump.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
 
@@ -284,7 +284,7 @@ namespace kh3ap
         }
         // Reproduce only the position at jump entry. The game selected the
         // state and owns all subsequent movement and AI transitions.
-        Kh02ReflectedCall move(boss, L"K2_SetActorLocation", "tram_xion_fixture", 512);
+        ReflectedFunctionCall move(boss, L"K2_SetActorLocation", "tram_xion_fixture", 512);
         move.vector(L"NewLocation", 1974.9742f, 6687.584f, 414.0048f);
         move.boolean(L"bTeleport", true);
         move.run();

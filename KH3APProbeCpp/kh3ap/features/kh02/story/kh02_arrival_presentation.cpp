@@ -1,6 +1,6 @@
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh02_arrival_presentation.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
@@ -24,10 +24,10 @@ namespace kh3ap
         constexpr int loading_background_black = 0;
         constexpr float arrival_reveal_seconds = 0.3f;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_map_session", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_map_session", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -67,7 +67,7 @@ namespace kh3ap
                 }
             }
         }
-        ReflectedCall fade(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall fade(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                            L"BPTresSetFadeColorAndAmount");
         fade.object(L"WorldContextObject", context);
         fade.integer(L"InLayer", arrival_cover_fade_layer);
@@ -102,7 +102,7 @@ namespace kh3ap
 
     void Kh02ArrivalPresentation::reveal(UObject* context)
     {
-        ReflectedCall fade(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall fade(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                            L"BPTresCancelFade");
         fade.object(L"WorldContextObject", context);
         fade.integer(L"InLayer", arrival_cover_fade_layer);
@@ -113,7 +113,7 @@ namespace kh3ap
 
     void Kh02ArrivalPresentation::reveal_source(UObject* context)
     {
-        ReflectedCall fade(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall fade(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                            L"BPTresCancelFade");
         fade.object(L"WorldContextObject", context);
         fade.integer(L"InLayer", 0);
@@ -205,7 +205,7 @@ namespace kh3ap
 
     auto Kh02ArrivalPresentation::changing(UObject* context) -> bool
     {
-        ReflectedCall changing(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall changing(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                L"BPTresIsFadeChange");
         changing.object(L"WorldContextObject", context);
         changing.integer(L"InLayer", arrival_cover_fade_layer);
@@ -223,7 +223,7 @@ namespace kh3ap
 
     auto Kh02ArrivalPresentation::loading_closed() -> bool
     {
-        ReflectedCall query(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall query(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                             L"TresUI_IsClosedLoadingScreen");
         query.run();
         return query.boolean_result();
@@ -231,7 +231,7 @@ namespace kh3ap
 
     void Kh02ArrivalPresentation::open_loading()
     {
-        ReflectedCall open(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall open(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                            L"TresUI_OpenLoadingScreen");
         open.integer(L"BgColor", loading_background_black);
         open.run();
@@ -239,7 +239,7 @@ namespace kh3ap
 
     void Kh02ArrivalPresentation::close_loading()
     {
-        ReflectedCall close(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall close(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                             L"TresUI_CloseLoadingScreen");
         close.run();
     }

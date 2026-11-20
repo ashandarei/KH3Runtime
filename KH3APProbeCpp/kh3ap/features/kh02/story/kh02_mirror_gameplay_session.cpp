@@ -128,7 +128,7 @@ namespace kh3ap
             return;
         }
         islands_battle_entry_pending = false;
-        ReflectedCall battle(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall battle(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresIsSpecialBattleMode");
         battle.run();
         if (!battle.boolean_result())
@@ -150,7 +150,7 @@ namespace kh3ap
             services.compat_error = "kh02_islands_battle_start_missing";
             return;
         }
-        ReflectedCall sound(kh02_require_loaded_object(L"/Script/TresGame.Default__TresSoundStatics"),
+        ReflectedCall sound(require_loaded_object(L"/Script/TresGame.Default__TresSoundStatics"),
                             L"TresSoundMode_End");
         sound.integer(L"mode", 0);
         sound.run();
@@ -188,7 +188,7 @@ namespace kh3ap
         if (!entrance_reveal_requested)
         {
             proof = {{"before", view.fade(pawn)}, {"source_finished", true}, {"verified", false}};
-            ReflectedCall reveal(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall reveal(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"BPTresCancelFade");
             reveal.object(L"WorldContextObject", pawn);
             reveal.integer(L"InLayer", 0);

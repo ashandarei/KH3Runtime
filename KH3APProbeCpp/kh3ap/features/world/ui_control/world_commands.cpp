@@ -8,7 +8,7 @@
 #include "kh3ap/features/kh02/runtime/kh02_runtime.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
 #include "kh3ap/features/kh02/core/kh02_voice_language.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/transport/kh02_remote_files.h"
 #include "kh3ap/features/kh02/transport/kh02_asset_companion.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"

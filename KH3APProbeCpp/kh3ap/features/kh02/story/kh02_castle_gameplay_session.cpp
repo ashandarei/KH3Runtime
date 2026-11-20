@@ -53,7 +53,7 @@ namespace kh3ap
         {
             proof["retry_host_replaced"] = true;
         }
-        ReflectedCall closed(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall closed(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresUI_IsClosedLoadingScreen");
         closed.run();
         proof["closed_at_begin_play"] = closed.boolean_result();
@@ -107,7 +107,7 @@ namespace kh3ap
         }
         auto* script = services.gameplay.script.Get();
         auto* gimmick = gimmick_script.Get();
-        ReflectedCall local(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall local(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                             L"GetLocalTresPlayerPawnBase");
         local.object(L"WorldContextObject", script);
         local.run();
@@ -164,7 +164,7 @@ namespace kh3ap
         path_trigger.configure(pawn, true);
         proof["castle_path_trigger"] = path_trigger.snapshot();
         proof["save_notice_disabled"] = true;
-        ReflectedCall closed(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall closed(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresUI_IsClosedLoadingScreen");
         closed.run();
         proof["closed_before_release"] = closed.boolean_result();

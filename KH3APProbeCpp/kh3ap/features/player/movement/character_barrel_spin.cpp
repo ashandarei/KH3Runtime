@@ -2,7 +2,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
@@ -66,9 +66,9 @@ namespace kh3ap::character_barrel_spin
         {
             return false;
         }
-        Kh02ReflectedCall position(actor, L"K2_GetActorLocation", "barrel_position", 16);
+        ReflectedFunctionCall position(actor, L"K2_GetActorLocation", "barrel_position", 16);
         position.run();
-        Kh02ReflectedCall player_position(pawn, L"K2_GetActorLocation", "barrel_player_position",
+        ReflectedFunctionCall player_position(pawn, L"K2_GetActorLocation", "barrel_player_position",
                                           16);
         player_position.run();
         const auto a = position.result_vector();

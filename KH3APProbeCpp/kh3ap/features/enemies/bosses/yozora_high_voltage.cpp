@@ -2,7 +2,7 @@
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FScriptArray.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
@@ -96,6 +96,7 @@ namespace kh3ap::enemy_remap_detail
                                 slot = previous;
                             }
                         } restore{*literal, *literal};
+                        enter_yozora_rooftop(pawn);
                         *literal = *center;
                         enter(node, component, memory);
                         Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Yozora High Voltage "
@@ -144,13 +145,13 @@ namespace kh3ap::enemy_remap_detail
         }
         try
         {
-            Kh02ReflectedCall active{manager, L"GetActiveCamera", "yozora_climax_camera", 32};
+            ReflectedFunctionCall active{manager, L"GetActiveCamera", "yozora_climax_camera", 32};
             active.run();
             if (active.result() != camera)
             {
                 return false;
             }
-            Kh02ReflectedCall end{camera, L"EndTresCamera", "yozora_climax_camera", 128};
+            ReflectedFunctionCall end{camera, L"EndTresCamera", "yozora_climax_camera", 128};
             end.boolean(L"bTakeover", false);
             end.run();
             Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Released Yozora climax shot camera={}\n"),

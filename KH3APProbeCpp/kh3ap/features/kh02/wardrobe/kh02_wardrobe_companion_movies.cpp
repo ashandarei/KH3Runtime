@@ -1,6 +1,6 @@
 #include "kh02_wardrobe_companion_movies.h"
 #include "kh3ap/features/kh02/movies/kh02_menu_movie.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -47,7 +47,7 @@ namespace kh3ap
             {
                 if (!requested[index])
                 {
-                    Kh02ReflectedCall instance(L"/Script/Engine.Default__GameplayStatics", L"GetGameInstance",
+                    ReflectedFunctionCall instance(L"/Script/Engine.Default__GameplayStatics", L"GetGameInstance",
                                                "Wardrobe", game_instance_parameter_limit_bytes);
                     instance.object(L"WorldContextObject", pawn);
                     instance.run();

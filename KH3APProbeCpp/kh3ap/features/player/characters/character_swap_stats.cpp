@@ -13,7 +13,7 @@
 #include "kh3ap/core/performance_build.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <cmath>
@@ -199,7 +199,7 @@ namespace kh3ap::character_swap
 
     auto character_integer_value(UObject* pawn, const wchar_t* method) -> int
     {
-        Kh02ReflectedCall call(pawn, method, "character_swap", 256);
+        ReflectedFunctionCall call(pawn, method, "character_swap", 256);
         call.run();
         const auto result =
             read_function_int_param(call.function, call.parameters.data(), L"ReturnValue");

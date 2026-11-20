@@ -1,7 +1,7 @@
 #include "kh02_mirror_travel.h"
 #include "kh02_story_flags.h"
 #include "kh3ap/features/kh02/world/kh02_area_resume.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -64,7 +64,7 @@ namespace kh3ap
         arrival_tag = plan.tag;
         arrival_package = plan.package;
         constexpr std::size_t travel_parameter_limit_bytes = 2'048;
-        Kh02ReflectedCall travel(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresMapJump", "kh02_story",
+        ReflectedFunctionCall travel(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresMapJump", "kh02_story",
                                  travel_parameter_limit_bytes);
         travel.name(L"MapName", plan.package.c_str());
         travel.name(L"TargetTag", plan.tag.c_str());

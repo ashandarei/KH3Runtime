@@ -1,5 +1,5 @@
 #include "kh02_localization.h"
-#include "kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
 #include <Unreal/UObject.hpp>
@@ -21,10 +21,10 @@ namespace kh3ap
         constexpr std::size_t native_string_bytes = 16;
         constexpr std::size_t find_text_parameters_bytes = 57;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -33,7 +33,7 @@ namespace kh3ap
     auto Kh02Localization::lookup(const wchar_t* text_namespace, const wchar_t* text_key, std::wstring* localized_text)
         -> Json
     {
-        ReflectedCall find(kh02_require_loaded_object(L"/Script/Engine.Default__KismetTextLibrary"),
+        ReflectedCall find(require_loaded_object(L"/Script/Engine.Default__KismetTextLibrary"),
                            L"FindTextInLocalizationTable");
         find.string(L"Namespace", text_namespace);
         find.string(L"Key", text_key);
@@ -62,7 +62,7 @@ namespace kh3ap
         {
             return;
         }
-        auto* library = kh02_require_loaded_object(L"/Script/Engine.Default__KismetInternationalizationLibrary");
+        auto* library = require_loaded_object(L"/Script/Engine.Default__KismetInternationalizationLibrary");
         ReflectedCall get(library, L"GetCurrentLanguage");
         auto* returned = get.param(L"ReturnValue");
         if (!returned || returned->GetClass().GetName() != L"StrProperty" ||

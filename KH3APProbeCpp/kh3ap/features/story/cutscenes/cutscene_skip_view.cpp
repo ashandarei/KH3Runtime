@@ -5,7 +5,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UClass.hpp>
@@ -28,10 +28,10 @@ namespace kh3ap
         constexpr auto handoff_timeout = std::chrono::seconds(30);
         constexpr int foreground_layer = 0;
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "cutscene_skip_view",
+                : ReflectedFunctionCall(owner, method, "cutscene_skip_view",
                                     max_cutscene_view_parameter_bytes)
             {
             }
@@ -94,7 +94,7 @@ namespace kh3ap
         }
         try
         {
-            auto* library = kh02_require_loaded_object(library_path);
+            auto* library = require_loaded_object(library_path);
             Call local(library, L"GetLocalTresPlayerPawnBase");
             local.object(L"WorldContextObject", world);
             local.run();
@@ -109,7 +109,7 @@ namespace kh3ap
             Call cinematic(library, L"TresIsCinematicMode");
             cinematic.object(L"WorldContextObject", pawn);
             cinematic.run();
-            Call paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
+            Call paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
                         L"IsGamePaused");
             paused.object(L"WorldContextObject", pawn);
             paused.run();

@@ -2,7 +2,7 @@
 #include "kh02_darkside_pillar_policy.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/FProperty.hpp>
@@ -249,7 +249,7 @@ namespace kh3ap
             return false;
         }
         const auto relative = vector(component, L"RelativeLocation");
-        Kh02ReflectedCall location(root, L"K2_GetComponentLocation", "kh02_pillar_parent_location", 64);
+        ReflectedFunctionCall location(root, L"K2_GetComponentLocation", "kh02_pillar_parent_location", 64);
         location.run();
         const auto root_world = location.result_vector();
         if (!kh02_pillar_origin_is_duplicated(
@@ -257,7 +257,7 @@ namespace kh3ap
         {
             return false;
         }
-        Kh02ReflectedCall move(component, L"K2_SetRelativeLocation", "kh02_pillar_origin",
+        ReflectedFunctionCall move(component, L"K2_SetRelativeLocation", "kh02_pillar_origin",
                                relative_location_parameter_bytes);
         if (move.function->GetOuterPrivate()->GetPathName() != L"/Script/Engine.SceneComponent")
         {

@@ -44,11 +44,12 @@ namespace kh3ap
         FName master_name{};
         FName dark_shooting_name{};
         FName force_camera_name{};
+        FName gravity_sphere_name{};
         std::atomic<bool> randomized_yozora{};
         std::atomic<bool> configured{};
         constexpr size_t max_owners = 32;
         using Clock = std::chrono::steady_clock;
-        enum class ArenaObject { Ascension, DarkShooting, YozoraCamera };
+        enum class ArenaObject { Ascension, DarkShooting, YozoraCamera, YozoraGravitySphere };
         struct PendingAscension
         {
             FWeakObjectPtr actor;
@@ -556,6 +557,8 @@ namespace kh3ap
         ArenaObject kind;
         if (yozora_active && name == force_camera_name)
             kind = ArenaObject::YozoraCamera;
+        else if (yozora_active && name == gravity_sphere_name)
+            kind = ArenaObject::YozoraGravitySphere;
         else if (master_active && name == dark_shooting_name)
             kind = ArenaObject::DarkShooting;
         else if (master_active && name == ascension_name)
@@ -580,6 +583,7 @@ namespace kh3ap
 
     void process_pending_master_ascension_centers()
     {
+        update_yozora_gravity_effects();
         if (!pending_count.load(std::memory_order_acquire))
         {
             return;
@@ -609,6 +613,10 @@ namespace kh3ap
                                   return true;
                               entry.next_attempt = now + std::chrono::milliseconds(16);
                               return false;
+                          }
+                          if (entry.kind == ArenaObject::YozoraGravitySphere)
+                          {
+                              return initialize_yozora_gravity_sphere(actor) || now >= entry.deadline;
                           }
                           if (entry.kind == ArenaObject::DarkShooting ? initialize_dark_shooting(actor)
                                                                       : initialize_master_ascension_center(actor))
@@ -651,6 +659,7 @@ namespace kh3ap
                 }))
         {
             force_camera_name = FName{L"TresCameraForceLockon", FNAME_Add};
+            gravity_sphere_name = FName{L"e_ex781_GravitySphere_C", FNAME_Add};
             randomized_yozora.store(true, std::memory_order_release);
         }
         if (!final_brake_override && std::any_of(replacements.begin(), replacements.end(),

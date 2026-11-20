@@ -89,13 +89,13 @@ uintptr_t original_vacuum = reinterpret_cast<uintptr_t>(&native_begin);
 void native_end(UObject*) {}
 uintptr_t original_vacuum_end = reinterpret_cast<uintptr_t>(&native_end);
 int view_restores = 0;
-struct Kh02ReflectedCall
+struct ReflectedFunctionCall
 {
     UObject* owner;
     std::wstring method;
     UObject* target{};
     UObject* returned{};
-    Kh02ReflectedCall(UObject* p, const wchar_t* m, const char*, size_t) : owner(p), method(m) {}
+    ReflectedFunctionCall(UObject* p, const wchar_t* m, const char*, size_t) : owner(p), method(m) {}
     void object(const wchar_t* name, UObject* p) { assert(std::wstring_view(name) == L"NewViewTarget"); target = p; }
     void number(const wchar_t* name, float value) { assert(std::wstring_view(name) == L"BlendTime" && value == 0); }
     void run()
@@ -109,10 +109,10 @@ struct Kh02ReflectedCall
 };
 namespace character_camera
 {
-    struct Call : Kh02ReflectedCall
+    struct Call : ReflectedFunctionCall
     {
         Call(UObject* owner, const wchar_t* method)
-            : Kh02ReflectedCall(owner, method, "character camera", 128) {}
+            : ReflectedFunctionCall(owner, method, "character camera", 128) {}
     };
     UObject* object(UObject* owner, const wchar_t* member) { return properties.read_object(owner, member); }
 }

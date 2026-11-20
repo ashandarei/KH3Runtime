@@ -23,7 +23,7 @@ namespace kh3ap
         }
         Call begin(gameplay, L"BeginDeferredActorSpawnFromClass");
         begin.object(L"WorldContextObject", pawn);
-        begin.object(L"ActorClass", kh02_require_loaded_object(L"/Script/Engine.SkeletalMeshActor"));
+        begin.object(L"ActorClass", require_loaded_object(L"/Script/Engine.SkeletalMeshActor"));
         begin.integer(L"CollisionHandlingOverride", always_spawn_collision_handling);
         begin.spawn_transform();
         begin.run();

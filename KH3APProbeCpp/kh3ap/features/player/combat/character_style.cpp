@@ -3,12 +3,13 @@
 #include "character_style_state.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/player_ids.h"
+#include "kh3ap/features/player/player_action_commands.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/features/player/characters/character_swap_stats.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
@@ -320,13 +321,15 @@ namespace kh3ap::character_style
         const bool rage = is_standard_sora_player_id(player) && command == rage_form_command;
         const bool spellweaver =
             player == player_id_value(PlayerId::Aqua) && command == spellweaver_command;
+        const bool dual_shot = player == player_id_value(PlayerId::Roxas) &&
+                               command == player_action_command_value(PlayerActionCommand::S_CROSSSHOOT);
         const bool second_form =
             player == player_id_value(PlayerId::Sora) &&
             ((live->form.weapon == second_form_l1_weapon_type &&
               command == second_form_l1_command) ||
              (live->form.weapon == second_form_l3_weapon_type &&
               command == second_form_l3_command));
-        if (!rage && !spellweaver && !second_form)
+        if (!rage && !spellweaver && !second_form && !dual_shot)
         {
             return false;
         }
@@ -335,7 +338,7 @@ namespace kh3ap::character_style
             // Offer through the shipping Rage eligibility path, then let the
             // normal situation-command input activate it. Readback after that
             // input, rather than this dispatch, establishes active Rage.
-            Kh02ReflectedCall offer(live->controller, L"BP_NotifySetAntiFormCommand",
+            ReflectedFunctionCall offer(live->controller, L"BP_NotifySetAntiFormCommand",
                                    "character Rage Form fixture", 256);
             offer.run();
             return true;

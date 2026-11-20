@@ -1,6 +1,6 @@
 #include "kh02_information_queue.h"
 #include "kh3ap/features/kh02/story/kh02_map_session.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/bridge/utilities.h"
@@ -62,7 +62,7 @@ namespace kh3ap
             }
             auto notice = std::move(pending_information.front());
             pending_information.erase(pending_information.begin());
-            Kh02ReflectedCall show(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresUI_OpenInformation",
+            ReflectedFunctionCall show(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresUI_OpenInformation",
                                    "kh02_story", parameter_limit_bytes);
             auto* text = show.param(L"InformationText");
             auto* schema = static_cast<UScriptStruct*>(notice->schema.Get());

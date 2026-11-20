@@ -9,7 +9,7 @@
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/input/runtime_player_control.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #endif
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -524,7 +524,7 @@ namespace kh3ap::alternate_wall_run
                 state->GetClassPrivate()->GetName() == L"TresPlayerState_WallRun")
             {
                 test_picture = true;
-                Kh02ReflectedCall picture(L"/Script/Engine.Default__KismetSystemLibrary",
+                ReflectedFunctionCall picture(L"/Script/Engine.Default__KismetSystemLibrary",
                                           L"ExecuteConsoleCommand", "alternate_wall_run_picture",
                                           maximum_screenshot_parameter_bytes);
                 picture.object(L"WorldContextObject", pawn);

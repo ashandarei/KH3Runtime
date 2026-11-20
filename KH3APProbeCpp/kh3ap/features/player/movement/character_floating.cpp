@@ -9,7 +9,7 @@
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/FProperty.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>

@@ -1,6 +1,6 @@
 #include "kh02_mesh_buffer_lease.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UObject.hpp>
 #include <Windows.h>
 #include <cstring>
@@ -29,10 +29,10 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_mesh_cpu_buffer_profile");
             }
-            auto* library = kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary");
+            auto* library = require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary");
             if (set)
             {
-                Kh02ReflectedCall write(library, L"ExecuteConsoleCommand", "kh02_story", parameter_limit_bytes);
+                ReflectedFunctionCall write(library, L"ExecuteConsoleCommand", "kh02_story", parameter_limit_bytes);
                 write.object(L"WorldContextObject", pawn);
                 write.string(L"Command", L"r.FreeSkeletalMeshBuffers " + std::to_wstring(*set));
                 write.run();

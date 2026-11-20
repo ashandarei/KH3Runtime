@@ -4,7 +4,7 @@
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/objects/uobject_weak.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/player/combat/character_underwater_combat.h"
 #include <DynamicOutput/DynamicOutput.hpp>
@@ -74,7 +74,7 @@ namespace kh3ap
                 int index;
                 ~Restore() { values->RemoveAt(index, 1, false); }
             } restore{templates, index};
-            Kh02ReflectedCall call(pawn, L"AddComponent", "party swimming navigation", 128);
+            ReflectedFunctionCall call(pawn, L"AddComponent", "party swimming navigation", 128);
             call.name(L"TemplateName", component_template->GetName().c_str());
             call.boolean(L"bManualAttachment", true);
             call.object(L"ComponentTemplateContext", donor->GetClassDefaultObject());
@@ -268,7 +268,7 @@ namespace kh3ap
                 {
                     throw std::runtime_error("party_swim_navigation_filter");
                 }
-                Kh02ReflectedCall set(board, L"SetValueAsObject", "party swim follow query", 64);
+                ReflectedFunctionCall set(board, L"SetValueAsObject", "party swim follow query", 64);
                 set.name(L"KeyName", L"FollowPlayerEQSQuery");
                 set.object(L"ObjectValue", query);
                 set.run();

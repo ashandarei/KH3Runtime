@@ -98,7 +98,7 @@
 #include "kh3ap/features/treasure/chest_persistence_service.h"
 #include "kh3ap/features/kh02/movies/kh02_movie_bridge.h"
 #include "kh3ap/core/reflection/reflection_core.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -164,10 +164,10 @@ namespace kh3ap
             constexpr int resume_mapset_base = 0x4b483600;
         } // namespace asset_request_id
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -769,7 +769,7 @@ namespace kh3ap
                                 {"setup_timings_us", setup_timings},
                                 {"preload_started_at_ms", GetTickCount64()}};
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                auto* fade_library = kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
+                auto* fade_library = require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary");
                 Json fade_bindings = Json::object();
                 for (const auto* method : {L"BPTresStartFadeIn", L"WaitBPTresStartFadeIn", L"WaitBPTresCancelFade"})
                 {
@@ -993,7 +993,7 @@ namespace kh3ap
             }
             compat_instance = this;
             event_thread.store(GetCurrentThreadId(), std::memory_order_release);
-            Kh02ReflectedCall callback_signature(L"/Script/Engine.Default__PrimitiveComponent",
+            ReflectedFunctionCall callback_signature(L"/Script/Engine.Default__PrimitiveComponent",
                                                  L"SetTranslucentSortPriority", "kh02_asset_callback", 64);
             auto* callback_argument = callback_signature.param(L"NewTranslucentSortPriority");
             if (callback_signature.function->GetParmsSize() != sizeof(int32_t) || !callback_argument ||
@@ -1534,14 +1534,14 @@ namespace kh3ap
         {
             return false;
         }
-        ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+        ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
         paused.object(L"WorldContextObject", hero);
         paused.run();
         if (paused.boolean_result())
         {
             return false;
         }
-        ReflectedCall travel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall travel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresMapJump");
         travel.name(L"MapName", L"/Game/Maps/GardenOfAssemblage/umap/GoA_01");
         travel.name(L"TargetTag", L"NormalSpawn");
@@ -1561,7 +1561,7 @@ namespace kh3ap
         {
             return false;
         }
-        ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+        ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
         paused.object(L"WorldContextObject", hero);
         paused.run();
         return !paused.boolean_result();
@@ -1660,7 +1660,7 @@ namespace kh3ap
         }
         try
         {
-            ReflectedCall paused(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
+            ReflectedCall paused(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
                                  L"IsGamePaused");
             paused.object(L"WorldContextObject", pawn);
             paused.run();
@@ -1947,7 +1947,7 @@ namespace kh3ap
         self->mirror_travel.arrival_package = destination->package;
         const std::wstring package = destination->package;
         self->map_session.arm(pawn, package + L"." + package.substr(package.find_last_of(L'/') + 1));
-        ReflectedCall travel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+        ReflectedCall travel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                              L"TresMapJump");
         travel.name(L"MapName", destination->package);
         travel.name(L"TargetTag", arrival_tag);

@@ -1,6 +1,6 @@
 #include "kh02_voice_language.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/transport/kh02_remote_files.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UObject.hpp>
@@ -34,7 +34,7 @@ namespace kh3ap
 
     auto current_kh02_voice_language() -> Kh02VoiceLanguage
     {
-        Kh02ReflectedCall query(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresGetVoiceLanguage",
+        ReflectedFunctionCall query(L"/Script/TresGame.Default__TresGameBlueprintLibrary", L"TresGetVoiceLanguage",
                                 "kh02_voice_language", 32);
         auto* returned = query.param(L"ReturnValue");
         if (!returned || returned->GetClass().GetName() != L"StrProperty" || returned->GetElementSize() != 16 ||

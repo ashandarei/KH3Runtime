@@ -6,7 +6,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/party/party_helpers.h"
 #include <Unreal/FProperty.hpp>
 #include <Unreal/UClass.hpp>
@@ -204,7 +204,7 @@ namespace kh3ap::character_party
         active = false;
     }
 
-    void Handoff::run_factory(Kh02ReflectedCall& change)
+    void Handoff::run_factory(ReflectedFunctionCall& change)
     {
         if (!detached_ || !install_default_roster_hook())
         {
@@ -273,7 +273,7 @@ namespace kh3ap::character_party
 #endif
             if (replacements)
             {
-                Kh02ReflectedCall retire(manager, L"DeleteFriendAll", "character party", 64);
+                ReflectedFunctionCall retire(manager, L"DeleteFriendAll", "character party", 64);
                 retire.run();
             }
         }

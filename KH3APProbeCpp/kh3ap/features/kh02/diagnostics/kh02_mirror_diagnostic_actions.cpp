@@ -41,7 +41,7 @@ namespace kh3ap
         if (action == Action::WithinCapture)
         {
             const auto file = kh02_capture_file(L"kh02-world-within-scene.png");
-            ReflectedCall capture(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+            ReflectedCall capture(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                   L"ExecuteConsoleCommand");
             capture.object(L"WorldContextObject", pawn);
             capture.string(L"Command", kh02_capture_command(file));
@@ -52,7 +52,7 @@ namespace kh3ap
         }
         else if (action == Action::WithinCaptureUi)
         {
-            ReflectedCall capture(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+            ReflectedCall capture(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                   L"ExecuteConsoleCommand");
             capture.object(L"WorldContextObject", pawn);
             capture.string(L"Command", L"Shot showui");
@@ -67,7 +67,7 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_within_replay_context");
             }
-            ReflectedCall get(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
+            ReflectedCall get(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"),
                               L"GetStreamingLevel");
             get.object(L"WorldContextObject", pawn);
             get.name(L"PackageName", mirror_scene ? L"cutscene_dw03_dw020" : L"cutscene_dw03_dw016");
@@ -112,7 +112,7 @@ namespace kh3ap
             rewind.number(L"NewPosition", 0);
             rewind.boolean(L"bJump", true);
             rewind.run();
-            ReflectedCall cinematic(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall cinematic(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                     L"TresStartCinematicMode");
             cinematic.object(L"WorldContextObject", pawn);
             cinematic.run();
@@ -252,7 +252,7 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_test_character_context");
             }
-            ReflectedCall change(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall change(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"BP_TresGameChangePlayer");
             change.object(L"WorldContextObject", pawn);
             change.integer(L"InKind", aqua_player_id);
@@ -266,12 +266,12 @@ namespace kh3ap
             {
                 throw std::runtime_error("kh02_test_leave_battle_context");
             }
-            ReflectedCall mode(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall mode(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                L"TresSetSpecialBattleMode");
             mode.object(L"WorldContextObject", pawn);
             mode.boolean(L"bIsSpecialMode", false);
             mode.run();
-            ReflectedCall travel(kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+            ReflectedCall travel(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                                  L"TresMapJump");
             travel.name(L"MapName", L"/Game/Maps/APKH02Mirrors/APKH02Depths");
             travel.name(L"TargetTag", L"dw_09_Lv_AutoSave_02");
@@ -287,7 +287,7 @@ namespace kh3ap
             }
             // Fixture setup only: load the source's completed final area before
             // staging beside its exit. Travel still requires the real overlap.
-            auto* mapset = kh02_require_loaded_object(L"/Game/Zevels/dw/dw_08/mapset/ms_dw_08.ms_dw_08");
+            auto* mapset = require_loaded_object(L"/Game/Zevels/dw/dw_08/mapset/ms_dw_08.ms_dw_08");
             kh02_apply_mapset(pawn, mapset, L"dw_StartArea_I", 0x4b483700);
             kh02_apply_mapset(pawn, mapset, L"dw_ClearArea_I", 0x4b483701);
         }

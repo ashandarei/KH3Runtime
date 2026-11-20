@@ -10,7 +10,7 @@
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/rewards/kh02_item_slots.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -102,15 +102,15 @@ namespace kh3ap
             }
         }
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "Alternate camp portrait", 512)
+                : ReflectedFunctionCall(owner, method, "Alternate camp portrait", 512)
             {
             }
 
             Call(const wchar_t* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "Alternate camp portrait", 512)
+                : ReflectedFunctionCall(owner, method, "Alternate camp portrait", 512)
             {
             }
         };

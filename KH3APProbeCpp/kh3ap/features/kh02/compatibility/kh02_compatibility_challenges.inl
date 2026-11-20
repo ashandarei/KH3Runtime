@@ -213,7 +213,7 @@ void execute_challenges()
                     throw std::runtime_error("The Critical Demon Tide objective requires its original victory site.");
                 }
                 ReflectedCall difficulty(
-                    kh02_require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
+                    require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
                     L"BP_GetGameLevel");
                 auto* difficulty_result = difficulty.param(L"ReturnValue");
                 if (!difficulty_result || difficulty_result->GetClass().GetName() != L"ByteProperty" ||

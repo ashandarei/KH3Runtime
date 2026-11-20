@@ -15,7 +15,7 @@ namespace kh3ap
         if (action == Action::Capture)
         {
             const auto file = kh02_capture_file(L"kh02-opening-scene.png");
-            ReflectedCall capture(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+            ReflectedCall capture(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                   L"ExecuteConsoleCommand");
             capture.object(L"WorldContextObject", pawn);
             capture.string(L"Command", kh02_capture_command(file));

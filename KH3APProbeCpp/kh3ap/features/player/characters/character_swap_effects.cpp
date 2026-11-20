@@ -6,7 +6,7 @@
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/kh02/compatibility/kh02_aliases.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/UClass.hpp>
@@ -51,10 +51,10 @@ namespace kh3ap::character_swap_effects
         constexpr unsigned pose_render_frames = 2;
         constexpr int load_uuid = 0x4b4b0001;
 
-        struct Call : Kh02ReflectedCall
+        struct Call : ReflectedFunctionCall
         {
             Call(UObject* object, const wchar_t* method)
-                : Kh02ReflectedCall(object, method, "character_swap_effect", 512)
+                : ReflectedFunctionCall(object, method, "character_swap_effect", 512)
             {
             }
         };
@@ -333,7 +333,7 @@ namespace kh3ap::character_swap_effects
 
         UObject* attach_particle(UObject* mesh, UObject* asset, UObject* owner)
         {
-            Call spawn(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"SpawnEmitterAttached");
+            Call spawn(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"SpawnEmitterAttached");
             spawn.object(L"EmitterTemplate", asset);
             spawn.object(L"AttachToComponent", mesh);
             spawn.name(L"AttachPointName", L"None");
@@ -535,13 +535,13 @@ namespace kh3ap::character_swap_effects
             root(source);
             effect_template = make_uobject_weak(source);
             pool_world = make_uobject_weak(actor_owning_world(pawn));
-            auto* gameplay = kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics");
+            auto* gameplay = require_loaded_object(L"/Script/Engine.Default__GameplayStatics");
             for (size_t index = 0; index < slots.size(); ++index)
             {
                 auto& slot = slots[index];
                 Call spawn(gameplay, L"BeginDeferredActorSpawnFromClass");
                 spawn.object(L"WorldContextObject", pawn);
-                spawn.object(L"ActorClass", kh02_require_loaded_object(L"/Script/Engine.SkeletalMeshActor"));
+                spawn.object(L"ActorClass", require_loaded_object(L"/Script/Engine.SkeletalMeshActor"));
                 spawn.integer(L"CollisionHandlingOverride", always_spawn_collision);
                 spawn.spawn_transform(0, 0, parked_actor_z);
                 spawn.run();
@@ -727,7 +727,7 @@ namespace kh3ap::character_swap_effects
             bool paused{};
             if (std::any_of(slots.begin(), slots.end(), [](const auto& slot) { return slot.active && slot.warming; }))
             {
-                Call pause(kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
+                Call pause(require_loaded_object(L"/Script/Engine.Default__GameplayStatics"), L"IsGamePaused");
                 pause.object(L"WorldContextObject", kh02_current_world());
                 pause.run();
                 paused = pause.boolean_result();
@@ -781,7 +781,7 @@ namespace kh3ap::character_swap_effects
                         count.run();
                         last_capture_particles =
                             *count.param(L"ReturnValue")->ContainerPtrToValuePtr<int32_t>(count.parameters.data());
-                        Call capture(kh02_require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
+                        Call capture(require_loaded_object(L"/Script/Engine.Default__KismetSystemLibrary"),
                                      L"ExecuteConsoleCommand");
                         capture.object(L"WorldContextObject", pawn);
                         capture.string(L"Command", L"Shot showui");

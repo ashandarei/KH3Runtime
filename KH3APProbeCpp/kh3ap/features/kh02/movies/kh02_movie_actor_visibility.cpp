@@ -1,5 +1,5 @@
 #include "kh02_movie_actor_visibility.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -26,10 +26,10 @@ namespace kh3ap
     {
         constexpr std::size_t reflected_parameter_limit_bytes = 2'048;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_cutscene", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_cutscene", reflected_parameter_limit_bytes)
             {
             }
         };
@@ -53,7 +53,7 @@ namespace kh3ap
         retired_movie_hidden_actors.insert(retired_movie_hidden_actors.end(), ending_movie_hidden_actors.begin(),
                                            ending_movie_hidden_actors.end());
         ending_movie_hidden_actors.clear();
-        auto* actor_class = static_cast<UClass*>(kh02_require_loaded_object(L"/Script/Engine.Actor"));
+        auto* actor_class = static_cast<UClass*>(require_loaded_object(L"/Script/Engine.Actor"));
         const auto scene_prefix = matinee->GetOuterPrivate()->GetPathName() + L".";
         for (auto* actor : find_live_actors_of_class(pawn, actor_class, maximum_scene_actor_candidates))
         {

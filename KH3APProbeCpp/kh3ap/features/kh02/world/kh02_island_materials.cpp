@@ -1,5 +1,5 @@
 #include "kh02_island_materials.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -22,10 +22,10 @@ namespace kh3ap
         constexpr int actor_scan_limit = 16'384;
         constexpr int material_slot_limit = 128;
 
-        struct ReflectedCall : Kh02ReflectedCall
+        struct ReflectedCall : ReflectedFunctionCall
         {
             ReflectedCall(UObject* owner, const wchar_t* method)
-                : Kh02ReflectedCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
+                : ReflectedFunctionCall(owner, method, "kh02_story", reflected_parameter_limit_bytes)
             {
             }
         };

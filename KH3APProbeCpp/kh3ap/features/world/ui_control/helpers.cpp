@@ -5,7 +5,7 @@
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/features/grants/keyblades/progressive_keyblade_level_helpers.h"
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
@@ -51,8 +51,8 @@ namespace kh3ap::ui_control_detail
 
     void cutscene_engine_pause(UObject* pawn, bool paused)
     {
-        auto* library = kh02_require_loaded_object(L"/Script/Engine.Default__GameplayStatics");
-        Kh02ReflectedCall set(library, L"SetGamePaused", "cutscene_pause",
+        auto* library = require_loaded_object(L"/Script/Engine.Default__GameplayStatics");
+        ReflectedFunctionCall set(library, L"SetGamePaused", "cutscene_pause",
                               max_cutscene_pause_parameter_bytes);
         set.object(L"WorldContextObject", pawn);
         set.boolean(L"bPaused", paused);
@@ -64,7 +64,7 @@ namespace kh3ap::ui_control_detail
     }
     bool engine_pause_active(UObject* pawn)
     {
-        Kh02ReflectedCall read(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
+        ReflectedFunctionCall read(L"/Script/Engine.Default__GameplayStatics", L"IsGamePaused",
                                "engine_pause", max_cutscene_pause_parameter_bytes);
         read.object(L"WorldContextObject", pawn);
         read.run();

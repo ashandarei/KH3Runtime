@@ -6,7 +6,7 @@
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/platform/game_build.h"
 
-#include "kh3ap/features/kh02/core/kh02_reflected_call.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/AActor.hpp>
@@ -90,11 +90,11 @@ namespace kh3ap::enemy_remap_detail
             }
             try
             {
-                Kh02ReflectedCall set(board, L"SetValueAsVector", "Ansem arena center", 64);
+                ReflectedFunctionCall set(board, L"SetValueAsVector", "Ansem arena center", 64);
                 set.name(L"KeyName", L"CenterLocation");
                 set.vector(L"VectorValue", center[0], center[1], center[2]);
                 set.run();
-                Kh02ReflectedCall get(board, L"GetValueAsVector", "Ansem arena center", 64);
+                ReflectedFunctionCall get(board, L"GetValueAsVector", "Ansem arena center", 64);
                 get.name(L"KeyName", L"CenterLocation");
                 get.run();
                 if (get.result_vector() == center)
@@ -148,6 +148,8 @@ namespace kh3ap::enemy_remap_detail
         if (path == yozora_class)
         {
             activate_yozora_query_contexts();
+            install_yozora_keyblade_steal();
+            preload_yozora_rooftop(pawn);
         }
         if (path == vanitas_class)
         {
