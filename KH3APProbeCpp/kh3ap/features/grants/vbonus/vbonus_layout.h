@@ -64,9 +64,9 @@ namespace kh3ap::vbonus_detail
     constexpr uint32_t s_vbonus_hud_mp_type = 6;
     constexpr uint32_t s_vbonus_hud_ability_type = 7;
     constexpr uint32_t s_vbonus_hud_magic_type = 8;
-    constexpr uint32_t s_vbonus_hud_item_slot_type = 9;
+    constexpr uint32_t s_vbonus_hud_armor_slot_type = 9;
     constexpr uint32_t s_vbonus_hud_accessory_slot_type = 10;
-    constexpr uint32_t s_vbonus_hud_armor_slot_type = 11;
+    constexpr uint32_t s_vbonus_hud_item_slot_type = 11;
     constexpr size_t s_sora_ability_entry_count = 0x200;
     constexpr std::wstring_view s_get_bonus_flag_path =
         L"/Script/TresGame.TresGameBlueprintLibrary:GetGameFlagBoolean";
