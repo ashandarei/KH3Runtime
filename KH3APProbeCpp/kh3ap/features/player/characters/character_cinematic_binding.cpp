@@ -205,6 +205,42 @@ namespace kh3ap::character_cinematic_binding
             return result;
         }
 
+        // Both Matinee keys and blend samples store a reflected object in a struct array.
+        template<class Visit>
+        void visit_animation_entries(UObject* owner, const wchar_t* array_name, const wchar_t* asset_name,
+                                     Visit visit)
+        {
+            auto* field = owner->GetPropertyByNameInChain(array_name);
+            auto* entry = field && field->IsA<FArrayProperty>()
+                              ? static_cast<FArrayProperty*>(field)->GetInner() : nullptr;
+            auto* schema = entry && entry->IsA<FStructProperty>()
+                               ? static_cast<FStructProperty*>(entry)->GetStruct() : nullptr;
+            auto* asset = is_uobject_valid_fast(schema) ? find_struct_field_by_name(schema, asset_name) : nullptr;
+            if (!asset || asset->GetClass().GetName() != L"ObjectProperty" ||
+                asset->GetElementSize() != sizeof(UObject*) || entry->GetElementSize() <= 0 ||
+                asset->GetOffset_Internal() < 0 ||
+                asset->GetOffset_Internal() + sizeof(UObject*) > entry->GetElementSize())
+            {
+                throw std::runtime_error("cinematic_animation_entry_layout");
+            }
+            auto* values = field->ContainerPtrToValuePtr<FScriptArray>(owner);
+            if (values->Num() < 0 || values->Num() > 4096)
+            {
+                throw std::runtime_error("cinematic_animation_entry_count");
+            }
+            for (int index = 0; index < values->Num(); ++index)
+            {
+                auto* value = static_cast<std::byte*>(values->GetData()) + index * entry->GetElementSize();
+                auto* animation = *asset->ContainerPtrToValuePtr<UObject*>(value);
+                if (!animation) { continue; }
+                if (!is_uobject_valid_fast(animation))
+                {
+                    throw std::runtime_error("cinematic_proportions_stale_animation");
+                }
+                visit(animation);
+            }
+        }
+
         void collect_animations(UObject* group, std::vector<UObject*>& animations)
         {
             auto* field = group->GetPropertyByNameInChain(L"InterpTracks");
@@ -230,42 +266,25 @@ namespace kh3ap::character_cinematic_binding
                 {
                     continue;
                 }
-                auto* keys = track->GetPropertyByNameInChain(L"Keys");
-                auto* key = keys && keys->IsA<FArrayProperty>()
-                                ? static_cast<FArrayProperty*>(keys)->GetInner() : nullptr;
-                auto* schema = key && key->IsA<FStructProperty>()
-                                   ? static_cast<FStructProperty*>(key)->GetStruct() : nullptr;
-                auto* asset = is_uobject_valid_fast(schema)
-                                  ? find_struct_field_by_name(schema, L"AnimAsset") : nullptr;
-                if (!asset || asset->GetClass().GetName() != L"ObjectProperty" ||
-                    asset->GetElementSize() != sizeof(UObject*) || key->GetElementSize() <= 0 ||
-                    asset->GetOffset_Internal() < 0 ||
-                    asset->GetOffset_Internal() + sizeof(UObject*) > key->GetElementSize())
-                {
-                    throw std::runtime_error("cinematic_proportions_key_layout");
-                }
-                auto* values = keys->ContainerPtrToValuePtr<FScriptArray>(track);
-                if (values->Num() < 0 || values->Num() > 4096)
-                {
-                    throw std::runtime_error("cinematic_proportions_key_count");
-                }
-                for (int index = 0; index < values->Num(); ++index)
-                {
-                    auto* value = static_cast<std::byte*>(values->GetData()) + index * key->GetElementSize();
-                    auto* animation = *asset->ContainerPtrToValuePtr<UObject*>(value);
-                    if (!animation)
-                    {
-                        continue; // An authored stop/empty key has no pose.
-                    }
-                    if (!is_uobject_valid_fast(animation))
-                    {
-                        throw std::runtime_error("cinematic_proportions_stale_animation");
-                    }
+                auto add_sequence = [&](UObject* animation) {
                     if (std::find(animations.begin(), animations.end(), animation) == animations.end())
                     {
                         animations.push_back(animation);
                     }
-                }
+                };
+                visit_animation_entries(track, L"Keys", L"AnimAsset", [&](UObject* asset) {
+                    // The MI boarding camera blends RailSlideLoop. The pose callback
+                    // receives its sampled sequences, never the blend space itself.
+                    const auto type = asset->GetClassPrivate()->GetName();
+                    if (type == L"BlendSpace" || type == L"BlendSpace1D")
+                    {
+                        visit_animation_entries(asset, L"SampleData", L"Animation", add_sequence);
+                    }
+                    else
+                    {
+                        add_sequence(asset);
+                    }
+                });
             }
         }
 
