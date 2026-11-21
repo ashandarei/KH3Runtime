@@ -38,7 +38,7 @@ namespace kh3ap
         struct TransferTiming
         {
             uint64_t request_write_us{}, response_header_us{}, response_payload_us{}, relocate_us{};
-            uint64_t read_calls{}, write_calls{};
+            uint64_t read_calls{}, write_calls{}, paired_requests{};
         };
 
         auto transfer_timing_snapshot() const -> TransferTiming;

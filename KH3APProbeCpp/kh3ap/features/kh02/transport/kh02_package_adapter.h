@@ -38,7 +38,7 @@ namespace kh02asset
         PackageAdapter();
         ~PackageAdapter();
         auto read(uint32_t file, uint64_t offset, uint32_t length, void* output, const RawRead& raw,
-                  PreparedExports* exports = nullptr) -> bool;
+                  PreparedExports* exports = nullptr, bool paired_reads = false) -> bool;
         auto last_error() const -> std::string;
         void clear();
         auto snapshot() const -> Stats;

@@ -91,5 +91,19 @@ int main()
     assert(std::get<1>(service.snapshot()).bytes == 0);
     assert(service.read(6, large_size, L"large.uexp", large_size - 4, 4, bytes.data(), load));
     assert(loads == 10 && loaded_offset == large_size - 4 && loaded_length == 4);
+
+    service.configure_ranges(true);
+    constexpr uint32_t window = 64 * 1024;
+    constexpr uint32_t file_size = window + 104;
+    assert(service.read(7, file_size, L"objects.uexp", 19, bytes.size(), bytes.data(), load));
+    assert(loads == 11 && loaded_offset == 0 && loaded_length == window);
+    assert(service.read(7, file_size, L"objects.uexp", 91, bytes.size(), bytes.data(), load));
+    assert(loads == 11 && bytes.front() == std::byte{91} && bytes.back() == std::byte{98});
+    assert(service.read(7, file_size, L"objects.uexp", window - 4, bytes.size(), bytes.data(), load));
+    assert(loads == 12 && loaded_offset == window - 4 && loaded_length == bytes.size());
+    assert(service.read(7, file_size, L"objects.uexp", window + 1, bytes.size(), bytes.data(), load));
+    assert(loads == 13 && loaded_offset == window && loaded_length == 100);
+    assert(service.read(7, file_size, L"objects.uexp", file_size - 8, bytes.size(), bytes.data(), load));
+    assert(loads == 14 && loaded_offset == file_size - 8 && loaded_length == bytes.size());
     std::cout << "KH0.2 remote read service passed\n";
 }

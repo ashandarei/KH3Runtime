@@ -7,7 +7,11 @@ in memory and is shared with its owning KH3 process through asset protocol 3.
 Both sides derive virtual paths and English/Japanese voice pairs from it.
 The index is limited to 65,536 files and 16 MiB of serialized metadata.
 
-The first read of a package prepares its header and exports together. The
+The first read of a package prepares its header and exports together. The host
+negotiates paired reads during the initial index-size query. When both DLLs
+support the protocol 4 extension, complete header and export files totaling
+up to 64 KiB travel in a single reply. Larger packages and protocol 3 peers
+use the existing single-file reads. The
 adapter parses the package tables, resolves names and imports, applies the
 authored compatibility rules, and retains only the calculated byte edits.
 Subsequent range reads apply those edits to bytes from the source provider.

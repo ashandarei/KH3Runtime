@@ -1,6 +1,7 @@
 #include "kh3ap/diagnostics/kh3_autosave_probe.h"
 #include "kh3ap/diagnostics/autosave/support.h"
 #include "kh3ap/core/input/exit_confirmation.h"
+#include "kh3ap/bridge/transport/pipe_transport.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <intrin.h>
 #include <algorithm>
@@ -111,6 +112,9 @@ namespace kh3ap
         {
             Output::send<LogLevel::Verbose>(
                 STR("[KH3APProbeCpp] ExitConfirmationBypass accepted exit request\n"));
+            // This exit can reach Windows process teardown without UE4SS uninstalling the mod.
+            // Join the bridge workers while they can still run and drain their queues.
+            pipe::stop_for_game_exit();
             return IDYES;
         }
 

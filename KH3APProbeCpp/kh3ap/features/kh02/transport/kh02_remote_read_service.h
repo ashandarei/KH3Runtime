@@ -47,11 +47,12 @@ namespace kh02asset
                 std::unique_lock lock(read_cache_mutex);
                 if (range_cache_enabled)
                 {
-                    const kh02asset::ReadRange range{file, offset, length};
-                    return range_cache.read_with_unlocked_load(range, length, 0,
-                                                               {static_cast<std::byte*>(destination), length}, lock,
-                                                               [&load, file, offset, length](std::span<std::byte> bytes)
-                                                               { return load(file, offset, length, bytes.data()); });
+                    const ReadRange request{file, offset, length};
+                    const auto range = suffix.ends_with(L".uexp") ? export_read_window(request, file_size) : request;
+                    return range_cache.read_with_unlocked_load(
+                        range, range.length, offset - range.offset, {static_cast<std::byte*>(destination), length},
+                        lock, [&load, range](std::span<std::byte> bytes)
+                        { return load(range.file, range.offset, range.length, bytes.data()); });
                 }
             }
             return load(file, offset, length, destination);

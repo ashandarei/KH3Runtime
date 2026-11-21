@@ -470,15 +470,22 @@ namespace kh02asset
         auto rename(const Context& context, std::size_t index) -> std::string
         {
             const auto& value = context.info.names[index].ascii;
-            auto result =
-                context.local.contains(static_cast<int32_t>(index))
-                    ? context.local.at(static_cast<int32_t>(index))
-                : context.native.contains(value)
-                    ? context.native.at(value)
-                    : relocate(value, (value != "/Game/" + context.id ||
-                                       context.id.starts_with("Shader/KHS_set/postprocess/")) &&
-                                          context.id != "Shader/Material_set/NonStateMaterial_set/"
-                                                        "SQEX_BaseEyelashes_NonState");
+            auto result = value;
+            if (const auto local = context.local.find(static_cast<int32_t>(index)); local != context.local.end())
+            {
+                result = local->second;
+            }
+            else if (const auto native = context.native.find(value); native != context.native.end())
+            {
+                result = native->second;
+            }
+            else if (value.find('/') != std::string::npos)
+            {
+                result = relocate(
+                    value, (value != "/Game/" + context.id || context.id.starts_with("Shader/KHS_set/postprocess/")) &&
+                               context.id != "Shader/Material_set/NonStateMaterial_set/"
+                                             "SQEX_BaseEyelashes_NonState");
+            }
             static const Renames global = {{"GetTresCameraManager", "PlayerCameraManager"},
                                            {"TresUI_CloseWindow", "KH02_CloseWindow"},
                                            {"TresUI_PrepareVideo", "KH02_PrepareVideo"},
@@ -499,16 +506,19 @@ namespace kh02asset
             {
                 result = "KH02_LoadReady";
             }
-            bool map_jump = id == "Levels/dw/dw_59/dw_59" || id == "Levels/dw/dw_60/dw_60" ||
-                            id == "Levels/dw/dw_03/umap/dw_03_challenge";
-            for (int area = 3; area <= 12; ++area)
+            if (value == "TresMapJump")
             {
-                const auto number = (area < 10 ? "0" : "") + std::to_string(area);
-                map_jump |= id == "Levels/dw/dw_" + number + "/umap/dw_" + number + "_gameflow";
-            }
-            if (map_jump && value == "TresMapJump")
-            {
-                result = "KH02_MJump";
+                bool map_jump = id == "Levels/dw/dw_59/dw_59" || id == "Levels/dw/dw_60/dw_60" ||
+                                id == "Levels/dw/dw_03/umap/dw_03_challenge";
+                for (int area = 3; !map_jump && area <= 12; ++area)
+                {
+                    const auto number = (area < 10 ? "0" : "") + std::to_string(area);
+                    map_jump = id == "Levels/dw/dw_" + number + "/umap/dw_" + number + "_gameflow";
+                }
+                if (map_jump)
+                {
+                    result = "KH02_MJump";
+                }
             }
             if (id == "Levels/dw/dw_60/dw_60" && value == "TresUnlockAchievement")
             {
@@ -598,6 +608,7 @@ namespace kh02asset
                 kind_names[kind] = available;
             }
             Bytes names;
+            names.reserve(info.name_end - info.name_start);
             for (std::size_t i = 0; i < info.names.size(); ++i)
             {
                 const auto& name = info.names[i];

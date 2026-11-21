@@ -125,6 +125,10 @@ class PacketRegression(unittest.TestCase):
         self.connect()
         self.assertEqual(42, self.inspection()["process_id"])
 
+    def test_confirmed_exit_joins_workers_with_a_connected_client(self):
+        self.send_records([record(MESSAGE, {"confirmed_exit": True})])
+        self.assertEqual(0, self.process.wait(timeout=5))
+
     def test_valid_replacement_uses_the_last_record(self):
         self.send_records([record(GRANT, grant(42)), record(GRANT, grant(99))])
         result = self.inspection()

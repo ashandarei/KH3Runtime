@@ -482,7 +482,8 @@ namespace kh3ap
             << ",\"response_payload_us\":" << transfer.response_payload_us
             << ",\"relocate_us\":" << transfer.relocate_us
             << ",\"read_calls\":" << transfer.read_calls
-            << ",\"write_calls\":" << transfer.write_calls;
+            << ",\"write_calls\":" << transfer.write_calls
+            << ",\"paired_requests\":" << transfer.paired_requests;
         out << '}';
 #endif
         out << ",\"voice_language\":\"" << bound_voice_language

@@ -82,6 +82,8 @@ namespace kh3ap::pipe
         std::atomic<bool> updates{false};
         std::atomic<bool> grant_updates{false};
         std::atomic<uint64_t> input_generation_counter{};
+        std::mutex lifecycle_mutex;
+        bool game_exiting{};
         std::thread worker;
         HANDLE stopped{};
         HANDLE changed{};
@@ -802,7 +804,8 @@ namespace kh3ap::pipe
     }
     auto start(const std::filesystem::path& root, Transport transport) -> void
     {
-        if (worker.joinable())
+        const std::lock_guard lifecycle_lock{lifecycle_mutex};
+        if (game_exiting || worker.joinable())
         {
             return;
         }
@@ -852,29 +855,44 @@ namespace kh3ap::pipe
             worker = std::thread(run, name_for(root), std::move(security));
         }
     }
+    namespace
+    {
+        auto stop_workers(bool exiting) -> void
+        {
+            const std::lock_guard lifecycle_lock{lifecycle_mutex};
+            game_exiting |= exiting;
+            if (!worker.joinable())
+            {
+                return;
+            }
+            {
+                std::lock_guard lock{mutex};
+                transport_stopping = true;
+            }
+            incoming.notify_all();
+            SetEvent(stopped);
+            worker.join();
+            native_traps::stop();
+            reconciliation::stop();
+            lucky_marks::stop();
+            level_checks::stop();
+            deathlink::stop();
+            std::lock_guard lock{mutex};
+            CloseHandle(changed);
+            changed = nullptr;
+            CloseHandle(stopped);
+            stopped = nullptr;
+        }
+    } // namespace
+
     auto stop() -> void
     {
-        if (!worker.joinable())
-        {
-            return;
-        }
-        {
-            std::lock_guard lock{mutex};
-            transport_stopping = true;
-        }
-        incoming.notify_all();
-        SetEvent(stopped);
-        worker.join();
-        native_traps::stop();
-        reconciliation::stop();
-        lucky_marks::stop();
-        level_checks::stop();
-        deathlink::stop();
-        std::lock_guard lock{mutex};
-        CloseHandle(changed);
-        changed = nullptr;
-        CloseHandle(stopped);
-        stopped = nullptr;
+        stop_workers(false);
+    }
+
+    auto stop_for_game_exit() -> void
+    {
+        stop_workers(true);
     }
     auto notify_grants() -> void
     {

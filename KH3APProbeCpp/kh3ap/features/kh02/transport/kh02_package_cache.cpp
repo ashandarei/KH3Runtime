@@ -96,7 +96,7 @@ namespace kh02asset
         std::atomic<uint64_t> hits{}, preparations{}, evictions{}, entry_count{}, byte_count{};
 
         auto prepare(uint32_t file, uint64_t offset, std::span<uint8_t> output, const RawRead& raw, bool& copied,
-                     PreparedExports* exports) -> std::shared_ptr<const Prepared>
+                     PreparedExports* exports, bool paired_reads) -> std::shared_ptr<const Prepared>
         {
             // Serialize preparation to bound temporary package buffers. Raw
             // reads take only the pipe lock, never this cache's lock.
@@ -149,12 +149,32 @@ namespace kh02asset
                 prepared->exports = payload->second;
             }
             // Failed reads are not cached: transport reconnection may recover.
-            const auto original_header =
-                read_all(prepared->header, raw, package::maximum_header_bytes);
-            const auto original_exports =
-                payload == paths.end()
-                    ? Bytes{}
-                    : read_all(prepared->exports, raw, package::maximum_export_bytes);
+            const auto header_size = current.files[prepared->header].size;
+            const auto export_size = payload == paths.end() ? 0 : current.files[prepared->exports].size;
+            Bytes header_bytes;
+            Bytes export_bytes;
+            std::span<const uint8_t> original_header;
+            std::span<const uint8_t> original_exports;
+            if (paired_reads && can_pair(header_size, export_size))
+            {
+                const auto length = static_cast<uint32_t>(header_size + export_size);
+                header_bytes.resize(length);
+                package::require(
+                    raw(pair_file_id, pair_ids(prepared->header, prepared->exports), length, header_bytes.data()),
+                    "kh02_adapter_pair_read");
+                original_header = std::span(header_bytes).first(header_size);
+                original_exports = std::span(header_bytes).subspan(header_size);
+            }
+            else
+            {
+                header_bytes = read_all(prepared->header, raw, package::maximum_header_bytes);
+                if (payload != paths.end())
+                {
+                    export_bytes = read_all(prepared->exports, raw, package::maximum_export_bytes);
+                }
+                original_header = header_bytes;
+                original_exports = export_bytes;
+            }
             AdaptedPackage changed;
             try
             {
@@ -242,7 +262,7 @@ namespace kh02asset
     }
 
     auto PackageAdapter::read(uint32_t file, uint64_t offset, uint32_t length, void* output, const RawRead& raw,
-                              PreparedExports* exports) -> bool
+                              PreparedExports* exports, bool paired_reads) -> bool
     {
         if (exports)
         {
@@ -263,8 +283,8 @@ namespace kh02asset
                 return raw(file, offset, length, output);
             }
             bool copied = false;
-            const auto prepared =
-                impl->prepare(file, offset, {static_cast<uint8_t*>(output), length}, raw, copied, exports);
+            const auto prepared = impl->prepare(file, offset, {static_cast<uint8_t*>(output), length}, raw, copied,
+                                                exports, paired_reads);
             if (!prepared->valid)
             {
                 throw std::runtime_error(prepared->error);

@@ -230,6 +230,25 @@ namespace kh02asset
     constexpr size_t range_cache_max_header = 256 * 1024;
     constexpr size_t range_cache_max_entries = 16384;
 
+    // UE4 often reads adjacent serialized objects from the same export. Share
+    // one aligned window when it contains the request, excluding the package tag.
+    inline auto export_read_window(ReadRange request, uint64_t file_size) -> ReadRange
+    {
+        constexpr uint32_t window_size = 64 * 1024;
+        if (file_size <= 4 || !request.length || request.length > range_cache_max_read ||
+            request.offset >= file_size - 4)
+        {
+            return request;
+        }
+        const uint64_t start = request.offset - request.offset % window_size;
+        const auto length = static_cast<uint32_t>(std::min<uint64_t>(window_size, file_size - 4 - start));
+        if (request.length > length - (request.offset - start))
+        {
+            return request;
+        }
+        return {request.file, start, length};
+    }
+
     inline bool cache_range_read(std::wstring_view path, uint64_t size, uint64_t offset, uint32_t length)
     {
         if (!length || offset > size || length > size - offset)

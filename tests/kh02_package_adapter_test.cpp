@@ -1,5 +1,7 @@
 #include "kh3ap/features/kh02/transport/kh02_package_format.h"
 #include "kh3ap/features/kh02/transport/kh02_index_state.h"
+#include "kh3ap/features/kh02/transport/kh02_asset_protocol.h"
+#include <array>
 #include <cassert>
 #include <iostream>
 #include <thread>
@@ -106,6 +108,34 @@ int main()
         }
         return true;
     };
+    PackageAdapter paired_cache;
+    bool fail_pair = true;
+    unsigned pair_attempts = 0;
+    const auto pair_read = [&](uint32_t id, uint64_t ids, uint32_t length, void* output)
+    {
+        assert(id == pair_file_id && ids == pair_ids(header_id, export_id));
+        assert(length == header.size() + exports.size());
+        ++pair_attempts;
+        if (fail_pair)
+        {
+            return false;
+        }
+        std::memcpy(output, header.data(), header.size());
+        std::memcpy(static_cast<uint8_t*>(output) + header.size(), exports.data(), exports.size());
+        return true;
+    };
+    Bytes result(header.size());
+    PreparedExports prepared;
+    assert(!paired_cache.read(header_id, 0, result.size(), result.data(), pair_read, &prepared, true));
+    assert(!paired_cache.snapshot().entries && prepared.bytes.empty());
+    fail_pair = false;
+    assert(paired_cache.read(header_id, 0, result.size(), result.data(), pair_read, &prepared, true));
+    assert(pair_attempts == 2 && result == adapted.header && prepared.bytes == adapted.exports);
+    paired_cache.clear();
+    std::array<uint8_t, 6> slice{};
+    assert(paired_cache.read(export_id, 3, slice.size(), slice.data(), pair_read, nullptr, true));
+    assert(pair_attempts == 3 && std::equal(slice.begin(), slice.end(), adapted.exports.begin() + 3));
+
     PackageAdapter cache;
     std::vector<std::thread> readers;
     for (int i = 0; i < 8; ++i)
