@@ -236,7 +236,17 @@ extern "C" bool kh02_remote_read(unsigned int file, unsigned long long offset, u
         return false;
     }
     const auto& asset = assets.files[file];
-    return read_service.read(file, asset.size, asset.suffix, offset, length, destination, rpc);
+    return read_service.read(file, asset.size, asset.suffix, offset, length, destination,
+                             [](uint32_t id, uint64_t at, uint32_t size, void* output)
+                             {
+                                 kh02asset::PreparedExports exports;
+                                 if (!remote_transport().read(id, at, size, output, false, &exports))
+                                 {
+                                     return false;
+                                 }
+                                 read_service.cache_prepared_exports(exports.file, std::move(exports.bytes));
+                                 return true;
+                             });
 }
 
 extern "C" long long kh02_remote_file_size(unsigned int file)
@@ -521,7 +531,7 @@ namespace kh3ap
         write_cache("header_cache", headers, kh02asset::header_cache_budget,
                     kh02asset::header_cache_max_file, true);
         write_cache("export_cache", exports, kh02asset::export_cache_budget,
-                    kh02asset::export_cache_max_file, exports_enabled);
+                    kh02asset::export_cache_budget, exports_enabled);
         write_cache("range_cache", ranges, kh02asset::range_cache_budget,
                     kh02asset::range_cache_max_read, ranges_enabled, "max_read_bytes",
                     kh02asset::range_cache_max_header, kh02asset::range_cache_max_entries);

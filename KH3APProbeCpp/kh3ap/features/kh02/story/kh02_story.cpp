@@ -217,7 +217,10 @@ namespace kh3ap
         using Thunk = void (*)(UObject*, FFrame&, void*);
         static inline Impl* compat_instance{};
 
-        explicit Impl(std::function<Kh02BattleLevelSettings()> settings) : enemy_stats(std::move(settings))
+        std::function<bool()> auto_skip_cutscenes;
+
+        Impl(std::function<Kh02BattleLevelSettings()> settings, std::function<bool()> skip_setting)
+            : auto_skip_cutscenes(std::move(skip_setting)), enemy_stats(std::move(settings))
         {
             compat_instance = this;
             dressing_room.on_change(
@@ -567,6 +570,10 @@ namespace kh3ap
             {
                 owned |= item.Get() == stream;
             }
+            for (const auto& item : self->castle.entry_scenery)
+            {
+                owned |= item.Get() == stream;
+            }
             if (!owned)
             {
                 return;
@@ -603,7 +610,10 @@ namespace kh3ap
                 castle.backtrack = castle.backtrack_pending;
                 castle.backtrack_pending = false;
                 bind_mirror_progress(world, kh02_checkpoint::gear_scene_dw011);
-                entry.first_castle_intro = !castle.backtrack;
+                // Binding starts a fresh Castle visit at the playable DW011 checkpoint.
+                // Only rewind to DW009 when the opening will actually be shown.
+                const bool skip_opening = !castle.backtrack && auto_skip_cutscenes();
+                entry.first_castle_intro = !castle.backtrack && !skip_opening;
                 if (entry.first_castle_intro)
                 {
                     auto flags = source_flags.values();
@@ -623,6 +633,7 @@ namespace kh3ap
                 {
                     castle.proof = {{"native_save_restore", true}};
                 }
+                castle.proof["opening_skipped_before_load"] = skip_opening;
                 hud.reset_world();
                 counter_requested = false;
                 gameplay.pawn = {};
@@ -630,7 +641,7 @@ namespace kh3ap
                 cutscenes.cancel();
                 help_callbacks.clear();
                 entry_world = make_uobject_weak(world);
-                castle.begin(world, entry, gameplay);
+                castle.begin(world, entry, gameplay, source_flags.value(L"gameflow_DW"));
             }
             catch (const std::exception& e)
             {
@@ -1448,8 +1459,8 @@ namespace kh3ap
         }
     };
 
-    Kh02Story::Kh02Story(std::function<Kh02BattleLevelSettings()> settings)
-        : impl(std::make_unique<Impl>(std::move(settings)))
+    Kh02Story::Kh02Story(std::function<Kh02BattleLevelSettings()> settings, std::function<bool()> auto_skip_cutscenes)
+        : impl(std::make_unique<Impl>(std::move(settings), std::move(auto_skip_cutscenes)))
     {
     }
 

@@ -22,6 +22,7 @@ namespace kh3ap
         std::function<void(const std::string&)> report_error;
         std::function<void()> shared_unlocks_ready;
         std::function<Kh02BattleLevelSettings()> battle_level_settings;
+        std::function<bool()> auto_skip_cutscenes;
     };
 
     // Application-owned lifetime. Test request polling is a separate client of

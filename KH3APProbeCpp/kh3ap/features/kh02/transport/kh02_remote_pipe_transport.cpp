@@ -300,33 +300,33 @@ namespace kh3ap
         return impl->connections.load();
     }
 
-    auto Kh02RemotePipeTransport::read(uint32_t file, uint64_t offset, uint32_t length,
-                                       void* output, bool reconnect) -> bool
+    auto Kh02RemotePipeTransport::read(uint32_t file, uint64_t offset, uint32_t length, void* output, bool reconnect,
+                                       kh02asset::PreparedExports* exports) -> bool
     {
         const auto binding = impl->binding.load();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const auto began = std::chrono::steady_clock::now();
         std::chrono::steady_clock::duration raw_time{};
 #endif
-        const auto result =
-            impl->adapter.read(file, offset, length, output,
-                               [&](uint32_t id, uint64_t at, uint32_t size, void* destination)
-                               {
-                                   if (impl->binding.load() != binding)
-                                   {
-                                       return false;
-                                   }
-                                   const bool reset = std::exchange(reconnect, false);
+        const auto result = impl->adapter.read(
+            file, offset, length, output,
+            [&](uint32_t id, uint64_t at, uint32_t size, void* destination)
+            {
+                if (impl->binding.load() != binding)
+                {
+                    return false;
+                }
+                const bool reset = std::exchange(reconnect, false);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                                   const auto raw_began = std::chrono::steady_clock::now();
+                const auto raw_began = std::chrono::steady_clock::now();
 #endif
-                                   const auto received =
-                                       impl->read(id, at, size, destination, reset);
+                const auto received = impl->read(id, at, size, destination, reset);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                                   raw_time += std::chrono::steady_clock::now() - raw_began;
+                raw_time += std::chrono::steady_clock::now() - raw_began;
 #endif
-                                   return received;
-                               });
+                return received;
+            },
+            exports);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const auto adaptation = std::chrono::steady_clock::now() - began - raw_time;
         impl->relocate_us +=

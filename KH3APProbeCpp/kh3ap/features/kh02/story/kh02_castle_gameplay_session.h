@@ -24,13 +24,14 @@ namespace kh3ap
             nlohmann::json& encounter_proof;
         };
 
-        void begin(RC::Unreal::UObject* world, Kh02EntrySession& entry, Kh02GameplayBinding& gameplay);
+        void begin(RC::Unreal::UObject* world, Kh02EntrySession& entry, Kh02GameplayBinding& gameplay, int checkpoint);
         auto finish(Services services) -> bool;
 
         // The coordinator also sets these when preparing travel or a native retry.
         bool armed{}, loading_held{}, mapset_requested{}, retry{}, backtrack{}, backtrack_pending{};
         RC::Unreal::FWeakObjectPtr preload_pawn, gimmick_script, initializer;
         std::vector<RC::Unreal::FWeakObjectPtr> streams;
+        std::vector<RC::Unreal::FWeakObjectPtr> entry_scenery;
         Kh02CastlePath path_trigger;
         Kh02ShootingStar shooting_star;
         nlohmann::json proof = nlohmann::json::object();

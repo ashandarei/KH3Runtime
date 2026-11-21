@@ -2,6 +2,7 @@
 #include "kh02_file_cache.h"
 #include <cstdint>
 #include <mutex>
+#include <new>
 #include <string_view>
 #include <tuple>
 
@@ -23,16 +24,22 @@ namespace kh02asset
                     [&load, file](std::span<std::byte> bytes)
                     { return load(file, 0, static_cast<uint32_t>(bytes.size()), bytes.data()); });
             }
-            if (length && file_size <= kh02asset::export_cache_max_file && suffix.ends_with(L".uexp"))
+            if (length && suffix.ends_with(L".uexp"))
             {
                 std::unique_lock lock(read_cache_mutex);
                 if (export_cache_enabled &&
                     kh02asset::cache_export_read(suffix, file_size, offset, length, export_cache.contains(file)))
                 {
-                    return export_cache.read_with_unlocked_load(
+                    const auto read = export_cache.read_with_unlocked_load(
                         file, static_cast<size_t>(file_size - 4), offset,
                         {static_cast<std::byte*>(destination), length}, lock, [&load, file](std::span<std::byte> bytes)
                         { return load(file, 0, static_cast<uint32_t>(bytes.size()), bytes.data()); });
+                    if (read && file_size > export_cache_max_file && offset + length == file_size - 4)
+                    {
+                        // Large exports only stay in the cache through their initial transfer.
+                        export_cache.erase(file);
+                    }
+                    return read;
                 }
             }
             if (kh02asset::cache_range_read(suffix, file_size, offset, length))
@@ -48,6 +55,28 @@ namespace kh02asset
                 }
             }
             return load(file, offset, length, destination);
+        }
+
+        void cache_prepared_exports(uint32_t file, std::vector<uint8_t> bytes)
+        {
+            if (bytes.size() <= 4 || bytes.capacity() > export_cache_budget)
+            {
+                return;
+            }
+            const bool large = bytes.size() > export_cache_max_file;
+            bytes.resize(bytes.size() - 4);
+            std::lock_guard lock(read_cache_mutex);
+            if (export_cache_enabled)
+            {
+                try
+                {
+                    export_cache.store_prepared(file, std::move(bytes), large);
+                }
+                catch (const std::bad_alloc&)
+                {
+                    // This cache fill is optional. The engine can still read the exports on demand.
+                }
+            }
         }
 
         void clear()

@@ -16,7 +16,8 @@ namespace kh3ap
     class Kh02Story
     {
       public:
-        explicit Kh02Story(std::function<Kh02BattleLevelSettings()> battle_level_settings);
+        Kh02Story(std::function<Kh02BattleLevelSettings()> battle_level_settings,
+                  std::function<bool()> auto_skip_cutscenes);
         ~Kh02Story();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         auto command(RC::Unreal::UObject* pawn, std::wstring_view action) -> std::optional<std::string>;

@@ -154,6 +154,10 @@ namespace kh3ap
                 const auto settings = m_goa_settings.status();
                 return Kh02BattleLevelSettings{settings.battle_level_sync_enabled,
                                                settings.battle_level_offset};
+            },
+            [this]()
+            {
+                return m_goa_settings.auto_skip_cutscenes();
             }}};
     }
 

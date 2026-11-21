@@ -844,7 +844,14 @@ namespace kh02asset
             };
             for (std::size_t at = 4; at + 6 < source.size(); ++at)
             {
-                if (source[at] != '/' || (source[at + 1] != 'G' && source[at + 1] != 'g') ||
+                const auto* slash =
+                    static_cast<const uint8_t*>(std::memchr(source.data() + at, '/', source.size() - at - 6));
+                if (!slash)
+                {
+                    break;
+                }
+                at = static_cast<std::size_t>(slash - source.data());
+                if ((source[at + 1] != 'G' && source[at + 1] != 'g') ||
                     (source[at + 2] != 'A' && source[at + 2] != 'a') ||
                     (source[at + 3] != 'M' && source[at + 3] != 'm') ||
                     (source[at + 4] != 'E' && source[at + 4] != 'e') || source[at + 5] != '/')

@@ -39,6 +39,10 @@ namespace kh02asset
             -> std::vector<Edit>
         {
             package::require(original.size() == changed.size(), "kh02_adapter_size_changed");
+            if (original.empty() || std::memcmp(original.data(), changed.data(), original.size()) == 0)
+            {
+                return {};
+            }
             std::size_t count{};
             for (std::size_t i = 0; i < original.size(); ++i)
             {
@@ -91,7 +95,8 @@ namespace kh02asset
         std::size_t cached_bytes{};
         std::atomic<uint64_t> hits{}, preparations{}, evictions{}, entry_count{}, byte_count{};
 
-        auto prepare(uint32_t file, const RawRead& raw) -> std::shared_ptr<const Prepared>
+        auto prepare(uint32_t file, uint64_t offset, std::span<uint8_t> output, const RawRead& raw, bool& copied,
+                     PreparedExports* exports) -> std::shared_ptr<const Prepared>
         {
             // Serialize preparation to bound temporary package buffers. Raw
             // reads take only the pipe lock, never this cache's lock.
@@ -150,6 +155,7 @@ namespace kh02asset
                 payload == paths.end()
                     ? Bytes{}
                     : read_all(prepared->exports, raw, package::maximum_export_bytes);
+            AdaptedPackage changed;
             try
             {
                 const auto& header_source = current.files[prepared->header].source;
@@ -157,7 +163,7 @@ namespace kh02asset
                 const auto name =
                     identity.substr(source_content_prefix.size(),
                                     identity.find_last_of('.') - source_content_prefix.size());
-                const auto changed = adapt_package(name, original_header, original_exports);
+                changed = adapt_package(name, original_header, original_exports);
                 prepared->header_edits = edits(original_header, changed.header);
                 prepared->export_edits = edits(original_exports, changed.exports);
                 prepared->valid = true;
@@ -196,6 +202,19 @@ namespace kh02asset
             entries.emplace(prepared->header, Entry{prepared, recent.begin()});
             entry_count = entries.size();
             byte_count = cached_bytes;
+            if (prepared->valid && (file == prepared->header || file == prepared->exports))
+            {
+                // This request already fetched the original bytes during preparation.
+                // Later requests only find the edit list in the cache.
+                const auto& original = file == prepared->header ? original_header : original_exports;
+                std::memcpy(output.data(), original.data() + offset, output.size());
+                copied = true;
+            }
+            if (prepared->valid && exports && !changed.exports.empty())
+            {
+                // The first header or export range can supply the adapted exports for later ranges.
+                *exports = {prepared->exports, std::move(changed.exports)};
+            }
             return prepared;
         }
     };
@@ -222,9 +241,13 @@ namespace kh02asset
         impl->error.clear();
     }
 
-    auto PackageAdapter::read(uint32_t file, uint64_t offset, uint32_t length, void* output,
-                              const RawRead& raw) -> bool
+    auto PackageAdapter::read(uint32_t file, uint64_t offset, uint32_t length, void* output, const RawRead& raw,
+                              PreparedExports* exports) -> bool
     {
+        if (exports)
+        {
+            *exports = {};
+        }
         try
         {
             const auto& index = asset_index();
@@ -239,12 +262,17 @@ namespace kh02asset
             {
                 return raw(file, offset, length, output);
             }
-            const auto prepared = impl->prepare(file, raw);
+            bool copied = false;
+            const auto prepared =
+                impl->prepare(file, offset, {static_cast<uint8_t*>(output), length}, raw, copied, exports);
             if (!prepared->valid)
             {
                 throw std::runtime_error(prepared->error);
             }
-            package::require(raw(file, offset, length, output), "kh02_adapter_raw_read_failed");
+            if (!copied)
+            {
+                package::require(raw(file, offset, length, output), "kh02_adapter_raw_read_failed");
+            }
             const auto& changes =
                 file == prepared->header ? prepared->header_edits : prepared->export_edits;
             const auto first = std::lower_bound(changes.begin(), changes.end(), offset,

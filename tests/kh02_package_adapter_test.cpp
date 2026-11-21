@@ -87,8 +87,10 @@ int main()
         }
     }
     std::atomic<unsigned> preparations{};
+    std::atomic<unsigned> reads{};
     const auto raw = [&](uint32_t id, uint64_t at, uint32_t count, void* output)
     {
+        ++reads;
         const auto& bytes = id == header_id ? header : exports;
         if (at == 0 && count == header.size() && id == header_id)
         {
@@ -126,9 +128,23 @@ int main()
     assert(preparations == 1);
     cache.clear();
     uint8_t fresh{};
+    const auto reads_before = reads.load();
     assert(cache.read(export_id, 4, 1, &fresh, raw));
     assert(fresh == adapted.exports[4]);
     assert(preparations == 2);
+    assert(reads == reads_before + 2); // The first request reuses its preparation read.
+    assert(cache.read(export_id, 10, 1, &fresh, raw));
+    assert(fresh == adapted.exports[10] && reads == reads_before + 3);
     assert(!cache.read(export_id, exports.size(), 1, nullptr, raw));
+
+    cache.clear();
+    PreparedExports sibling;
+    assert(cache.read(header_id, 0, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.header[0] && sibling.file == export_id && sibling.bytes == adapted.exports);
+    assert(cache.read(header_id, 1, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.header[1] && sibling.bytes.empty());
+    cache.clear();
+    assert(cache.read(export_id, 4, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.exports[4] && sibling.file == export_id && sibling.bytes == adapted.exports);
     std::cout << "KH0.2 package bounds, edits, and concurrent range cache passed\n";
 }

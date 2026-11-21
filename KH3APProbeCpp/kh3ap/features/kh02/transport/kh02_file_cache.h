@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <list>
 #include <limits>
@@ -64,8 +65,8 @@ namespace kh02asset
             {
                 ++stats_.misses;
                 const auto generation = generation_;
-                std::vector<std::byte> bytes(data_size);
-                if (!load(std::span<std::byte>(bytes)) || generation != generation_)
+                std::vector<uint8_t> bytes(data_size);
+                if (!load(std::as_writable_bytes(std::span(bytes))) || generation != generation_)
                 {
                     return false;
                 }
@@ -82,24 +83,13 @@ namespace kh02asset
                 }
                 else
                 {
-                    // Failed reads never replace a valid cache entry or evict data.
-                    while (stats_.bytes + data_size > budget_ || entries_.size() >= max_entries_)
-                    {
-                        const auto oldest = recent_.back();
-                        stats_.bytes -= entries_.at(oldest).bytes.size();
-                        entries_.erase(oldest);
-                        recent_.pop_back();
-                        ++stats_.evictions;
-                    }
-                    recent_.push_front(key);
-                    found = entries_.emplace(key, Entry{std::move(bytes), recent_.begin()}).first;
-                    stats_.bytes += data_size;
+                    found = store(key, std::move(bytes), recent_.begin());
                 }
             }
 
             if (!output.empty())
             {
-                std::copy_n(found->second.bytes.data() + offset, output.size(), output.data());
+                std::memcpy(output.data(), found->second.bytes.data() + offset, output.size());
             }
             return true;
         }
@@ -131,6 +121,30 @@ namespace kh02asset
                         });
         }
 
+        void store_prepared(const Key& key, std::vector<uint8_t> bytes, bool allow_eviction = false)
+        {
+            if (bytes.empty() || bytes.capacity() > budget_ || !max_entries_ || entries_.contains(key))
+            {
+                return;
+            }
+            if (!allow_eviction && (bytes.capacity() > budget_ - stats_.bytes || entries_.size() >= max_entries_))
+            {
+                return;
+            }
+            store(key, std::move(bytes), allow_eviction ? recent_.begin() : recent_.end());
+        }
+
+        void erase(const Key& key)
+        {
+            const auto found = entries_.find(key);
+            if (found != entries_.end())
+            {
+                stats_.bytes -= found->second.bytes.capacity();
+                recent_.erase(found->second.position);
+                entries_.erase(found);
+            }
+        }
+
         void clear()
         {
             ++generation_;
@@ -147,9 +161,32 @@ namespace kh02asset
       private:
         struct Entry
         {
-            std::vector<std::byte> bytes;
+            std::vector<uint8_t> bytes;
             typename std::list<Key>::iterator position;
         };
+
+        auto store(const Key& key, std::vector<uint8_t> bytes, typename std::list<Key>::iterator position)
+        {
+            const auto size = bytes.capacity();
+            const auto recent = recent_.insert(position, key);
+            auto found = entries_.end();
+            try
+            {
+                found = entries_.emplace(key, Entry{std::move(bytes), recent}).first;
+            }
+            catch (...)
+            {
+                recent_.erase(recent);
+                throw;
+            }
+            stats_.bytes += size;
+            while (stats_.bytes > budget_ || entries_.size() > max_entries_)
+            {
+                erase(recent_.back());
+                ++stats_.evictions;
+            }
+            return found;
+        }
 
         size_t budget_;
         size_t max_entries_;
@@ -217,12 +254,12 @@ namespace kh02asset
         // UE4 normally requests the serialized exports without their final
         // four-byte package tag. Cache exactly that prefix, with no read-ahead.
         // Partial misses and reads of the footer still use the original reader.
-        if (size <= 4 || size > export_cache_max_file || !path.ends_with(L".uexp") || !length)
+        if (size <= 4 || !path.ends_with(L".uexp") || !length)
         {
             return false;
         }
         const auto payload_size = size - 4;
         return offset <= payload_size && length <= payload_size - offset &&
-               (already_cached || (offset == 0 && length == payload_size));
+               (already_cached || (size <= export_cache_max_file && offset == 0 && length == payload_size));
     }
 } // namespace kh02asset

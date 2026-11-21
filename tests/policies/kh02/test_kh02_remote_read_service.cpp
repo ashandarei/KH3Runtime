@@ -63,5 +63,33 @@ int main()
     assert(!service.read(4, 32, L"retry.uasset", 0, 4, bytes.data(), failed_load));
     assert(service.read(4, 32, L"retry.uasset", 0, 4, bytes.data(), load));
     assert(loads == 8);
+
+    service.configure_exports(true);
+    const std::vector<uint8_t> prepared(12, 42);
+    service.cache_prepared_exports(5, prepared);
+    assert(service.read(5, prepared.size(), L"paired.uexp", 0, bytes.size(), bytes.data(), load));
+    assert(loads == 8 && bytes.front() == std::byte{42} && bytes.back() == std::byte{42});
+    assert(service.read(5, prepared.size(), L"paired.uexp", 8, 4, bytes.data(), load));
+    assert(loads == 9 && loaded_offset == 8 && loaded_length == 4);
+    service.configure_exports(false);
+    service.cache_prepared_exports(5, prepared);
+    assert(std::get<1>(service.snapshot()).bytes == 0);
+
+    kh02asset::FileReadCache bounded_cache(12);
+    const auto fill = [](std::span<std::byte>) { return true; };
+    assert(bounded_cache.read(1, 4, 0, {}, fill));
+    bounded_cache.store_prepared(2, std::vector<uint8_t>(bytes.size()));
+    assert(bounded_cache.read(3, 4, 0, {}, fill));
+    assert(bounded_cache.contains(1) && !bounded_cache.contains(2) && bounded_cache.contains(3));
+
+    service.configure_exports(true);
+    constexpr auto large_size = kh02asset::export_cache_max_file + 12;
+    service.cache_prepared_exports(6, std::vector<uint8_t>(large_size, 57));
+    assert(service.read(6, large_size, L"large.uexp", 0, bytes.size(), bytes.data(), load));
+    assert(service.read(6, large_size, L"large.uexp", large_size - 12, bytes.size(), bytes.data(), load));
+    assert(loads == 9 && bytes.front() == std::byte{57} && bytes.back() == std::byte{57});
+    assert(std::get<1>(service.snapshot()).bytes == 0);
+    assert(service.read(6, large_size, L"large.uexp", large_size - 4, 4, bytes.data(), load));
+    assert(loads == 10 && loaded_offset == large_size - 4 && loaded_length == 4);
     std::cout << "KH0.2 remote read service passed\n";
 }

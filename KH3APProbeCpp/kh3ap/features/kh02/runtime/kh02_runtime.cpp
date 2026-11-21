@@ -68,7 +68,7 @@ namespace kh3ap
         {
             if (!story)
             {
-                story = std::make_unique<Kh02Story>(config.battle_level_settings);
+                story = std::make_unique<Kh02Story>(config.battle_level_settings, config.auto_skip_cutscenes);
                 ++constructions;
             }
             return *story;
