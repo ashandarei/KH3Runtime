@@ -475,7 +475,8 @@ int main()
     const auto check_root = root / "checks";
     std::filesystem::create_directory(check_root);
     std::ofstream(check_root / "slot_data.json") << R"({"kh3_seed":{"seed_name":"test","slot":1},
-        "classic_kingdom_checks":2,"start_with_wall_run":1,"ingredients":2,"adversary_checks":1,"olympus_coliseum_pool":1,"bridge":{"conditional_checks":[
+        "classic_kingdom_checks":2,"start_with_wall_run":1,"ingredients":2,"exclude_caribbean_ingredients":1,
+        "adversary_checks":1,"olympus_coliseum_pool":1,"bridge":{"conditional_checks":[
         {"trigger_bridge_key":"VBonus:Vbonus_016","ap_location_id":102,"unless_item_id":999},
         {"trigger_bridge_key":"VBonus:Vbonus_016","ap_location_id":103,"unless_item_id":1263022199},
         {"trigger_bridge_key":"VBonus:Vbonus_016","ap_location_id":104,"unless_start_option":"start_with_wall_run"}],"locations":[
@@ -593,11 +594,12 @@ int main()
     reconciliation::observe("runtime_classic_kingdom_state.json", encode(classic));
     until([] { return reconciliation::view()->completed_checks.contains("Event:TresUIMobilePortalDataAsset"); });
     reconciliation::observe("runtime_space_checks.json", R"({"schema":"kh3ap.space_checks.v1","seed_name":"test","slot":1,"source":"native_space_completion","completed":["Battle1"]})");
-    reconciliation::observe("runtime_ingredient_state.json", R"({"schema":"kh3ap.runtime_ingredient_state.v1","seed_name":"test","slot":1,"source":"food_prize","acquired_spots":["SPOT1"]})");
+    reconciliation::observe("runtime_ingredient_state.json", R"({"schema":"kh3ap.runtime_ingredient_state.v1","seed_name":"test","slot":1,"source":"food_prize","acquired_spots":["SPOT1","CA_01_PF_001"]})");
     reconciliation::observe("runtime_workshop.json", R"({"schema":"kh3ap.workshop.v1","seed_name":"test","slot":1,"source":"native_workshop_flags","completed_checks":["Synthesis:Recipe1"]})");
     until([] { return reconciliation::view()->completed_checks.contains("Synthesis:Recipe1"); });
     assert(reconciliation::view()->completed_checks.contains("GummiSpace:Battle1"));
     assert(reconciliation::view()->completed_checks.contains("IngredientSpot:SPOT1"));
+    assert(!reconciliation::view()->completed_checks.contains("IngredientSpot:CA_01_PF_001"));
     Json adversary{{"schema", "kh3ap.runtime_adversary_state.v1"}, {"seed_name", "test"}, {"slot", 1},
         {"source", "native_kill_counters"}, {"process_id", GetCurrentProcessId()},
         {"defeated", Json::array_t{"HEARTLESS_08", "NOT_IN_SEED"}}};
@@ -634,6 +636,24 @@ int main()
     assert(reconciliation::view()->completed_checks == completed_checks && reconciliation::view()->goal_complete);
     assert(reconciliation::view()->active.contains(0) && !reconciliation::view()->active.contains(1));
     assert(reconciliation::view()->delivery->grants.front().index == 1);
+    reconciliation::stop();
+    // An ingredient acquired in The Caribbean can still award its check after
+    // a later field pickup elsewhere.
+    const auto ingredient_root = root / "ingredients";
+    std::filesystem::create_directory(ingredient_root);
+    std::ofstream(ingredient_root / "slot_data.json") << R"({"kh3_seed":{"seed_name":"test","slot":1},
+        "ingredients":1,"exclude_caribbean_ingredients":1,"bridge":{"locations":[
+        {"bridge_key":"Ingredient:FST_ITEM02","source_table":"Ingredient","source_id":"FST_ITEM02","type":"ingredient"}]}})";
+    reconciliation::start(ingredient_root);
+    reconciliation::observe("runtime_ingredient_state.json", R"({"schema":"kh3ap.runtime_ingredient_state.v1",
+        "seed_name":"test","slot":1,"source":"food_prize","acquired_ingredients":["FST_ITEM02"],
+        "acquired_ingredients_outside_caribbean":[]})");
+    synchronize();
+    assert(!reconciliation::view()->completed_checks.contains("Ingredient:FST_ITEM02"));
+    reconciliation::observe("runtime_ingredient_state.json", R"({"schema":"kh3ap.runtime_ingredient_state.v1",
+        "seed_name":"test","slot":1,"source":"food_prize","acquired_ingredients":["FST_ITEM02"],
+        "acquired_ingredients_outside_caribbean":["FST_ITEM02"]})");
+    until([] { return reconciliation::view()->completed_checks.contains("Ingredient:FST_ITEM02"); });
     reconciliation::stop();
     // Upgrade recovery: the old worker journal omitted the special chests
     // even though their opened state was safely checkpointed.

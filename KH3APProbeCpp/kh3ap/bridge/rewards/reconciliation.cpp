@@ -164,6 +164,7 @@ namespace kh3ap::reconciliation
             std::vector<Conditional> conditional_checks;
             std::set<int64_t> received_item_ids;
             int64_t ingredient_mode{}, classic_mode{}, coliseum_mode{};
+            bool exclude_caribbean_ingredients{};
             bool adversary_checks{};
             chest_manifest::Catalog chest_catalog;
             std::string keyblade_manifest, music_manifest;
@@ -1342,6 +1343,7 @@ namespace kh3ap::reconciliation
                 seed_catalog.configure(value);
                 ingredient_mode = number(field(value, "ingredients"),
                                          number(field(value, "ingredient_checks"), 0));
+                exclude_caribbean_ingredients = number(field(value, "exclude_caribbean_ingredients"), 0) == 1;
                 adversary_checks = number(field(value, "adversary_checks"), 0) == 1;
                 classic_mode = number(field(value, "classic_kingdom_checks"), 0);
                 coliseum_mode = number(field(value, "olympus_coliseum_pool"), 0);
@@ -2259,11 +2261,16 @@ namespace kh3ap::reconciliation
                 {
                     return EventDisposition::Done;
                 }
-                table_progress(input,
-                               ingredient_mode == ingredient_spots_mode ? "IngredientSpot"
-                                                                        : "Ingredient",
-                               ingredient_mode == ingredient_spots_mode ? "acquired_spots"
-                                                                        : "acquired_ingredients");
+                if (ingredient_mode == ingredient_spots_mode)
+                {
+                    table_progress(input, "IngredientSpot", "acquired_spots");
+                }
+                else
+                {
+                    table_progress(input, "Ingredient", exclude_caribbean_ingredients
+                                                           ? "acquired_ingredients_outside_caribbean"
+                                                           : "acquired_ingredients");
+                }
 
                 return EventDisposition::Finalize;
             }

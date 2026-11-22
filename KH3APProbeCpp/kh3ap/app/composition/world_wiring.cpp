@@ -240,6 +240,11 @@ namespace kh3ap
         }};
     }
 
+    auto RuntimeComposition::Impl::make_caribbean_chart() -> RuntimeCaribbeanChart
+    {
+        return RuntimeCaribbeanChart{s_runtime_state};
+    }
+
     auto RuntimeComposition::Impl::make_battlegate_activation()
         -> RuntimeBattlegateActivationService
     {
