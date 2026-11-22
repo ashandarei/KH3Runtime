@@ -105,5 +105,25 @@ int main()
     assert(loads == 13 && loaded_offset == window && loaded_length == 100);
     assert(service.read(7, file_size, L"objects.uexp", file_size - 8, bytes.size(), bytes.data(), load));
     assert(loads == 14 && loaded_offset == file_size - 8 && loaded_length == bytes.size());
+    // Text serialization can seek backwards in the same resource.
+    constexpr uint32_t text_size = 96 * 1024;
+    assert(service.read(8, text_size, L"menu.locres", 400, bytes.size(), bytes.data(), load));
+    assert(loads == 15 && loaded_offset == 0 && loaded_length == text_size);
+    assert(service.read(8, text_size, L"menu.locres", 3, bytes.size(), bytes.data(), load));
+    assert(loads == 15 && bytes.front() == std::byte{3});
+
+    // The final serialized object may arrive first. Keep the adapted bytes through
+    // a competing large speculative fill and release them after a payload of demand reads.
+    constexpr auto scenery_path = L"/content/zaps/dw/umap/dw_02/dw_02_crystalground.uexp";
+    constexpr uint32_t scenery_size = 2 * 1024 * 1024;
+    service.cache_prepared_exports(9, std::vector<uint8_t>(scenery_size, 0x3c), scenery_path);
+    assert(service.read(9, scenery_size, scenery_path, scenery_size - 12, bytes.size(), bytes.data(), load));
+    service.cache_prepared_exports(10, std::vector<uint8_t>(kh02asset::export_cache_budget, 0x07));
+    const auto after_competition = std::get<1>(service.snapshot());
+    assert(after_competition.bytes == scenery_size);
+    std::vector<std::byte> front(scenery_size - 12);
+    assert(service.read(9, scenery_size, scenery_path, 0, front.size(), front.data(), load));
+    assert(loads == 15 && front.front() == std::byte{0x3c} && front.back() == std::byte{0x3c});
+    assert(std::get<1>(service.snapshot()).bytes == 0);
     std::cout << "KH0.2 remote read service passed\n";
 }

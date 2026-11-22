@@ -50444,8 +50444,6 @@
         "path": "/Game/Blueprints/Enemy/e_ex309/e_ex309_Pawn.e_ex309_Pawn_C",
         "pinned": false,
         "allowed": [
-          "BOSS_002",
-          "BOSS_003",
           "BOSS_004",
           "BOSS_005",
           "BOSS_006",
@@ -50509,8 +50507,6 @@
         "path": "/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C",
         "pinned": false,
         "allowed": [
-          "BOSS_002",
-          "BOSS_003",
           "BOSS_004",
           "BOSS_005",
           "BOSS_006",
@@ -51968,8 +51964,6 @@
         "path": "/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C",
         "pinned": false,
         "allowed": [
-          "BOSS_002",
-          "BOSS_003",
           "BOSS_004",
           "BOSS_005",
           "BOSS_006",
@@ -52033,8 +52027,6 @@
         "path": "/Game/Blueprints/Enemy/e_ex308_s10/e_ex308_Pawn_s10.e_ex308_Pawn_s10_C",
         "pinned": false,
         "allowed": [
-          "BOSS_002",
-          "BOSS_003",
           "BOSS_004",
           "BOSS_005",
           "BOSS_006",

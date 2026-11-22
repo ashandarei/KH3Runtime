@@ -1,5 +1,6 @@
 #include "kh02_localization.h"
 #include "kh02_profile.h"
+#include "kh3ap/core/performance_build.h"
 #include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/utilities.h"
@@ -163,6 +164,11 @@ namespace kh3ap
         {
             throw std::runtime_error("kh02_localization_resource_not_loaded");
         }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+        // Round-trip one key from each of the menu and subtitle resources as well as the objective.
+        proof["challenge_menu"] = lookup(L"kh02_menu.camp_challenge", L"text_001");
+        proof["story_subtitle"] = lookup(L"kh02_event_dw.dw033", L"a0020");
+#endif
     }
 
     auto Kh02Localization::snapshot() const -> const Json&

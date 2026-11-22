@@ -42,6 +42,17 @@ namespace kh02asset
             return entries_.contains(key);
         }
 
+        bool keep_recent(const Key& key)
+        {
+            const auto found = entries_.find(key);
+            if (found == entries_.end())
+            {
+                return false;
+            }
+            recent_.splice(recent_.begin(), recent_, found->second.position);
+            return true;
+        }
+
         template <class Load>
         bool read(const Key& key, size_t data_size, uint64_t offset, std::span<std::byte> output, Load load)
         {

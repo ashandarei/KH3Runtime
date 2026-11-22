@@ -68,6 +68,25 @@ namespace kh3ap
         L"/Game/Blueprints/Enemy/e_ex305/e_ex305_Pawn.e_ex305_Pawn_C";
     inline constexpr std::wstring_view remind_xigbar_class =
         L"/Game/Blueprints/Enemy/e_ex305_s10/e_ex305_Pawn_s10.e_ex305_Pawn_s10_C";
+
+    inline constexpr std::wstring_view ice_titan_class =
+        L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C";
+    inline constexpr std::wstring_view lava_titan_class =
+        L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C";
+
+    [[nodiscard]] inline auto has_titan_partner_remaps(
+        const std::unordered_map<std::wstring, std::wstring>& replacements) -> bool
+    {
+        bool ice = false;
+        bool lava = false;
+        for (const auto& [_, replacement] : replacements)
+        {
+            ice |= replacement == ice_titan_class;
+            lava |= replacement == lava_titan_class;
+        }
+        return ice && lava;
+    }
+
     [[nodiscard]] inline auto needs_opening_ansem_phase_driver(std::wstring_view source,
                                                                std::wstring_view replacement) -> bool
     {
@@ -151,6 +170,16 @@ namespace kh3ap
             replacements,
             [](const auto& entry)
             {
+                // Marluxia and Larxene share Luxord's scripted HP floor in both story versions.
+                if ((entry.second == ice_titan_class || entry.second == lava_titan_class) &&
+                    (entry.first == L"/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C" ||
+                     entry.first == L"/Game/Blueprints/Enemy/e_ex309/e_ex309_Pawn.e_ex309_Pawn_C" ||
+                     entry.first == L"/Game/Blueprints/Enemy/e_ex308_s10/e_ex308_Pawn_s10.e_ex308_Pawn_s10_C" ||
+                     entry.first == L"/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C"))
+                {
+                    return true;
+                }
+
                 // Protect existing seeds from all Young Xehanort variants in the
                 // Ice/Lava Titan encounter, retaining the native Titan instead.
                 if ((entry.first == L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C" ||

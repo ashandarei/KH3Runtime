@@ -244,7 +244,12 @@ extern "C" bool kh02_remote_read(unsigned int file, unsigned long long offset, u
                                  {
                                      return false;
                                  }
-                                 read_service.cache_prepared_exports(exports.file, std::move(exports.bytes));
+                                 if (!exports.bytes.empty())
+                                 {
+                                     const auto& suffix = kh02asset::asset_index().files.at(exports.file).suffix;
+                                     read_service.cache_prepared_exports(exports.file, std::move(exports.bytes),
+                                                                         suffix);
+                                 }
                                  return true;
                              });
 }

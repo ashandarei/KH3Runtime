@@ -761,8 +761,6 @@ namespace kh3ap
                 castle.preload_pawn = make_uobject_weak(pawn);
                 mesh_buffers.retain(pawn);
                 record_setup("mesh_buffers_us");
-                localization.prepare();
-                record_setup("localization_us");
                 install_compat();
                 record_setup("compatibility_us");
                 native_before = kh02_native_flags();
@@ -830,6 +828,15 @@ namespace kh3ap
             const bool stats_ready = enemy_stats.prepare(pawn);
             const bool ability_capacity_ready = ability_capacity.prepare(pawn, entry_assets);
             const bool aqua_level_ready = aqua_progression.prepare(pawn, entry_assets);
+            if (!castle.proof["setup_timings_us"].contains("localization_us"))
+            {
+                // Keep text ready before travel while independent asset requests are in flight.
+                const auto started = std::chrono::steady_clock::now();
+                localization.prepare();
+                castle.proof["setup_timings_us"]["localization_us"] =
+                    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started)
+                        .count();
+            }
             if (!aqua_ready || !mapset_asset || !hud_ready || !stats_ready || !ability_capacity_ready ||
                 !aqua_level_ready)
             {

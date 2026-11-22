@@ -82,6 +82,42 @@ int main()
     assert(!needs_opening_ansem_phase_driver(base_xigbar_class, remind_xigbar_class));
     assert(!needs_opening_ansem_phase_driver(base_xigbar_class, base_xigbar_class));
     assert(!needs_opening_ansem_phase_driver(remind_xigbar_class, L""));
+    {
+        const std::wstring ice_titan = L"/Game/Blueprints/Enemy/e_he902/e_he902_Pawn.e_he902_Pawn_C";
+        const std::wstring lava_titan = L"/Game/Blueprints/Enemy/e_he904/e_he904_Pawn.e_he904_Pawn_C";
+        const std::wstring dark_riku =
+            L"/Game/Blueprints/Enemy/e_ex313_s10/e_ex313_Pawn_s10.e_ex313_Pawn_s10_C";
+        const std::wstring remind_xigbar{remind_xigbar_class};
+        const std::wstring base_xigbar{base_xigbar_class};
+        std::unordered_map<std::wstring, std::wstring> pairs{
+            {remind_xigbar, ice_titan}, {base_xigbar, ice_titan}, {dark_riku, lava_titan}};
+        assert(remove_incompatible_boss_arena_replacements(pairs) == 0);
+        assert(pairs.at(remind_xigbar) == ice_titan);
+        assert(pairs.at(base_xigbar) == ice_titan);
+        assert(pairs.at(dark_riku) == lava_titan);
+        assert(has_titan_partner_remaps(pairs));
+        pairs.erase(remind_xigbar);
+        assert(has_titan_partner_remaps(pairs));
+        pairs.at(base_xigbar) = lava_titan;
+        assert(!has_titan_partner_remaps(pairs));
+        pairs.at(dark_riku) = ice_titan;
+        assert(has_titan_partner_remaps(pairs));
+        pairs.erase(base_xigbar);
+        assert(!has_titan_partner_remaps(pairs));
+
+        for (const auto* partner : {
+                 L"/Game/Blueprints/Enemy/e_ex308/e_ex308_Pawn.e_ex308_Pawn_C",
+                 L"/Game/Blueprints/Enemy/e_ex309/e_ex309_Pawn.e_ex309_Pawn_C",
+                 L"/Game/Blueprints/Enemy/e_ex308_s10/e_ex308_Pawn_s10.e_ex308_Pawn_s10_C",
+                 L"/Game/Blueprints/Enemy/e_ex309_s10/e_ex309_Pawn_s10.e_ex309_Pawn_s10_C"})
+        {
+            pairs[partner] = ice_titan;
+            assert(remove_incompatible_boss_arena_replacements(pairs) == 1);
+            pairs[partner] = lava_titan;
+            assert(remove_incompatible_boss_arena_replacements(pairs) == 1);
+        }
+        assert(pairs.at(dark_riku) == ice_titan);
+    }
     assert(!opening_ansem_retreat_due(19.9f, 91));
     assert(opening_ansem_retreat_due(20.0f, 100));
     assert(opening_ansem_retreat_due(0.25f, 90));

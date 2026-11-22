@@ -4,6 +4,7 @@
 #include "kh3ap/features/enemies/bosses/encounter_repairs.h"
 #include "kh3ap/features/enemies/bosses/master_xehanort_center.h"
 #include "kh3ap/features/enemies/bosses/hp_limits.h"
+#include "kh3ap/features/enemies/boss_remap_policy.h"
 #include "kh3ap/features/enemies/level_entity_remap.h"
 #include "kh3ap/features/enemies/remap_catalog.h"
 #include "kh3ap/features/enemies/remap_runtime.h"
@@ -152,6 +153,24 @@ namespace kh3ap
             }
         }
 #endif
+
+        const auto is_titan_remap = [](const auto& entry) {
+            return entry.second == ice_titan_class || entry.second == lava_titan_class;
+        };
+        if (std::ranges::any_of(boss_class_replacements, is_titan_remap) && !install_titan_hit_actor_guard())
+        {
+            const auto removed = std::erase_if(boss_class_replacements, is_titan_remap);
+            Output::send<LogLevel::Warning>(STR("[KH3APProbeCpp] Titan remaps omitted count={}: "
+                                               "native hit actor guard unavailable\n"), removed);
+        }
+        if (has_titan_partner_remaps(boss_class_replacements) && !install_titan_partner_guard())
+        {
+            const auto removed = std::erase_if(boss_class_replacements, [](const auto& entry) {
+                return entry.second == ice_titan_class;
+            });
+            Output::send<LogLevel::Warning>(STR("[KH3APProbeCpp] Ice Titan remaps omitted count={}: "
+                                               "native partner guard unavailable\n"), removed);
+        }
 
         installed_ = true;
         s_runtime_enemy_remap.enemy_replacements =
