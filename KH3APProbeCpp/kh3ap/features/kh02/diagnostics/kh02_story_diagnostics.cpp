@@ -157,6 +157,7 @@ namespace kh3ap
         result["event_aqua"] = cutscenes.event_aqua_snapshot();
         auto* current_world = static_cast<AActor*>(pawn)->GetWorld();
         result["ground_levels"] = kh02_ground_streams(current_world);
+        result["scenery_levels"] = kh02_stream_states(current_world, L"/Game/Zaps/dw/umap/dw_02/dw_02_Area_");
         result["camera_levels"] = kh02_stream_states(current_world, L"/Game/Zevels/dw/dw_02/umap/dw_02_camera_");
         result["encounter_levels"] = kh02_stream_states(current_world, L"/Game/Zevels/dw/dw_02/umap/dw_02_enemy_");
         result["encounters"] = view.encounter_proof;

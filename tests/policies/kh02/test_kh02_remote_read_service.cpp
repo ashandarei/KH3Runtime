@@ -63,5 +63,67 @@ int main()
     assert(!service.read(4, 32, L"retry.uasset", 0, 4, bytes.data(), failed_load));
     assert(service.read(4, 32, L"retry.uasset", 0, 4, bytes.data(), load));
     assert(loads == 8);
+
+    service.configure_exports(true);
+    const std::vector<uint8_t> prepared(12, 42);
+    service.cache_prepared_exports(5, prepared);
+    assert(service.read(5, prepared.size(), L"paired.uexp", 0, bytes.size(), bytes.data(), load));
+    assert(loads == 8 && bytes.front() == std::byte{42} && bytes.back() == std::byte{42});
+    assert(service.read(5, prepared.size(), L"paired.uexp", 8, 4, bytes.data(), load));
+    assert(loads == 9 && loaded_offset == 8 && loaded_length == 4);
+    service.configure_exports(false);
+    service.cache_prepared_exports(5, prepared);
+    assert(std::get<1>(service.snapshot()).bytes == 0);
+
+    kh02asset::FileReadCache bounded_cache(12);
+    const auto fill = [](std::span<std::byte>) { return true; };
+    assert(bounded_cache.read(1, 4, 0, {}, fill));
+    bounded_cache.store_prepared(2, std::vector<uint8_t>(bytes.size()));
+    assert(bounded_cache.read(3, 4, 0, {}, fill));
+    assert(bounded_cache.contains(1) && !bounded_cache.contains(2) && bounded_cache.contains(3));
+
+    service.configure_exports(true);
+    constexpr auto large_size = kh02asset::export_cache_max_file + 12;
+    service.cache_prepared_exports(6, std::vector<uint8_t>(large_size, 57));
+    assert(service.read(6, large_size, L"large.uexp", 0, bytes.size(), bytes.data(), load));
+    assert(service.read(6, large_size, L"large.uexp", large_size - 12, bytes.size(), bytes.data(), load));
+    assert(loads == 9 && bytes.front() == std::byte{57} && bytes.back() == std::byte{57});
+    assert(std::get<1>(service.snapshot()).bytes == 0);
+    assert(service.read(6, large_size, L"large.uexp", large_size - 4, 4, bytes.data(), load));
+    assert(loads == 10 && loaded_offset == large_size - 4 && loaded_length == 4);
+
+    service.configure_ranges(true);
+    constexpr uint32_t window = 64 * 1024;
+    constexpr uint32_t file_size = window + 104;
+    assert(service.read(7, file_size, L"objects.uexp", 19, bytes.size(), bytes.data(), load));
+    assert(loads == 11 && loaded_offset == 0 && loaded_length == window);
+    assert(service.read(7, file_size, L"objects.uexp", 91, bytes.size(), bytes.data(), load));
+    assert(loads == 11 && bytes.front() == std::byte{91} && bytes.back() == std::byte{98});
+    assert(service.read(7, file_size, L"objects.uexp", window - 4, bytes.size(), bytes.data(), load));
+    assert(loads == 12 && loaded_offset == window - 4 && loaded_length == bytes.size());
+    assert(service.read(7, file_size, L"objects.uexp", window + 1, bytes.size(), bytes.data(), load));
+    assert(loads == 13 && loaded_offset == window && loaded_length == 100);
+    assert(service.read(7, file_size, L"objects.uexp", file_size - 8, bytes.size(), bytes.data(), load));
+    assert(loads == 14 && loaded_offset == file_size - 8 && loaded_length == bytes.size());
+    // Text serialization can seek backwards in the same resource.
+    constexpr uint32_t text_size = 96 * 1024;
+    assert(service.read(8, text_size, L"menu.locres", 400, bytes.size(), bytes.data(), load));
+    assert(loads == 15 && loaded_offset == 0 && loaded_length == text_size);
+    assert(service.read(8, text_size, L"menu.locres", 3, bytes.size(), bytes.data(), load));
+    assert(loads == 15 && bytes.front() == std::byte{3});
+
+    // The final serialized object may arrive first. Keep the adapted bytes through
+    // a competing large speculative fill and release them after a payload of demand reads.
+    constexpr auto scenery_path = L"/content/zaps/dw/umap/dw_02/dw_02_crystalground.uexp";
+    constexpr uint32_t scenery_size = 2 * 1024 * 1024;
+    service.cache_prepared_exports(9, std::vector<uint8_t>(scenery_size, 0x3c), scenery_path);
+    assert(service.read(9, scenery_size, scenery_path, scenery_size - 12, bytes.size(), bytes.data(), load));
+    service.cache_prepared_exports(10, std::vector<uint8_t>(kh02asset::export_cache_budget, 0x07));
+    const auto after_competition = std::get<1>(service.snapshot());
+    assert(after_competition.bytes == scenery_size);
+    std::vector<std::byte> front(scenery_size - 12);
+    assert(service.read(9, scenery_size, scenery_path, 0, front.size(), front.data(), load));
+    assert(loads == 15 && front.front() == std::byte{0x3c} && front.back() == std::byte{0x3c});
+    assert(std::get<1>(service.snapshot()).bytes == 0);
     std::cout << "KH0.2 remote read service passed\n";
 }

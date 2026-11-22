@@ -1,5 +1,7 @@
 #include "kh3ap/features/kh02/transport/kh02_package_format.h"
 #include "kh3ap/features/kh02/transport/kh02_index_state.h"
+#include "kh3ap/features/kh02/transport/kh02_asset_protocol.h"
+#include <array>
 #include <cassert>
 #include <iostream>
 #include <thread>
@@ -87,8 +89,10 @@ int main()
         }
     }
     std::atomic<unsigned> preparations{};
+    std::atomic<unsigned> reads{};
     const auto raw = [&](uint32_t id, uint64_t at, uint32_t count, void* output)
     {
+        ++reads;
         const auto& bytes = id == header_id ? header : exports;
         if (at == 0 && count == header.size() && id == header_id)
         {
@@ -104,6 +108,34 @@ int main()
         }
         return true;
     };
+    PackageAdapter paired_cache;
+    bool fail_pair = true;
+    unsigned pair_attempts = 0;
+    const auto pair_read = [&](uint32_t id, uint64_t ids, uint32_t length, void* output)
+    {
+        assert(id == pair_file_id && ids == pair_ids(header_id, export_id));
+        assert(length == header.size() + exports.size());
+        ++pair_attempts;
+        if (fail_pair)
+        {
+            return false;
+        }
+        std::memcpy(output, header.data(), header.size());
+        std::memcpy(static_cast<uint8_t*>(output) + header.size(), exports.data(), exports.size());
+        return true;
+    };
+    Bytes result(header.size());
+    PreparedExports prepared;
+    assert(!paired_cache.read(header_id, 0, result.size(), result.data(), pair_read, &prepared, true));
+    assert(!paired_cache.snapshot().entries && prepared.bytes.empty());
+    fail_pair = false;
+    assert(paired_cache.read(header_id, 0, result.size(), result.data(), pair_read, &prepared, true));
+    assert(pair_attempts == 2 && result == adapted.header && prepared.bytes == adapted.exports);
+    paired_cache.clear();
+    std::array<uint8_t, 6> slice{};
+    assert(paired_cache.read(export_id, 3, slice.size(), slice.data(), pair_read, nullptr, true));
+    assert(pair_attempts == 3 && std::equal(slice.begin(), slice.end(), adapted.exports.begin() + 3));
+
     PackageAdapter cache;
     std::vector<std::thread> readers;
     for (int i = 0; i < 8; ++i)
@@ -126,9 +158,23 @@ int main()
     assert(preparations == 1);
     cache.clear();
     uint8_t fresh{};
+    const auto reads_before = reads.load();
     assert(cache.read(export_id, 4, 1, &fresh, raw));
     assert(fresh == adapted.exports[4]);
     assert(preparations == 2);
+    assert(reads == reads_before + 2); // The first request reuses its preparation read.
+    assert(cache.read(export_id, 10, 1, &fresh, raw));
+    assert(fresh == adapted.exports[10] && reads == reads_before + 3);
     assert(!cache.read(export_id, exports.size(), 1, nullptr, raw));
+
+    cache.clear();
+    PreparedExports sibling;
+    assert(cache.read(header_id, 0, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.header[0] && sibling.file == export_id && sibling.bytes == adapted.exports);
+    assert(cache.read(header_id, 1, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.header[1] && sibling.bytes.empty());
+    cache.clear();
+    assert(cache.read(export_id, 4, 1, &fresh, raw, &sibling));
+    assert(fresh == adapted.exports[4] && sibling.file == export_id && sibling.bytes == adapted.exports);
     std::cout << "KH0.2 package bounds, edits, and concurrent range cache passed\n";
 }

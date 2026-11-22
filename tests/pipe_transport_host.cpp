@@ -42,6 +42,14 @@ int wmain(int argc, wchar_t** argv)
         if (const auto message = kh3ap::pipe::read(root / "runtime_ap_message.json"); message && *message != previous_message)
         {
             previous_message = *message;
+            if (kh3ap::JsonFieldReader::bool_field(*message, "confirmed_exit").value_or(false))
+            {
+                kh3ap::pipe::stop_for_game_exit();
+                kh3ap::pipe::stop(); // UE4SS may also unload the mod.
+                kh3ap::pipe::start(root, kh3ap::pipe::Transport::LocalTcp);
+                // If startup reopened the bridge, CRT teardown will find joinable workers.
+                return 0;
+            }
             if (kh3ap::JsonFieldReader::int64_field(*message, "launch_wait_test").has_value())
             {
                 std::stop_source cancellation;

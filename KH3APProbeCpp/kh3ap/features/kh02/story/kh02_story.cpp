@@ -217,7 +217,10 @@ namespace kh3ap
         using Thunk = void (*)(UObject*, FFrame&, void*);
         static inline Impl* compat_instance{};
 
-        explicit Impl(std::function<Kh02BattleLevelSettings()> settings) : enemy_stats(std::move(settings))
+        std::function<bool()> auto_skip_cutscenes;
+
+        Impl(std::function<Kh02BattleLevelSettings()> settings, std::function<bool()> skip_setting)
+            : auto_skip_cutscenes(std::move(skip_setting)), enemy_stats(std::move(settings))
         {
             compat_instance = this;
             dressing_room.on_change(
@@ -567,6 +570,10 @@ namespace kh3ap
             {
                 owned |= item.Get() == stream;
             }
+            for (const auto& item : self->castle.entry_scenery)
+            {
+                owned |= item.Get() == stream;
+            }
             if (!owned)
             {
                 return;
@@ -603,7 +610,10 @@ namespace kh3ap
                 castle.backtrack = castle.backtrack_pending;
                 castle.backtrack_pending = false;
                 bind_mirror_progress(world, kh02_checkpoint::gear_scene_dw011);
-                entry.first_castle_intro = !castle.backtrack;
+                // Binding starts a fresh Castle visit at the playable DW011 checkpoint.
+                // Only rewind to DW009 when the opening will actually be shown.
+                const bool skip_opening = !castle.backtrack && auto_skip_cutscenes();
+                entry.first_castle_intro = !castle.backtrack && !skip_opening;
                 if (entry.first_castle_intro)
                 {
                     auto flags = source_flags.values();
@@ -623,6 +633,7 @@ namespace kh3ap
                 {
                     castle.proof = {{"native_save_restore", true}};
                 }
+                castle.proof["opening_skipped_before_load"] = skip_opening;
                 hud.reset_world();
                 counter_requested = false;
                 gameplay.pawn = {};
@@ -630,7 +641,7 @@ namespace kh3ap
                 cutscenes.cancel();
                 help_callbacks.clear();
                 entry_world = make_uobject_weak(world);
-                castle.begin(world, entry, gameplay);
+                castle.begin(world, entry, gameplay, source_flags.value(L"gameflow_DW"));
             }
             catch (const std::exception& e)
             {
@@ -750,8 +761,6 @@ namespace kh3ap
                 castle.preload_pawn = make_uobject_weak(pawn);
                 mesh_buffers.retain(pawn);
                 record_setup("mesh_buffers_us");
-                localization.prepare();
-                record_setup("localization_us");
                 install_compat();
                 record_setup("compatibility_us");
                 native_before = kh02_native_flags();
@@ -819,6 +828,15 @@ namespace kh3ap
             const bool stats_ready = enemy_stats.prepare(pawn);
             const bool ability_capacity_ready = ability_capacity.prepare(pawn, entry_assets);
             const bool aqua_level_ready = aqua_progression.prepare(pawn, entry_assets);
+            if (!castle.proof["setup_timings_us"].contains("localization_us"))
+            {
+                // Keep text ready before travel while independent asset requests are in flight.
+                const auto started = std::chrono::steady_clock::now();
+                localization.prepare();
+                castle.proof["setup_timings_us"]["localization_us"] =
+                    std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now() - started)
+                        .count();
+            }
             if (!aqua_ready || !mapset_asset || !hud_ready || !stats_ready || !ability_capacity_ready ||
                 !aqua_level_ready)
             {
@@ -1448,8 +1466,8 @@ namespace kh3ap
         }
     };
 
-    Kh02Story::Kh02Story(std::function<Kh02BattleLevelSettings()> settings)
-        : impl(std::make_unique<Impl>(std::move(settings)))
+    Kh02Story::Kh02Story(std::function<Kh02BattleLevelSettings()> settings, std::function<bool()> auto_skip_cutscenes)
+        : impl(std::make_unique<Impl>(std::move(settings), std::move(auto_skip_cutscenes)))
     {
     }
 

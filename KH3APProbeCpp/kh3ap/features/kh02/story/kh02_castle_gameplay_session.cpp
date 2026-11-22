@@ -1,6 +1,7 @@
 #include "kh02_castle_gameplay_session.h"
 #include "kh02_entry_session.h"
 #include "kh02_story_flags.h"
+#include "kh3ap/features/kh02/progress/kh02_story_checkpoints.h"
 #include "kh02_source_level_readiness.h"
 #include "kh02_map_session.h"
 #include "kh3ap/features/kh02/cutscenes/kh02_event_aqua.h"
@@ -36,13 +37,15 @@ namespace kh3ap
 
     } // namespace
 
-    void Kh02CastleGameplaySession::begin(UObject* world, Kh02EntrySession& entry, Kh02GameplayBinding& gameplay)
+    void Kh02CastleGameplaySession::begin(UObject* world, Kh02EntrySession& entry, Kh02GameplayBinding& gameplay,
+                                          int checkpoint)
     {
         entry.initialized = false;
         gameplay.world = make_uobject_weak(world);
         gameplay.script = {};
         gimmick_script = {};
         streams.clear();
+        entry_scenery.clear();
         gameplay.started = false;
         armed = false;
 
@@ -74,14 +77,8 @@ namespace kh3ap
         {
             throw std::runtime_error("kh02_entry_stream_count");
         }
-        for (int index = castle_gameplay_stream_begin; index < castle_gameplay_stream_end; ++index)
+        const auto bind_shown = [](UObject* stream)
         {
-            auto* stream = array->data[index];
-            if (!is_uobject_valid_fast(stream) || stream->GetOuterPrivate() != world)
-            {
-                throw std::runtime_error("kh02_entry_stream_owner");
-            }
-            streams.push_back(make_uobject_weak(stream));
             auto* shown = stream->GetPropertyByNameInChain(L"OnLevelShown");
             if (!shown || !shown->IsA<FMulticastDelegateProperty>() ||
                 shown->GetElementSize() != sizeof(FMulticastScriptDelegate))
@@ -90,7 +87,42 @@ namespace kh3ap
             }
             shown->ContainerPtrToValuePtr<FMulticastScriptDelegate>(stream)->InvocationList.Add(
                 FScriptDelegate{make_uobject_weak(stream), FName(L"KH02_EntryLevelsVisible", FNAME_Add)});
+        };
+        for (int index = castle_gameplay_stream_begin; index < castle_gameplay_stream_end; ++index)
+        {
+            auto* stream = array->data[index];
+            if (!is_uobject_valid_fast(stream) || stream->GetOuterPrivate() != world)
+            {
+                throw std::runtime_error("kh02_entry_stream_owner");
+            }
+            streams.push_back(make_uobject_weak(stream));
+            bind_shown(stream);
         }
+        auto request_scenery = [&](const wchar_t* package)
+        {
+            ReflectedFunctionCall find(L"/Script/Engine.Default__GameplayStatics", L"GetStreamingLevel",
+                                       "kh02_entry_scenery", 512);
+            find.object(L"WorldContextObject", world);
+            find.name(L"PackageName", package);
+            find.run();
+            auto* stream = find.result();
+            if (!is_uobject_valid_fast(stream) || stream->GetOuterPrivate() != world)
+            {
+                throw std::runtime_error("kh02_entry_scenery_stream_missing");
+            }
+            entry_scenery.push_back(make_uobject_weak(stream));
+            bind_shown(stream);
+            set_flag(stream, L"bShouldBeLoaded", true);
+            set_flag(stream, L"bShouldBeVisible", true);
+        };
+        request_scenery(L"/Game/Zaps/dw/umap/dw_02/dw_02_Area_Tower");
+        // CS_12 removes the opening alley. A save from before the collapse
+        // still needs it even when entering via the revisit path.
+        if (checkpoint < kh02_checkpoint::gear_scene_dw012)
+        {
+            request_scenery(L"/Game/Zaps/dw/umap/dw_02/dw_02_Area_Alley");
+        }
+        proof["requested_scenery_layers"] = entry_scenery.size();
     }
 
     auto Kh02CastleGameplaySession::finish(Services services) -> bool
@@ -105,6 +137,21 @@ namespace kh3ap
         {
             return false;
         }
+        for (const auto& weak : entry_scenery)
+        {
+            auto* stream = weak.Get();
+            if (!is_uobject_valid_fast(stream))
+            {
+                throw std::runtime_error("kh02_entry_scenery_expired");
+            }
+            ReflectedCall visible(stream, L"IsLevelVisible");
+            visible.run();
+            if (!visible.boolean_result())
+            {
+                return false;
+            }
+        }
+        proof["entry_scenery_visible"] = true;
         auto* script = services.gameplay.script.Get();
         auto* gimmick = gimmick_script.Get();
         ReflectedCall local(require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),

@@ -45,4 +45,6 @@ namespace kh3ap::pipe
     enum class Transport { Auto, NamedPipe, LocalTcp };
     auto start(const std::filesystem::path& root, Transport transport = Transport::Auto) -> void;
     auto stop() -> void;
+    // A confirmed game exit is final even when startup has not reached the bridge yet.
+    auto stop_for_game_exit() -> void;
 }

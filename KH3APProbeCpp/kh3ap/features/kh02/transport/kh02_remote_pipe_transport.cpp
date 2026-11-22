@@ -24,6 +24,7 @@ namespace kh3ap
     struct Kh02RemotePipeTransport::Impl
     {
         std::atomic<uint32_t> provider{};
+        std::atomic<bool> paired_reads{};
         std::atomic<uint64_t> binding{};
         std::atomic<uint64_t> sequence{}, requests{}, received{}, failures{}, connections{},
             read_microseconds{};
@@ -36,7 +37,7 @@ namespace kh3ap
         kh02asset::RpcTimingMetrics transport_timing;
         std::atomic<uint64_t> request_write_us{}, response_header_us{}, response_payload_us{},
             relocate_us{};
-        std::atomic<uint64_t> read_calls{}, write_calls{};
+        std::atomic<uint64_t> read_calls{}, write_calls{}, paired_requests{};
 #endif
         struct Transport
         {
@@ -112,15 +113,26 @@ namespace kh3ap
         }
 
         bool read(uint32_t file, uint64_t offset, uint32_t length, void* output, bool reconnect,
-                  uint64_t* index_size = nullptr)
+                  uint64_t* index_size = nullptr, bool* negotiate_pairs = nullptr)
         {
             using namespace kh02asset;
             const auto& assets = asset_index();
             const auto pid = provider.load();
             const bool metadata = file == index_file_id;
+            const bool pair = file == pair_file_id;
+            const auto header = pair_header(offset);
+            const auto exports = pair_exports(offset);
+            if (pair &&
+                (!paired_reads || header == exports || header >= assets.files.size() ||
+                 exports >= assets.files.size() || !can_pair(assets.files[header].size, assets.files[exports].size) ||
+                 length != assets.files[header].size + assets.files[exports].size))
+            {
+                return false;
+            }
             if (!pid || !assets.tag || length > max_read || (length && !output) ||
-                (!metadata && (file >= assets.files.size() || offset > assets.files[file].size ||
-                               length > assets.files[file].size - offset)))
+                (!metadata && !pair &&
+                 (file >= assets.files.size() || offset > assets.files[file].size ||
+                  length > assets.files[file].size - offset)))
             {
                 return false;
             }
@@ -179,7 +191,9 @@ namespace kh3ap
                 ++connections;
             }
             const auto pipe = transport.pipe;
-            Request request{magic, version, file, length, offset, ++sequence, assets.tag};
+            Request request{
+                magic,     pair || negotiate_pairs ? paired_version : version, file, length, offset, ++sequence,
+                assets.tag};
             Response response{};
             ++requests;
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -201,13 +215,21 @@ namespace kh3ap
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
             record_phase(response_header_us);
 #endif
-            if (!header_received || response.magic != magic || response.status ||
-                response.pid != pid || response.length != length ||
+            // A v3 peer rejects the new version with this empty, correlated reply.
+            // Consume it once at binding and continue with ordinary reads on that same pipe.
+            if (negotiate_pairs && header_received && response.magic == magic && response.status == 1 &&
+                response.pid == pid && response.nonce == request.nonce && response.catalog_tag == assets.tag &&
+                response.offset == offset && !response.file_size && !response.length)
+            {
+                *negotiate_pairs = false;
+                return true;
+            }
+            if (!header_received || response.magic != magic || response.status || response.pid != pid ||
+                response.length != length ||
                 (metadata ? (!response.file_size || response.file_size > maximum_index_bytes ||
                              offset > response.file_size || length > response.file_size - offset)
-                          : response.file_size != assets.files[file].size) ||
-                response.catalog_tag != assets.tag || response.offset != offset ||
-                response.nonce != request.nonce)
+                          : response.file_size != (pair ? length : assets.files[file].size)) ||
+                response.catalog_tag != assets.tag || response.offset != offset || response.nonce != request.nonce)
             {
                 transport.reset();
                 ++failures;
@@ -230,13 +252,25 @@ namespace kh3ap
             if (length && !metadata)
             {
                 std::lock_guard lock(stats_mutex);
-                read_files.insert(file);
+                if (pair)
+                {
+                    read_files.insert(header);
+                    read_files.insert(exports);
+                }
+                else
+                {
+                    read_files.insert(file);
+                }
             }
             received += length;
             read_microseconds += std::chrono::duration_cast<std::chrono::microseconds>(
                                      std::chrono::steady_clock::now() - began)
                                      .count();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            if (pair)
+            {
+                ++paired_requests;
+            }
             timing.succeeded();
 #endif
             return true;
@@ -256,6 +290,7 @@ namespace kh3ap
         impl->adapter.clear();
         std::lock_guard lock(impl->transport_mutex);
         impl->transport.reset();
+        impl->paired_reads = false;
         impl->provider = source_pid;
         impl->pipe_path = L"\\\\.\\pipe\\KH02AssetRead_" + std::to_wstring(source_pid);
     }
@@ -270,7 +305,9 @@ namespace kh3ap
     {
         using namespace kh02asset;
         uint64_t size{};
-        if (!impl->read(index_file_id, 0, 0, nullptr, false, &size))
+        bool supports_pairs = true;
+        if (!impl->read(index_file_id, 0, 0, nullptr, false, &size, &supports_pairs) ||
+            (!supports_pairs && !impl->read(index_file_id, 0, 0, nullptr, false, &size)))
         {
             throw std::runtime_error("kh02_remote_index_size");
         }
@@ -288,6 +325,7 @@ namespace kh3ap
             offset += length;
         }
         publish_index(parse_index(wire, asset_index().source_build));
+        impl->paired_reads = supports_pairs;
     }
 
     auto Kh02RemotePipeTransport::provider_pid() const -> uint32_t
@@ -300,33 +338,33 @@ namespace kh3ap
         return impl->connections.load();
     }
 
-    auto Kh02RemotePipeTransport::read(uint32_t file, uint64_t offset, uint32_t length,
-                                       void* output, bool reconnect) -> bool
+    auto Kh02RemotePipeTransport::read(uint32_t file, uint64_t offset, uint32_t length, void* output, bool reconnect,
+                                       kh02asset::PreparedExports* exports) -> bool
     {
         const auto binding = impl->binding.load();
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const auto began = std::chrono::steady_clock::now();
         std::chrono::steady_clock::duration raw_time{};
 #endif
-        const auto result =
-            impl->adapter.read(file, offset, length, output,
-                               [&](uint32_t id, uint64_t at, uint32_t size, void* destination)
-                               {
-                                   if (impl->binding.load() != binding)
-                                   {
-                                       return false;
-                                   }
-                                   const bool reset = std::exchange(reconnect, false);
+        const auto result = impl->adapter.read(
+            file, offset, length, output,
+            [&](uint32_t id, uint64_t at, uint32_t size, void* destination)
+            {
+                if (impl->binding.load() != binding)
+                {
+                    return false;
+                }
+                const bool reset = std::exchange(reconnect, false);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                                   const auto raw_began = std::chrono::steady_clock::now();
+                const auto raw_began = std::chrono::steady_clock::now();
 #endif
-                                   const auto received =
-                                       impl->read(id, at, size, destination, reset);
+                const auto received = impl->read(id, at, size, destination, reset);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-                                   raw_time += std::chrono::steady_clock::now() - raw_began;
+                raw_time += std::chrono::steady_clock::now() - raw_began;
 #endif
-                                   return received;
-                               });
+                return received;
+            },
+            exports, impl->paired_reads.load());
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         const auto adaptation = std::chrono::steady_clock::now() - began - raw_time;
         impl->relocate_us +=
@@ -352,7 +390,7 @@ namespace kh3ap
     {
         return {impl->request_write_us.load(),    impl->response_header_us.load(),
                 impl->response_payload_us.load(), impl->relocate_us.load(),
-                impl->read_calls.load(),          impl->write_calls.load()};
+                impl->read_calls.load(),          impl->write_calls.load(), impl->paired_requests.load()};
     }
 
     auto Kh02RemotePipeTransport::read_original(uint32_t file, uint64_t offset, uint32_t length, void* output) -> bool

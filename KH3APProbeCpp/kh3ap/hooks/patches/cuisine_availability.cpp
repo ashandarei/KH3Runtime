@@ -22,13 +22,17 @@ namespace kh3ap
         // owner is native game data, not a UObject; never cache its address.
         using Query = bool(*)(void*, uint64_t);
         inline static Impl* active{};
-        uint64_t original{}, cuisine{}, restaurant{}, camera{};
+        uint64_t original{}, cuisine{}, restaurant{}, camera{}, photo_mission{};
         std::unique_ptr<PLH::x64Detour> hook;
 
         static bool query(void* owner, uint64_t name)
         {
             auto& self = *active;
-            if (owner && (name == self.cuisine || name == self.restaurant || name == self.camera)) return true;
+            if (owner && (name == self.cuisine || name == self.restaurant || name == self.camera ||
+                          name == self.photo_mission))
+            {
+                return true;
+            }
             return reinterpret_cast<Query>(self.original)(owner, name);
         }
 
@@ -49,8 +53,8 @@ namespace kh3ap
             const auto* pe = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
             // Native TresUnlockFlagData query: resolves the requested row and
             // compares GameFlagName against GameFlagLabel. Cuisine/Bistro
-            // require TT_END; the camera requires TT_TRM_EVENT03. Override only
-            // these unlock queries; normal camera safety checks still apply.
+            // require TT_END. The camera and the Moogle Photo Missions menu
+            // require TT_TRM_EVENT03. Individual photo requests have their own gates.
             const auto* profile=steam_parity_native_profile(pe->FileHeader.TimeDateStamp,pe->OptionalHeader.SizeOfImage);
             if (pe->Signature != IMAGE_NT_SIGNATURE || pe->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
                 !profile || std::memcmp(reinterpret_cast<void*>(base+profile->cuisine_query.rva),
@@ -62,11 +66,15 @@ namespace kh3ap
             cuisine = name_key(L"cuisine");
             restaurant = name_key(L"restaurant");
             camera = name_key(L"spcamera");
+            photo_mission = name_key(L"photo_mission");
             active = this;
             hook = std::make_unique<PLH::x64Detour>(base + profile->cuisine_query.rva, reinterpret_cast<uintptr_t>(&query), &original);
             const bool installed = hook->hook() && original;
             if (!installed) uninstall();
-            RC::Output::send<RC::LogLevel::Warning>(STR("[KH3APProbeCpp] Cuisine availability installed={} cuisine=always restaurant=always spcamera=always storefront={}\n"), installed,profile->image_size==kh3ap::native_build::steam.image_size?STR("steam"):STR("egs"));
+            RC::Output::send<RC::LogLevel::Warning>(
+                STR("[KH3APProbeCpp] Cuisine availability installed={} cuisine=always "
+                    "restaurant=always spcamera=always photo_mission=always storefront={}\n"),
+                installed, profile->image_size == kh3ap::native_build::steam.image_size ? STR("steam") : STR("egs"));
         }
 
         void uninstall()

@@ -236,7 +236,22 @@ extern "C" bool kh02_remote_read(unsigned int file, unsigned long long offset, u
         return false;
     }
     const auto& asset = assets.files[file];
-    return read_service.read(file, asset.size, asset.suffix, offset, length, destination, rpc);
+    return read_service.read(file, asset.size, asset.suffix, offset, length, destination,
+                             [](uint32_t id, uint64_t at, uint32_t size, void* output)
+                             {
+                                 kh02asset::PreparedExports exports;
+                                 if (!remote_transport().read(id, at, size, output, false, &exports))
+                                 {
+                                     return false;
+                                 }
+                                 if (!exports.bytes.empty())
+                                 {
+                                     const auto& suffix = kh02asset::asset_index().files.at(exports.file).suffix;
+                                     read_service.cache_prepared_exports(exports.file, std::move(exports.bytes),
+                                                                         suffix);
+                                 }
+                                 return true;
+                             });
 }
 
 extern "C" long long kh02_remote_file_size(unsigned int file)
@@ -472,7 +487,8 @@ namespace kh3ap
             << ",\"response_payload_us\":" << transfer.response_payload_us
             << ",\"relocate_us\":" << transfer.relocate_us
             << ",\"read_calls\":" << transfer.read_calls
-            << ",\"write_calls\":" << transfer.write_calls;
+            << ",\"write_calls\":" << transfer.write_calls
+            << ",\"paired_requests\":" << transfer.paired_requests;
         out << '}';
 #endif
         out << ",\"voice_language\":\"" << bound_voice_language
@@ -521,7 +537,7 @@ namespace kh3ap
         write_cache("header_cache", headers, kh02asset::header_cache_budget,
                     kh02asset::header_cache_max_file, true);
         write_cache("export_cache", exports, kh02asset::export_cache_budget,
-                    kh02asset::export_cache_max_file, exports_enabled);
+                    kh02asset::export_cache_budget, exports_enabled);
         write_cache("range_cache", ranges, kh02asset::range_cache_budget,
                     kh02asset::range_cache_max_read, ranges_enabled, "max_read_bytes",
                     kh02asset::range_cache_max_header, kh02asset::range_cache_max_entries);

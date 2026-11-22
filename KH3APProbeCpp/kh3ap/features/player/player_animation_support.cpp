@@ -4,10 +4,14 @@
 #include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
+#include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/TArray.hpp>
+#include <DynamicOutput/DynamicOutput.hpp>
 #define NOMINMAX
 #include <Windows.h>
 #include <cstring>
@@ -141,11 +145,17 @@ namespace kh3ap::player_animation_support
     {
         auto* target_skeleton = object_property(animation_instance, L"CurrentSkeleton");
         auto* source_skeleton = object_property(animation, L"Skeleton");
+        auto* skeleton_class =
+            UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/Engine.Skeleton");
+        if (!is_uobject_a_fast(target_skeleton, skeleton_class) ||
+            !is_uobject_a_fast(source_skeleton, skeleton_class))
+        {
+            throw std::runtime_error("player_animation_skeleton_invalid");
+        }
+
         auto* compatible_field =
-            is_uobject_valid_fast(target_skeleton)
-                ? target_skeleton->GetPropertyByNameInChain(L"SQEX_CompatibleSkeletonLists")
-                : nullptr;
-        if (!source_skeleton || !compatible_field || !compatible_field->IsA<FArrayProperty>() ||
+            target_skeleton->GetPropertyByNameInChain(L"SQEX_CompatibleSkeletonLists");
+        if (!compatible_field || !compatible_field->IsA<FArrayProperty>() ||
             static_cast<FArrayProperty*>(compatible_field)->GetInner()->GetElementSize() !=
                 sizeof(CompatibleSkeleton))
         {
@@ -153,29 +163,45 @@ namespace kh3ap::player_animation_support
         }
         auto* compatible_skeletons =
             compatible_field->ContainerPtrToValuePtr<TArray<CompatibleSkeleton>>(target_skeleton);
-        bool already_compatible = target_skeleton == source_skeleton;
-        for (const auto& entry : *compatible_skeletons)
+        // The native rebuild walks the entire list. A reclaimed address can also
+        // contain a live UObject of a different class.
+        const auto removed = compatible_skeletons->RemoveAll([skeleton_class](const auto& entry) {
+            return !is_uobject_a_fast(entry.skeleton, skeleton_class);
+        });
+        if (removed > 0)
         {
-            already_compatible = already_compatible || entry.skeleton == source_skeleton;
+            RC::Output::send<RC::LogLevel::Normal>(
+                STR("[KH3APProbeCpp] Removed invalid compatible skeletons count={} target={}\n"),
+                removed, target_skeleton->GetPathName());
         }
-        if (!already_compatible)
+        const bool add_source = target_skeleton != source_skeleton &&
+            !compatible_skeletons->ContainsByPredicate([source_skeleton](const auto& entry) {
+                return entry.skeleton == source_skeleton;
+            });
+        if (add_source)
         {
+            // The shared skeleton's list and native remap cache outlive any pawn
+            // or anim set. Keep runtime-added donor assets resident for the session.
+            if (!source_skeleton->HasAnyInternalFlags(EInternalObjectFlags::RootSet))
+            {
+                source_skeleton->SetRootSet();
+            }
             compatible_skeletons->Add({source_skeleton, {}, {}});
         }
 
         const auto module_base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
         const auto is_compatible =
             reinterpret_cast<bool (*)(UObject*, UObject*)>(module_base + skeleton_compatible_rva);
-        if (!is_compatible(target_skeleton, source_skeleton))
+        if (removed > 0 || add_source || !is_compatible(target_skeleton, source_skeleton))
         {
-            // Rebuild the game's bone-name mappings; never reuse Sora's raw bone indices.
+            // Rebuild the bone-name mappings after changing the native list.
             const auto rebuild_remaps =
                 reinterpret_cast<void (*)(UObject*)>(module_base + rebuild_skeleton_remaps_rva);
             rebuild_remaps(target_skeleton);
-        }
-        if (!is_compatible(target_skeleton, source_skeleton))
-        {
-            throw std::runtime_error("player_animation_skeleton_remap_failed");
+            if (!is_compatible(target_skeleton, source_skeleton))
+            {
+                throw std::runtime_error("player_animation_skeleton_remap_failed");
+            }
         }
     }
 } // namespace kh3ap::player_animation_support
