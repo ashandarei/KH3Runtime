@@ -77,6 +77,7 @@
 #include "kh3ap/features/story/minigames/olympus_coliseum_completion_service.h"
 #include "kh3ap/features/story/world_fixes/kingdom_of_corona_qol_service.h"
 #include "kh3ap/features/story/world_fixes/monstropolis_mapset_service.h"
+#include "kh3ap/features/story/world_fixes/caribbean_chart.h"
 #include "kh3ap/features/story/progression/battlegate_activation_service.h"
 
 namespace kh3ap
@@ -176,6 +177,7 @@ namespace kh3ap
         auto make_olympus_coliseum_completion() -> RuntimeOlympusColiseumCompletionService;
         auto make_kingdom_of_corona_qol() -> RuntimeKingdomOfCoronaQolService;
         auto make_monstropolis_mapset() -> RuntimeMonstropolisMapSetService;
+        auto make_caribbean_chart() -> RuntimeCaribbeanChart;
         auto make_battlegate_activation() -> RuntimeBattlegateActivationService;
 
         // Declaration order is construction order. Forward callbacks stay
@@ -273,6 +275,7 @@ namespace kh3ap
         RuntimeKingdomOfCoronaQolService m_kingdom_of_corona_qol{make_kingdom_of_corona_qol()};
 
         RuntimeMonstropolisMapSetService m_monstropolis_mapset{make_monstropolis_mapset()};
+        RuntimeCaribbeanChart m_caribbean_chart{make_caribbean_chart()};
 
         RuntimeBattlegateActivationService m_battlegate_activation{make_battlegate_activation()};
     };

@@ -9,6 +9,7 @@
 #include "kh3ap/app/composition/bindings.h"
 #include "kh3ap/app/composition/settings.h"
 #include "kh3ap/bridge/transport/pipe_transport.h"
+#include "kh3ap/hooks/patches/startup_movie_bypass.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 
@@ -21,6 +22,7 @@ namespace kh3ap
 
     RuntimeComposition::Impl::Impl()
     {
+        install_startup_movie_bypass();
         configure_runtime_controller_input(character_controller_input_policy());
         m_steam_platform_recovery.capture_early_platform_state();
         m_autosave_probe.install_exit_confirmation_bypass();
@@ -92,6 +94,7 @@ namespace kh3ap
         m_garden_return.install_once();
         m_save_space.install_once();
         m_kingdom_of_corona_qol.install_once();
+        m_caribbean_chart.install_once();
         m_monstropolis_mapset.install_once();
         m_battlegate_activation.install_once();
         m_periodic_bridge.install_event_hooks();
@@ -105,6 +108,7 @@ namespace kh3ap
 
     auto RuntimeComposition::Impl::shutdown() -> void
     {
+        uninstall_startup_movie_bypass();
         fast_deathlink::shutdown();
         m_ingredients.shutdown();
         kh3ap::pipe::stop();

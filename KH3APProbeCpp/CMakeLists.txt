@@ -234,6 +234,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/moogle_shop/workshop_service.cpp
     kh3ap/features/story/minigames/olympus_coliseum_completion_service.cpp
     kh3ap/features/story/world_fixes/kingdom_of_corona_qol_service.cpp
+    kh3ap/features/story/world_fixes/caribbean_chart.cpp
     kh3ap/features/story/world_fixes/monstropolis_mapset_service.cpp
     kh3ap/features/story/progression/battlegate_activation_service.cpp
     kh3ap/features/story/world_fixes/graveyard_backtracking.cpp

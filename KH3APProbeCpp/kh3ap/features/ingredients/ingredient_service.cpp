@@ -1,6 +1,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include "kh3ap/app/config.h"
 #include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #ifdef S
@@ -18,6 +19,7 @@
 #endif
 #include <Windows.h>
 #include <cstring>
+#include <cwchar>
 #include "kh3ap/features/ingredients/ingredient_service.h"
 #include "kh3ap/features/ingredients/ingredient_checkpoint_writer.h"
 #include "kh3ap/bridge/transport/checkpoint_file.h"
@@ -227,7 +229,8 @@ namespace kh3ap
         std::filesystem::path bridge;
         std::wstring seed;
         int64_t slot{};
-        std::set<std::wstring> acquired, acquired_spots;
+        std::set<std::wstring> acquired, acquired_spots, acquired_outside_caribbean;
+        bool restrict_ingredient_checks_to_outside_caribbean{};
         struct MapSpot
         {
             FWeakObjectPtr actor;
@@ -518,7 +521,8 @@ namespace kh3ap
             {
                 return false;
             }
-            const auto identity = JsonObject{*data}.object_field("kh3_seed");
+            const auto metadata = JsonObject{*data};
+            const auto identity = metadata.object_field("kh3_seed");
             auto name = identity.string_field("seed_name").value_or(L"");
             auto player = identity.int64_field("slot").value_or(0);
             if (name.empty() || player < 1)
@@ -537,8 +541,12 @@ namespace kh3ap
                 bridge = *dir;
                 seed = name;
                 slot = player;
+                restrict_ingredient_checks_to_outside_caribbean =
+                    metadata.int64_field("ingredients").value_or(0) == 1 &&
+                    metadata.int64_field("exclude_caribbean_ingredients").value_or(0) == 1;
                 acquired.clear();
                 acquired_spots.clear();
+                acquired_outside_caribbean.clear();
                 dirty = false;
                 ++journal_revision;
                 map_spots.clear();
@@ -569,6 +577,17 @@ namespace kh3ap
                         if (valid_ingredient_spot_key(key))
                         {
                             acquired_spots.insert(key);
+                        }
+                    }
+                    if (restrict_ingredient_checks_to_outside_caribbean)
+                    {
+                        for (auto& key : JsonFieldReader::string_array_field(
+                                 *previous, "acquired_ingredients_outside_caribbean"))
+                        {
+                            if (valid_ingredient_key(key))
+                            {
+                                acquired_outside_caribbean.insert(key);
+                            }
                         }
                     }
                     last_pickup_sequence =
@@ -817,6 +836,29 @@ namespace kh3ap
             }
             return snapshot;
         }
+        static auto pickup_outside_caribbean(UObject* pawn, std::wstring_view spot) -> bool
+        {
+            if (!spot.empty())
+            {
+                return !spot.starts_with(L"CA_");
+            }
+            // Some field-prize callers have no catalogued actor in the VM stack.
+            std::wstring full_name;
+            if (!try_get_uobject_full_name_fast(pawn, full_name))
+            {
+                return false;
+            }
+            const auto separator = full_name.find(L' ');
+            if (separator == std::wstring::npos)
+            {
+                return false;
+            }
+            const auto* path = full_name.c_str() + separator + 1;
+            constexpr std::wstring_view levels_prefix = L"/game/levels/";
+            constexpr auto caribbean_prefix = settings::s_caribbean_level_path_token;
+            return _wcsnicmp(path, levels_prefix.data(), levels_prefix.size()) == 0 &&
+                   _wcsnicmp(path, caribbean_prefix.data(), caribbean_prefix.size()) != 0;
+        }
         void after(const Snapshot& snapshot, double elapsed_ms)
         {
             const RuntimeHotPathProfileScope profile{L"ingredients:after_pickup"};
@@ -832,9 +874,16 @@ namespace kh3ap
             }
             std::vector<std::wstring> additions;
             const auto changes = acquired_field_ingredients(snapshot.counts, *values, true);
+            const bool track_outside_caribbean = restrict_ingredient_checks_to_outside_caribbean &&
+                                                !changes.empty() &&
+                                                pickup_outside_caribbean(pawn, snapshot.spot);
             for (int i : changes)
             {
                 auto key = ingredient_key(i);
+                if (track_outside_caribbean && acquired_outside_caribbean.insert(key).second)
+                {
+                    dirty = true;
+                }
                 if (acquired.insert(key).second)
                 {
                     additions.push_back(key);
@@ -885,31 +934,33 @@ namespace kh3ap
             }
             const RuntimeHotPathProfileScope profile{L"ingredients:persist"};
             std::ostringstream json;
+            const auto write_keys = [&json](const std::set<std::wstring>& keys)
+            {
+                json << '[';
+                bool first = true;
+                for (const auto& key : keys)
+                {
+                    if (!first)
+                    {
+                        json << ',';
+                    }
+                    first = false;
+                    json << '"' << json_escape(key) << '"';
+                }
+                json << ']';
+            };
             json << "{\"schema\":\"kh3ap.runtime_ingredient_state.v1\",\"seed_name\":\""
                  << json_escape(seed) << "\",\"slot\":" << slot
-                 << ",\"source\":\"food_prize\",\"acquired_ingredients\":[";
-            bool first = true;
-            for (auto& key : acquired)
+                 << ",\"source\":\"food_prize\",\"acquired_ingredients\":";
+            write_keys(acquired);
+            if (restrict_ingredient_checks_to_outside_caribbean)
             {
-                if (!first)
-                {
-                    json << ',';
-                }
-                first = false;
-                json << '"' << json_escape(key) << '"';
+                json << ",\"acquired_ingredients_outside_caribbean\":";
+                write_keys(acquired_outside_caribbean);
             }
-            json << "],\"acquired_spots\":[";
-            first = true;
-            for (auto& key : acquired_spots)
-            {
-                if (!first)
-                {
-                    json << ',';
-                }
-                first = false;
-                json << '"' << json_escape(key) << '"';
-            }
-            json << "],\"last_pickup_sequence\":" << last_pickup_sequence
+            json << ",\"acquired_spots\":";
+            write_keys(acquired_spots);
+            json << ",\"last_pickup_sequence\":" << last_pickup_sequence
                  << ",\"last_pickup_spot\":\"" << json_escape(last_pickup_spot)
                  << "\",\"last_pickup_at_utc\":\"" << json_escape(last_pickup_at)
                  << "\",\"updated_at_utc\":\"" << now_iso8601_utc() << "\"}\n";
