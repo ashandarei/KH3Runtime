@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <cwctype>
@@ -119,6 +120,7 @@ namespace kh3ap
             {L"DW_GEAR_GETCOUNT_04", kh02_gear_counter::all_collected}};
 
         using Operation = Kh02StoryFlagBindings::Operation;
+        std::optional<int> forest_rail_checkpoint;
         Kh02StoryFlagBindings bindings{{[this](UObject* caller) { ensure_source_world(caller); },
                                         [this](const Kh02StoryFlagBindings::Request& request)
                                         { return evaluate(request); }}};
@@ -146,6 +148,8 @@ namespace kh3ap
         auto evaluate(const Kh02StoryFlagBindings::Request& request) -> int
         {
             const auto& key = request.key;
+            const bool is_rail_replay = forest_rail_checkpoint && key == L"gameflow_DW";
+            auto& value = is_rail_replay ? *forest_rail_checkpoint : flags[key];
             if (request.operation == Operation::integer || request.operation == Operation::boolean)
             {
                 bindings.note_read();
@@ -153,14 +157,13 @@ namespace kh3ap
                 {
                     return 0;
                 }
-                const int value = flags[key];
                 return request.operation == Operation::boolean ? value != 0 : value;
             }
             if (request.operation == Operation::set_boolean)
             {
-                flags[key] = request.boolean;
+                value = request.boolean;
                 bindings.note_write();
-                if (changed)
+                if (!is_rail_replay && changed)
                 {
                     changed();
                 }
@@ -173,12 +176,25 @@ namespace kh3ap
             }
             if (request.operation == Operation::set_label)
             {
-                if (kh02_checks::second_darkside_victory(request.source_node, request.normalized_key, flags[key],
+                if (is_rail_replay)
+                {
+                    bindings.note_write();
+                    if (label->second == kh02_checkpoint::forest_area_f_end)
+                    {
+                        forest_rail_checkpoint.reset();
+                    }
+                    else
+                    {
+                        value = label->second;
+                    }
+                    return 0;
+                }
+                if (kh02_checks::second_darkside_victory(request.source_node, request.normalized_key, value,
                                                          label->second))
                 {
                     flags[L"gameflow_DW_AP_DARKSIDE_02_CLEAR"] = 1;
                 }
-                flags[key] = label->second;
+                value = label->second;
                 bindings.note_write();
                 if (changed)
                 {
@@ -187,7 +203,6 @@ namespace kh3ap
                 return 0;
             }
             bindings.note_read();
-            const int value = flags[key];
             return request.operation == Operation::equal           ? value == label->second
                    : request.operation == Operation::greater_equal ? value >= label->second
                                                                    : value < label->second;
@@ -221,6 +236,10 @@ namespace kh3ap
             {
                 throw std::runtime_error("source_mirror_rebind_world");
             }
+            if (world.Get() != w)
+            {
+                forest_rail_checkpoint.reset();
+            }
             world = make_uobject_weak(w);
         }
 
@@ -250,6 +269,7 @@ namespace kh3ap
             if (world.Get() != w || restart)
             {
                 world = make_uobject_weak(w);
+                forest_rail_checkpoint.reset();
                 flags.clear();
                 flags[L"gameflow_DW"] = checkpoint;
                 flags[L"gameflow_DW_GEAR_GETCOUNT"] = 0;
@@ -339,6 +359,19 @@ namespace kh3ap
         }
     }
 
+    void Kh02StoryFlags::start_forest_rail_replay()
+    {
+        auto* world = impl->world.Get();
+        if (is_uobject_valid_fast(world) &&
+            world->GetPathName() == L"/Game/Maps/APKH02Mirrors/APKH02Forest.APKH02Forest" &&
+            value(L"gameflow_DW") >= kh02_checkpoint::forest_area_f_end)
+        {
+            // Only the source encounter's comparisons see its retry checkpoint.
+            // Chapter saves, check reconciliation and other areas keep the saved flow.
+            impl->forest_rail_checkpoint = kh02_checkpoint::first_darkside_end;
+        }
+    }
+
     void Kh02StoryFlags::select_mirror_room_entry(int area)
     {
         const wchar_t* name = area == 4   ? L"APKH02Stairs"
@@ -403,6 +436,7 @@ namespace kh3ap
     void Kh02StoryFlags::reset()
     {
         impl->world = {};
+        impl->forest_rail_checkpoint.reset();
         impl->flags.clear();
         impl->bindings.reset_observations();
     }

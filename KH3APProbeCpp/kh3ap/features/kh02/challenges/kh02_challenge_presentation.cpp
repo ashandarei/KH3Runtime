@@ -31,6 +31,11 @@ namespace kh3ap
 
     std::wstring kh02_challenge_description(int number)
     {
+        if (number - 1 == kh02_challenge_id::all_kill_shooter_darkside)
+        {
+            return L"Defeat " + std::to_wstring(kh02_tracking::goal(kh02_challenge_id::all_kill_shooter_darkside)) +
+                   L" Darksides in the chapter or Boss Rush.";
+        }
         try
         {
             ReflectedCall find(require_loaded_object(L"/Script/Engine.Default__KismetTextLibrary"),
@@ -76,12 +81,13 @@ namespace kh3ap
         -> std::vector<Kh02ChallengeRow>
     {
         std::vector<Kh02ChallengeRow> rows;
-        rows.reserve(kh02_challenge_id::count);
-        for (int number = 1; number <= kh02_challenge_id::count; ++number)
+        rows.reserve(kh02_challenge_id::playable_count);
+        for (int number = 1; number <= kh02_challenge_id::playable_count; ++number)
         {
+            const int id = number - 1;
             const auto progress = kh02_challenge_progress(number, true, counts);
-            const auto state = states.find(number - 1);
-            std::wstring title = kh02_challenges[number - 1].title;
+            const auto state = states.find(id);
+            std::wstring title = kh02_challenges[id].title;
             const auto prefix = title.find(L". ");
             if (prefix != std::wstring::npos)
             {

@@ -13,6 +13,7 @@ namespace kh3ap::alternate_wall_run
     inline constexpr int state_id = player_state_ids::wall_run;
     bool prepare(RC::Unreal::UObject* pawn);
     void capture_sora(RC::Unreal::UObject* pawn);
+    void align_kh02_aqua_ledge_grab(RC::Unreal::UObject* pawn);
     bool ready(RC::Unreal::UObject* pawn);
     void refresh_unlocks(RC::Unreal::UObject* pawn, bool enabled);
     RC::Unreal::UObject* replacement_voice(RC::Unreal::UObject* notify, RC::Unreal::UObject* mesh,

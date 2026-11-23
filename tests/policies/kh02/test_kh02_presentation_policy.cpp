@@ -159,4 +159,21 @@ int main()
     {
         assert(!kh02_visited_area_destination(area, visited));
     }
+    flags[kh02_visited_area_flag(kh02_forest_area)] = 1;
+    flags[L"gameflow_DW"] = kh02_checkpoint::forest_scene_dw021;
+    assert(kh02_forest_save_point(801, visited));
+    assert(!kh02_forest_save_point(802, visited));
+    assert(!kh02_forest_save_point(804, visited));
+    flags[L"gameflow_DW"] = kh02_checkpoint::forest_area_f_end;
+    assert(kh02_forest_save_point(802, visited));
+    assert(kh02_forest_save_point(804, visited));
+    assert(!kh02_forest_save_point(803, visited));
+    flags[L"gameflow_DW"] = kh02_checkpoint::forest_scene_dw024;
+    assert(kh02_forest_save_point(803, visited));
+    const auto forest_selection = kh02_area_selection(visited);
+    assert(forest_selection.selected_area(2) == kh02_forest_area);
+    assert(forest_selection.selected_area(3) == 801);
+    assert(forest_selection.selected_area(4) == 804);
+    assert(forest_selection.selected_area(5) == 802);
+    assert(forest_selection.selected_area(6) == 803);
 }

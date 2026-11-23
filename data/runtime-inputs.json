@@ -29486,19 +29486,6 @@
         "vanilla_item_name": "",
         "world": "Kingdom Hearts 0.2"
       },
-      "1263350579": {
-        "ap_location_id": 1263350579,
-        "ap_location_name": "0.2 - Objective 51: Demon Tide on Critical",
-        "bridge_delivery_required": true,
-        "bridge_key": "KH02:Objective:051",
-        "kh02_challenge": 50,
-        "source_id": "Objective:051",
-        "source_table": "KH02",
-        "type": "kh02_objective",
-        "vanilla_item": "NONE",
-        "vanilla_item_name": "",
-        "world": "Kingdom Hearts 0.2"
-      },
       "1263350785": {
         "ap_location_id": 1263350785,
         "ap_location_name": "0.2 - Castle Town - Chest DW_LBOX01",
@@ -34371,7 +34358,7 @@
         "world": "Arendelle"
       }
     },
-    "sha256": "2df16812d18ae9e9b43b1befdd5b69ffa4bdfdcc2c64055853baee34292ee407"
+    "sha256": "acb1d78a6bcd6da4c0f75ca923f2eceeb66488c44c418a549d66177d613ad712"
   },
   "randomization": {
     "groups": [

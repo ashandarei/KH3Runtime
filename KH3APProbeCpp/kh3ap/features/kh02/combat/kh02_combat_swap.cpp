@@ -5,6 +5,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/player_ids.h"
 #include "kh3ap/features/player/player_state_ids.h"
+#include "kh3ap/features/player/state/player_state_queue.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/movement/character_floating.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
@@ -220,6 +221,23 @@ namespace kh3ap
             auto* property = movement_properties.resolve(current, L"MyStateID");
             return property && property->GetElementSize() == 1 ? *property->ContainerPtrToValuePtr<uint8_t>(current)
                                                                : -1;
+        }
+
+        bool item_use_clear(UObject* pawn)
+        {
+            const auto* queue = read_player_state_queue(object(pawn, L"MyStateComp"));
+            if (!queue)
+            {
+                return false;
+            }
+            for (auto* queued_state : *queue)
+            {
+                if (state_id(queued_state) == player_state_ids::use_item)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         bool ordinary_state(int id)
@@ -1803,7 +1821,9 @@ namespace kh3ap
             auto* pawn = player();
             if (!dispatched)
             {
-                if (pawn != outgoing.Get() || !available(pawn))
+                // The item can already belong to the outgoing pawn's queue while
+                // its active state is still Idle or Jump. Let it apply in place.
+                if (pawn != outgoing.Get() || !available(pawn) || !item_use_clear(pawn))
                 {
                     character_shotlock::finish_swap_input_check();
                     queued = false;

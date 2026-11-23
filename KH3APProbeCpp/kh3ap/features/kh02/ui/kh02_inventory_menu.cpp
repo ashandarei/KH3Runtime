@@ -10,6 +10,7 @@
 #include "kh3ap/features/kh02/story/kh02_story.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
 #include "kh3ap/features/kh02/rewards/kh02_item_slots.h"
+#include "kh3ap/features/colors/color_material_ops.h"
 #include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -150,35 +151,34 @@ namespace kh3ap
             return convert.result_vector();
         }
 
-        static auto portrait_head_parameters(UObject* source_mesh, UObject* portrait_mesh)
-            -> std::array<std::array<float, 4>, 4>
+        static void apply_portrait_head_parameters(UObject* source_material, UObject* portrait_material,
+                                                   const Transform& source_transform,
+                                                   const Transform& portrait_transform)
         {
-            constexpr std::array names{L"atama_mtr_x", L"atama_mtr_y", L"atama_mtr_z", L"atama_WP"};
-            const auto source_transform = component_transform(source_mesh);
-            const auto portrait_transform = component_transform(portrait_mesh);
-            Call material(source_mesh, L"GetMaterial");
-            material.integer(L"ElementIndex", 0);
-            material.run();
-            std::array<std::array<float, 4>, 4> values{};
-            for (size_t index = 0; index < names.size(); ++index)
+            constexpr std::array orientation{L"atama_mtr_x", L"atama_mtr_y", L"atama_mtr_z"};
+            const auto overrides = material_parameter_names(source_material);
+            // Eye projection uses world-space values written by the gameplay
+            // mesh. Their material slots vary with the character and costume.
+            for (const auto& name : overrides)
             {
-                Call parameter(material.result(), L"K2_GetVectorParameterValue");
-                parameter.name(L"ParameterName", names[index]);
-                parameter.run();
-                auto* result = parameter.param(L"ReturnValue");
-                if (!result || result->GetElementSize() != sizeof(values[index]))
+                const bool position = name == L"atama_WP";
+                if (!position && std::find(orientation.begin(), orientation.end(), name) == orientation.end())
                 {
-                    throw std::runtime_error("Alternate portrait head parameter layout");
+                    continue;
                 }
-                std::memcpy(values[index].data(), result->ContainerPtrToValuePtr<void>(parameter.parameters.data()),
-                            sizeof(values[index]));
-                const bool position = index == 3;
-                const auto local = transform_parameter(
-                    source_transform, {values[index][0], values[index][1], values[index][2]}, true, position);
+                const auto value = read_vector_parameter_from_mid(source_material, name);
+                if (!value)
+                {
+                    continue;
+                }
+                const auto local =
+                    transform_parameter(source_transform, {(*value)[0], (*value)[1], (*value)[2]}, true, position);
                 const auto mapped = transform_parameter(portrait_transform, local, false, position);
-                std::copy(mapped.begin(), mapped.end(), values[index].begin());
+                Call apply(portrait_material, L"SetVectorParameterValue");
+                apply.name(L"ParameterName", name.c_str());
+                apply.numbers(L"Value", {mapped[0], mapped[1], mapped[2], (*value)[3]});
+                apply.run();
             }
-            return values;
         }
 
         template <class T> static auto field(void* object, size_t offset) -> T
@@ -430,8 +430,8 @@ namespace kh3ap
             Call link(actor, L"SetLinkMeshComponent");
             link.object(L"LinkMeshComponent", source_mesh);
             link.run();
-            const auto head_parameters = portrait_head_parameters(source_mesh, mesh);
-            constexpr std::array head_parameter_names{L"atama_mtr_x", L"atama_mtr_y", L"atama_mtr_z", L"atama_WP"};
+            const auto source_transform = component_transform(source_mesh);
+            const auto portrait_transform = component_transform(mesh);
             Call material_count(source_mesh, L"GetNumMaterials");
             material_count.run();
             const auto count =
@@ -443,24 +443,27 @@ namespace kh3ap
                 material.integer(L"ElementIndex", index);
                 material.run();
                 auto* source_material = material.result();
+                if (!is_uobject_valid_fast(source_material))
+                {
+                    continue;
+                }
                 auto* parent = try_read_reflected_object_property_value(source_material, L"Parent");
                 Call create(mesh, L"CreateDynamicMaterialInstance");
                 create.integer(L"ElementIndex", index);
                 create.object(L"SourceMaterial", is_uobject_valid_fast(parent) ? parent : source_material);
                 create.run();
                 auto* instance = create.result();
+                if (!is_uobject_valid_fast(instance))
+                {
+                    continue;
+                }
                 Call copy(instance, L"K2_CopyMaterialInstanceParameters");
                 copy.object(L"Source", source_material);
                 copy.run();
-                // Eye projection uses world-space head vectors. Reusing the
-                // gameplay coordinates makes the relocated capture's eyes black.
-                for (size_t parameter = 0; parameter < head_parameter_names.size(); ++parameter)
+                if (const auto* material_class = source_material->GetClassPrivate();
+                    material_class && material_class->GetName() == L"MaterialInstanceDynamic")
                 {
-                    const auto& value = head_parameters[parameter];
-                    Call apply(instance, L"SetVectorParameterValue");
-                    apply.name(L"ParameterName", head_parameter_names[parameter]);
-                    apply.numbers(L"Value", {value[0], value[1], value[2], value[3]});
-                    apply.run();
+                    apply_portrait_head_parameters(source_material, instance, source_transform, portrait_transform);
                 }
             }
             portrait_actor = make_uobject_weak(actor);

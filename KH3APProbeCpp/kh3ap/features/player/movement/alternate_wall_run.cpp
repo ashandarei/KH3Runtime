@@ -463,6 +463,22 @@ namespace kh3ap::alternate_wall_run
             pawn->GetName(), animations.size());
         return true;
     }
+
+    void align_kh02_aqua_ledge_grab(UObject* pawn)
+    {
+        static FWeakObjectPtr aligned;
+        if (!is_uobject_valid_fast(pawn) || aligned.Get() == pawn ||
+            pawn->GetClassPrivate()->GetName() != L"p_ex002_Pawn_C")
+        {
+            return;
+        }
+        // The chapter's native player factory bypasses alternate preparation.
+        // The shared Grip clips meet the lip at Sora's anchor; Aqua's vanilla
+        // -80 cm forward offset leaves her hands about 20 cm short.
+        constexpr DangleOffset shared_grip_anchor{-60.0f, 0.0f, -150.0f};
+        dangle_offset(pawn) = shared_grip_anchor;
+        aligned = make_uobject_weak(pawn);
+    }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
     namespace
     {

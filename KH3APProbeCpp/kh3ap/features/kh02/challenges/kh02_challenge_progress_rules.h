@@ -10,7 +10,6 @@ namespace kh3ap::kh02_tracking
     inline constexpr int mickey_link_state_id = 113;
     inline constexpr int ice_slide_goal_meters = 75;
     inline constexpr int centimeters_per_meter = 100;
-    inline constexpr int critical_difficulty = 3;
     inline constexpr int maximum_player_level = 99;
     inline constexpr int excellent_shotlock_chain_goal = 6;
 
@@ -111,11 +110,6 @@ namespace kh3ap::kh02_tracking
             changed |= complete(states, kh02_challenge_id::finish_magic_wish_enemy_aqua);
         }
         return changed;
-    }
-
-    inline bool critical_tide_victory(std::map<int, int>& states, int difficulty)
-    {
-        return difficulty == critical_difficulty && complete(states, kh02_challenge_id::finish_coop_action_devil_wave);
     }
 
     inline bool add(std::map<int, int>& states, std::map<int, int>& counts, int id, int amount = 1)

@@ -196,7 +196,8 @@ int main()
              L"World /Game/Maps/APKH02Mirrors/APKH02DestinyIslands.APKH02DestinyIslands",
              L"World /Game/Maps/APKH02Mirrors/APKH02Transition.APKH02Transition",
              L"World /Game/Maps/APKH02Mirrors/APKH02Epilogue.APKH02Epilogue",
-             L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallenge.APKH02MirrorChallenge"})
+             L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallenge.APKH02MirrorChallenge",
+             L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond.APKH02MirrorChallengeSecond"})
     {
         for (bool journey : {false, true})
         {

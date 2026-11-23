@@ -10,6 +10,7 @@
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <DynamicOutput/DynamicOutput.hpp>
+#include <array>
 #include <vector>
 
 namespace kh3ap::character_attack_completion
@@ -19,6 +20,28 @@ namespace kh3ap::character_attack_completion
     {
         constexpr int maximum_attack_row_bytes = 4096;
         constexpr int maximum_weapon_equips = 16;
+        constexpr float kairi_combo_power_multiplier = 1.10f;
+        constexpr std::array kairi_combo_rows{
+            L"KB_STRIKESHIFT", L"KB_STRIKESHIFT_HIT", L"KB_UPPER", L"KB_TURN", L"KB_DASH", L"KB_DASH_END",
+            L"KB_FLOWER", L"KB_FLOWER_END", L"KB_SPIRAL", L"KB_SPIRAL_END", L"KB_AERIAL"};
+
+        void tune_kairi_combo(const Kh02DataTableView& table)
+        {
+            auto* power = table.schema->GetPropertyByNameInChain(L"m_Power");
+            if (!power || power->GetClass().GetName() != L"FloatProperty" || power->GetElementSize() != sizeof(float))
+            {
+                throw std::runtime_error("kairi_combo_power_layout");
+            }
+            for (const auto* name : kairi_combo_rows)
+            {
+                auto* row = table.find(name);
+                if (!row)
+                {
+                    throw std::runtime_error("kairi_combo_attack_row_missing");
+                }
+                *power->ContainerPtrToValuePtr<float>(row) *= kairi_combo_power_multiplier;
+            }
+        }
 
         UObject** reference(UObject* owner, const wchar_t* name)
         {
@@ -168,6 +191,10 @@ namespace kh3ap::character_attack_completion
         if (!source.visit(copy_row, &copy) || copy.failed || copy.count == 0)
         {
             throw std::runtime_error("character_attack_copy_rows");
+        }
+        if (player == PlayerId::Kairi)
+        {
+            tune_kairi_combo(destination);
         }
         *reference(private_set, L"m_AttackData") = private_table;
         for (auto** owner : owners)

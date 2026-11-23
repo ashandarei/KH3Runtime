@@ -11,7 +11,7 @@ struct ChallengeContract
     static constexpr int castle_secret = 37;
     static constexpr int mirror_secret = 39;
     static constexpr int tower_team_finish = 49;
-    static constexpr int critical_tide = 50;
+    static constexpr int retired_critical_tide = kh02_challenge_id::finish_coop_action_devil_wave;
     static constexpr int lamp_goal = 20;
     static constexpr int white_gem_goal = 7;
     static constexpr int maximum_counter = 1'000'000;
@@ -41,7 +41,7 @@ void parse_challenges()
         }
         integer_argument = *cursor++;
         if (integer_argument != ChallengeContract::tower_team_finish &&
-            integer_argument != ChallengeContract::critical_tide)
+            integer_argument != ChallengeContract::retired_critical_tide)
         {
             throw std::runtime_error("kh02_source_try_challenge_id");
         }
@@ -174,6 +174,18 @@ void parse_challenges()
 
 void execute_challenges()
 {
+    // The original wave graph still addresses this native enum slot.
+    if (integer_argument == ChallengeContract::retired_critical_tide &&
+        (adapter == Adapter::TryChallenge || adapter == Adapter::ChallengeStatus ||
+         adapter == Adapter::CompleteChallenge || adapter == Adapter::StartChallenge ||
+         adapter == Adapter::EnableChallenge || adapter == Adapter::DisableChallenge))
+    {
+        if (return_value)
+        {
+            *static_cast<uint8_t*>(return_value) = 0;
+        }
+        return;
+    }
     if (adapter == Adapter::EnableChallenge || adapter == Adapter::DisableChallenge)
     {
         story->challenge_events[integer_argument] = adapter == Adapter::EnableChallenge;
@@ -202,41 +214,8 @@ void execute_challenges()
         const int next_state =
             adapter == Adapter::CompleteChallenge ? ChallengeContract::complete : ChallengeContract::active;
         const bool state_changed = story->within_challenges[integer_argument] < next_state;
-        if (adapter == Adapter::CompleteChallenge)
-        {
-            // The source starts this objective only on Critical. KH3
-            // owns the difficulty, so verify its live value at victory.
-            if (integer_argument == ChallengeContract::critical_tide)
-            {
-                if (!frame->Node->GetPathName().starts_with(L"/Game/Zevels/dw/dw_10/umap/dw_10_enemy."))
-                {
-                    throw std::runtime_error("The Critical Demon Tide objective requires its original victory site.");
-                }
-                ReflectedCall difficulty(
-                    require_loaded_object(L"/Script/TresGame.Default__TresGameBlueprintLibrary"),
-                    L"BP_GetGameLevel");
-                auto* difficulty_result = difficulty.param(L"ReturnValue");
-                if (!difficulty_result || difficulty_result->GetClass().GetName() != L"ByteProperty" ||
-                    difficulty_result->GetElementSize() != sizeof(uint8_t))
-                {
-                    throw std::runtime_error("The current difficulty query has an unsupported result.");
-                }
-                difficulty.run();
-                kh02_tracking::critical_tide_victory(
-                    story->within_challenges,
-                    *difficulty_result->ContainerPtrToValuePtr<uint8_t>(difficulty.parameters.data()));
-            }
-            else
-            {
-                story->within_challenges[integer_argument] =
-                    std::max(story->within_challenges[integer_argument], next_state);
-            }
-        }
-        else
-        {
-            story->within_challenges[integer_argument] =
-                std::max(story->within_challenges[integer_argument], next_state);
-        }
+        story->within_challenges[integer_argument] =
+            std::max(story->within_challenges[integer_argument], next_state);
         if (return_value)
         {
             *static_cast<uint8_t*>(return_value) =
