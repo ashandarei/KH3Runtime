@@ -28,7 +28,7 @@
 #define NOMINMAX
 #include <WinSock2.h>
 #include <windows.h>
-#include <Xinput.h>
+#include "kh3ap/core/platform/loaded_xinput.h"
 
 using namespace RC;
 using namespace RC::Unreal;
@@ -196,12 +196,7 @@ namespace kh3ap
 
         auto capture_xinput_connected_mask() -> uint32_t
         {
-            HMODULE const xinput = GetModuleHandleW(L"XINPUT1_3.dll");
-            using XInputGetStateFn = DWORD(WINAPI*)(DWORD, XINPUT_STATE*);
-            const auto get_state =
-                xinput
-                    ? reinterpret_cast<XInputGetStateFn>(GetProcAddress(xinput, "XInputGetState"))
-                    : nullptr;
+            const auto get_state = loaded_xinput_get_state();
             if (!get_state)
             {
                 return 0;

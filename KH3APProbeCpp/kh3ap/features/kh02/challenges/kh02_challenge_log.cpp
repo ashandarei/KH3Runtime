@@ -332,7 +332,7 @@ namespace kh3ap
 
     auto Kh02ChallengeLog::open(UObject* camp, std::vector<Kh02ChallengeRow> rows) -> bool
     {
-        if (!is_uobject_valid_fast(camp) || rows.size() != kh02_challenge_id::count || !impl->error.empty())
+        if (!is_uobject_valid_fast(camp) || rows.size() != kh02_challenge_id::playable_count || !impl->error.empty())
         {
             return false;
         }

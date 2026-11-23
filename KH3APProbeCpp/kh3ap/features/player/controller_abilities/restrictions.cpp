@@ -182,8 +182,9 @@ namespace kh3ap
         // This own-character grant must not wait for unrelated spell HUD or
         // shared command preparation to finish.
         if (!kairi_glide::refresh(aqua, failure)) { return false; }
-        constexpr auto& abilities = s_refresh_abilities;
-        std::array<RuntimeSoraAbilityEntryState, abilities.size()> states{};
+        auto abilities = s_refresh_abilities;
+        abilities[s_controller_abilities.size()] = current_wall_run_id(aqua);
+        std::array<RuntimeSoraAbilityEntryState, s_refresh_abilities.size()> states{};
         if (!try_read_runtime_sora_ability_entry_states(abilities, aqua, states, failure))
         {
             return false;
@@ -202,7 +203,7 @@ namespace kh3ap
                                                          : CharacterStyleOwner::Other,
             kh02_current_story_world(), mode, equipped(1), aqua_style_unlock::owned(),
             kairi_style_unlock::owned());
-        const kh02rewards::SharedUnlockOwnership owned{equipped(0), style_owned, equipped(2),
+        const kh02rewards::SharedUnlockOwnership owned{equipped(0) || equipped(s_controller_abilities.size()), style_owned, equipped(2),
                                                        links.owned && links.equipped, equipped(3)};
         const bool shared_style = is_aqua || is_kairi || mode == RuntimeStyleChangeMode::Shared;
         const auto plan = kh02rewards::shared_unlock_plan(owned, shared_style);

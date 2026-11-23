@@ -184,7 +184,7 @@ namespace kh3ap
     // HandleStartingNewPlayer, and its reward/tutorial block can begin before
     // a later map-ready callback. Patch each he_01 class load synchronously so
     // both Formchange panels and camp menu are bypassed before ReceiveBeginPlay.
-    // world_keyblade_bypass.h separately suppresses the vanilla Hero's Origin
+    // gameflow_reward_bypass.h separately suppresses the vanilla Hero's Origin
     // grant while retaining the story flags used by the AP completion check.
     [[nodiscard]] auto
     try_apply_runtime_olympus_completion_early_bypass(RC::Unreal::UObject* gameflow_object) -> bool;

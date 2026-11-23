@@ -7,7 +7,6 @@
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/core/conditional_profile_scope.h"
-#include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/features/grants/vbonus/vbonus_grant_call_helpers.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/features/kh02/story/kh02_story.h"
@@ -29,20 +28,6 @@ namespace kh3ap
     auto RuntimeControllerAbilityService::Impl::request_refresh(RuntimeControllerAbilityEvent event)
         -> void
     {
-        // Possession already reconciles ordinary command lists. The late
-        // banner is only a retry signal after failed setup, plus Olympus'
-        // explicit story gate override. Native ability-change hooks remain
-        // independent and always enqueue their own work.
-        if (event == RuntimeControllerAbilityEvent::MapReady &&
-            successful_pawn_.Get() == config_.runtime_state.grant_state().pawn_state().object() &&
-            successful_pawn_.Get() != nullptr && successful_controller_.Get() != nullptr &&
-            successful_controller_.Get() ==
-                config_.runtime_state.grant_state().pawn_state().controller_object() &&
-            !is_runtime_mount_olympus_ability_context(
-                config_.runtime_state.grant_state().pawn_state().name()))
-        {
-            return;
-        }
         pending_events_.fetch_or(static_cast<uint32_t>(event));
     }
 
@@ -68,6 +53,7 @@ namespace kh3ap
         }
         if ((events & static_cast<uint32_t>(RuntimeControllerAbilityEvent::MapReady)) != 0)
         {
+            applied_states_.invalidate(setter_index::wall_run);
             map_ready_pending_ = true;
             mount_olympus_shoot_flow_pending_ = false;
         }
@@ -145,8 +131,10 @@ namespace kh3ap
 
             std::array<RuntimeSoraAbilityEntryState, s_refresh_abilities.size()> states{};
             std::wstring failure{};
+            auto abilities = s_refresh_abilities;
+            abilities[s_controller_abilities.size()] = current_wall_run_id(pawn);
             const bool state_available = try_read_runtime_sora_ability_entry_states(
-                s_refresh_abilities, pawn, states, &failure);
+                abilities, pawn, states, &failure);
             if (!state_available)
             {
                 if (config_.debug_logging && failure != last_query_failure_)
@@ -165,7 +153,9 @@ namespace kh3ap
                 {
                     const auto& definition = s_controller_abilities[index];
                     const auto& state = states[index];
-                    const bool desired = state.owned && state.equipped;
+                    const auto& regional = states[s_controller_abilities.size()];
+                    const bool desired = (state.owned && state.equipped) ||
+                        (definition.setter_index == setter_index::wall_run && regional.equipped);
                     if (definition.ability_value == ability_id::magic)
                     {
                         continue; // shared MP, separate commands below
@@ -253,17 +243,9 @@ namespace kh3ap
         refresh_state_.finish(success);
         if (success)
         {
-            successful_pawn_ =
-                make_uobject_weak(config_.runtime_state.grant_state().pawn_state().object());
-            successful_controller_ = make_uobject_weak(
-                config_.runtime_state.grant_state().pawn_state().controller_object());
             Output::send<LogLevel::Verbose>(STR("[KH3APProbeCpp] Controller ability event refresh "
                                                 "complete events={} attempts={}\n"),
                                             reasons, refresh_state_.attempts());
-        }
-        else
-        {
-            successful_pawn_ = nullptr;
         }
         if (!success && !refresh_state_.pending())
         {

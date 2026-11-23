@@ -23,7 +23,7 @@ namespace kh3ap::kh02_checks
         const auto type = row.at("type").get<std::string>();
         if (type == "kh02_objective" && !row.contains("kh02_flag"))
         {
-            result.challenge = kh02_progress::integer(row.at("kh02_challenge"), 0, 50);
+            result.challenge = kh02_progress::integer(row.at("kh02_challenge"), 0, kh02_challenge_id::count - 1);
             const int number = result.challenge + 1;
             const auto expected = "Objective:" + std::string(number < 10 ? "00" : "0") + std::to_string(number);
             if (result.id == expected)

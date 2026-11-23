@@ -59,6 +59,7 @@ namespace kh3ap
                                      std::wstring_view flag_name, std::optional<int> value) -> std::string;
         // Agent manual saves only; does not authorize AP grants or title loading.
         static auto native_save_ready(RC::Unreal::UObject* pawn) -> bool;
+        static void record_mickey_link(RC::Unreal::UObject* pawn) noexcept;
         static void release_dressing_room(bool restore_materials);
         static auto open_dressing_room(RC::Unreal::UObject* camp) -> bool;
         static auto open_challenges(RC::Unreal::UObject* camp) -> bool;

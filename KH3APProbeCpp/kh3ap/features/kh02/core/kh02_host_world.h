@@ -19,6 +19,8 @@ namespace kh3ap
                world == L"World /Game/Maps/APKH02Mirrors/APKH02DestinyIslands.APKH02DestinyIslands" ||
                world == L"World /Game/Maps/APKH02Mirrors/APKH02Transition.APKH02Transition" ||
                world == L"World /Game/Maps/APKH02Mirrors/APKH02Epilogue.APKH02Epilogue" ||
-               world == L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallenge.APKH02MirrorChallenge";
+               world == L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallenge.APKH02MirrorChallenge" ||
+               world ==
+                   L"World /Game/Maps/APKH02Mirrors/APKH02MirrorChallengeSecond.APKH02MirrorChallengeSecond";
     }
 } // namespace kh3ap

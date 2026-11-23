@@ -105,6 +105,9 @@ namespace kh3ap::character_exploration
             SharedState{player_state_ids::gigas, L"/Script/TresGame.TresPlayerState_Gigas", {}, true},
             SharedState{player_state_ids::cover, L"/Script/TresGame.TresPlayerState_Cover", {}, true},
             SharedState{player_state_ids::shop_menu, L"/Script/TresGame.TresPlayerState_ShopMenu", {}},
+            // Supply the native thaw and secondary-motion cleanup when an
+            // owned alternate's state roster omits the Freeze reaction.
+            SharedState{player_state_ids::bad_stat_freeze, L"/Script/TresGame.TresPlayerState_BadStatFreeze", {}},
             SharedState{character_traversal::open_chest_state, L"/Script/TresGame.TresPlayerState_OpenTreasureBox", {}, true},
             SharedState{character_traversal::swim_state, L"/Script/TresGame.TresPlayerState_Swim", {}, true},
             SharedState{character_traversal::special_ship_state, L"/Script/TresGame.TresPlayerState_SpecialShip", {}, true},

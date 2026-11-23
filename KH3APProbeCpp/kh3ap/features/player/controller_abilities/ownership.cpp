@@ -119,14 +119,15 @@ namespace kh3ap
                 return false;
             }
         }
-        else if (!call_setter(controller, definition->setter_index, state.equipped, failure_reason))
+        else if (!key.starts_with(L"wall_run_"))
         {
-            return false;
-        }
-        else
-        {
+            if (!call_setter(controller, definition->setter_index, state.equipped, failure_reason))
+            {
+                return false;
+            }
             applied_states_.record(definition->setter_index, state.equipped);
         }
+        // The refresh below applies a regional receipt only in its matching world.
         request_refresh(RuntimeControllerAbilityEvent::Grant);
         if (result)
         {
@@ -188,6 +189,15 @@ namespace kh3ap
                                                        failure_reason))
         {
             return false;
+        }
+        if (!state.owned && key == L"wall_run")
+        {
+            const auto local = current_wall_run_id(pawn);
+            if (local != ability_id::wall_run &&
+                !try_read_runtime_sora_ability_entry_state(local, pawn, &state, failure_reason))
+            {
+                return false;
+            }
         }
         *owned = state.owned;
         return true;

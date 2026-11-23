@@ -21,10 +21,20 @@ namespace kh3ap
 {
     namespace startup_movie_detail
     {
-        constexpr uintptr_t playlist_append_rva = 0x317526B;
-        constexpr uintptr_t startup_wait_rva = 0x3DDA090;
-        constexpr uintptr_t movie_player_vtable_rva = 0x7DAA740;
-        constexpr uintptr_t startup_finished_rva = 0x92A2D20;
+        struct StartupMovieProfile
+        {
+            uintptr_t playlist_append_rva;
+            uintptr_t startup_wait_rva;
+            uintptr_t movie_player_vtable_rva;
+            uintptr_t startup_finished_rva;
+            uintptr_t clock_fields_rva;
+            uintptr_t input_pump_rva;
+            std::span<const uint8_t> wait_prologue;
+            std::array<uint8_t, 15> input_pump;
+            std::array<uint8_t, 5> omit_playlist_entry;
+        };
+
+        constexpr size_t wait_vtable_offset = 0x50;
         constexpr size_t slate_widget_offset = 0x80;
         constexpr size_t movie_count_offset = 0x98;
         constexpr size_t minimum_display_time_offset = 0xA0;
@@ -34,16 +44,27 @@ namespace kh3ap
 
         constexpr std::array<uint8_t, 16> playlist_append{
             0x48, 0x63, 0x5C, 0x24, 0x70, 0x8D, 0x43, 0x01, 0x89, 0x44, 0x24, 0x70, 0x3B, 0x44, 0x24, 0x74};
-        constexpr std::array<uint8_t, 5> omit_playlist_entry{0xEB, 0x5D, 0x90, 0x90, 0x90}; // -> 0x31752CA
-        constexpr std::array<uint8_t, 19> wait_prologue{
+        constexpr std::array<uint8_t, 19> egs_wait_prologue{
             0x48, 0x8B, 0xC4, 0x48, 0x89, 0x48, 0x08, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55,
             0x41, 0x56, 0x41, 0x57};
+        constexpr std::array<uint8_t, 20> steam_wait_prologue{
+            0x48, 0x8B, 0xC4, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56, 0x41, 0x57,
+            0x48, 0x8D, 0x6C, 0x24, 0xA8};
         constexpr std::array<uint8_t, 15> wait_clock_fields{
             0xF2, 0x0F, 0x5C, 0x8F, 0x00, 0x02, 0x00, 0x00, 0xF3, 0x0F, 0x10, 0x87, 0xA0, 0x00, 0x00};
-        constexpr std::array<uint8_t, 15> wait_input_pump{
-            0xB1, 0x01, 0xE8, 0xF8, 0x12, 0x4A, 0xFF, 0x49, 0x8B, 0xCF, 0xE8, 0xC0, 0xA9, 0x77, 0xFF};
+
+        // Both builds resume at the instruction following the copyright playlist append.
+        constexpr StartupMovieProfile egs_profile{
+            0x317526B, 0x3DDA090, 0x7DAA740, 0x92A2D20, 0x3DDA3A0, 0x3DDA421, egs_wait_prologue,
+            {0xB1, 0x01, 0xE8, 0xF8, 0x12, 0x4A, 0xFF, 0x49, 0x8B, 0xCF, 0xE8, 0xC0, 0xA9, 0x77, 0xFF},
+            {0xEB, 0x5D, 0x90, 0x90, 0x90}};
+        constexpr StartupMovieProfile steam_profile{
+            0x2CDCA6C, 0x38B9D90, 0x7477828, 0x9C76E4C, 0x38BA145, 0x38BA1C6, steam_wait_prologue,
+            {0xB1, 0x01, 0xE8, 0x23, 0xCF, 0x52, 0xFF, 0x49, 0x8B, 0xCD, 0xE8, 0x4B, 0x77, 0x80, 0xFF},
+            {0xEB, 0x62, 0x90, 0x90, 0x90}};
 
         inline uint8_t* game_image{};
+        inline const StartupMovieProfile* installed_profile{};
         inline uint64_t wait_original{};
         inline std::unique_ptr<PLH::x64Detour> wait_detour;
         inline std::atomic_bool startup_widget_pending{};
@@ -79,8 +100,8 @@ namespace kh3ap
             using Wait = void (*)(uint8_t*);
             const auto original = reinterpret_cast<Wait>(wait_original);
             if (startup_widget_pending.load(std::memory_order_acquire) && movie_player &&
-                *reinterpret_cast<uint8_t**>(movie_player) == game_image + movie_player_vtable_rva &&
-                game_image[startup_finished_rva] == 0 &&
+                *reinterpret_cast<uint8_t**>(movie_player) == game_image + installed_profile->movie_player_vtable_rva &&
+                game_image[installed_profile->startup_finished_rva] == 0 &&
                 *reinterpret_cast<void**>(movie_player + slate_widget_offset) &&
                 *reinterpret_cast<int32_t*>(movie_player + movie_count_offset) == 0 &&
                 startup_widget_pending.exchange(false, std::memory_order_acq_rel))
@@ -118,16 +139,31 @@ namespace kh3ap
             return;
         }
         const auto* const pe = reinterpret_cast<const IMAGE_NT_HEADERS64*>(image + dos->e_lfanew);
-        if (pe->Signature != IMAGE_NT_SIGNATURE || pe->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-            !native_build::egs.matches(pe->FileHeader.TimeDateStamp, pe->OptionalHeader.SizeOfImage))
+        if (pe->Signature != IMAGE_NT_SIGNATURE || pe->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64)
         {
             return;
         }
 
-        if (std::memcmp(image + playlist_append_rva, playlist_append.data(), playlist_append.size()) != 0 ||
-            std::memcmp(image + startup_wait_rva, wait_prologue.data(), wait_prologue.size()) != 0 ||
-            std::memcmp(image + 0x3DDA3A0, wait_clock_fields.data(), wait_clock_fields.size()) != 0 ||
-            std::memcmp(image + 0x3DDA421, wait_input_pump.data(), wait_input_pump.size()) != 0)
+        const StartupMovieProfile* profile{};
+        switch (native_build::identify(pe->FileHeader.TimeDateStamp, pe->OptionalHeader.SizeOfImage))
+        {
+        case native_build::Build::Egs:
+            profile = &egs_profile;
+            break;
+        case native_build::Build::Steam:
+            profile = &steam_profile;
+            break;
+        default:
+            return;
+        }
+
+        auto* wait = image + profile->startup_wait_rva;
+        auto* wait_slot = image + profile->movie_player_vtable_rva + wait_vtable_offset;
+        if (std::memcmp(image + profile->playlist_append_rva, playlist_append.data(), playlist_append.size()) != 0 ||
+            std::memcmp(wait, profile->wait_prologue.data(), profile->wait_prologue.size()) != 0 ||
+            std::memcmp(image + profile->clock_fields_rva, wait_clock_fields.data(), wait_clock_fields.size()) != 0 ||
+            std::memcmp(image + profile->input_pump_rva, profile->input_pump.data(), profile->input_pump.size()) != 0 ||
+            *reinterpret_cast<uint8_t**>(wait_slot) != wait)
         {
             RC::Output::send<RC::LogLevel::Warning>(
                 STR("[KH3APProbeCpp] Copyright movie bypass signature mismatch\n"));
@@ -136,15 +172,16 @@ namespace kh3ap
 
         game_image = image;
         wait_detour = std::make_unique<PLH::x64Detour>(
-            reinterpret_cast<uint64_t>(image + startup_wait_rva),
+            reinterpret_cast<uint64_t>(wait),
             reinterpret_cast<uint64_t>(&wait_for_startup_screen), &wait_original);
-        if (!wait_detour->hook() ||
-            !replace_bytes(image + playlist_append_rva, playlist_append, omit_playlist_entry))
+        if (!wait_detour->hook() || !replace_bytes(image + profile->playlist_append_rva,
+                                                  playlist_append, profile->omit_playlist_entry))
         {
             release_native_detour(wait_detour);
             RC::Output::send<RC::LogLevel::Warning>(STR("[KH3APProbeCpp] Copyright movie bypass unavailable\n"));
             return;
         }
+        installed_profile = profile;
         startup_widget_pending.store(true, std::memory_order_release);
     }
 
@@ -152,11 +189,13 @@ namespace kh3ap
     {
         using namespace startup_movie_detail;
         startup_widget_pending.store(false, std::memory_order_release);
-        if (game_image)
+        if (installed_profile)
         {
-            replace_bytes(game_image + playlist_append_rva, omit_playlist_entry,
-                          std::span{playlist_append}.first<omit_playlist_entry.size()>());
+            const auto& patch = installed_profile->omit_playlist_entry;
+            replace_bytes(game_image + installed_profile->playlist_append_rva, patch,
+                          std::span{playlist_append}.first(patch.size()));
         }
         release_native_detour(wait_detour);
+        installed_profile = nullptr;
     }
 }

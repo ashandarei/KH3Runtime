@@ -163,13 +163,6 @@ namespace kh3ap
                     self->pending_change |= kh02_tracking::spellweaver_activation(self->states, self->counts,
                                                                                   self->fully_equipped, phantom_battle);
                 }
-                auto* state_id = is_uobject_valid_fast(state) ? state->GetPropertyByNameInChain(L"MyStateID") : nullptr;
-                if (state_id && state_id->GetElementSize() == 1 &&
-                    *state_id->ContainerPtrToValuePtr<uint8_t>(state) == kh02_tracking::mickey_link_state_id)
-                {
-                    self->pending_change |=
-                        kh02_tracking::add(self->states, self->counts, kh02_challenge_id::coop_action);
-                }
             }
             catch (const std::exception& exception)
             {
@@ -208,7 +201,8 @@ namespace kh3ap
                     return;
                 }
                 const auto type = enemy->GetClassPrivate()->GetName();
-                if (!kh02_tracking::heartless(type) && !type.starts_with(L"e_dw405_Pawn_"))
+                if (!kh02_tracking::heartless(type) && !kh02_tracking::darkside(type) &&
+                    !type.starts_with(L"e_dw405_Pawn_"))
                 {
                     return;
                 }

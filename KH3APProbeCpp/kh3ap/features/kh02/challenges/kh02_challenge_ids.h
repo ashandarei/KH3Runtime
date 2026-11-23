@@ -56,6 +56,7 @@ namespace kh3ap::kh02_challenge_id
     inline constexpr int finish_coop_action_devil_wave = 50;
     inline constexpr int count = 51;
     inline constexpr int enum_entry_count = count + 1;
+    inline constexpr int playable_count = finish_coop_action_devil_wave;
 } // namespace kh3ap::kh02_challenge_id
 
 namespace kh3ap::kh02_challenge_state

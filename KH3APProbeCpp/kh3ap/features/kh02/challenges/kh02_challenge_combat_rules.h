@@ -21,20 +21,25 @@ namespace kh3ap::kh02_tracking
         return -1;
     }
 
+    inline bool enemy_family(std::wstring_view name, std::wstring_view prefix)
+    {
+        return name.starts_with(prefix) && (name.size() == prefix.size() || name[prefix.size()] == L'_');
+    }
+
+    inline bool darkside(std::wstring_view name)
+    {
+        return enemy_family(name, L"e_dw407_Pawn") || enemy_family(name, L"e_dw407a_Pawn") ||
+               enemy_family(name, L"e_dw407b_Pawn");
+    }
+
     inline bool heartless(std::wstring_view name)
     {
         if (species(name) >= 0)
         {
             return true;
         }
-        for (std::wstring_view prefix : {L"e_dw401_Pawn", L"e_dw402_Pawn", L"e_dw407_Pawn", L"e_dw407b_Pawn"})
-        {
-            if (name.starts_with(prefix) && (name.size() == prefix.size() || name[prefix.size()] == '_'))
-            {
-                return true;
-            }
-        }
-        return false;
+        return enemy_family(name, L"e_dw401_Pawn") || enemy_family(name, L"e_dw402_Pawn") ||
+               enemy_family(name, L"e_dw407_Pawn") || enemy_family(name, L"e_dw407b_Pawn");
     }
 
     struct Hit
@@ -49,16 +54,15 @@ namespace kh3ap::kh02_tracking
     {
         const int type = species(enemy);
         bool changed = false;
-        if (hit.player && hit.lethal)
+        // The defeat journal has already confirmed and deduplicated the death.
+        // Enemy-family totals do not depend on the damage event's owner.
+        if (darkside(enemy))
         {
-            if (enemy.starts_with(L"e_dw402_Pawn_") && hit.spellweaver)
-            {
-                changed |= complete(states, kh02_challenge_id::finish_magic_wish_devil_tower);
-            }
-            if (enemy.starts_with(L"e_dw407b_Pawn_"))
-            {
-                changed |= add(states, counts, kh02_challenge_id::all_kill_shooter_darkside);
-            }
+            changed |= add(states, counts, kh02_challenge_id::all_kill_shooter_darkside);
+        }
+        if (enemy_family(enemy, L"e_dw402_Pawn") && hit.player && hit.lethal && hit.spellweaver)
+        {
+            changed |= complete(states, kh02_challenge_id::finish_magic_wish_devil_tower);
         }
         if (!heartless(enemy))
         {

@@ -80,6 +80,7 @@ namespace kh3ap
     {
         (void)try_install_viewport_input_hook();
         bool injection_completed_this_tick = false;
+        check_controller_title_shortcut();
         if (injection_pending_)
         {
             UObject* const context = menu_context_.Get();

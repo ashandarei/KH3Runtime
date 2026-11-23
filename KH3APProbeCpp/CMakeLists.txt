@@ -556,7 +556,7 @@ target_include_directories(${TARGET} PRIVATE
     "${stb_SOURCE_DIR}"
 )
 
-target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE asmjit kh3ap_json_headers kh3ap_vorbis)
+target_link_libraries(${TARGET} PUBLIC UE4SS PolyHook_2 ws2_32 bcrypt ole32 advapi32 PRIVATE winmm asmjit kh3ap_json_headers kh3ap_vorbis)
 
 if(MSVC)
     # Favor smaller code while retaining the shipping /O2 optimization preset.

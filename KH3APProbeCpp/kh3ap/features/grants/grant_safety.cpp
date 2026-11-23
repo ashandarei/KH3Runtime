@@ -14,6 +14,7 @@
 #include "kh3ap/features/player/objects/object_resolver.h"
 #include "kh3ap/core/objects/weak_object_resolver.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/features/player/state/player_state_queue.h"
 #include "kh3ap/features/player/state/sora_state_catalog.h"
 #include "kh3ap/app/state.h"
 #include "kh3ap/features/world/space/space_service.h"
@@ -23,8 +24,6 @@
 #include "kh3ap/features/grants/delivery/map_ap_grant_catalog.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
-#include <Unreal/Property/FArrayProperty.hpp>
-#include <Unreal/TArray.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UObject.hpp>
 
@@ -484,24 +483,8 @@ namespace kh3ap
 
         // Airstep can be queued while the current state still reports Idle or Jump.
         // Burn prepends its own state, so check the native queue before applying a trap.
-        using namespace RC::Unreal;
-        using StateQueue = TArray<UObject*>;
-        constexpr int max_state_queue_entries = 64;
-        auto* property = component->GetPropertyByNameInChain(L"m_StateQueue");
-        if (!property || property->GetClass().GetName() != L"ArrayProperty" ||
-            property->GetElementSize() != sizeof(StateQueue))
-        {
-            return {false, L"trap_state_queue_unavailable", {}};
-        }
-        auto* inner = const_cast<FProperty*>(static_cast<FArrayProperty*>(property)->GetInner());
-        if (!inner || inner->GetClass().GetName() != L"ObjectProperty" ||
-            inner->GetElementSize() != sizeof(UObject*))
-        {
-            return {false, L"trap_state_queue_unavailable", {}};
-        }
-        const auto* queue = property->ContainerPtrToValuePtr<StateQueue>(component);
-        if (queue->Num() < 0 || queue->Num() > max_state_queue_entries ||
-            queue->Max() < queue->Num() || (queue->Num() && !queue->GetData()))
+        const auto* queue = read_player_state_queue(component);
+        if (!queue)
         {
             return {false, L"trap_state_queue_unavailable", {}};
         }

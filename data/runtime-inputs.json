@@ -2649,6 +2649,46 @@
       "1263022662": {
         "name": "Style Change: Seven Wishes",
         "token": "KH3AP_CONTROLLER_UNLOCK::seven_wishes"
+      },
+      "1263022663": {
+        "name": "Wall Run: Olympus",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_he"
+      },
+      "1263022664": {
+        "name": "Wall Run: Twilight Town",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_tt"
+      },
+      "1263022665": {
+        "name": "Wall Run: Toy Box",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ts"
+      },
+      "1263022666": {
+        "name": "Wall Run: Kingdom of Corona",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ra"
+      },
+      "1263022667": {
+        "name": "Wall Run: Monstropolis",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_mi"
+      },
+      "1263022668": {
+        "name": "Wall Run: Arendelle",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_fz"
+      },
+      "1263022669": {
+        "name": "Wall Run: The Caribbean",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ca"
+      },
+      "1263022670": {
+        "name": "Wall Run: San Fransokyo",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_bx"
+      },
+      "1263022671": {
+        "name": "Wall Run: Keyblade Graveyard",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_kg"
+      },
+      "1263022672": {
+        "name": "Wall Run: Re Mind",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_remind"
       }
     },
     "tokens": {
@@ -6755,6 +6795,56 @@
         "name": "Style Change: Seven Wishes",
         "flags": [],
         "munny": 0
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_bx": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: San Fransokyo"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ca": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: The Caribbean"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_fz": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Arendelle"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_he": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Olympus"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_kg": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Keyblade Graveyard"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_mi": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Monstropolis"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ra": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Kingdom of Corona"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_remind": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Re Mind"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ts": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Toy Box"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_tt": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Twilight Town"
       }
     },
     "vbonus_bundles": [
@@ -14020,9 +14110,9 @@
       },
       "1263023217": {
         "ap_location_id": 1263023217,
-        "ap_location_name": "Frozen Slider Frost Serpents",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents",
         "bridge_key": "VBonus:Vbonus_048",
-        "location_description": "Frozen Slider Frost Serpents",
+        "location_description": "Frozen Slider (Story) Frost Serpents",
         "source_id": "Vbonus_048",
         "source_table": "VBonus",
         "type": "vbonus",
@@ -26311,10 +26401,10 @@
       },
       "1263089122": {
         "ap_location_id": 1263089122,
-        "ap_location_name": "Frozen Slider Frost Serpents - Reward 2",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents - Reward 2",
         "bridge_delivery_required": true,
         "bridge_key": "VBonusExtra:Vbonus_048_2",
-        "location_description": "Frozen Slider Frost Serpents - Reward 2",
+        "location_description": "Frozen Slider (Story) Frost Serpents - Reward 2",
         "source_id": "Vbonus_048_2",
         "source_table": "VBonusExtra",
         "trigger_bridge_key": "VBonus:Vbonus_048",
@@ -26323,10 +26413,10 @@
       },
       "1263089123": {
         "ap_location_id": 1263089123,
-        "ap_location_name": "Frozen Slider Frost Serpents - Reward 3",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents - Reward 3",
         "bridge_delivery_required": true,
         "bridge_key": "VBonusExtra:Vbonus_048_3",
-        "location_description": "Frozen Slider Frost Serpents - Reward 3",
+        "location_description": "Frozen Slider (Story) Frost Serpents - Reward 3",
         "source_id": "Vbonus_048_3",
         "source_table": "VBonusExtra",
         "trigger_bridge_key": "VBonus:Vbonus_048",
@@ -29480,19 +29570,6 @@
         "bridge_key": "KH02:Objective:050",
         "kh02_challenge": 49,
         "source_id": "Objective:050",
-        "source_table": "KH02",
-        "type": "kh02_objective",
-        "vanilla_item": "NONE",
-        "vanilla_item_name": "",
-        "world": "Kingdom Hearts 0.2"
-      },
-      "1263350579": {
-        "ap_location_id": 1263350579,
-        "ap_location_name": "0.2 - Objective 51: Demon Tide on Critical",
-        "bridge_delivery_required": true,
-        "bridge_key": "KH02:Objective:051",
-        "kh02_challenge": 50,
-        "source_id": "Objective:051",
         "source_table": "KH02",
         "type": "kh02_objective",
         "vanilla_item": "NONE",
@@ -34371,7 +34448,7 @@
         "world": "Arendelle"
       }
     },
-    "sha256": "2df16812d18ae9e9b43b1befdd5b69ffa4bdfdcc2c64055853baee34292ee407"
+    "sha256": "ab3f0c6a66b316cda3da3c42c5abeabd1c1cf8b92e8b75adc0d314f8232723a6"
   },
   "randomization": {
     "groups": [

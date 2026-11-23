@@ -112,18 +112,12 @@ int main(){
     spellweaver.player = false;
     defeat(combat_states, combat_counts, L"e_dw402_Pawn_C", spellweaver);
     assert(combat_counts[18] == 1);
-    for (int kill = 0; kill < 3; ++kill)
-    {
-        defeat(combat_states, combat_counts, L"e_dw407b_Pawn_C", counter);
-    }
+    assert(defeat(combat_states, combat_counts, L"e_dw407_Pawn_s100_C", counter));
+    assert(defeat(combat_states, combat_counts, L"e_dw407a_Pawn_s0_C", {}));
+    assert(defeat(combat_states, combat_counts, L"e_dw407b_Pawn_C", {}));
     assert(combat_counts[31] == 3 && combat_states[31] == 2);
     assert(!mickey_link_state(1) && !mickey_link_state(112));
     assert(mickey_link_state(113) && !mickey_link_state(114));
-    assert(!critical_tide_victory(combat_states, 0));
-    assert(!critical_tide_victory(combat_states, 1));
-    assert(!critical_tide_victory(combat_states, 2));
-    assert(combat_states[50] != 2);
-    assert(critical_tide_victory(combat_states, 3) && combat_states[50] == 2);
 
     for (int shot = 0; shot < 5; ++shot)
     {

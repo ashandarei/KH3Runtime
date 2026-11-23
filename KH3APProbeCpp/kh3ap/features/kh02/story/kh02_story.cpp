@@ -2,6 +2,7 @@
 #include "kh02_postboss_handoff.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include "kh3ap/features/kh02/progress/kh02_aqua_progression.h"
+#include "kh3ap/features/player/movement/alternate_wall_run.h"
 #include "kh3ap/features/kh02/combat/kh02_phantom_equipment.h"
 #include "kh02_session_retirement.h"
 #include "kh02_story_overrides.h"
@@ -353,7 +354,8 @@ namespace kh3ap
                      const auto tag = std::move(mirror_travel.arrival_tag);
                      mirror_travel.arrival_tag.clear();
                      mirror_travel.arrival_package.clear();
-                     if (tag.starts_with(L"dw_08_Lv_Save_") || tag == L"dw_09_Lv_Save_01")
+                     if (tag.starts_with(L"dw_08_Lv_Save_") || tag == kh02_forest_rail_start_tag ||
+                         tag == L"dw_09_Lv_Save_01")
                      {
                          // Native room return can retain its previous arena
                          // position even when travel selected a save-point tag.
@@ -677,9 +679,15 @@ namespace kh3ap
                 {
                     auto* w = actor_owning_world(object);
                     bind_mirror_progress(w, kh02_checkpoint::mirror_scene_dw016);
+                    const bool forest_rail_replay =
+                        r->area == kh02_forest_area && mirror_travel.arrival_tag == kh02_forest_rail_start_tag;
+                    if (forest_rail_replay)
+                    {
+                        source_flags.start_forest_rail_replay();
+                    }
                     const int source_checkpoint = source_flags.value(L"gameflow_DW");
                     const int area_checkpoint = kh02_area_entry_checkpoint(r->area, source_checkpoint);
-                    if (area_checkpoint != source_checkpoint)
+                    if (!forest_rail_replay && area_checkpoint != source_checkpoint)
                     {
                         auto flags = source_flags.values();
                         flags["gameflow_DW"] = area_checkpoint;
@@ -1303,6 +1311,7 @@ namespace kh3ap
             track_challenges(pawn);
             if (challenges_active())
             {
+                alternate_wall_run::align_kh02_aqua_ledge_grab(gameplay.pawn.Get());
                 // Use the initialized, world-bound chapter pawn even when the
                 // ordinary KH3 grant gate excludes this imported host.
                 postclear_treasure.tick(gameplay.pawn.Get());
@@ -1940,6 +1949,33 @@ namespace kh3ap
             std::move(selected));
     }
 
+    void Kh02Story::record_mickey_link(UObject* pawn) noexcept
+    {
+        auto* self = Impl::compat_instance;
+        if (!self || self->event_thread.load(std::memory_order_acquire) != GetCurrentThreadId())
+        {
+            return;
+        }
+        try
+        {
+            const auto saved = reconciliation::view();
+            if (self->challenges_active() && is_uobject_valid_fast(pawn) && kh02_story_player(pawn) == pawn &&
+                actor_owning_world(pawn) == self->gameplay.world.Get() && saved && saved->kh02_progress_ready &&
+                self->progress_session.matches(saved->seed, saved->slot, saved->kh02_progress_revision) &&
+                kh02_tracking::add(self->within_challenges, self->within_challenge_counts,
+                                   kh02_challenge_id::coop_action))
+            {
+                self->publish_mirror_progress();
+            }
+        }
+        catch (const std::exception& error)
+        {
+            const std::string message = error.what();
+            RC::Output::send<RC::LogLevel::Error>(STR("[KH3APProbeCpp] KH0.2 Mickey Link progress failed: {}\n"),
+                                                  std::wstring(message.begin(), message.end()));
+        }
+    }
+
     auto Kh02Story::travel_to_visited_area(int area) -> bool
     {
         auto* self = Impl::compat_instance;
@@ -1948,8 +1984,9 @@ namespace kh3ap
         {
             return false;
         }
-        const auto* destination = kh02_visited_area_destination(area, [self](const std::wstring& name)
-                                                                { return self->source_flags.value(name); });
+        const auto visited = [self](const std::wstring& name) { return self->source_flags.value(name); };
+        const auto* forest_save = kh02_forest_save_point(area, visited);
+        const auto* destination = kh02_visited_area_destination(forest_save ? kh02_forest_area : area, visited);
         if (!destination)
         {
             return false;
@@ -1959,8 +1996,10 @@ namespace kh3ap
             return false;
         }
         self->castle.backtrack_pending = area == 2;
-        const auto* arrival_tag =
-            kh02_area_resume_tag(area, self->source_flags.value(L"gameflow_DW"), destination->tag);
+        const auto* arrival_tag = forest_save
+                                      ? forest_save->tag
+                                      : kh02_area_resume_tag(area, self->source_flags.value(L"gameflow_DW"),
+                                                             destination->tag);
         self->mirror_travel.arrival_tag = arrival_tag;
         self->mirror_travel.arrival_package = destination->package;
         const std::wstring package = destination->package;

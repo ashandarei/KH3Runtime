@@ -1,5 +1,8 @@
 #include "kh3ap/features/ui/options_menu/host.h"
 #include "kh3ap/core/objects/uobject_validity.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
+#include "kh3ap/features/world/garden_return/runtime_context.h"
 #include "kh3ap/core/memory/memory_protection_bits.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FProperty.hpp>
@@ -11,6 +14,8 @@
 #define NOMINMAX
 #endif
 #include <Windows.h>
+#include "kh3ap/core/platform/loaded_xinput.h"
+#include <mmsystem.h>
 #include <atomic>
 #include <memory>
 #include <optional>
@@ -83,7 +88,101 @@ namespace kh3ap
             return GetClassNameW(foreground, class_name, window_class_name_capacity) != 0 &&
                    std::wstring_view{class_name} == L"UnrealWindow";
         }
+
+        auto xinput_title_chord(int32_t controller) -> std::optional<bool>
+        {
+            if (controller < 0 || controller >= XUSER_MAX_COUNT)
+            {
+                return {};
+            }
+            const auto get_state = loaded_xinput_get_state();
+            XINPUT_STATE state{};
+            if (!get_state || get_state(static_cast<DWORD>(controller), &state) != ERROR_SUCCESS)
+            {
+                return {};
+            }
+            constexpr auto chord = XINPUT_GAMEPAD_BACK | XINPUT_GAMEPAD_START |
+                                   XINPUT_GAMEPAD_LEFT_SHOULDER | XINPUT_GAMEPAD_RIGHT_SHOULDER;
+            return (state.Gamepad.wButtons & chord) == chord;
+        }
+
+        bool return_to_title(const wchar_t* shortcut)
+        {
+            using namespace garden_return_detail;
+            auto* current_world = object_field(viewport(), L"World");
+            if (!current_world || current_world->GetName() == L"TresGameTitle" ||
+                !loading_closed() || save_open())
+            {
+                return false;
+            }
+            auto* pawn = player();
+            if (!pawn || actor_owning_world(pawn) != current_world)
+            {
+                return false;
+            }
+            try
+            {
+                ReflectedFunctionCall title(library(), L"BP_GotoTitle", "title_shortcut", 32);
+                title.object(L"WorldContextObject", pawn);
+                title.integer(L"InFadeKind", 1); // MAPJUMP_FADE_KIND_FADEOUT
+                title.run();
+                Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Return to KH3 title requested by {}\n"), shortcut);
+                return true;
+            }
+            catch (const std::exception&)
+            {
+                Output::send<LogLevel::Warning>(STR("[KH3APProbeCpp] Could not dispatch BP_GotoTitle\n"));
+                return false;
+            }
+        }
     } // namespace
+    void RuntimeOptionsMenuService::Impl::check_controller_title_shortcut()
+    {
+        const auto candidate = title_shortcut_.awaiting_create();
+        if (!candidate)
+        {
+            dualsense_devices_.reset();
+            return;
+        }
+        if (block_background_controller_input() && !game_window_is_foreground())
+        {
+            return;
+        }
+        if (title_shortcut_.take_xinput_chord(xinput_title_chord))
+        {
+            return_to_title(L"XInput View+Menu+LB+RB");
+            return;
+        }
+        if (!dualsense_devices_)
+        {
+            dualsense_devices_.emplace();
+            const UINT count = joyGetNumDevs();
+            for (UINT id = 0; id < count; ++id)
+            {
+                JOYCAPSW caps{};
+                if (joyGetDevCapsW(id, &caps, sizeof(caps)) == JOYERR_NOERROR &&
+                    caps.wMid == 0x054c && caps.wPid == 0x0ce6)
+                {
+                    dualsense_devices_->push_back(id);
+                }
+            }
+        }
+        // Read a complete single-device report so two pads cannot form a chord.
+        constexpr DWORD buttons = JOY_BUTTON5 | JOY_BUTTON6 | JOY_BUTTON9 | JOY_BUTTON10;
+        for (const UINT id : *dualsense_devices_)
+        {
+            JOYINFOEX input{};
+            input.dwSize = sizeof(input);
+            input.dwFlags = JOY_RETURNBUTTONS;
+            if (joyGetPosEx(id, &input) == JOYERR_NOERROR && (input.dwButtons & buttons) == buttons)
+            {
+                title_shortcut_.mark_physical_attempt(*candidate);
+                return_to_title(L"DualSense Create+Options+L1+R1");
+                return;
+            }
+        }
+    }
+
     RuntimeOptionsMenuService::Impl::~Impl()
     {
         Impl* expected = this;
@@ -119,11 +218,25 @@ namespace kh3ap
         -> bool
     {
         const auto original = reinterpret_cast<ViewportInputKeyFn>(s_original_input_key_.load());
+        const auto name = key->key_name.ToString();
+        const bool controller_input = gamepad && (event == input_event_released ||
+            !block_background_controller_input() || game_window_is_foreground());
+        const bool keyboard_title = !gamepad && name == L"F12" &&
+            title_keyboard_input_.route(controller, name, event, [&]
+            {
+                return event == 0 && return_to_title(L"F12");
+            });
+        if (keyboard_title || (controller_input && title_shortcut_.route(controller, name, event,
+            [] { return return_to_title(L"Select+Start+L1+R1"); })))
+        {
+            // Only own the completing button. The other three releases must
+            // reach whichever native or custom action received their presses.
+            key->key_name = FName{};
+            (void)original(client, viewport, controller, key, event, 0.0F, gamepad);
+            return true;
+        }
         const bool settings_key =
-            gamepad &&
-            (event == input_event_released || !block_background_controller_input() ||
-             game_window_is_foreground()) &&
-            settings_shortcut_.route(controller, key->key_name.ToString(), event);
+            controller_input && settings_shortcut_.route(controller, name, event);
         const bool settings_active = menu_context_.Get() != nullptr;
         const bool menu_consumed = route_viewport_key(key->key_name, controller, event, gamepad);
         // The stock settings rows own input too: an unhandled Back must not
@@ -134,9 +247,9 @@ namespace kh3ap
         // for cleanup, even when this outer table assigned the press to native UI.
         // Its return value must not steal that native owner's release.
         const bool gameplay_release = event == input_event_released && config_.gameplay_key &&
-            config_.gameplay_key(controller, key->key_name.ToString(), event, gamepad);
+            config_.gameplay_key(controller, name, event, gamepad);
         const bool gameplay_consumed = gameplay_input_ownership_.route(
-            controller, key->key_name.ToString(), event,
+            controller, name, event,
             [&]
             {
                 if (event == input_event_released)
@@ -144,7 +257,7 @@ namespace kh3ap
                     return gameplay_release;
                 }
                 return !settings_active && !menu_consumed && config_.gameplay_key &&
-                       config_.gameplay_key(controller, key->key_name.ToString(), event, gamepad);
+                       config_.gameplay_key(controller, name, event, gamepad);
             });
         const bool consumed = menu_consumed || gameplay_consumed;
         if (consumed)

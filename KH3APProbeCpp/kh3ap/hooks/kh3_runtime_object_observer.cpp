@@ -208,12 +208,12 @@ namespace kh3ap
         {
             return false;
         }
-        for (size_t index = 0; index < world_keyblade_class_names_.size(); ++index)
+        for (size_t index = 0; index < gameflow_reward_class_names_.size(); ++index)
         {
             const std::wstring name =
-                std::wstring{runtime_world_keyblade_profiles[index].gameflow} + L"_C";
-            world_keyblade_class_names_[index] = FName{name.c_str(), RC::Unreal::FNAME_Add};
-            if (fname_is_none(world_keyblade_class_names_[index]))
+                std::wstring{runtime_gameflow_reward_profiles[index].gameflow} + L"_C";
+            gameflow_reward_class_names_[index] = FName{name.c_str(), RC::Unreal::FNAME_Add};
+            if (fname_is_none(gameflow_reward_class_names_[index]))
             {
                 return false;
             }
@@ -569,11 +569,11 @@ namespace kh3ap
                     index);
             }
         }
-        for (size_t index = 0; index < world_keyblade_class_names_.size(); ++index)
+        for (size_t index = 0; index < gameflow_reward_class_names_.size(); ++index)
         {
-            if (fname_equals(*class_name, world_keyblade_class_names_[index]))
+            if (fname_equals(*class_name, gameflow_reward_class_names_[index]))
             {
-                (void)try_apply_runtime_world_keyblade_early_bypass(
+                (void)try_apply_gameflow_reward_bypass(
                     index, static_cast<RC::Unreal::UObject*>(
                                const_cast<RC::Unreal::UObjectBase*>(object)));
                 break;

@@ -156,6 +156,10 @@ namespace kh3ap
             }
             const bool accepted = reinterpret_cast<Dispatch>(self->original)(queue_interface, command, info);
             accepted ? ++self->native_accepts : ++self->native_rejections;
+            if (accepted)
+            {
+                Kh02Story::record_mickey_link(pawn);
+            }
             self->phase = accepted ? "native_link_dispatched" : "native_link_rejected";
             return accepted;
         }
@@ -347,6 +351,10 @@ namespace kh3ap
         const bool accepted =
             reinterpret_cast<Dispatch>(impl->original)(queue_interface, light_chain_command, impl->command_info.Get());
         accepted ? ++impl->native_accepts : ++impl->native_rejections;
+        if (accepted)
+        {
+            Kh02Story::record_mickey_link(pawn);
+        }
         impl->phase = accepted ? "native_link_dispatched_as_aqua" : "native_link_rejected_after_handoff";
         impl->pending = false;
     }

@@ -881,7 +881,9 @@ namespace kh3ap
                 if (!is_uobject_valid_fast(controller) || !loading_closed() ||
                     (combat_action ? (!combat_swap.available(player()) || combat_swap.busy())
                      : inventory_action
-                         ? ((!camp_is_kh02_world(world()) && !character_swap::current_hero()) ||
+                         ? ((!camp_is_kh02_world(world()) && !character_swap::current_hero() &&
+                            (!field<uint8_t>(request.menu, native_ui::panel_open_offset) ||
+                             request.action == L"inventory_reload")) ||
                             (!field<uint8_t>(request.menu, native_ui::panel_open_offset) &&
                              (request.action == L"inventory_reload" ||
                               Kh02Story::persistent_reward_context() != player())))

@@ -210,7 +210,7 @@ void typed_progress_handoff()
     invalid.flags["gameflow_DW"] = 211;
     rejected([&] { freeze(invalid); });
     invalid = *initial;
-    invalid.challenges[51] = 1;
+    invalid.challenges[kh3ap::kh02_challenge_id::count] = 1;
     rejected([&] { freeze(invalid); });
     invalid = *initial;
     invalid.challenges[1] = 3;
@@ -234,7 +234,7 @@ void typed_progress_handoff()
         key.resize(96, 'x');
         largest.flags.emplace(std::move(key), 1000000);
     }
-    for (int index = 0; index <= 50; ++index)
+    for (int index = 0; index < kh3ap::kh02_challenge_id::count; ++index)
     {
         largest.challenges[index] = 2;
         largest.counts[index] = 1000000;
@@ -423,7 +423,7 @@ int main()
     bad["events"]["42"] = 1;
     rejected([&] { validate(bad); });
     bad = progress(240, 1);
-    bad["counts"]["51"] = 1;
+    bad["counts"][std::to_string(kh3ap::kh02_challenge_id::count)] = 1;
     rejected([&] { validate(bad); });
     bad = progress(240, 1);
     bad["counts"]["01"] = 1;
