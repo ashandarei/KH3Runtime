@@ -14020,9 +14020,9 @@
       },
       "1263023217": {
         "ap_location_id": 1263023217,
-        "ap_location_name": "Frozen Slider Frost Serpents",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents",
         "bridge_key": "VBonus:Vbonus_048",
-        "location_description": "Frozen Slider Frost Serpents",
+        "location_description": "Frozen Slider (Story) Frost Serpents",
         "source_id": "Vbonus_048",
         "source_table": "VBonus",
         "type": "vbonus",
@@ -26311,10 +26311,10 @@
       },
       "1263089122": {
         "ap_location_id": 1263089122,
-        "ap_location_name": "Frozen Slider Frost Serpents - Reward 2",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents - Reward 2",
         "bridge_delivery_required": true,
         "bridge_key": "VBonusExtra:Vbonus_048_2",
-        "location_description": "Frozen Slider Frost Serpents - Reward 2",
+        "location_description": "Frozen Slider (Story) Frost Serpents - Reward 2",
         "source_id": "Vbonus_048_2",
         "source_table": "VBonusExtra",
         "trigger_bridge_key": "VBonus:Vbonus_048",
@@ -26323,10 +26323,10 @@
       },
       "1263089123": {
         "ap_location_id": 1263089123,
-        "ap_location_name": "Frozen Slider Frost Serpents - Reward 3",
+        "ap_location_name": "Frozen Slider (Story) Frost Serpents - Reward 3",
         "bridge_delivery_required": true,
         "bridge_key": "VBonusExtra:Vbonus_048_3",
-        "location_description": "Frozen Slider Frost Serpents - Reward 3",
+        "location_description": "Frozen Slider (Story) Frost Serpents - Reward 3",
         "source_id": "Vbonus_048_3",
         "source_table": "VBonusExtra",
         "trigger_bridge_key": "VBonus:Vbonus_048",
@@ -34358,7 +34358,7 @@
         "world": "Arendelle"
       }
     },
-    "sha256": "acb1d78a6bcd6da4c0f75ca923f2eceeb66488c44c418a549d66177d613ad712"
+    "sha256": "ab3f0c6a66b316cda3da3c42c5abeabd1c1cf8b92e8b75adc0d314f8232723a6"
   },
   "randomization": {
     "groups": [
