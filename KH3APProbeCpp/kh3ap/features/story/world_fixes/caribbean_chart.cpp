@@ -24,10 +24,14 @@ namespace kh3ap
     namespace
     {
         // TresUIP_SpecialShip::SetNauticalChartPoint runs when the chart opens.
-        constexpr uintptr_t set_chart_points_rva = 0x1adb610;
-        constexpr std::array<uint8_t, 20> set_chart_points_signature{
+        constexpr uintptr_t egs_chart_points_rva = 0x1adb610;
+        constexpr uintptr_t steam_chart_points_rva = 0x175b270;
+        constexpr std::array<uint8_t, 20> egs_chart_points_signature{
             0x88, 0x54, 0x24, 0x10, 0x53, 0x55, 0x56, 0x57, 0x41, 0x54,
             0x41, 0x55, 0x41, 0x56, 0x41, 0x57, 0x48, 0x83, 0xec, 0x78};
+        constexpr std::array<uint8_t, 28> steam_chart_points_signature{
+            0x88, 0x54, 0x24, 0x10, 0x55, 0x53, 0x56, 0x57, 0x41, 0x54, 0x41, 0x55, 0x41, 0x56,
+            0x41, 0x57, 0x48, 0x8d, 0x6c, 0x24, 0xe1, 0x48, 0x81, 0xec, 0x98, 0x00, 0x00, 0x00};
         constexpr int32_t explore_the_seas = 2400; // CA_ISLAND_EVENT4
         constexpr GfxProbeFunctionPaths gfx{
             L"/Script/ScaleformUI.GFxObject:GetMemberValue",
@@ -50,14 +54,25 @@ namespace kh3ap
             }
             const auto base = reinterpret_cast<uintptr_t>(dos);
             const auto* nt = reinterpret_cast<const IMAGE_NT_HEADERS64*>(base + dos->e_lfanew);
-            if (nt->Signature != IMAGE_NT_SIGNATURE || nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64 ||
-                !native_build::egs.matches(nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage))
+            if (nt->Signature != IMAGE_NT_SIGNATURE || nt->FileHeader.Machine != IMAGE_FILE_MACHINE_AMD64)
             {
                 return 0;
             }
-            const auto address = base + set_chart_points_rva;
-            return std::memcmp(reinterpret_cast<const void*>(address), set_chart_points_signature.data(),
-                               set_chart_points_signature.size()) == 0 ? address : 0;
+            const auto validated_address = [base](uintptr_t rva, const auto& signature)
+            {
+                const auto address = base + rva;
+                return std::memcmp(reinterpret_cast<const void*>(address), signature.data(), signature.size()) == 0
+                           ? address : 0;
+            };
+            switch (native_build::identify(nt->FileHeader.TimeDateStamp, nt->OptionalHeader.SizeOfImage))
+            {
+            case native_build::Build::Egs:
+                return validated_address(egs_chart_points_rva, egs_chart_points_signature);
+            case native_build::Build::Steam:
+                return validated_address(steam_chart_points_rva, steam_chart_points_signature);
+            default:
+                return 0;
+            }
         }
 
         auto child(UObject* parent, std::wstring_view name) -> UObject*
