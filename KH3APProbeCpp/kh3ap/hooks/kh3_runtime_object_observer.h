@@ -2,7 +2,7 @@
 
 #include "kh3ap/features/story/bootstrap/world_bootstrap.h"
 #include "kh3ap/features/tutorials/link_tutorial_bypass.h"
-#include "kh3ap/features/tutorials/world_keyblade_bypass.h"
+#include "kh3ap/features/tutorials/gameflow_reward_bypass.h"
 
 #include <Unreal/NameTypes.hpp>
 #include <Unreal/UObjectArray.hpp>
@@ -154,8 +154,8 @@ namespace kh3ap
         RC::Unreal::FName final_world_guidance_ew01_gameflow_class_name_{};
         RC::Unreal::FName final_world_guidance_ew04_gameflow_class_name_{};
         RC::Unreal::FName olympus_completion_gameflow_class_name_{};
-        std::array<RC::Unreal::FName, runtime_world_keyblade_profiles.size()>
-            world_keyblade_class_names_{};
+        std::array<RC::Unreal::FName, runtime_gameflow_reward_profiles.size()>
+            gameflow_reward_class_names_{};
         RC::Unreal::FName olympus_early_gameflow_class_name_{};
         RC::Unreal::FName twilight_town_gameflow_class_name_{};
         RC::Unreal::FName olympus_save_points_gameflow_class_name_{};

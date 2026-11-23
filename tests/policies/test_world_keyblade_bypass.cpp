@@ -1,4 +1,4 @@
-#include "kh3ap/features/tutorials/world_keyblade_bypass.h"
+#include "kh3ap/features/tutorials/gameflow_reward_bypass.h"
 
 #include <cassert>
 #include <cstring>
@@ -30,16 +30,16 @@ namespace
         std::memcpy(bytes.data() + at + 0x2E, &resume, sizeof(resume));
         return bytes;
     }
-    auto patch(std::vector<uint8_t>& bytes, uint8_t weapon = 5,
+    auto patch(std::vector<uint8_t>& bytes, uint8_t item_id = 5,
         uint64_t conversion = 0x238A1AF4300, uint64_t grant = 0x238A1B4F160)
     {
-        return kh3ap::try_patch_runtime_world_keyblade_bytecode(
-            bytes.data(), bytes.size(), weapon, conversion, grant, 0x3449B);
+        return kh3ap::try_patch_gameflow_reward_bytecode(
+            bytes.data(), bytes.size(), item_id, conversion, grant, 0x3449B);
     }
 }
 int main()
 {
-    using Result = kh3ap::RuntimeWorldKeybladeBypassResult;
+    using Result = kh3ap::GameflowRewardBypassResult;
     auto bytes = fixture();
     const auto before = bytes;
     assert(patch(bytes) == Result::Patched);
@@ -60,11 +60,21 @@ int main()
     std::memcpy(&target, bytes.data() + at + 1, sizeof(target));
     assert(target == backward_resume);
     assert(patch(bytes) == Result::AlreadyPatched);
+    // Data arena grants use the same latent call with a category-specific enum.
+    for (const auto& profile : kh3ap::runtime_gameflow_reward_profiles)
+    {
+        if (profile.conversion_suffix == L"Weapon") continue;
+        bytes = fixture();
+        bytes[at - 2] = profile.item_id;
+        assert(patch(bytes, profile.item_id, 0x123) == Result::NoMatchingGrant);
+        assert(patch(bytes, profile.item_id) == Result::Patched);
+        assert(patch(bytes, profile.item_id) == Result::AlreadyPatched);
+    }
     // Other weapons and shared AP grant functions must never be redirected.
     for (int mismatch = 0; mismatch < 3; ++mismatch)
     {
         bytes = fixture();
-        assert(patch(bytes, mismatch == 0 ? 1 : 5,
+        assert(patch(bytes, mismatch == 0 ? 0 : 5,
             mismatch == 1 ? 0x123 : 0x238A1AF4300,
             mismatch == 2 ? 0x456 : 0x238A1B4F160) ==
             (mismatch == 0 ? Result::Rejected : Result::NoMatchingGrant));

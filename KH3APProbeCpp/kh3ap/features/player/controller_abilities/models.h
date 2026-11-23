@@ -113,15 +113,31 @@ namespace kh3ap::controller_ability_detail
          setter_index::links_restriction},
     }};
 
+    inline constexpr std::array<ControllerAbilityDefinition, 10> s_world_wall_runs{{
+        {STR("wall_run_he"), STR("ETresAbilityKind::AP_WALL_RUN_HE"), 135, setter_index::wall_run},
+        {STR("wall_run_tt"), STR("ETresAbilityKind::AP_WALL_RUN_TT"), 136, setter_index::wall_run},
+        {STR("wall_run_ts"), STR("ETresAbilityKind::AP_WALL_RUN_TS"), 137, setter_index::wall_run},
+        {STR("wall_run_ra"), STR("ETresAbilityKind::AP_WALL_RUN_RA"), 138, setter_index::wall_run},
+        {STR("wall_run_mi"), STR("ETresAbilityKind::AP_WALL_RUN_MI"), 139, setter_index::wall_run},
+        {STR("wall_run_fz"), STR("ETresAbilityKind::AP_WALL_RUN_FZ"), 140, setter_index::wall_run},
+        {STR("wall_run_ca"), STR("ETresAbilityKind::AP_WALL_RUN_CA"), 141, setter_index::wall_run},
+        {STR("wall_run_bx"), STR("ETresAbilityKind::AP_WALL_RUN_BX"), 142, setter_index::wall_run},
+        {STR("wall_run_kg"), STR("ETresAbilityKind::AP_WALL_RUN_KG"), 143, setter_index::wall_run},
+        {STR("wall_run_remind"), STR("ETresAbilityKind::AP_WALL_RUN_REMIND"), 144, setter_index::wall_run},
+    }};
+
+    auto current_wall_run_id(UObject* pawn) -> uint8_t;
+
     // One live range supplies both the controller gates and Magic/Links.
     // Retain caller order while the snapshot helper bridges the style-ID gap.
     inline constexpr auto s_refresh_abilities = []
     {
-        std::array<uint8_t, s_controller_abilities.size() + 1> ids{};
+        std::array<uint8_t, s_controller_abilities.size() + 2> ids{};
         for (size_t index = 0; index < s_controller_abilities.size(); ++index)
         {
             ids[index] = s_controller_abilities[index].ability_value;
         }
+        ids[s_controller_abilities.size()] = ability_id::wall_run; // replaced with the current world ID
         ids.back() = ability_id::links;
         return ids;
     }();

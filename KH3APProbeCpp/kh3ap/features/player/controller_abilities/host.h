@@ -92,7 +92,6 @@ namespace kh3ap
         bool map_ready_pending_{};
         bool mount_olympus_shoot_flow_pending_{};
         FWeakObjectPtr controller_{};
-        FWeakObjectPtr successful_pawn_{}, successful_controller_{};
         RuntimeControllerAbilityAppliedState applied_states_{};
         std::atomic<uint32_t> pending_events_{};
         RuntimeControllerAbilityRefreshState refresh_state_{};

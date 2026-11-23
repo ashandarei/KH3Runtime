@@ -4,6 +4,7 @@
 #include "kh3ap/features/ui/options_menu/callback_state.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include "kh3ap/core/input/controller_focus.h"
+#include "kh3ap/core/input/title_shortcut.h"
 #include "kh3ap/features/ui/game_settings_shortcut.h"
 #include "kh3ap/features/ui/ui_sound_service.h"
 #include <Unreal/FWeakObjectPtr.hpp>
@@ -242,6 +243,7 @@ namespace kh3ap
         auto handle_viewport_key(const FName& key_name, int32_t event_type) -> bool;
 
         auto tick() -> void;
+        void check_controller_title_shortcut();
 
         // Declaration order preserves the host, weak-object pools and detour ownership.
 
@@ -291,6 +293,9 @@ namespace kh3ap
         RuntimeOptionsInputOwnership gameplay_input_ownership_{};
         RuntimeControllerFocus controller_focus_{};
         RuntimeGameSettingsShortcut settings_shortcut_{};
+        TitleShortcut title_shortcut_{};
+        std::optional<std::vector<unsigned int>> dualsense_devices_{};
+        RuntimeOptionsInputOwnership title_keyboard_input_{};
         bool controller_focus_installed_{};
         std::unique_ptr<PLH::x64Detour> viewport_input_axis_detour_{};
         std::unique_ptr<PLH::x64Detour> viewport_lost_focus_detour_{};

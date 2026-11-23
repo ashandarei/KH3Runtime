@@ -2649,6 +2649,46 @@
       "1263022662": {
         "name": "Style Change: Seven Wishes",
         "token": "KH3AP_CONTROLLER_UNLOCK::seven_wishes"
+      },
+      "1263022663": {
+        "name": "Wall Run: Olympus",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_he"
+      },
+      "1263022664": {
+        "name": "Wall Run: Twilight Town",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_tt"
+      },
+      "1263022665": {
+        "name": "Wall Run: Toy Box",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ts"
+      },
+      "1263022666": {
+        "name": "Wall Run: Kingdom of Corona",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ra"
+      },
+      "1263022667": {
+        "name": "Wall Run: Monstropolis",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_mi"
+      },
+      "1263022668": {
+        "name": "Wall Run: Arendelle",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_fz"
+      },
+      "1263022669": {
+        "name": "Wall Run: The Caribbean",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_ca"
+      },
+      "1263022670": {
+        "name": "Wall Run: San Fransokyo",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_bx"
+      },
+      "1263022671": {
+        "name": "Wall Run: Keyblade Graveyard",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_kg"
+      },
+      "1263022672": {
+        "name": "Wall Run: Re Mind",
+        "token": "KH3AP_CONTROLLER_UNLOCK::wall_run_remind"
       }
     },
     "tokens": {
@@ -6755,6 +6795,56 @@
         "name": "Style Change: Seven Wishes",
         "flags": [],
         "munny": 0
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_bx": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: San Fransokyo"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ca": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: The Caribbean"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_fz": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Arendelle"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_he": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Olympus"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_kg": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Keyblade Graveyard"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_mi": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Monstropolis"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ra": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Kingdom of Corona"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_remind": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Re Mind"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_ts": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Toy Box"
+      },
+      "KH3AP_CONTROLLER_UNLOCK::wall_run_tt": {
+        "flags": [],
+        "munny": 0,
+        "name": "Wall Run: Twilight Town"
       }
     },
     "vbonus_bundles": [

@@ -12,6 +12,9 @@
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/FString.hpp>
 #include <Unreal/UObject.hpp>
+#include <Unreal/UFunction.hpp>
+#include <Unreal/Hooks.hpp>
+#include <Unreal/FProperty.hpp>
 #include <Windows.h>
 #include <array>
 #include <cstring>
@@ -73,6 +76,85 @@ namespace kh3ap
             default:
                 return 0;
             }
+        }
+
+        constexpr wchar_t fleet_overlap[] =
+            L"BndEvt__lv_TriggerVolume_FrontFinalDestination_K2Node_ActorBoundEvent_459_OnTresActorBeginOverlap__DelegateSignature";
+
+        // The stock fleet volume includes the Island09 landing. Use the island's
+        // outer island visit volume (Island09_Desert_Out) to keep its anchorage clear.
+        auto at_forsaken_isle(UObject* other) -> bool
+        {
+            if (!is_uobject_valid_fast(other)) return false;
+            try
+            {
+                ReflectedFunctionCall location(other, L"K2_GetActorLocation", "forsaken_fleet", 12);
+                location.run();
+                const auto position = location.result_vector();
+                constexpr float island_x = -3273.491455078125f;
+                constexpr float island_y = -284075.78125f;
+                constexpr float visit_radius = 25000.f;
+                const float dx = position[0] - island_x;
+                const float dy = position[1] - island_y;
+                return dx * dx + dy * dy < visit_radius * visit_radius;
+            }
+            catch (const std::runtime_error&)
+            {
+                return false;
+            }
+        }
+
+        void route_fleet_overlap(UObject* level_script, UFunction* event, void* parameters)
+        {
+            static const FName name{fleet_overlap, FNAME_Add};
+            if (!event || event->GetNamePrivate() != name || !parameters || !is_uobject_valid_fast(level_script))
+            {
+                return;
+            }
+            auto* graph = level_script->GetFunctionByNameInChain(L"ExecuteUbergraph_ca_02_gameflow");
+            if (!is_uobject_valid_fast(graph) ||
+                graph->GetPathName() != L"/Game/Levels/ca/ca_02/umap/ca_02_gameflow.ca_02_gameflow_C:ExecuteUbergraph_ca_02_gameflow" ||
+                event->GetNumParms() != 1 || event->GetParmsSize() != sizeof(UObject*))
+            {
+                return;
+            }
+            auto* other_param = find_function_param_by_name(event, L"OtherActor");
+            if (!other_param || other_param->GetClass().GetName() != L"ObjectProperty" ||
+                other_param->GetOffset_Internal() != 0 || other_param->GetElementSize() != sizeof(UObject*))
+            {
+                return;
+            }
+
+            // This bound event's private entry is a single EX_Jump to the
+            // stock story gates. Select its target on every overlap, including
+            // subsequent entries in the same world after sailing back from sea.
+            constexpr int32_t overlap_entry = 633777;
+            constexpr int32_t stock_story_gates = 571783;
+            constexpr int32_t graph_return = 635881;
+            auto& script = graph->GetScript();
+            if (script.Num() != graph_return + 3 || script[overlap_entry] != 0x06 ||
+                script[graph_return] != 0x04 || script[graph_return + 1] != 0x0b || script[graph_return + 2] != 0x53)
+            {
+                return;
+            }
+            auto* target_operand = script.GetData() + overlap_entry + 1;
+            int32_t current{};
+            std::memcpy(&current, target_operand, sizeof(current));
+            if (current != stock_story_gates && current != graph_return)
+            {
+                return;
+            }
+
+            auto* other = *other_param->ContainerPtrToValuePtr<UObject*>(parameters);
+            const bool anchored = at_forsaken_isle(other);
+            const int32_t target = anchored ? graph_return : stock_story_gates;
+            if (target != current)
+            {
+                std::memcpy(target_operand, &target, sizeof(target));
+            }
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Forsaken Isle fleet overlap anchored={}\n"), anchored);
+#endif
         }
 
         auto child(UObject* parent, std::wstring_view name) -> UObject*
@@ -168,6 +250,7 @@ namespace kh3ap
         {
             return;
         }
+        Hook::RegisterProcessEventPreCallback(&route_fleet_overlap);
         auto& self = *impl_;
         auto hook = std::make_unique<PLH::x64Detour>(address, reinterpret_cast<uintptr_t>(&Impl::set_points),
                                                     &self.original);

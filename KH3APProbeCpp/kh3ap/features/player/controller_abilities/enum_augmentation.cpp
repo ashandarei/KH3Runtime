@@ -125,7 +125,8 @@ namespace kh3ap
             return true;
         };
         if (!collect_additions(s_controller_abilities) ||
-            !collect_additions(s_keyblade_style_abilities) || !collect_additions(s_link_abilities))
+            !collect_additions(s_keyblade_style_abilities) || !collect_additions(s_link_abilities) ||
+            !collect_additions(s_world_wall_runs))
         {
             return true;
         }
@@ -138,7 +139,7 @@ namespace kh3ap
             return true;
         }
 
-        constexpr int64_t highest_reserved_ability_value = ability_id::links;
+        constexpr int64_t highest_reserved_ability_value = s_world_wall_runs.back().ability_value;
         size_t insertion_index = existing.size();
         for (size_t entry_index = 0; entry_index < existing.size(); ++entry_index)
         {

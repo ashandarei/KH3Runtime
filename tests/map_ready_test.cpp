@@ -83,16 +83,6 @@ struct Service {
 };
 
 struct AbilityReady {
-    struct State {
-        UObject* pawn{};UObject* controller{};std::wstring pawn_name;
-        auto object() { return pawn; }
-        auto controller_object() { return controller; }
-        auto name() -> std::wstring_view { return pawn_name; }
-        auto pawn_state() -> State& { return *this; }
-        auto grant_state() -> State& { return *this; }
-    };
-    struct Config { State runtime_state; } config_;
-    FWeakObjectPtr successful_pawn_,successful_controller_;
     std::atomic<uint32_t> pending_events_{};
 #include "ability_ready_under_test.h"
 };
@@ -161,23 +151,11 @@ int main() {
     assert(!alternate.map_ready_for_pawn(&sora)); // Explicit lifecycle reset.
 
     AbilityReady ability;
-    UObject current_pawn,current_controller,new_controller;
-    ability.config_.runtime_state={&current_pawn,&current_controller,L"/Game/Levels/ts/ts_02/pawn"};
+    // The producer above suppresses duplicate banners. Every actual map-ready
+    // boundary must reconcile Wall Run, even when a load reuses the pawn.
     ability.request_refresh(RuntimeControllerAbilityEvent::MapReady);
-    assert(ability.pending_events_.exchange(0)==4); // Unfinished/failed early work can retry at readiness.
-    ability.successful_pawn_=&current_pawn;ability.successful_controller_=&current_controller;
     ability.request_refresh(RuntimeControllerAbilityEvent::MapReady);
-    assert(ability.pending_events_.exchange(0)==0); // Successful possession setup is not repeated.
+    assert(ability.pending_events_.exchange(0) == 4);
     ability.request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);
-    assert(ability.pending_events_.exchange(0)==8); // Native story setters are independent.
-    ability.config_.runtime_state.pawn_name=L"/Game/Levels/he/he_02/pawn";
-    ability.request_refresh(RuntimeControllerAbilityEvent::MapReady);
-    assert(ability.pending_events_.exchange(0)==4); // Olympus requires the late override.
-    ability.config_.runtime_state.pawn_name=L"/Game/Levels/ts/ts_02/pawn";
-    ability.config_.runtime_state.controller=&new_controller;
-    ability.request_refresh(RuntimeControllerAbilityEvent::MapReady);
-    assert(ability.pending_events_.exchange(0)==4); // Same pawn, different controller.
-    ability.config_.runtime_state.controller=&current_controller;++current_pawn.serial;
-    ability.request_refresh(RuntimeControllerAbilityEvent::MapReady);
-    assert(ability.pending_events_.exchange(0)==4); // Weak serial reuse cannot skip new ownership.
+    assert(ability.pending_events_.exchange(0) == 8);
 }

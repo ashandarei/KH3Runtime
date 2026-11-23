@@ -4,7 +4,7 @@
 
 #include "kh3ap/features/story/world_fixes/final_world_guidance_bypass.h"
 #include "kh3ap/features/tutorials/olympus_tutorial_bypass.h"
-#include "kh3ap/features/tutorials/world_keyblade_bypass.h"
+#include "kh3ap/features/tutorials/gameflow_reward_bypass.h"
 #include "kh3ap/features/tutorials/tutorial_popup_bypass.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/bridge/utilities.h"
@@ -949,15 +949,15 @@ namespace kh3ap
         return false;
     }
 
-    auto try_apply_runtime_world_keyblade_early_bypass(size_t index, UObject* object) -> bool
+    auto try_apply_gameflow_reward_bypass(size_t index, UObject* object) -> bool
     {
-        if (index >= runtime_world_keyblade_profiles.size())
+        if (index >= runtime_gameflow_reward_profiles.size())
         {
             return false;
         }
         try
         {
-            const auto& profile = runtime_world_keyblade_profiles[index];
+            const auto& profile = runtime_gameflow_reward_profiles[index];
             const std::wstring name = L"ExecuteUbergraph_" + std::wstring{profile.gameflow};
             auto* function = is_uobject_valid_fast(object)
                                  ? object->GetFunctionByNameInChain(name.c_str())
@@ -967,7 +967,8 @@ namespace kh3ap
                 return false;
             }
             auto* conversion = find_live_function(
-                L"/Script/TresGame.TresGameBlueprintLibrary:BP_TresConvertItemIDtoKeyNameWeapon");
+                L"/Script/TresGame.TresGameBlueprintLibrary:BP_TresConvertItemIDtoKeyName" +
+                std::wstring{profile.conversion_suffix});
             auto* grant = find_live_function(
                 L"/Script/TresGame.TresGameBlueprintLibrary:WaitBPTresGetKeyitem");
             if (!conversion || !grant)
@@ -979,29 +980,31 @@ namespace kh3ap
             static_assert(sizeof(callback) == sizeof(callback_bits));
             std::memcpy(&callback_bits, &callback, sizeof(callback_bits));
             auto& script = function->GetScript();
-            const auto result = try_patch_runtime_world_keyblade_bytecode(
+            const auto result = try_patch_gameflow_reward_bytecode(
                 script.GetData(), script.Num() > 0 ? static_cast<size_t>(script.Num()) : 0,
-                profile.weapon_id, reinterpret_cast<uint64_t>(conversion),
+                profile.item_id, reinterpret_cast<uint64_t>(conversion),
                 reinterpret_cast<uint64_t>(grant), static_cast<uint32_t>(callback_bits));
-            if (result == RuntimeWorldKeybladeBypassResult::NoMatchingGrant)
+            // Some world sublevels omit their shared ending. Each Data arena has one grant.
+            if (result == GameflowRewardBypassResult::NoMatchingGrant && profile.conversion_suffix == L"Weapon")
             {
                 return true;
             }
-            if (result != RuntimeWorldKeybladeBypassResult::AlreadyPatched)
+            if (result != GameflowRewardBypassResult::AlreadyPatched)
             {
                 Output::send<LogLevel::Warning>(
-                    STR("[KH3APProbeCpp] WorldKeybladeEarlyPatch gameflow={} weapon_id={} "
+                    STR("[KH3APProbeCpp] GameflowRewardBypass gameflow={} item_id={} "
                         "script_size={} result={} timing=uobject_create_pre_begin_play\n"),
-                    profile.gameflow, profile.weapon_id, script.Num(),
-                    result == RuntimeWorldKeybladeBypassResult::Patched ? STR("patched")
+                    profile.gameflow, profile.item_id, script.Num(),
+                    result == GameflowRewardBypassResult::Patched ? STR("patched")
                                                                         : STR("rejected"));
             }
-            return result != RuntimeWorldKeybladeBypassResult::Rejected;
+            return result == GameflowRewardBypassResult::Patched ||
+                   result == GameflowRewardBypassResult::AlreadyPatched;
         }
         catch (...)
         {
             Output::send<LogLevel::Warning>(
-                STR("[KH3APProbeCpp] WorldKeybladeEarlyPatch exception index={}\n"), index);
+                STR("[KH3APProbeCpp] GameflowRewardBypass exception index={}\n"), index);
             return false;
         }
     }
