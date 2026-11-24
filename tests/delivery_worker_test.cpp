@@ -6,6 +6,7 @@
 #include "kh3ap/bridge/transport/pipe_transport.h"
 #include "kh3ap/bridge/serialization/request_parser.h"
 #include "chest_fixture.h"
+#include "seed_document_fixture.h"
 #include "kh3ap/bridge/serialization/json.h"
 #define NOMINMAX
 #include <windows.h>
@@ -31,8 +32,14 @@ namespace
     std::map<std::string, Json> published;
     std::map<std::string, size_t> publication_counts;
     std::shared_ptr<const json::SeedDocument> pak_seed_fixture;
-    auto pak_seed_source(std::string_view name) -> std::shared_ptr<const json::SeedDocument>
-    { return name == "slot_data.json" ? pak_seed_fixture : nullptr; }
+    auto test_seed_source(const std::filesystem::path& path) -> std::shared_ptr<const json::SeedDocument>
+    {
+        if (pak_seed_fixture)
+        {
+            return path.filename() == "slot_data.json" ? pak_seed_fixture : nullptr;
+        }
+        return seed_document_fixture::read(path);
+    }
     auto embed_bundle(const std::filesystem::path& directory, std::string_view text) -> void
     {
         const auto path = directory / "slot_data.json";
@@ -89,6 +96,7 @@ namespace kh3ap::native_traps
 }
 int main()
 {
+    json::bind_runtime_seed_source(test_seed_source);
     // Recovery edits the private bank and preserves unrelated chapter progress.
     const auto chapter = kh02_gameflow::update(nullptr, "gameflow_dw", 110);
     assert(kh02_gameflow::read(nullptr, "gameflow_DW") == 102);
@@ -1252,7 +1260,6 @@ int main()
     } while (std::next_permutation(roxas_order.begin(), roxas_order.end()));
     // Pak-backed recovery and foreign rewards work with no loose catalog.
     pak_seed_fixture = json::read_seed_document(loot_root / "slot_data.json");
-    json::bind_runtime_seed_source(pak_seed_source);
     const auto pak_root = root / "pak-only";
     std::filesystem::create_directory(pak_root);
     assert(!std::filesystem::exists(pak_root / "slot_data.json"));

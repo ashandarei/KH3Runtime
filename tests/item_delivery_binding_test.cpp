@@ -7,8 +7,8 @@
 
 namespace {
 std::shared_ptr<const kh3ap::json::SeedDocument> pak_document;
-auto pak_source(std::string_view name) -> std::shared_ptr<const kh3ap::json::SeedDocument>
-{ return name == "slot_data.json" ? pak_document : nullptr; }
+auto pak_source(const std::filesystem::path& path) -> std::shared_ptr<const kh3ap::json::SeedDocument>
+{ return path.filename() == "slot_data.json" ? pak_document : nullptr; }
 }
 
 using kh3ap::item_delivery::delivery_binding_error;
@@ -57,11 +57,20 @@ int main()
     // absent, corrupt or belongs to a different seed. Missing pak data fails closed.
     pak_document = kh3ap::json::decode_seed_document("slot_data.json",
         R"({"kh3_seed":{"seed_name":"pak-seed","slot":7},"bridge":{"locations":[]}})");
-    kh3ap::json::bind_runtime_seed_source(pak_source);
     const auto path = std::filesystem::temp_directory_path() / "kh3-pak-binding-fixture" / "slot_data.json";
     std::filesystem::create_directories(path.parent_path());
-    check(kh3ap::json::read_seed_document(path) == pak_document);
     std::ofstream(path) << R"({"kh3_seed":{"seed_name":"wrong","slot":2}})";
+    bool unbound_rejected{};
+    try
+    {
+        kh3ap::json::read_seed_document(path);
+    }
+    catch (const std::logic_error& error)
+    {
+        unbound_rejected = std::string_view(error.what()) == "runtime_seed_source_missing";
+    }
+    check(unbound_rejected);
+    kh3ap::json::bind_runtime_seed_source(pak_source);
     check(kh3ap::json::read_seed_document(path) == pak_document);
     check(kh3ap::item_delivery::installed_delivery_seed_identity().seed == L"pak-seed");
     check(kh3ap::item_delivery::installed_delivery_seed_identity().slot == 7);

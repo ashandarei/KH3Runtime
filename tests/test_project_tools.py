@@ -18,9 +18,9 @@ class CatalogGeneration(unittest.TestCase):
         sys.path.insert(0, str(ROOT / "scripts"))
         try:
             from runtime_ui_catalogs import chest_journal_header
-            locations = json.loads((ROOT / "data/runtime-inputs.json").read_text(encoding="utf-8"))["locations"]["locations"]
+            chests = json.loads((ROOT / "data/runtime-inputs.json").read_text(encoding="utf-8"))["chest_journal"]
             sources = json.loads((ROOT / "data/chest-journal-sources.json").read_text(encoding="utf-8"))
-            header = chest_journal_header(locations, sources)
+            header = chest_journal_header(chests, sources)
             self.assertIn('L"RA_LBOX_006"', header)  # Dive-rock chest lives in the gimmick layer.
             self.assertIn(sources['RA_LBOX_006'][0], header)
             self.assertIn('L"DW_BOX031"', header)  # Imported post-story chest.
@@ -29,10 +29,10 @@ class CatalogGeneration(unittest.TestCase):
             incomplete = dict(sources)
             incomplete.pop("HE_LBOX_001")
             with self.assertRaises(ValueError):
-                chest_journal_header(locations, incomplete)
+                chest_journal_header(chests, incomplete)
             malformed = dict(sources, HE_LBOX_001=["/Game/Unverified"])
             with self.assertRaises(ValueError):
-                chest_journal_header(locations, malformed)
+                chest_journal_header(chests, malformed)
         finally:
             sys.path.pop(0)
 
@@ -44,10 +44,9 @@ class CatalogGeneration(unittest.TestCase):
             shutil.copy2(ROOT / "scripts/generate_catalogs.py", root / "scripts")
             shutil.copy2(ROOT / "scripts/runtime_ui_catalogs.py", root / "scripts")
             payload = {"text": 'quote " slash \\ null \0 Unicode 世界 ' + "x" * 9000}
-            data = {"schema": "kh3ap.runtime_inputs.v1", "limits": {"document_depth": 128},
+            data = {"schema": "kh3ap.runtime_inputs.v2", "chest_journal": [], "limits": {"document_depth": 128},
                     "ui": json.loads((ROOT / "data/runtime-inputs.json").read_text(encoding="utf-8"))["ui"],
-                    **{name: payload for name in ("catalog", "chests", "locations", "randomization")}}
-            data["locations"] = {"locations": {}}
+                    **{name: payload for name in ("catalog", "chests", "randomization")}}
             (root / "data/chest-journal-sources.json").write_text("{}")
             source = root / "data/runtime-inputs.json"
             source.write_text(json.dumps(data), encoding="utf-8")

@@ -94,9 +94,14 @@ def weapon_header(entries):
     return "\n".join([*lines, "}};", "}", ""])
 
 
-def chest_journal_header(locations, sources):
-    expected = {v['source_id'].removeprefix('Treasure:') for v in locations.values()
-                if v['type'] in ('treasure', 'kh02_chest')}
+def chest_journal_header(chests, sources):
+    fields = ('id', 'name', 'world', 'description')
+    if not isinstance(chests, list) or any(
+            not isinstance(chest, dict) or set(chest) != {*fields, 'requires_map_source'}
+            or type(chest['requires_map_source']) is not bool
+            or any(not isinstance(chest[field], str) for field in fields) for chest in chests):
+        raise ValueError('Invalid chest journal input')
+    expected = {chest['id'] for chest in chests if chest['requires_map_source']}
     if set(sources) != expected:
         raise ValueError('Chest map sources must cover exactly the native and imported chest catalog')
     for identity, actors in sources.items():
@@ -105,21 +110,11 @@ def chest_journal_header(locations, sources):
                 for actor in actors):
             raise ValueError(f'Invalid chest map source: {identity}')
     entries = []
-    for row in locations.values():
-        if row['type'] not in ('treasure', 'kh02_chest', 'melody_of_memory'):
-            continue
-        identity = row['source_id'].removeprefix('Treasure:')
-        description = row.get('location_description', row['ap_location_name'])
-        name = description.split(' (')[0]
-        world = row['world']
-        if row['type'] == 'kh02_chest':
-            world, name = row['ap_location_name'].rsplit(' - ', 1)
-        elif row['type'] == 'melody_of_memory':
-            name = 'Melody Chest'
-        fields = (identity, name, world, description)
-        if any(any(c in value for c in '\t\n\r|~') for value in fields):
+    for chest in chests:
+        values = tuple(chest[field] for field in fields)
+        if any(any(c in value for c in '\t\n\r|~') for value in values):
             raise ValueError('Chest journal contains a reserved delimiter')
-        entries.append((*fields, '|'.join(sources.get(identity, ()))))
+        entries.append((*values, '|'.join(sources.get(chest['id'], ()))))
     if len({row[0] for row in entries}) != len(entries):
         raise ValueError('Duplicate chest journal identity')
     # Preserve the familiar numbered treasure order within each world.

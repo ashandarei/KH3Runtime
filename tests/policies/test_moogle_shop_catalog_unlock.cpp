@@ -31,9 +31,9 @@ namespace
     uint64_t observed_row_address{};
     std::vector<std::wstring> queried_keyblades{};
 
-    auto read_seed(std::string_view name) -> std::shared_ptr<const kh3ap::json::SeedDocument>
+    auto read_seed(const std::filesystem::path& path) -> std::shared_ptr<const kh3ap::json::SeedDocument>
     {
-        assert(name == "slot_data.json");
+        assert(path.filename() == "slot_data.json");
         return seed_document;
     }
 

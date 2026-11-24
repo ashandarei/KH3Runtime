@@ -1,19 +1,20 @@
 # Local runtime data contract
 
 `data/runtime-inputs.json` is a reviewed, checked-in input to the DLL project.
-Its schema is `kh3ap.runtime_inputs.v1`. It contains item identities and native
-tokens, chest data, the location catalog and its checksum, encounter mappings,
-bounded JSON-document limits, ingredient and adversary journal catalogs, and
-alternate weapon identities. It contains no player credentials, seed
-placements, saves, game files, or Python world implementation.
+Its schema is `kh3ap.runtime_inputs.v2`. It contains item identities and native
+tokens, chest data, chest journal display records, encounter mappings, bounded
+JSON-document limits, ingredient and adversary journal catalogs, and alternate
+weapon identities. Chest journal map actors come from the runtime's
+`data/chest-journal-sources.json`. The installed seed pak supplies the resolved
+gameplay locations in its `slot_data.json` record.
 
 `scripts/generate_catalogs.py` uses only this file and Python's standard library.
 It renders the owned native headers; `--check` rejects stale output. Normal
 builds validate that output, and build metadata records the input file SHA-256.
 
 The DLL project owns its checked-in snapshot. Catalog updates are explicit,
-reviewed data changes. Keep stable IDs, runtime tokens, location checksum rules,
-and the existing client/game protocol consistent across compatible releases.
+reviewed data changes. Keep stable IDs, runtime tokens, and the client/game
+protocol consistent across compatible releases.
 There is no automatic synchronization, parent-repo discovery, APWorld import,
 or source-module execution during builds, tests, installation, or packaging.
 
