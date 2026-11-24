@@ -24,24 +24,19 @@ namespace kh3ap::json
         output = write(value);
     }
     auto utf8_to_wide(std::string_view text) -> std::optional<std::wstring>;
-    // Restore the immutable bundled catalog plus seed-specific overrides.
-    auto expand_slot_data(Value compact) -> Value;
 
     struct SeedDocument
     {
         Value value;
         std::string text;
     };
-    using SeedDocumentSource = std::shared_ptr<const SeedDocument> (*)(std::string_view name);
-    // The game binds its pak source before constructing runtime services.
-    // Standalone tools may still read files, but a bound runtime never falls
-    // back to loose files, including when the pak source reports an error.
+    using SeedDocumentSource = std::shared_ptr<const SeedDocument> (*)(const std::filesystem::path& path);
+    // The game binds its installed pak source before constructing runtime services.
     auto bind_runtime_seed_source(SeedDocumentSource source) -> void;
     auto decode_seed_document(std::string_view name, std::string text)
         -> std::shared_ptr<const SeedDocument>;
     auto is_seed_document(const std::filesystem::path& path) -> bool;
-    // Shared immutable documents; replaced files invalidate the cached entry.
-    // Read/parse/size errors propagate with the source filename.
+    // An unavailable seed source or document fails the read.
     auto read_seed_document(const std::filesystem::path& path)
         -> std::shared_ptr<const SeedDocument>;
     inline auto read_seed_json(const std::filesystem::path& path) -> std::shared_ptr<const Value>

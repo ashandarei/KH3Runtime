@@ -8,6 +8,7 @@
 #include "kh3ap/bridge/session/deathlink.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/bridge/serialization/json.h"
+#include "seed_document_fixture.h"
 #define NOMINMAX
 #include <windows.h>
 #include <chrono>
@@ -18,6 +19,7 @@ int wmain(int argc, wchar_t** argv)
 {
     if (argc != 2 && argc != 3) return 2;
     const std::filesystem::path root{argv[1]};
+    kh3ap::json::bind_runtime_seed_source(kh3ap::seed_document_fixture::read);
     kh3ap::pipe::start(root, argc == 3 && std::wstring_view(argv[2]) == L"--tcp"
         ? kh3ap::pipe::Transport::LocalTcp : kh3ap::pipe::Transport::Auto);
     kh3ap::pipe::write(root / "runtime_context.json", R"({"context":"native-test"})");

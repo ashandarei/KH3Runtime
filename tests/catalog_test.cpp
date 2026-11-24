@@ -2,18 +2,14 @@
 #include "kh3ap/features/kh02/progress/kh02_check_policy.h"
 #include "kh3ap/bridge/catalog/catalog_data.h"
 #include "kh3ap/bridge/serialization/json.h"
-#include "kh3ap/bridge/catalog/location_catalog_data.h"
-#define NOMINMAX
-#include <Windows.h>
 #include <cassert>
-#include <fstream>
 #include <iostream>
 
 using Json = kh3ap::json::Value;
 using namespace kh3ap;
 auto parse(std::string_view text) -> Json { Json j; assert(kh3ap::json::parse(j, text)); return j; }
 auto fails(const auto& fn) -> bool { try { fn(); } catch (const std::exception&) { return true; } return false; }
-int main(int argc, char** argv)
+int main()
 {
     const auto aqua_finish = kh02_checks::condition(Json{
         {"source_table", "KH02"}, {"source_id", "Boss:UnlockAqua"},
@@ -24,46 +20,17 @@ int main(int argc, char** argv)
     assert(native_catalog::runtime_token_for_item(1263022607) == L"KH3AP_PARTY_MEMBER_UNLOCK::PartyMember_003");
     assert(native_catalog::runtime_token_for_item(-1).empty());
     assert(native_catalog::runtime_token_for_item(0).empty());
-    if (argc == 2)
-    {
-        const auto document = kh3ap::json::read_seed_document(argv[1]);
-        std::ofstream output(std::string(argv[1]) + ".expanded.json");
-        output << document->text;
-        return 0;
-    }
-    const auto locations = parse(kh3ap::json::location_catalog_data);
-    const auto first = locations["locations"].begin();
-    const auto id = std::stoll(first.key());
-    Json compact{{"kh3_seed", {{"seed_name", "compact"}, {"slot", 1}}}, {"bridge", Json::object()},
-        {"location_catalog", {{"version", 1}, {"sha256", locations["sha256"]},
-            {"assignments", Json::array({Json{{"assigned_item_name", "Foreign reward"}, {"assigned_item_player", 2}}})},
-            {"entries", Json::array({Json::array({id, 0, Json{{"mom_song_id", 12}, {"shop_price", 99}}, Json::array({"bridge_key"})})})}}}};
-    const auto restored = kh3ap::json::expand_slot_data(compact);
-    auto expected = first.value();
-    expected.erase("bridge_key"); expected["assigned_item_name"] = "Foreign reward";
-    expected["assigned_item_player"] = 2; expected["mom_song_id"] = 12; expected["shop_price"] = 99;
-    assert(restored["bridge"]["locations"] == Json::array({expected}));
-    assert(!restored.contains("location_catalog"));
-    auto bad = compact; bad["location_catalog"]["sha256"] = "wrong";
-    assert(fails([&] { kh3ap::json::expand_slot_data(bad); }));
-    bad = compact; bad["location_catalog"]["entries"].push_back(bad["location_catalog"]["entries"][0]);
-    assert(fails([&] { kh3ap::json::expand_slot_data(bad); }));
-    bad = compact; bad["location_catalog"]["entries"][0][1] = 3;
-    assert(fails([&] { kh3ap::json::expand_slot_data(bad); }));
-    bad = compact; bad["location_catalog"]["entries"][0][2]["ap_location_id"] = id + 1;
-    assert(fails([&] { kh3ap::json::expand_slot_data(bad); }));
-    bad = compact; bad["location_catalog"]["entries"][0][3].push_back("missing_field");
-    assert(fails([&] { kh3ap::json::expand_slot_data(bad); }));
-    const auto directory = std::filesystem::temp_directory_path() / ("kh3-compact-catalog-" + std::to_string(GetCurrentProcessId()));
-    std::filesystem::create_directories(directory);
-    const auto path = directory / "slot_data.json";
-    { std::ofstream file(path); file << compact.dump(); }
-    const auto document = kh3ap::json::read_seed_document(path);
-    assert(document->value == restored && parse(document->text) == restored);
-    assert(kh3ap::json::read_seed_document(path) == document);
-    { std::ofstream file(path); file << bad.dump(); }
-    assert(fails([&] { kh3ap::json::read_seed_document(path); }));
-    std::filesystem::remove(path); std::filesystem::remove(directory);
+    const auto resolved = parse(R"({"kh3_seed":{"seed_name":"resolved","slot":1},"bridge":{"locations":[
+        {"ap_location_id":104,"source_id":"TestChest","assigned_item_name":"Foreign reward",
+         "assigned_item_player":2,"mom_song_id":12,"shop_price":99}
+    ]}})");
+    const auto resolved_text = resolved.dump();
+    const auto document = kh3ap::json::decode_seed_document("slot_data.json", resolved_text);
+    assert(document->value == resolved && document->text == resolved_text);
+    auto compact = resolved;
+    compact["bridge"].erase("locations");
+    compact["location_catalog"] = Json{{"version", 1}};
+    assert(fails([&] { kh3ap::json::decode_seed_document("slot_data.json", compact.dump()); }));
     auto seed = parse(R"({"kh3_seed":{"seed_name":"catalog","slot":1},"ultima_weapon_shard_count":3,"bridge":{"locations":[
         {"ap_location_id":100,"bridge_key":"VBonus:Vbonus_016","source_table":"VBonus","source_id":"Vbonus_016","bridge_delivery_required":true},
         {"ap_location_id":101,"bridge_key":"LevelUp:4","source_table":"LevelUp","source_id":"4"},

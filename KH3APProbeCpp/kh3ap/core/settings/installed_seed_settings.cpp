@@ -95,8 +95,9 @@ namespace kh3ap
             return documents;
         }
 
-        auto document_from_pak(std::string_view name) -> std::shared_ptr<const json::SeedDocument>
+        auto document_from_pak(const std::filesystem::path& path) -> std::shared_ptr<const json::SeedDocument>
         {
+            const auto name = path.filename();
             const auto& documents = installed_documents();
             if (name == "slot_data.json")
             {

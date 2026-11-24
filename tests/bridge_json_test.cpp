@@ -4,8 +4,8 @@
 #include "kh3ap/features/player/context/context_resolver.h"
 #include "kh3ap/bridge/serialization/request_parser.h"
 #include "kh3ap/bridge/serialization/json.h"
-#include "kh3ap/bridge/catalog/location_catalog_data.h"
 #include "kh3ap/bridge/checks/check_checkpoint.h"
+#include "seed_document_fixture.h"
 #include <cassert>
 #include <chrono>
 #include <fstream>
@@ -20,6 +20,7 @@ namespace kh3ap
 int main()
 {
     using namespace kh3ap;
+    json::bind_runtime_seed_source(seed_document_fixture::read);
     const JsonObject object{R"({"nested":{"name":"wrong","flag":false},"name":"Sora \"hi\" \\ \n \u00e9 \u65e5 \ud83d\ude00","flag":true,"integer":9223372036854775807,"minimum":-9223372036854775808,"exact":9007199254740993,"decimal":1.25e2,"strings":["A\\B","\u65e5"],"rows":[{"name":"quoted } ] \"","child":{"id":7}}]})"};
     assert(object.valid());
     assert(object.string_field("name") == L"Sora \"hi\" \\ \n \u00e9 \u65e5 \U0001f600");
@@ -170,38 +171,14 @@ int main()
 
     // Shared compact assignments must not amplify a small input into an
     // unbounded expanded document.
-    const auto catalog = json::Value::parse(json::location_catalog_data);
-    auto entries = json::Value::array();
-    constexpr size_t expansion_test_locations = 64;
-    for (const auto& [key, base] : catalog["locations"].items())
-    {
-        entries.push_back(json::Value::array({base["ap_location_id"], 0,
-                                             json::Value::object(), json::Value::array()}));
-        if (entries.size() == expansion_test_locations)
-        {
-            break;
-        }
-    }
-    assert(entries.size() == expansion_test_locations);
-    json::Value compact{
-        {"bridge", json::Value::object()},
-        {"location_catalog", {
-            {"version", 1}, {"sha256", catalog["sha256"]}, {"entries", entries},
-            {"assignments", json::Value::array({json::Value{{"assigned_item_name", "Potion"}}})}}}};
-    const auto expanded = json::expand_slot_data(compact);
-    assert(expanded["bridge"]["locations"].size() == expansion_test_locations);
-    assert(expanded["bridge"]["locations"][0]["assigned_item_name"] == "Potion");
-    compact["location_catalog"]["assignments"][0]["assigned_item_name"] =
-        std::string(json::limits::seed_bytes / 16, 'x');
-    assert(compact.dump().size() < json::limits::seed_bytes);
-    bool expansion_rejected{};
+    bool oversized_slot_rejected{};
     try
     {
-        (void)json::expand_slot_data(std::move(compact));
+        json::decode_seed_document("slot_data.json", std::string(json::limits::seed_bytes + 1, 'x'));
     }
-    catch (const std::runtime_error&)
+    catch (const std::runtime_error& error)
     {
-        expansion_rejected = true;
+        oversized_slot_rejected = std::string_view(error.what()) == "seed_metadata_size_limit:slot_data.json";
     }
-    assert(expansion_rejected);
+    assert(oversized_slot_rejected);
 }
