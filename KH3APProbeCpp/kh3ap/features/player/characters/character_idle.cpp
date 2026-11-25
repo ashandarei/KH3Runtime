@@ -53,6 +53,7 @@ namespace kh3ap::character_idle
         constexpr size_t state_owner_pawn_offset = 0x68;
 
         constexpr auto set_path = player_animation_support::kairi_idle_animation_set_path;
+        constexpr auto last_pose_notify_path = L"/Script/TresGame.Default__TresAnimNotify_LastAnimPose";
         const uintptr_t resolve_rva = character_native::rva(character_native::Site::idle_resolve);
         const uintptr_t battle_rva = character_native::rva(character_native::Site::set_battle);
         const uintptr_t play_rva = character_native::rva(character_native::Site::idle_play);
@@ -317,19 +318,74 @@ namespace kh3ap::character_idle
                 character_native::rva(character_native::Site::voice_notify);
             const auto table = *reinterpret_cast<uintptr_t**>(voice);
             size_t matches{};
+            size_t matched_slot{};
             for (size_t index = 0; index < 128; ++index)
             {
-                if (table[index] == address) { pose_notify_slot = index; ++matches; }
+                if (table[index] == address) { matched_slot = index; ++matches; }
             }
             if (matches != 1)
             {
                 throw std::runtime_error("pose_notify_slot_unavailable");
             }
+            pose_notify_slot = matched_slot;
+        }
+
+        void prepare_roxas_run_pose()
+        {
+            roxas_run_pose.animation = {};
+            try
+            {
+                auto* animation = find_loaded_runtime_asset(
+                    L"/Game/Character/pc/p_ex007/anm/rt/body/RunStartB.RunStartB");
+                if (!is_uobject_valid_fast(animation))
+                {
+                    throw std::runtime_error("roxas_run_start_missing");
+                }
+                prepare_pose_notify_slot();
+                if (!roxas_run_pose.notify.Get())
+                {
+                    auto* defaults = find_loaded_runtime_asset(last_pose_notify_path);
+                    auto* pose = is_uobject_valid_fast(defaults)
+                                     ? defaults->GetPropertyByNameInChain(L"m_LastAnimPose")
+                                     : nullptr;
+                    auto* engine = UObjectGlobals::StaticFindObject<UObject*>(
+                        nullptr, nullptr, L"/Engine/Transient.TresGameEngine_0");
+                    auto* package = is_uobject_valid_fast(engine) ? engine->GetOuterPrivate() : nullptr;
+                    if (!pose || pose->GetElementSize() != 1 ||
+                        defaults->GetClassPrivate()->GetName() != L"TresAnimNotify_LastAnimPose" ||
+                        !is_uobject_valid_fast(package) || package->GetClassPrivate()->GetName() != L"Package")
+                    {
+                        throw std::runtime_error("roxas_run_pose_notify_layout");
+                    }
+
+                    FStaticConstructObjectParameters parameters(defaults->GetClassPrivate(), package);
+                    parameters.Name = FName(L"KH3AP_RoxasRunPoseNotify", FNAME_Add);
+                    parameters.SetFlags = RF_Transient;
+                    auto* notify = UObjectGlobals::StaticConstructObject(parameters);
+                    if (!is_uobject_valid_fast(notify))
+                    {
+                        throw std::runtime_error("roxas_run_pose_notify_create");
+                    }
+                    constexpr uint8_t battle_run_pose = 1;
+                    *pose->ContainerPtrToValuePtr<uint8_t>(notify) = battle_run_pose;
+                    // Keep one transient notify for the process. Its package
+                    // outer avoids retaining a pawn or world through the root.
+                    notify->SetRootSet();
+                    roxas_run_pose.notify = make_uobject_weak(notify);
+                }
+                roxas_run_pose.animation = make_uobject_weak(animation);
+            }
+            catch (const std::runtime_error& failure)
+            {
+                RC::Output::send<RC::LogLevel::Warning>(
+                    STR("[KH3APProbeCpp] Roxas run pose completion unavailable: {}\n"),
+                    std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
+            }
         }
 
         void prepare_kairi_pose_completion(UObject* idle_set)
         {
-            auto* notify = find_loaded_runtime_asset(L"/Script/TresGame.Default__TresAnimNotify_LastAnimPose");
+            auto* notify = find_loaded_runtime_asset(last_pose_notify_path);
             auto* pose = is_uobject_valid_fast(notify) ? notify->GetPropertyByNameInChain(L"m_LastAnimPose") : nullptr;
             if (!pose || pose->GetElementSize() != 1 || *pose->ContainerPtrToValuePtr<uint8_t>(notify) != 0 ||
                 notify->GetClassPrivate()->GetName() != L"TresAnimNotify_LastAnimPose")
@@ -882,9 +938,7 @@ namespace kh3ap::character_idle
                 throw std::runtime_error("roxas_idle_animation_missing");
             }
         }
-        prepare_pose_notify_slot();
-        roxas_run_pose = run_pose_completion(find_loaded_runtime_asset(
-            L"/Game/Character/pc/p_ex001/anm/rt/body/1013.1013")); // RunBattleStartW
+        prepare_roxas_run_pose();
         prepare_roxas_face(anim);
         roxas_current_state_offset = current->GetOffset_Internal();
         roxas_state_id_offset = state_id->GetOffset_Internal();
