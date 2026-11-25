@@ -1,8 +1,7 @@
 #include "kh3ap/core/settings/pak_seed_settings.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/features/world/space/space_access.h"
-#include "kh3ap/features/world/space/space_policy.h"
-#include "kh3ap/features/world/portals/portal_policy.h"
+#include "kh3ap/features/world/portals/portal_unlocks.h"
 #include "kh3ap/bridge/utilities.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
 #include "kh3ap/bridge/transport/pipe_transport.h"
@@ -30,7 +29,7 @@ namespace kh3ap
         if (access_ready && bridge == *directory && times == input_times && revisions == input_revisions) return;
         access_ready = false;
         allowed.clear(); items.clear();
-        party_portals = false;
+        party_portals.clear();
         kh02_enabled = false;
         bridge = *directory;
         auto read_snapshot = [&](size_t i) -> std::optional<std::string> {
@@ -53,13 +52,18 @@ namespace kh3ap
             if(settings.string_field("protocol_name") != L"kh3_ap_file_bridge" ||
                 settings.int64_field("protocol_version") != 1) return;
             const auto slot_seed = settings.object_field("kh3_seed");
+            const auto mixed = settings.object_field("mixed_portal_unlocks");
+            const auto party_ids = portals::party_portal_ids(
+                settings.int64_field("portal_unlocks").value_or(portals::keyblade_mode),
+                [&](const std::string& region) { return mixed.string_field(region); });
+            if (!party_ids) return;
             slot_settings = SlotSettings{
                 slot_seed.string_field("seed_name").value_or(L""),
                 slot_seed.int64_field("slot").value_or(0),
                 static_cast<int>(settings.int64_field("heart_piece_count").value_or(0)),
                 static_cast<int>(settings.int64_field("worlds_required").value_or(-1)),
                 settings.int64_field("include_space").value_or(0) == 1,
-                settings.int64_field("portal_unlocks").value_or(0) == 1,
+                *party_ids,
                 settings.int64_field("kh02_enabled").value_or(0) == 1};
         }
         if (JsonFieldReader::string_field(*status, "protocol_name") != L"kh3_ap_file_bridge" ||
@@ -88,11 +92,14 @@ namespace kh3ap
             else return;
         }
         if (JsonFieldReader::int64_field(*status, "received_item_count") != expected_index) return;
-        for (const auto& entry : space::landings)
-            if (auto has = [this](std::wstring_view name) { return items.contains(std::wstring{name}); };
-                party_portals ? portals::allowed(entry.code, has) : space::landing_allowed(entry.code, has))
-                allowed.insert(std::wstring{entry.code});
-        if (party_portals && portals::allowed(L"ss", [this](std::wstring_view name) { return items.contains(std::wstring{name}); }))
+        const auto has = [this](std::wstring_view name) { return items.contains(std::wstring{name}); };
+        for (const auto& world : gate_opener::worlds)
+        {
+            const auto* def = portals::by_id(world.portal);
+            if (def && (party_portals.contains(world.portal) ? portals::allowed(*def, has) : has(world.keyblade)))
+                allowed.emplace(def->code);
+        }
+        if (!party_portals.empty())
             allowed.insert(L"ss");
         access_ready = true;
         input_times = times;

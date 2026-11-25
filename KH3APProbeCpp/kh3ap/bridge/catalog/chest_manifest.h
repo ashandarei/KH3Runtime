@@ -4,6 +4,7 @@
 #include "kh3ap/bridge/catalog/chest_data.h"
 #include "kh3ap/bridge/checks/chest_snapshot.h"
 #include "kh3ap/bridge/serialization/json.h"
+#include "kh3ap/features/world/portals/portal_unlocks.h"
 #include <cmath>
 #include <map>
 #include <set>
@@ -175,7 +176,11 @@ namespace kh3ap::chest_manifest
             if (color_map)
             {
                 const auto doors = integer(field(metadata, "portal_unlocks"));
-                if (doors != 0 && doors != 1)
+                const auto& mixed = field(metadata, "mixed_portal_unlocks");
+                const auto party_ids = portals::party_portal_ids(doors, [&](const std::string& region) {
+                    return json::utf8_to_wide(text(field(mixed, region)));
+                });
+                if (!party_ids)
                 {
                     throw std::runtime_error("chest_manifest_portal_mode");
                 }
@@ -184,11 +189,19 @@ namespace kh3ap::chest_manifest
                 {
                     door_blades.insert(text(name));
                 }
+                if (doors == portals::mixed_mode)
+                {
+                    for (const auto& world : gate_opener::worlds)
+                    {
+                        if (party_ids->contains(world.portal))
+                            door_blades.erase(portals::catalog_key(world.keyblade));
+                    }
+                }
                 for (const auto& [name, unused] :
                      field(data, "palettes").get_ref<const Json::object_t&>())
                 {
                     if (name != "Pandora's Power" && name != "Ultima Weapon" &&
-                        door_blades.contains(name) == (doors == 1))
+                        door_blades.contains(name) == (doors == portals::party_mode))
                     {
                         next_eligible.insert(name);
                     }

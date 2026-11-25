@@ -1,4 +1,5 @@
 #include "chest_fixture.h"
+#include "mixed_portal_fixture.h"
 #include "kh3ap/bridge/transport/bridge_channels.h"
 #include "kh3ap/features/treasure/chest_character_policy.h"
 #include "kh3ap/features/treasure/chest_commands.h"
@@ -191,6 +192,15 @@ int main()
         expected_doors.insert(widen(name.get_ref<const std::string&>()));
     assert(eligible_names(character_pool) == expected_doors && character_pool.size() == 12);
     assert(!character_pool.contains(L"Ultima Weapon") && !character_pool.contains(L"Pandora's Power"));
+
+    auto mixed_seed = character_seed;
+    mixed_seed["portal_unlocks"] = 2;
+    mixed_seed["mixed_portal_unlocks"] = Json::parse(mixed_portal_fixture);
+    catalog.configure(mixed_seed);
+    assert((eligible_names(catalog.snapshot({}, 42, "bridge", widen).eligible_keyblades) ==
+            std::set<std::wstring>{L"Classic Tone", L"Grand Chef", L"Hunny Spout", L"Hero's Origin", L"Oblivion"}));
+    mixed_seed["mixed_portal_unlocks"]["Data Battles"] = "Party Member: Riku";
+    rejects([&] { catalog.configure(mixed_seed); });
 
     Json::array_t placements;
     for (const auto& [id, unused] : shared["placements"].get_ref<const Json::object_t&>()) placements.push_back(placed(id));

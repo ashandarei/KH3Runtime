@@ -23,7 +23,7 @@ namespace kh3ap
         std::wstring seed;
         bool access_ready{};
         bool include_space{};
-        bool party_portals{};
+        std::set<int> party_portals;
         bool kh02_enabled{};
         int64_t ap_slot{};
         int heart_piece_count{}, worlds_required{};
@@ -35,7 +35,9 @@ namespace kh3ap
             std::wstring seed;
             int64_t slot{};
             int heart_piece_count{}, worlds_required{};
-            bool include_space{}, party_portals{}, kh02_enabled{};
+            bool include_space{};
+            std::set<int> party_portals;
+            bool kh02_enabled{};
         };
         std::optional<SlotSettings> slot_settings;
     };

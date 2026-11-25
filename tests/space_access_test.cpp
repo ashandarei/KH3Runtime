@@ -6,6 +6,7 @@
 #include <cassert>
 #include <fstream>
 #include <map>
+#include "mixed_portal_fixture.h"
 
 namespace
 {
@@ -138,7 +139,7 @@ int main()
                 R"("items":[{"index":0,"item_name":")" + std::string{receipt} + R"("}]})";
             revisions[root / "ap_items.json"]++;
             access.refresh(configure);
-            assert(access.access_ready && access.party_portals);
+            assert(access.access_ready && access.party_portals.contains(test.id));
             const auto has = [&](std::wstring_view name) { return access.items.contains(std::wstring{name}); };
             const bool expected = receipt == test.receipt;
             assert(kh3ap::portals::allowed(*definition, has) == expected);
@@ -153,7 +154,7 @@ int main()
         access = RuntimeSpaceAccess([&] { return directory; });
         revisions[root / "slot_data.json"]++;
         access.refresh(configure);
-        assert(access.access_ready && access.party_portals && !access.include_space);
+        assert(access.access_ready && access.party_portals.contains(test.id) && !access.include_space);
         assert((access.allowed == std::set<std::wstring>{L"ss", std::wstring{test.code}}));
 
         // Switch the setting with the same receipts: the character alone must
@@ -162,7 +163,7 @@ int main()
         access = RuntimeSpaceAccess([&] { return directory; });
         revisions[root / "slot_data.json"]++;
         access.refresh(configure);
-        assert(access.access_ready && !access.party_portals && access.allowed.empty());
+        assert(access.access_ready && access.party_portals.empty() && access.allowed.empty());
         snapshots[root / "ap_items.json"] = "{" + protocol +
             R"("items":[{"index":0,"item_name":")" + std::string{test.keyblade} + R"("}]})";
         revisions[root / "ap_items.json"]++;
@@ -172,8 +173,32 @@ int main()
         access = RuntimeSpaceAccess([&] { return directory; });
         revisions[root / "slot_data.json"]++;
         access.refresh(configure);
-        assert(access.access_ready && access.party_portals && access.allowed == std::set<std::wstring>{L"ss"});
+        assert(access.access_ready && access.party_portals.contains(test.id) && access.allowed == std::set<std::wstring>{L"ss"});
     }
+
+    const auto mixed_settings = "{" + protocol +
+        R"("kh3_seed":{"seed_name":"seed","slot":7},"portal_unlocks":2,"kh02_enabled":1)";
+    pak_options = kh3ap::JsonObject{mixed_settings + ",\"mixed_portal_unlocks\":" + mixed_portal_fixture + "}"};
+    access = RuntimeSpaceAccess([&] { return directory; });
+    for (const auto& [receipt, code] : std::map<std::string, std::wstring>{
+        {"Party Member: Hercules", L"he"}, {"Hero's Origin", L""},
+        {"Party Member: Woody", L""}, {"Favorite Deputy", L"ts"},
+        {"Party Member: Aqua", L"dw"}, {"Oblivion", L""}}) {
+        snapshots[root / "ap_items.json"] = "{" + protocol +
+            R"("items":[{"index":0,"item_name":")" + receipt + R"("}]})";
+        revisions[root / "ap_items.json"]++;
+        access.refresh(configure);
+        assert((access.access_ready && access.party_portals == std::set<int>{4, 8}));
+        std::set<std::wstring> expected{L"ss"};
+        if (!code.empty()) expected.insert(code);
+        assert(access.allowed == expected);
+        assert(kh3ap::portals::kh02_access(access.access_ready, access.kh02_enabled,
+                                           access.allowed.contains(L"dw")).unlocked == (code == L"dw"));
+    }
+    pak_options = kh3ap::JsonObject{mixed_settings + "}"};
+    access = RuntimeSpaceAccess([&] { return directory; });
+    access.refresh(configure);
+    assert(!access.access_ready && access.allowed.empty());
 
     // Dark World and the imported chapter share the selected portal unlock.
     // Neither the other mode's item nor optional challenges can bypass it.
