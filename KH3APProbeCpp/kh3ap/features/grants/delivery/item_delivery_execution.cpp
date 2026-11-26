@@ -69,7 +69,10 @@ namespace kh3ap::item_delivery
         const auto reconciliation_state = reconciliation::view();
         const auto epoch_error = batch_request.delivery_epoch != reconciliation::epoch() ||
             batch_request.delivery_epoch != reconciliation_state->epoch;
-        if (epoch_error || !reconciliation_state->ready)
+        const bool game_over_rewards = reconciliation_state->game_over_rewards && !request_path &&
+            queue == &poll_state.scheduled_queue() && !batch_request.grants.empty() &&
+            std::ranges::all_of(batch_request.grants, supports_game_over_reward);
+        if (epoch_error || (!reconciliation_state->ready && !game_over_rewards))
         {
             if (queue) queue->clear();
             publish_delivery_readiness(deps, batch_request.request_id, L"rejected",
@@ -129,15 +132,22 @@ namespace kh3ap::item_delivery
         }
 
         const auto policy = runtime_item_delivery_policy(batch_request.grants, batch_request.action_kind, true);
-        const bool allow_special_battle_game_over = policy.allow_special_battle_game_over;
         const auto death = deathlink::view();
-        if (death->fenced && !allow_special_battle_game_over && !RuntimeSpaceService::is_space_active())
+        if (death->fenced && !game_over_rewards && !policy.game_over_only && !RuntimeSpaceService::is_space_active())
         {
             publish_delivery_readiness(deps, batch_request.request_id, L"waiting", L"deathlink_transition_pending",
                 L"Native DeathLink owns Game Over and playable-pawn recovery.", batch_request.grants.size());
             return;
         }
-        auto context = prepare_delivery_context(deps, policy, true, now);
+        auto context = [&]() -> DeliveryContext {
+            if (game_over_rewards)
+            {
+                if (auto* pawn = game_over_reward_pawn(deps.runtime_state, reconciliation_state->retry_inventory_restored))
+                    return {{true, L"game_over_reward_ready", {}}, {pawn}};
+                return {{false, L"game_over_menu_not_ready", {}}, {}};
+            }
+            return prepare_delivery_context(deps, policy, true, now);
+        }();
         const auto& safety_status = context.safety;
         auto& world_context_candidates = context.candidates;
         const DeliveryTrace trace{
@@ -155,15 +165,14 @@ namespace kh3ap::item_delivery
                     static_cast<uint64_t>(batch_request.grants.size()));
             const bool should_log_pending =
                     deps.runtime_state.grant_state().log_throttle_state().mark_manual_runtime_item_grant_log(now, item_delivery_log_interval);
-            if (allow_special_battle_game_over && should_log_pending)
+            if (policy.game_over_only && should_log_pending)
             {
                 trace.deathlink(
                         STR("batch_wait"), nullptr,
                         runtime_item_grant_wait_ms(deps, now),
                         STR("waiting"),
                         safety_status.reason,
-                        safety_status.details,
-                        allow_special_battle_game_over);
+                        safety_status.details);
             }
             if (should_log_pending)
             {
@@ -232,15 +241,14 @@ namespace kh3ap::item_delivery
                 runtime_item_grant_wait_ms(deps, now),
                 STR("begin"),
                 STR(""));
-        if (allow_special_battle_game_over)
+        if (policy.game_over_only)
         {
             trace.deathlink(
                     STR("batch_apply_begin"), nullptr,
                     runtime_item_grant_wait_ms(deps, now),
                     STR("begin"),
                     STR("apply_begin"),
-                    STR(""),
-                    allow_special_battle_game_over);
+                    STR(""));
         }
         Output::send<LogLevel::Verbose>(
                 STR("[KH3APProbeCpp] Runtime item grant apply begin request_id={} grants={} candidates={} waited_ms={} context={}\n"),
@@ -269,7 +277,7 @@ namespace kh3ap::item_delivery
                                     if (const auto cached = queue->cached(grant))
                                         return RuntimeItemDeliveryAttempt{.applied = true, .duplicate = true, .payload = *cached};
                                 RuntimeItemDeliveryAttempt attempt{};
-                                if (deathlink::view()->fenced && !allow_special_battle_game_over && !RuntimeSpaceService::is_space_active())
+                                if (deathlink::view()->fenced && !game_over_rewards && !policy.game_over_only && !RuntimeSpaceService::is_space_active())
                                 {
                                     attempt.unsafe_abort = true;
                                     attempt.failure_details = L"deathlink_transition_pending";
@@ -288,7 +296,7 @@ namespace kh3ap::item_delivery
                                             &apply_payload,
                                             &failure_details,
                                             &applied_world_context_object,
-                                            &unsafe_abort_requested);
+                                            &unsafe_abort_requested, game_over_rewards);
                                 }();
                                 const uint64_t grant_elapsed_ms = elapsed_ms_since(grant_apply_started_at);
                                 trace.profile(
@@ -303,8 +311,7 @@ namespace kh3ap::item_delivery
                                             runtime_item_grant_wait_ms(deps, now),
                                             delivery_attempt_status(grant_applied, unsafe_abort_requested),
                                             grant_applied ? std::wstring_view{STR("bp_tres_start_game_over_called")} : std::wstring_view{STR("grant_failed")},
-                                            grant_applied ? std::wstring_view{STR("")} : std::wstring_view{failure_details},
-                                            true);
+                                            grant_applied ? std::wstring_view{STR("")} : std::wstring_view{failure_details});
                                 }
                                 if (grant_elapsed_ms >= slow_item_grant_threshold_ms)
                                 {
@@ -470,7 +477,7 @@ namespace kh3ap::item_delivery
                 static_cast<uint64_t>(batch_payload.applied.size()),
                 static_cast<uint64_t>(batch_request.grants.size()),
                 batch_payload.error.empty() ? std::wstring_view{STR("<none>")} : std::wstring_view{batch_payload.error});
-        if (allow_special_battle_game_over)
+        if (policy.game_over_only)
         {
             trace.deathlink(
                     STR("batch_apply_event_write"), nullptr,
@@ -481,8 +488,7 @@ namespace kh3ap::item_delivery
                     ? std::format(STR("applied_count={} requested_count={}"),
                     static_cast<uint64_t>(batch_payload.applied.size()),
                     static_cast<uint64_t>(batch_request.grants.size()))
-                    : batch_payload.error,
-                    allow_special_battle_game_over);
+                    : batch_payload.error);
         }
         if (batch_apply_event_written && queue)
         {
@@ -578,8 +584,7 @@ namespace kh3ap::item_delivery
 
         const auto policy = runtime_item_delivery_policy(
                 std::span{&request, size_t{1}}, request.action_kind, false);
-        const bool allow_special_battle_game_over = policy.allow_special_battle_game_over;
-        if (deathlink::view()->fenced && !allow_special_battle_game_over && !RuntimeSpaceService::is_space_active())
+        if (deathlink::view()->fenced && !policy.game_over_only && !RuntimeSpaceService::is_space_active())
         {
             publish_delivery_readiness(deps, request.request_id, L"waiting", L"deathlink_transition_pending",
                 L"Native DeathLink owns Game Over and playable-pawn recovery.", 1);
@@ -602,15 +607,14 @@ namespace kh3ap::item_delivery
                     1);
             const bool should_log_pending =
                     deps.runtime_state.grant_state().log_throttle_state().mark_manual_runtime_item_grant_log(now, item_delivery_log_interval);
-            if (allow_special_battle_game_over && should_log_pending)
+            if (policy.game_over_only && should_log_pending)
             {
                 trace.deathlink(
                         STR("single_wait"), &request,
                         runtime_item_grant_wait_ms(deps, now),
                         STR("waiting"),
                         safety_status.reason,
-                        safety_status.details,
-                        allow_special_battle_game_over);
+                        safety_status.details);
             }
             if (should_log_pending)
             {
@@ -673,7 +677,7 @@ namespace kh3ap::item_delivery
                 request, request.action_kind, deps.bridge_dir, poll_state,
                 [&](const RuntimeItemGrantRequest&) {
                     RuntimeItemDeliveryAttempt attempt{};
-                    if (deathlink::view()->fenced && !allow_special_battle_game_over && !RuntimeSpaceService::is_space_active())
+                    if (deathlink::view()->fenced && !policy.game_over_only && !RuntimeSpaceService::is_space_active())
                     {
                         attempt.unsafe_abort = true;
                         attempt.failure_details = L"deathlink_transition_pending";
@@ -697,15 +701,14 @@ namespace kh3ap::item_delivery
                             runtime_item_grant_wait_ms(deps, now),
                             STR("begin"),
                             STR(""));
-                    if (allow_special_battle_game_over)
+                    if (policy.game_over_only)
                     {
                         trace.deathlink(
                                 STR("single_apply_begin"), &request,
                                 runtime_item_grant_wait_ms(deps, now),
                                 STR("begin"),
                                 STR("apply_begin"),
-                                STR(""),
-                                allow_special_battle_game_over);
+                                STR(""));
                     }
                     const auto single_grant_started_at = std::chrono::steady_clock::now();
                     auto& unsafe_single_abort = attempt.unsafe_abort;
@@ -726,15 +729,14 @@ namespace kh3ap::item_delivery
                             single_grant_elapsed_ms,
                             delivery_attempt_status(single_grant_applied, unsafe_single_abort),
                             single_grant_applied ? std::wstring_view{STR("")} : std::wstring_view{failure_details});
-                    if (allow_special_battle_game_over)
+                    if (policy.game_over_only)
                     {
                         trace.deathlink(
                                 STR("single_grant_apply_result"), &request,
                                 runtime_item_grant_wait_ms(deps, now),
                                 delivery_attempt_status(single_grant_applied, unsafe_single_abort),
                                 single_grant_applied ? std::wstring_view{STR("bp_tres_start_game_over_called")} : std::wstring_view{STR("grant_failed")},
-                                single_grant_applied ? std::wstring_view{STR("")} : std::wstring_view{failure_details},
-                                allow_special_battle_game_over);
+                                single_grant_applied ? std::wstring_view{STR("")} : std::wstring_view{failure_details});
                     }
                     if (single_grant_elapsed_ms >= slow_item_grant_threshold_ms)
                     {
@@ -800,15 +802,14 @@ namespace kh3ap::item_delivery
                     elapsed_ms_since(single_write_started_at),
                     single_apply_event_written ? std::wstring_view{STR("written")} : std::wstring_view{STR("not_written")},
                     STR(""));
-            if (allow_special_battle_game_over)
+            if (policy.game_over_only)
             {
                 trace.deathlink(
                         STR("single_apply_event_write"), &request,
                         runtime_item_grant_wait_ms(deps, now),
                         single_apply_event_written ? std::wstring_view{STR("written")} : std::wstring_view{STR("not_written")},
                         single_apply_event_written ? std::wstring_view{STR("apply_event_written")} : std::wstring_view{STR("apply_event_not_written")},
-                        STR(""),
-                        allow_special_battle_game_over);
+                        STR(""));
             }
             if (acknowledge_runtime_item_delivery(
                     single_apply_event_written, poll_state, request_key, now, consume_request))

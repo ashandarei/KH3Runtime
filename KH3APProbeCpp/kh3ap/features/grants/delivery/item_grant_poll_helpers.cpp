@@ -233,7 +233,8 @@ namespace kh3ap
         const bool using_priority_request = runtime_item_delivery_uses_priority(
                 priority_request_exists, space_active,
                 priority_request_exists && space_active && (request_file_exists(normal_request_path) || !poll_state.delivery_queue().empty() || scheduled_exists));
-        const bool using_schedule = !using_priority_request && !request_file_exists(normal_request_path) && poll_state.delivery_queue().empty();
+        const bool prefer_game_over_rewards = native->game_over_rewards && native->delivery;
+        const bool using_schedule = prefer_game_over_rewards || (!using_priority_request && !request_file_exists(normal_request_path) && poll_state.delivery_queue().empty());
         const auto request_path = using_schedule ? std::optional<std::filesystem::path>{} :
             using_priority_request ? priority_request_path : normal_request_path;
         if (!deps.runtime_state.grant_state().item_grant_poll_state().is_armed())

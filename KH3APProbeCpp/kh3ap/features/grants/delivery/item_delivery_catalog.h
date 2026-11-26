@@ -29,6 +29,20 @@ namespace kh3ap::item_delivery
     };
     using ExpandedCatalog = std::map<int64_t, std::vector<RuntimeItemGrantRequest>>;
 
+    inline bool is_magic_reward(const RuntimeItemGrantRequest& grant)
+    {
+        return grant.grant_method == L"durable_sora_vbonus" &&
+               grant.runtime_token.starts_with(L"ETresVictoryBonusKind::MELEM_");
+    }
+
+    inline bool supports_game_over_reward(const RuntimeItemGrantRequest& grant)
+    {
+        return grant.grant_method == L"bp_tres_get_item" ||
+               grant.grant_method == L"bp_tres_get_item_add_munny" ||
+               grant.grant_method == L"durable_sora_ability" ||
+               is_magic_reward(grant);
+    }
+
     inline auto durable_repair_method(std::wstring_view method) -> bool
     {
         return method == L"controller_unlock" || method == L"durable_sora_ability" ||
@@ -101,7 +115,7 @@ namespace kh3ap::item_delivery
     inline auto schedule_catalog(const std::map<int64_t, ReceiptTemplate>& receipts,
             const ExpandedCatalog& expanded, const reconciliation::Receipts& active,
             const std::set<int64_t>& forced, const std::set<std::string>& repairs,
-            const std::set<int64_t>& retry_preserved = {}) -> ScheduledDelivery
+            const std::set<int64_t>& retry_preserved = {}, bool game_over = false) -> ScheduledDelivery
     {
         ScheduledDelivery result;
         for (const auto& [index, item] : receipts)
@@ -109,6 +123,7 @@ namespace kh3ap::item_delivery
             if (active.contains(index) || !delivery_eligible(item, index, forced, repairs)) continue;
             result.pending.push_back(index);
             auto group = expanded.at(index);
+            if (game_over && !std::ranges::all_of(group, supports_game_over_reward)) continue;
             // A mixed receipt may contain a retained ability/inventory item
             // and a rolled-back VBonus. Replay only its missing components.
             if (retry_preserved.contains(index))

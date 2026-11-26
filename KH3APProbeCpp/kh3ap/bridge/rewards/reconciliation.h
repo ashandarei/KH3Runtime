@@ -18,6 +18,8 @@ namespace kh3ap::reconciliation
     struct View
     {
         bool ready{};
+        bool game_over_rewards{};
+        bool retry_inventory_restored{};
         int64_t epoch{};
         Receipts active;
         std::string error;

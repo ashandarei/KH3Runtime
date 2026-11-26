@@ -163,36 +163,11 @@ namespace kh3ap
             return;
         }
 
-        const auto now = std::chrono::steady_clock::now();
-        const RuntimeGrantSafetyStatus special_battle_mode_status =
-                current_runtime_special_battle_mode_status(deps.runtime_state.grant_state(), now);
-        const bool allow_special_battle_bad_status_trap =
+        const bool alternate_bad_status_supported =
                 supports_alternate_bad_status(request->runtime_token, request->grant_method);
-        auto* alternate = allow_special_battle_bad_status_trap
+        auto* alternate = alternate_bad_status_supported
                 ? character_swap::bad_status_context() : nullptr;
-        if (!special_battle_mode_status.ready && !allow_special_battle_bad_status_trap)
-        {
-            if (deps.emit_pending_results)
-            {
-                write_manual_runtime_item_grant_result(
-                        deps.bridge_dir,
-                        deps.manual_result_filename,
-                        *request,
-                        STR("pending_prereq"),
-                        special_battle_mode_status.details.empty()
-                                ? special_battle_mode_status.reason
-                                : std::format(STR("{}:{}"), special_battle_mode_status.reason, special_battle_mode_status.details),
-                        deps.protocol_name,
-                        deps.protocol_version);
-            }
-            Output::send<LogLevel::Verbose>(
-                    STR("[KH3APProbeCpp] Manual runtime item pending reason={} details={}\n"),
-                    special_battle_mode_status.reason,
-                    special_battle_mode_status.details);
-            return;
-        }
-
-        if (allow_special_battle_bad_status_trap)
+        if (alternate_bad_status_supported)
         {
             const RuntimeGrantSafetyStatus trap_state_status =
                     alternate ? runtime_alternate_bad_status_safety_status(deps.runtime_state, alternate)

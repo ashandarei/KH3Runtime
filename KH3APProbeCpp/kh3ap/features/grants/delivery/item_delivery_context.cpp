@@ -41,14 +41,11 @@ namespace kh3ap::item_delivery
             bool is_batch,
             std::chrono::steady_clock::time_point now) -> DeliveryContext
     {
-        const bool allow_special_battle_game_over = policy.allow_special_battle_game_over;
-        const bool allow_during_special_battle =
-                allow_special_battle_game_over || policy.allow_special_battle_bad_status_trap;
         const bool contains_bad_status_trap = policy.contains_bad_status_trap;
         auto* alternate = (policy.supports_alternate_game_over || policy.supports_alternate_betrayal) ? character_swap::game_over_context() :
             policy.supports_alternate_bad_status ? character_swap::bad_status_context() : nullptr;
         // The story hero selects the route only. Sora still resolves through the
-        // normal cached-pawn, possession, loading, battle and live-state gates below.
+        // normal cached-pawn, possession, loading and live-state gates below.
         if (!alternate && requires_persistent_delivery_context())
         {
             auto* owner = persistent_player_reward_context();
@@ -84,29 +81,14 @@ namespace kh3ap::item_delivery
                     deps.runtime_state,
                     now,
                     s_runtime_item_grant_ready_context_debounce,
-                    allow_during_special_battle,
-                    allow_special_battle_game_over);
+                    policy.game_over_only);
         }();
         std::vector<UObject*> world_context_candidates{};
         const RuntimeGrantSafetyStatus unsafe_map_status = [&]() {
             const RuntimeHotPathProfileScope profile{
                     is_batch ? STR("runtime_item_grant:batch_unsafe_map_status")
                              : STR("runtime_item_grant:single_unsafe_map_status")};
-            return current_runtime_unsafe_map_status(deps.runtime_state, allow_special_battle_game_over);
-        }();
-        const RuntimeGrantSafetyStatus special_battle_mode_status = [&]() {
-            const RuntimeHotPathProfileScope profile{
-                    is_batch ? STR("runtime_item_grant:batch_special_battle_status")
-                             : STR("runtime_item_grant:single_special_battle_status")};
-            if (allow_during_special_battle)
-            {
-                return RuntimeGrantSafetyStatus{
-                        .ready = true,
-                        .reason = std::wstring{STR("ready")},
-                        .details = std::wstring{},
-                };
-            }
-            return current_runtime_special_battle_mode_status(deps.runtime_state.grant_state(), now);
+            return current_runtime_unsafe_map_status(deps.runtime_state, policy.game_over_only);
         }();
         const RuntimeGrantSafetyStatus bistro_return_gate_status = [&]() {
             const RuntimeHotPathProfileScope profile{
@@ -148,7 +130,7 @@ namespace kh3ap::item_delivery
                     deps.apply_deps.sora_current_state_cache);
         }();
         const std::array gates{
-                unsafe_map_status, special_battle_mode_status, bistro_return_gate_status,
+                unsafe_map_status, bistro_return_gate_status,
                 classic_kingdom_transition_gate_status, olympus_coliseum_transition_gate_status,
                 sora_state_cache_status};
         auto decision = evaluate_runtime_item_delivery_gates(

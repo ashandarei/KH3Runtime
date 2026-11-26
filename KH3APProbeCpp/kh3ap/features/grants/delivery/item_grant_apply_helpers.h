@@ -68,5 +68,6 @@ namespace kh3ap
             RuntimeItemApplyPayload* payload,
             std::wstring* failure_details,
             RC::Unreal::UObject** applied_world_context_object,
-            bool* unsafe_abort_requested = nullptr) -> bool;
+            bool* unsafe_abort_requested = nullptr,
+            bool game_over_reward = false) -> bool;
 }

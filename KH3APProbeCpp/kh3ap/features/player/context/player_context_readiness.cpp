@@ -37,7 +37,6 @@ namespace kh3ap
         using ::kh3ap::settings::s_enable_runtime_item_grant_polling;
         using ::kh3ap::settings::s_enable_shootlock_runtime_grant_gate;
         using ::kh3ap::settings::s_runtime_item_grant_delay;
-        using ::kh3ap::settings::s_runtime_item_grant_special_battle_exit_delay;
     }
 
     auto RuntimePlayerContextService::Impl::publish_playable_context_from_validated_pawn_name(
@@ -289,18 +288,14 @@ namespace kh3ap
         }
 
         const auto now = std::chrono::steady_clock::now();
-        const bool special_battle_exit = reason == STR("special_battle_mode");
-        const auto ready_delay = special_battle_exit
-                                     ? s_runtime_item_grant_special_battle_exit_delay
-                                     : s_runtime_item_grant_delay;
         const std::wstring playable_context_source =
             std::format(STR("RuntimeReadyEvent:{}"), reason);
-        if (!special_battle_exit && refresh_playable_context &&
+        if (refresh_playable_context &&
             config.publish_cached_playable_context)
         {
             config.publish_cached_playable_context(now, playable_context_source);
         }
-        if (!special_battle_exit && refresh_playable_context &&
+        if (refresh_playable_context &&
             config.runtime_state.grant_state().clear_classic_kingdom_transition_gate(
                 playable_context_source, now))
         {
@@ -310,7 +305,7 @@ namespace kh3ap
                     "mode=event_driven\n"),
                 playable_context_source);
         }
-        if (!special_battle_exit && refresh_playable_context &&
+        if (refresh_playable_context &&
             config.runtime_state.grant_state().clear_olympus_coliseum_transition_gate(
                 playable_context_source, now))
         {
@@ -320,16 +315,16 @@ namespace kh3ap
                     "mode=event_driven\n"),
                 playable_context_source);
         }
-        config.runtime_state.grant_state().item_grant_poll_state().arm_ready(ready_delay, now);
+        config.runtime_state.grant_state().item_grant_poll_state().arm_ready(s_runtime_item_grant_delay, now);
         const std::wstring context_summary = runtime_context();
         Output::send<LogLevel::Verbose>(
             STR("[KH3APProbeCpp] Runtime item grant ready event reason={} delay_ms={} "
-                "game_thread_wake={} | context={}\n"),
+                "game_thread_wake=true | context={}\n"),
             reason,
             static_cast<uint64_t>(
-                std::chrono::duration_cast<std::chrono::milliseconds>(ready_delay).count()),
-            special_battle_exit ? STR("false") : STR("true"), context_summary);
-        if (!special_battle_exit && config.process_pending_grant_now)
+                std::chrono::duration_cast<std::chrono::milliseconds>(s_runtime_item_grant_delay).count()),
+            context_summary);
+        if (config.process_pending_grant_now)
         {
             config.process_pending_grant_now(context_summary);
         }

@@ -44,8 +44,7 @@ namespace kh3ap
                                                                  std::wstring_view source) -> bool
     {
         runtime_observe_current_player(pawn);
-        if (config.runtime_state.grant_state().special_battle_mode_active() ||
-            !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
+        if (!RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn))
         {
             return false;
         }
@@ -101,15 +100,9 @@ namespace kh3ap
     }
 
     auto RuntimePlayerContextService::Impl::cache_validated_sora_pawn_candidate(
-        UObject* pawn, std::wstring_view pawn_name, std::wstring_view source,
-        bool allow_during_special_battle) -> bool
+        UObject* pawn, std::wstring_view pawn_name, std::wstring_view source) -> bool
     {
         runtime_observe_current_player(pawn);
-        if (config.runtime_state.grant_state().special_battle_mode_active() &&
-            !allow_during_special_battle)
-        {
-            return false;
-        }
         if (is_runtime_ap_ignored_map_context(pawn_name))
         {
             if (config.enter_ignored_map)
@@ -177,7 +170,7 @@ namespace kh3ap
         }
 
         UObject* const previous_pawn = config.runtime_state.grant_state().pawn_state().object();
-        const bool cached = cache_validated_sora_pawn_candidate(pawn, pawn_name, source, true);
+        const bool cached = cache_validated_sora_pawn_candidate(pawn, pawn_name, source);
         if (cached && pawn != previous_pawn)
         {
             Output::send<LogLevel::Normal>(

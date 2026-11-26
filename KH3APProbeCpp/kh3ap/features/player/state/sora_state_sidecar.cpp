@@ -58,7 +58,6 @@ namespace kh3ap
                 }
             }
             if (state_safety != RuntimeSoraStateSafety::Ok ||
-                deps.special_battle_mode_active ||
                 !deps.runtime_context_snapshot ||
                 !is_safe_playable_runtime_context_snapshot(*deps.runtime_context_snapshot))
             {

@@ -2,6 +2,7 @@
 #include "ultima_weapon_shard_policy.h"
 #include "kh3ap/features/grants/trap_catalog.h"
 #include "kh3ap/features/grants/game_over_policy.h"
+#include "kh3ap/bridge/rewards/reconciliation.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_unlocks.h"
 #include "kh3ap/features/grants/delivery/item_grant_apply_helpers.h"
@@ -232,10 +233,18 @@ namespace kh3ap
 
         auto final_grant_safety_status(const RuntimeItemGrantRequest& request,
                                        UObject* world_context_object,
-                                       const RuntimeItemGrantApplyDeps& deps)
+                                       const RuntimeItemGrantApplyDeps& deps, bool game_over_reward)
             -> RuntimeGrantSafetyStatus
         {
             const RuntimeHotPathProfileScope profile{STR("runtime_item_grant:final_safety")};
+            if (game_over_reward)
+            {
+                const auto view = reconciliation::view();
+                const bool ready = view->game_over_rewards && view->epoch == reconciliation::epoch() &&
+                    item_delivery::supports_game_over_reward(request) && world_context_object &&
+                    world_context_object == game_over_reward_pawn(deps.runtime_state, view->retry_inventory_restored);
+                return {ready, ready ? L"ready" : L"game_over_menu_not_ready", {}};
+            }
             if (RuntimeSpaceService::is_space_active())
             {
                 UObject* current = nullptr;
@@ -674,7 +683,7 @@ namespace kh3ap
                                               RuntimeItemApplyPayload* payload,
                                               std::wstring* failure_details,
                                               UObject** applied_world_context_object,
-                                              bool* unsafe_abort_requested) -> bool
+                                              bool* unsafe_abort_requested, bool game_over_reward) -> bool
     {
         if (payload)
         {
@@ -697,7 +706,7 @@ namespace kh3ap
         {
             std::wstring candidate_failure{};
             const auto final_safety_status =
-                final_grant_safety_status(request, world_context_object, deps);
+                final_grant_safety_status(request, world_context_object, deps, game_over_reward);
             if (!final_safety_status.ready)
             {
                 candidate_failure = std::format(

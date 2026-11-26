@@ -146,11 +146,9 @@ namespace kh3ap
     }
 
     auto RuntimePlayerContextService::cache_validated_sora_pawn_candidate(
-        UObject* pawn, std::wstring_view pawn_name, std::wstring_view source,
-        bool allow_during_special_battle) -> bool
+        UObject* pawn, std::wstring_view pawn_name, std::wstring_view source) -> bool
     {
-        return impl_->cache_validated_sora_pawn_candidate(pawn, pawn_name, source,
-                                                          allow_during_special_battle);
+        return impl_->cache_validated_sora_pawn_candidate(pawn, pawn_name, source);
     }
 
     auto RuntimePlayerContextService::cache_constructed_sora_pawn(UObject* pawn,

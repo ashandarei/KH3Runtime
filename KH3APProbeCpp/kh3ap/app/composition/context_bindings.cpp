@@ -180,11 +180,6 @@ namespace kh3ap::composition_detail
                                                    std::wstring_view pawn_source,
                                                    bool force_publish) -> void
     {
-        if (s_runtime_state.grant_state().special_battle_mode_active())
-        {
-            return;
-        }
-
         kh3ap::maybe_publish_playable_runtime_context_from_cached_pawn(
             s_runtime_state, try_get_bridge_dir(), now, pawn_source, force_publish);
     }

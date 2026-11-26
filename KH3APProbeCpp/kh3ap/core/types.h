@@ -94,6 +94,7 @@ namespace kh3ap
         std::wstring event_original_item{L"AP_RUNTIME_ITEM"};
         int64_t munny_delta{0};
         bool show_info{true};
+        bool restore_staged_magic{}; // Native receipt was already written to the retry bank.
     };
 
     struct RuntimeItemGrantBatchRequest

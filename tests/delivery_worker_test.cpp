@@ -1137,12 +1137,34 @@ int main()
         std::lock_guard lock{test_mutex};
         assert(published.contains("runtime_music_chests.json") && published.contains("runtime_keyblade_chests.json"));
     }
+    // Fresh items on the death menu use the same receipts as combat deliveries.
+    // Keep gameplay closed and leave the spell eligible for replay after Restore.
+    auto& arrivals = snapshot_input["items"].get_ref<Json::array_t&>();
+    arrivals.push_back(Json{{"index",7},{"item_id",1263022201},{"from_player",2},{"location_id",-1}});
+    arrivals.push_back(Json{{"index",8},{"item_id",1263022448},{"from_player",2},{"location_id",-1}});
+    reconciliation::observe("runtime_receipt_catalog.json",encode(snapshot_input));
+    until([] {
+        const auto view = reconciliation::view();
+        return view->game_over_rewards && !view->ready && view->delivery && view->delivery->grants.size() == 2;
+    });
+    for (const auto& grant : reconciliation::view()->delivery->grants)
+    {
+        assert(grant.action_kind == L"game_over_reward" && !grant.show_info);
+    }
+    complete_receipts(std::array<int64_t,2>{7,8},reconciliation::view()->epoch);
+    until([] { return reconciliation::view()->active.contains(8) && !reconciliation::view()->delivery; });
     reconciliation::inventory_snapshot(true,ticks+2);
     until([] { return !reconciliation::view()->ready && !reconciliation::view()->active.contains(1); });
     assert(reconciliation::view()->active.contains(0) && reconciliation::view()->active.contains(2) &&
         reconciliation::view()->active.contains(3));
     assert(reconciliation::view()->active.contains(4) && !reconciliation::view()->active.contains(5));
     assert(!reconciliation::view()->active.contains(6));
+    const auto camp = reconciliation::view();
+    assert(camp->game_over_rewards && camp->retry_inventory_restored && camp->active.contains(7));
+    assert(camp->delivery && std::ranges::any_of(camp->delivery->grants, [](const auto& grant) {
+        return grant.index == 8 && grant.restore_staged_magic;
+    }));
+    assert(!reconciliation::view()->active.contains(8));
     // Cached context is not proof of completed restoration. A map-ready event
     // may reuse Sora's identity; it must not replace the native checkpoint.
     projection_room["pawn_source"]="VanillaLevelWritePolyhook:level_owner";

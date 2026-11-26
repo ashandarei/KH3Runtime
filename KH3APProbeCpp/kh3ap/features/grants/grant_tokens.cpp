@@ -30,7 +30,8 @@ namespace kh3ap
 
     auto RuntimeGrantTokens::effective_show_info(const RuntimeItemGrantRequest& request) -> bool
     {
-        return request.show_info || should_force_visible(request.runtime_token);
+        return request.action_kind != L"game_over_reward" &&
+               (request.show_info || should_force_visible(request.runtime_token));
     }
 
     auto RuntimeGrantTokens::make_request_key(const RuntimeItemGrantRequest& request) -> std::wstring

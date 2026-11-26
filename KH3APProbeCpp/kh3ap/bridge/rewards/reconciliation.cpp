@@ -187,7 +187,7 @@ namespace kh3ap::reconciliation
             bool inventory_tracking{inventory_observer.load()}, inventory_valid{},
                 inventory_restored{};
             Receipts inventory_backup;
-            std::set<int64_t> inventory_partial, retry_preserved;
+            std::set<int64_t> inventory_partial, retry_preserved, inventory_magic;
             std::string retry_map, retry_pawn, pawn, death_map, recovery_source, recovery_at,
                 death_key;
             int64_t loaded_slot{};
@@ -799,6 +799,9 @@ namespace kh3ap::reconciliation
                 auto next = std::make_shared<View>();
                 next->ready = initialized && loaded && !dead && error.empty() &&
                               processed_epoch == current_epoch.load();
+                next->game_over_rewards = initialized && loaded && dead &&
+                                          inventory_tracking && error.empty() && processed_epoch == current_epoch.load();
+                next->retry_inventory_restored = inventory_restored;
                 next->epoch = current_epoch.load();
                 next->error = error;
                 next->active = active;
@@ -848,9 +851,9 @@ namespace kh3ap::reconciliation
                 auto plan =
                     catalog_loaded && loaded && expanded
                         ? item_delivery::schedule_catalog(delivery_catalog, *expanded, active,
-                                                          forced, repairs, retry_preserved)
+                                                          forced, repairs, retry_preserved, next->game_over_rewards)
                         : item_delivery::ScheduledDelivery{};
-                if (catalog_loaded && next->ready)
+                if (catalog_loaded && (next->ready || next->game_over_rewards))
                 {
                     for (auto index : plan.pending)
                     {
@@ -860,15 +863,17 @@ namespace kh3ap::reconciliation
                     {
                         const auto& item = delivery_catalog.at(grant.index);
                         signature += std::to_string(grant.index) + ",";
-                        grant.action_kind = batch->action_kind;
+                        grant.restore_staged_magic = next->game_over_rewards && inventory_restored &&
+                            inventory_magic.contains(grant.index) && item_delivery::is_magic_reward(grant);
+                        grant.action_kind = next->game_over_rewards ? L"game_over_reward" : batch->action_kind;
                         grant.reapply_context_key = batch->reapply_context_key;
                         if (repairs.contains(item.bridge_key))
                         {
                             grant.reapply_context_key +=
                                 L":repair:" + std::to_wstring(repair_generation[item.bridge_key]);
                         }
-                        grant.show_info = !item.local || item.level_up || item.bridge_required ||
-                                          forced.contains(grant.index);
+                        grant.show_info = !next->game_over_rewards && (!item.local || item.level_up ||
+                                          item.bridge_required || forced.contains(grant.index));
                         batch->grants.push_back(std::move(grant));
                     }
                     for (const auto& trap : plan.traps)
@@ -1669,7 +1674,7 @@ namespace kh3ap::reconciliation
                 const auto event = decode(job.data);
                 if (!bound(event) || text(field(event, "owner")) != "dll" ||
                     number(field(event, "delivery_epoch")) != processed_epoch || !catalog_loaded ||
-                    !expanded || !loaded || dead)
+                    !expanded || !loaded || (dead && !inventory_tracking))
                 {
                     return EventDisposition::Done;
                 }
@@ -1687,12 +1692,20 @@ namespace kh3ap::reconciliation
                         {
                             throw std::runtime_error("native_ack_unknown_receipt");
                         }
-                        active.add(index);
-                        pending.erase(index);
                         const auto& item = delivery_catalog.at(index);
                         const auto& grants = expanded->at(index);
+                        if (dead && !std::ranges::all_of(grants, item_delivery::supports_game_over_reward))
+                        {
+                            continue;
+                        }
+                        active.add(index);
+                        pending.erase(index);
                         if (inventory_tracking && inventory_valid && !grants.empty())
                         {
+                            if (std::ranges::any_of(grants, item_delivery::is_magic_reward))
+                            {
+                                inventory_magic.insert(index);
+                            }
                             const auto mirrored = [](const auto& grant)
                             {
                                 return item_delivery::writes_inventory_backup(grant.grant_method);
@@ -1798,6 +1811,7 @@ namespace kh3ap::reconciliation
                 }
                 // Same FIFO as mutation ACKs: this copy is synchronous on
                 // the game thread. Never sample a later published View.
+                std::erase_if(inventory_magic, [&](auto index) { return active.contains(index); });
                 inventory_backup = active;
                 inventory_valid = true;
                 std::erase_if(inventory_partial,
@@ -1859,6 +1873,7 @@ namespace kh3ap::reconciliation
                 inventory_restored = false;
                 inventory_valid = false;
                 inventory_partial.clear();
+                inventory_magic.clear();
                 retry_preserved.clear();
                 disk_checkpoint = slots.contains(job.slot) ? slots.at(job.slot) : Receipts{};
                 context = nullptr;
@@ -1968,6 +1983,7 @@ namespace kh3ap::reconciliation
                 inventory_restored = false;
                 inventory_valid = false;
                 inventory_partial.clear();
+                inventory_magic.clear();
                 retry_preserved.clear();
                 disk_checkpoint = {};
                 rollback({}, "new_game_staging", utc());

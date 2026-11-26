@@ -25,7 +25,7 @@ namespace kh3ap
 
     auto RuntimePlayerContextService::Impl::cache_controller_pawn_candidate_fast(
         UObject* controller, std::wstring_view controller_name, UObject* pawn,
-        std::wstring_view source, bool trust_controller_pawn, bool allow_during_special_battle)
+        std::wstring_view source, bool trust_controller_pawn)
         -> bool
     {
         runtime_observe_current_player(pawn);
@@ -50,8 +50,7 @@ namespace kh3ap
         {
             return false;
         }
-        const bool cached = cache_validated_sora_pawn_candidate(pawn, pawn_name, source,
-                                                                allow_during_special_battle);
+        const bool cached = cache_validated_sora_pawn_candidate(pawn, pawn_name, source);
         if (cached)
         {
             pawn_state.update_controller(weak_uobject_resolver(controller), controller_name);
@@ -139,8 +138,7 @@ namespace kh3ap
                 if (cache_controller_pawn_candidate_fast(
                         controller, controller_name,
                         read_object_property_in_chain(controller, property_name),
-                        std::format(STR("{}:{}"), source, property_name), trust_cached_controller,
-                        trust_cached_controller))
+                        std::format(STR("{}:{}"), source, property_name), trust_cached_controller))
                 {
                     return true;
                 }

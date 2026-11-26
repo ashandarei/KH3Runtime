@@ -29,6 +29,8 @@ namespace kh3ap
         std::wstring details{};
     };
 
+    auto game_over_reward_pawn(RuntimeState& runtime_state, bool preparation_camp) -> RC::Unreal::UObject*;
+
     auto current_runtime_blocking_ui_status(const RuntimeBlockingUiState& blocking_ui_state) -> RuntimeGrantSafetyStatus;
     auto runtime_space_inventory_safety_status(RuntimeState& runtime_state, bool supported,
             RC::Unreal::UObject** context) -> RuntimeGrantSafetyStatus;
@@ -42,10 +44,6 @@ namespace kh3ap
             std::chrono::steady_clock::time_point now) -> RuntimeGrantSafetyStatus;
 
     auto current_runtime_olympus_coliseum_transition_gate_status(
-            const RuntimeGrantState& grant_state,
-            std::chrono::steady_clock::time_point now) -> RuntimeGrantSafetyStatus;
-
-    auto current_runtime_special_battle_mode_status(
             const RuntimeGrantState& grant_state,
             std::chrono::steady_clock::time_point now) -> RuntimeGrantSafetyStatus;
 
@@ -112,6 +110,5 @@ namespace kh3ap
             RuntimeState& runtime_state,
             std::chrono::steady_clock::time_point now,
             std::chrono::steady_clock::duration ready_context_debounce,
-            bool allow_special_battle_mode = false,
             bool allow_excluded_map_game_over = false) -> RuntimeGrantSafetyStatus;
 }
