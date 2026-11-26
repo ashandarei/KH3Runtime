@@ -50,6 +50,7 @@ namespace kh3ap
         FestivalDance,
         OneAction,
         RailSlideMI,
+        FRBaymaxRide,
     };
 
     enum class RuntimeSoraStateSafety : uint8_t
@@ -68,7 +69,7 @@ namespace kh3ap
         std::wstring_view note;
     };
 
-    constexpr std::array<RuntimeSoraStateCatalogEntry, 40> k_observed_sora_state_catalog{{
+    constexpr std::array<RuntimeSoraStateCatalogEntry, 41> k_observed_sora_state_catalog{{
             {RuntimeSoraStateKind::Idle, player_state_ids::idle, L"TresPlayerState_Idle", RuntimeSoraStateSafety::Ok, L"observed during normal playable idle"},
             {RuntimeSoraStateKind::Run, player_state_ids::run, L"TresPlayerState_Run", RuntimeSoraStateSafety::Ok, L"observed during normal movement"},
             {RuntimeSoraStateKind::Jump, player_state_ids::jump, L"TresPlayerState_Jump", RuntimeSoraStateSafety::Ok, L"observed during normal movement"},
@@ -96,6 +97,7 @@ namespace kh3ap
             {RuntimeSoraStateKind::ComboAnti, player_state_ids::combo_anti, L"TresPlayerState_ComboAnti", RuntimeSoraStateSafety::Ok, L"observed during anti/combo state"},
             {RuntimeSoraStateKind::ComboSwim, player_state_ids::combo_swim, L"TresPlayerState_ComboSwim", RuntimeSoraStateSafety::Ok, L"observed during playable swim combo state"},
             {RuntimeSoraStateKind::FRMountCurling, player_state_ids::fr_mount_curling, L"TresPlayerState_FRMountCurling", RuntimeSoraStateSafety::Ok, L"observed during Frozen mountain curling"},
+            {RuntimeSoraStateKind::FRBaymaxRide, player_state_ids::fr_baymax_ride, L"TresPlayerState_FRBaymaxRide", RuntimeSoraStateSafety::Ok, L"observed while riding Baymax in San Fransokyo"},
             {RuntimeSoraStateKind::Swim, player_state_ids::swim, L"TresPlayerState_Swim", RuntimeSoraStateSafety::Ok, L"observed during normal swimming"},
             {RuntimeSoraStateKind::SaveMenu, player_state_ids::save_menu, L"TresPlayerState_SaveMenu", RuntimeSoraStateSafety::NotOk, L"blocked in save menu"},
             {RuntimeSoraStateKind::ShopMenu, player_state_ids::shop_menu, L"TresPlayerState_ShopMenu", RuntimeSoraStateSafety::NotOk, L"blocked in shop menu"},

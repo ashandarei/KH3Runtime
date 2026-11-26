@@ -10,6 +10,7 @@
 #include "kh3ap/app/composition/settings.h"
 #include "kh3ap/bridge/transport/pipe_transport.h"
 #include "kh3ap/hooks/patches/startup_movie_bypass.h"
+#include "kh3ap/features/ui/photo_loading_captions.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 
@@ -58,6 +59,7 @@ namespace kh3ap
             kh3ap::pipe::start(*root);
         }
         m_steam_platform_recovery.observe_unreal_startup_state();
+        install_photo_loading_captions();
         m_runtime_startup.initialize();
         m_goa_settings.install_once();
         const auto& slot_data = installed_seed_slot_data();
@@ -108,6 +110,7 @@ namespace kh3ap
 
     auto RuntimeComposition::Impl::shutdown() -> void
     {
+        uninstall_photo_loading_captions();
         uninstall_startup_movie_bypass();
         fast_deathlink::shutdown();
         m_ingredients.shutdown();
