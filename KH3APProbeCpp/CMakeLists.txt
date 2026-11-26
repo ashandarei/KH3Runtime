@@ -51,6 +51,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/treasure/music_chest/music_chest_pause.cpp
     kh3ap/features/treasure/music_chest/music_chest_publication.cpp
     kh3ap/features/treasure/music_chest/mom_audio.cpp
+    kh3ap/features/ui/photo_loading_captions.cpp
     kh3ap/features/ui/options_menu.cpp
     kh3ap/features/ui/options_menu_service.cpp
     kh3ap/features/ui/options_menu/model.cpp

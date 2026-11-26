@@ -13,6 +13,12 @@ int main()
     assert(by_id->class_name == L"TresPlayerState_Reflect");
     assert(by_id->safety == RuntimeSoraStateSafety::Ok);
 
+    const auto* baymax_ride = lookup_runtime_sora_state_by_id(137);
+    assert(baymax_ride != nullptr);
+    assert(baymax_ride->kind == RuntimeSoraStateKind::FRBaymaxRide);
+    assert(baymax_ride->safety == RuntimeSoraStateSafety::Ok);
+    assert(lookup_runtime_sora_state_by_class_name(L"TresPlayerState_FRBaymaxRide") == baymax_ride);
+
     assert(runtime_sora_state_id(RuntimeSoraStateKind::Reflect) == std::optional<uint8_t>{66});
     assert(runtime_sora_state_class_name(RuntimeSoraStateKind::Reflect) == L"TresPlayerState_Reflect");
     assert(runtime_sora_state_matches_kind(RuntimeSoraStateKind::Reflect, 66, L""));

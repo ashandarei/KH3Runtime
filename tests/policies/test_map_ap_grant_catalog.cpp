@@ -34,6 +34,13 @@ int main()
     assert(kh3ap::find_runtime_unsafe_ap_grant_rule(
             L"World /Game/Levels/kg/kg_01/kg_01_unioncross.kg_01_unioncross"));
 
+    for (const auto arena : {L"/Game/Levels/ex/ex_39/ex_39", L"/Game/Levels/rg_DLC/rg_10/rg_10",
+                             L"/Game/Levels/dw_DLC/dw_22/dw_22", L"/Game/Levels/ss_DLC/ss_01/ss_01"})
+    {
+        const auto* rule = kh3ap::find_runtime_map_ap_grant_rule(arena);
+        assert(rule && rule->safety == kh3ap::RuntimeMapApGrantSafety::Safe);
+    }
+
     // The Pooh field has ordinary possessed Sora; each puzzle is a separate
     // unsafe map. Travelling between them must not retain the previous rule.
     for (int round = 0; round < 3; ++round)

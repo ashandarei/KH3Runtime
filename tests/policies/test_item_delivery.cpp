@@ -93,13 +93,11 @@ namespace
         const auto inspect = [](std::vector<RuntimeItemGrantRequest> grants) {
             return runtime_item_delivery_policy(grants, L"runtime_item_grant_batch", true);
         };
-        assert(inspect({game_over, game_over}).allow_special_battle_game_over);
-        assert(!inspect({game_over, grant(3)}).allow_special_battle_game_over);
-        assert(inspect({burn, sneeze}).allow_special_battle_bad_status_trap);
+        assert(inspect({game_over, game_over}).game_over_only);
+        assert(!inspect({game_over, grant(3)}).game_over_only);
         assert(inspect({burn, sneeze}).supports_alternate_bad_status);
         assert(!inspect({burn, grant(3)}).supports_alternate_bad_status);
         assert(inspect({burn, stun}).supports_alternate_bad_status);
-        assert(inspect({stun}).allow_special_battle_bad_status_trap);
         auto freeze = burn;
         freeze.runtime_token = L"ETresBadStatusType::TRES_BADSTAT_FREEZE";
         assert(!inspect({burn, freeze}).supports_alternate_bad_status);
@@ -118,11 +116,9 @@ namespace
         assert(!inspect({}).supports_alternate_betrayal);
         betrayal.runtime_token = L"KH3AP_TRAP::KING_MICKEY";
         assert(!inspect({betrayal}).supports_alternate_betrayal);
-        assert(inspect({burn, stun}).allow_special_battle_bad_status_trap);
-        assert(!inspect({burn, freeze}).allow_special_battle_bad_status_trap);
         assert(inspect({burn, grant(3)}).contains_bad_status_trap);
         const auto mixed = inspect({game_over, burn});
-        assert(!mixed.allow_special_battle_game_over && !mixed.allow_special_battle_bad_status_trap);
+        assert(!mixed.game_over_only);
         assert(inspect({grant(1), grant(2, L"bp_tres_get_item_add_munny"),
                         grant(3, L"ultima_weapon_shard")}).supports_space_inventory);
         for (const auto* method : {L"durable_sora_ability", L"durable_sora_vbonus", L"direct_player_bad_status",
@@ -143,8 +139,7 @@ namespace
                     L"save_load_replay", false).supports_space_inventory);
         }
         assert(inspect({grant(1)}).require_fresh_playable_context);
-        assert(!inspect({}).allow_special_battle_game_over);
-        assert(!inspect({}).allow_special_battle_bad_status_trap);
+        assert(!inspect({}).game_over_only);
         auto manual_game_over = game_over;
         manual_game_over.action_kind = L"manual_game_over";
         manual_game_over.runtime_token = L"GAMEOVER_KIND_NORMAL";
@@ -238,8 +233,7 @@ namespace
         const std::vector rewards{small_pouch, large_pouch, ability, grant(4)};
         const auto policy = runtime_item_delivery_policy(rewards, L"runtime_item_grant_batch", true);
         assert(policy.supports_kh02_persistent_rewards);
-        assert(!policy.allow_special_battle_game_over);
-        assert(!policy.allow_special_battle_bad_status_trap);
+        assert(!policy.game_over_only);
     }
 
     void space_inventory_does_not_starve_behind_priority_deathlink()
@@ -303,6 +297,15 @@ namespace
         assert(!send(bridge).duplicate);
         request.request_id = L"resent-request";
         assert(send(bridge).duplicate); // Transport identity is not item identity.
+        request.action_kind = L"game_over_reward";
+        auto deliver_on_death = [&] {
+            return execute_runtime_item_delivery_grant(request, L"runtime_item_grant_batch", bridge, state, apply);
+        };
+        assert(deliver_on_death().duplicate);
+        request.reapply_context_key = L"restored-checkpoint";
+        assert(!deliver_on_death().duplicate);
+        assert(deliver_on_death().duplicate);
+        request.action_kind = L"runtime_item_grant_batch";
         request.reapply_context_key = L"loaded-slot-2";
         assert(!send(bridge).duplicate);
         assert(!send(std::optional<std::filesystem::path>{L"test-bridge/other-seed"}).duplicate);
@@ -316,7 +319,7 @@ namespace
         assert(!send(bridge).duplicate);
         request.index = -1;
         assert(!send(bridge).duplicate && !send(bridge).duplicate);
-        assert(count == 9);
+        assert(count == 10);
     }
 
     void partial_batches_continue_and_retry_only_failed_fresh_items()

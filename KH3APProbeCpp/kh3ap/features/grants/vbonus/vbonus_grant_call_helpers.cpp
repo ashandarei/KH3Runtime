@@ -225,6 +225,44 @@ namespace kh3ap
         {
             return false;
         }
+        if (request.restore_staged_magic && is_magic && !vanilla_banks.persistent_only)
+        {
+            // Prepare and Retry reconstructs the active spell record before opening
+            // camp. The retry bank already includes the acknowledged AP spell.
+            const auto staged = try_read_vanilla_vbonus_count(vanilla_banks.staging_record, bonus_value);
+            auto active = try_read_vanilla_vbonus_count(vanilla_banks.active_record, bonus_value);
+            if (!staged || !active || *active > *staged)
+            {
+                return fail_vanilla_ability_bank(L"retry_magic_record_mismatch", failure_reason);
+            }
+            if (*staged > 0)
+            {
+                while (*active < *staged)
+                {
+                    const auto expected = *active + 1;
+                    if (!vanilla_banks.add_vbonus_to_equipment(
+                            reinterpret_cast<void*>(vanilla_banks.active_vbonus_target),
+                            vanilla_banks.difficulty, bonus_value, 0, true))
+                    {
+                        return fail_vanilla_ability_bank(L"retry_magic_active_grant_rejected", failure_reason);
+                    }
+                    active = try_read_vanilla_vbonus_count(vanilla_banks.active_record, bonus_value);
+                    if (!active || *active != expected)
+                    {
+                        return fail_vanilla_ability_bank(L"retry_magic_active_count_unverified", failure_reason);
+                    }
+                }
+                if (!flag_owned &&
+                    (!try_call_set_game_flag_boolean(request.runtime_flag_name, true, runtime_state,
+                                                     s_set_bonus_flag_path, s_bonus_flag_library_path, false, failure_reason) ||
+                     !try_call_get_game_flag_boolean(request.runtime_flag_name, flag_owned, runtime_state,
+                                                     s_get_bonus_flag_path, s_bonus_flag_library_path, false, failure_reason) ||
+                     !flag_owned))
+                {
+                    return false;
+                }
+            }
+        }
         if (flag_owned)
         {
             if (mirror_stats) { character_swap::refresh_victory_bonuses(); }

@@ -63,7 +63,7 @@ namespace kh3ap::item_delivery
     auto DeliveryTrace::deathlink(
             std::wstring_view event, const RuntimeItemGrantRequest* grant,
             uint64_t waited_ms, std::wstring_view status, std::wstring_view reason,
-            std::wstring_view details, bool allow_special_battle_game_over) const -> void
+            std::wstring_view details) const -> void
     {
         append_deathlink_game_over_diagnostic(
                 deps, event,
@@ -73,8 +73,7 @@ namespace kh3ap::item_delivery
                 grant ? std::wstring_view{grant->item_name} : L"DeathLink Game Over",
                 grant ? std::wstring_view{grant->runtime_token} : L"GAMEOVER_KIND_NORMAL",
                 grant ? std::wstring_view{grant->grant_method} : L"bp_tres_start_game_over",
-                grant_count, candidates.size(), waited_ms, status, reason, details,
-                allow_special_battle_game_over);
+                grant_count, candidates.size(), waited_ms, status, reason, details);
     }
 
     auto runtime_item_grant_wait_ms(
@@ -175,8 +174,7 @@ namespace kh3ap::item_delivery
             uint64_t waited_ms,
             std::wstring_view status,
             std::wstring_view reason,
-            std::wstring_view details,
-            bool allow_special_battle_game_over) -> void
+            std::wstring_view details) -> void
     {
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         if (!deps.bridge_dir.has_value())
@@ -202,8 +200,7 @@ namespace kh3ap::item_delivery
         json << ",\"status\":\"" << json_escape(status) << "\"";
         json << ",\"reason\":\"" << json_escape(reason) << "\"";
         json << ",\"details\":\"" << json_escape(details) << "\"";
-        json << ",\"allow_special_battle_game_over\":"
-             << (allow_special_battle_game_over ? "true" : "false");
+        json << ",\"allow_special_battle_game_over\":true";
         json << ",\"special_battle_mode_active\":"
              << (grant_state.special_battle_mode_active() ? "true" : "false");
         json << ",\"special_battle_mode_source\":\""

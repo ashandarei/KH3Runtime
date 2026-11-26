@@ -3,6 +3,7 @@
 #include "kh3ap/app/composition/detour.h"
 #include "kh3ap/core/platform/game_build.h"
 #include "kh3ap/hooks/native_detour_lifetime.h"
+#include "kh3ap/hooks/patches/checked_code_patch.h"
 
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <UnrealDef.hpp>
@@ -68,32 +69,6 @@ namespace kh3ap
         inline uint64_t wait_original{};
         inline std::unique_ptr<PLH::x64Detour> wait_detour;
         inline std::atomic_bool startup_widget_pending{};
-
-        inline bool replace_bytes(uint8_t* address, std::span<const uint8_t> expected,
-                                  std::span<const uint8_t> replacement)
-        {
-            if (std::memcmp(address, expected.data(), expected.size()) != 0)
-            {
-                return false;
-            }
-
-            DWORD protection{};
-            if (!VirtualProtect(address, replacement.size(), PAGE_EXECUTE_READWRITE, &protection))
-            {
-                return false;
-            }
-
-            std::memcpy(address, replacement.data(), replacement.size());
-            const bool flushed = FlushInstructionCache(GetCurrentProcess(), address, replacement.size()) != FALSE;
-            if (!flushed)
-            {
-                std::memcpy(address, expected.data(), replacement.size());
-                FlushInstructionCache(GetCurrentProcess(), address, replacement.size());
-            }
-            DWORD ignored{};
-            VirtualProtect(address, replacement.size(), protection, &ignored);
-            return flushed;
-        }
 
         inline void wait_for_startup_screen(uint8_t* movie_player)
         {
@@ -174,7 +149,7 @@ namespace kh3ap
         wait_detour = std::make_unique<PLH::x64Detour>(
             reinterpret_cast<uint64_t>(wait),
             reinterpret_cast<uint64_t>(&wait_for_startup_screen), &wait_original);
-        if (!wait_detour->hook() || !replace_bytes(image + profile->playlist_append_rva,
+        if (!wait_detour->hook() || !replace_checked_code_bytes(image + profile->playlist_append_rva,
                                                   playlist_append, profile->omit_playlist_entry))
         {
             release_native_detour(wait_detour);
@@ -192,7 +167,7 @@ namespace kh3ap
         if (installed_profile)
         {
             const auto& patch = installed_profile->omit_playlist_entry;
-            replace_bytes(game_image + installed_profile->playlist_append_rva, patch,
+            replace_checked_code_bytes(game_image + installed_profile->playlist_append_rva, patch,
                           std::span{playlist_append}.first(patch.size()));
         }
         release_native_detour(wait_detour);

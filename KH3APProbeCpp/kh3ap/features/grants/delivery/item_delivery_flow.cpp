@@ -17,7 +17,7 @@ namespace kh3ap
     {
         constexpr auto item_delivery_frame_budget = std::chrono::milliseconds(1);
 
-        auto is_special_battle_bad_status_trap(const RuntimeItemGrantRequest& request) -> bool
+        auto is_registered_trap(const RuntimeItemGrantRequest& request) -> bool
         {
             return find_runtime_trap_spec(request.runtime_token, request.grant_method) != nullptr;
         }
@@ -26,7 +26,8 @@ namespace kh3ap
                 const std::optional<std::filesystem::path>& bridge_dir,
                 const RuntimeItemGrantRequest& request) -> std::wstring
         {
-            if (request.action_kind != L"runtime_item_grant_batch" || request.index < 0)
+            if ((request.action_kind != L"runtime_item_grant_batch" &&
+                 request.action_kind != L"game_over_reward") || request.index < 0)
             {
                 return {};
             }
@@ -47,14 +48,12 @@ namespace kh3ap
             bool is_batch) -> RuntimeItemDeliveryPolicy
     {
         return {
-                .allow_special_battle_game_over = !grants.empty() && std::all_of(
+                .game_over_only = !grants.empty() && std::all_of(
                         grants.begin(), grants.end(), [](const auto& grant) {
                             return grant.grant_method == L"bp_tres_start_game_over";
                         }),
-                .allow_special_battle_bad_status_trap = !grants.empty() && std::all_of(
-                        grants.begin(), grants.end(), is_special_battle_bad_status_trap),
                 .contains_bad_status_trap = std::any_of(
-                        grants.begin(), grants.end(), is_special_battle_bad_status_trap),
+                        grants.begin(), grants.end(), is_registered_trap),
                 .require_fresh_playable_context = !grants.empty() ||
                         action_kind == (is_batch ? L"save_load_replay_batch" : L"save_load_replay"),
                 .supports_space_inventory = std::all_of(

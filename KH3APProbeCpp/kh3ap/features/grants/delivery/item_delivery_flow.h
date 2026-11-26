@@ -15,8 +15,7 @@ namespace kh3ap
     // batch must never inherit the Game Over or space permission of one item.
     struct RuntimeItemDeliveryPolicy
     {
-        bool allow_special_battle_game_over{};
-        bool allow_special_battle_bad_status_trap{};
+        bool game_over_only{};
         bool contains_bad_status_trap{};
         bool require_fresh_playable_context{};
         bool supports_space_inventory{};

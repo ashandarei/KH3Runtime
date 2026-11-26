@@ -306,7 +306,6 @@ namespace kh3ap::settings
     // Requests are published by atomic rename and are safe to apply on the
     // first dedicated grant poll once the existing context gates pass.
     inline constexpr auto s_runtime_item_grant_delay = std::chrono::milliseconds(0);
-    inline constexpr auto s_runtime_item_grant_special_battle_exit_delay = std::chrono::seconds(5);
     inline constexpr auto s_runtime_item_grant_ready_context_debounce = std::chrono::milliseconds(1000);
     // Grant safety still polls every runtime-file interval. This only controls
     // the repeated diagnostic heartbeat while an unchanged gate remains active.

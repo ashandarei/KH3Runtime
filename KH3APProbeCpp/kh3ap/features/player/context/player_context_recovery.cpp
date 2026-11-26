@@ -55,10 +55,9 @@ namespace kh3ap
         }
         special_battle_game_over_recovery_pending = false;
         Output::send<LogLevel::Verbose>(
-            STR("[KH3APProbeCpp] Runtime special battle grant gate cleared by map change source={} "
+            STR("[KH3APProbeCpp] Runtime special battle flag cleared by map change source={} "
                 "observed={} observed_map_root={} armed_map_root={} armed_source={}\n"),
             source, observed_name, *observed_map_root, armed_map_root, armed_source);
-        process_pending_grant_from_runtime_ready_event(source, true);
         return true;
     }
 
@@ -109,7 +108,7 @@ namespace kh3ap
             return false;
         }
         Output::send<LogLevel::Verbose>(
-            STR("[KH3APProbeCpp] Runtime special battle grant gate cleared by game over recovery "
+            STR("[KH3APProbeCpp] Runtime special battle flag cleared by game over recovery "
                 "source={} observed={} observed_map_root={} armed_map_root={} armed_source={} "
                 "blocking_reason={}\n"),
             source, observed_name,
@@ -117,7 +116,6 @@ namespace kh3ap
                                             : observed_map_root_value,
             armed_map_root.empty() ? std::wstring{STR("<unknown>")} : armed_map_root, armed_source,
             blocking_ui.reason.empty() ? std::wstring{STR("<none>")} : blocking_ui.reason);
-        process_pending_grant_from_runtime_ready_event(source, true);
         return true;
     }
 

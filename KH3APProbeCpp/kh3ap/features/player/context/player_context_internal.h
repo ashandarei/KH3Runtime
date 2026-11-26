@@ -51,8 +51,7 @@ namespace kh3ap
         auto cache_pawn_candidate(UObject* pawn, std::wstring_view source) -> bool;
 
         auto cache_validated_sora_pawn_candidate(UObject* pawn, std::wstring_view pawn_name,
-                                                 std::wstring_view source,
-                                                 bool allow_during_special_battle) -> bool;
+                                                 std::wstring_view source) -> bool;
 
         auto cache_constructed_sora_pawn(UObject* pawn, std::wstring_view source) -> bool;
 
@@ -71,8 +70,7 @@ namespace kh3ap
         auto cache_controller_pawn_candidate_fast(UObject* controller,
                                                   std::wstring_view controller_name, UObject* pawn,
                                                   std::wstring_view source,
-                                                  bool trust_controller_pawn,
-                                                  bool allow_during_special_battle) -> bool;
+                                                  bool trust_controller_pawn) -> bool;
 
         auto refresh_controller_from_sora_event(UObject* pawn) -> bool;
 

@@ -9,6 +9,11 @@
 #include "kh3ap/hooks/blocking_ui/blocking_ui_state.h"
 #include "kh3ap/features/grants/ap_ignored_map.h"
 #include "kh3ap/features/player/context/context_state.h"
+#include "kh3ap/features/player/context/current_player.h"
+#include "kh3ap/features/world/garden_return/runtime_context.h"
+#include "kh3ap/core/ui/ui_layout.h"
+#include "kh3ap/core/input/runtime_controller_input_profile.h"
+#include "kh3ap/features/world/garden_return/garden_return_service.h"
 #include "kh3ap/features/grants/grant_pawn_state.h"
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
@@ -291,34 +296,6 @@ namespace kh3ap
         };
     }
 
-    auto current_runtime_special_battle_mode_status(
-            const RuntimeGrantState& grant_state,
-            std::chrono::steady_clock::time_point now) -> RuntimeGrantSafetyStatus
-    {
-        if (!grant_state.special_battle_mode_active())
-        {
-            return {
-                    .ready = true,
-                    .reason = std::wstring{STR("ready")},
-                    .details = std::wstring{},
-            };
-        }
-
-        return {
-                .ready = false,
-                .reason = std::wstring{STR("special_battle_mode_active")},
-                .details = std::format(
-                        STR("source={} details={} waited_ms={}"),
-                        grant_state.special_battle_mode_source().empty()
-                                ? std::wstring{STR("<unknown>")}
-                                : grant_state.special_battle_mode_source(),
-                        grant_state.special_battle_mode_details().empty()
-                                ? std::wstring{STR("<none>")}
-                                : grant_state.special_battle_mode_details(),
-                        grant_state.special_battle_mode_wait_ms(now)),
-        };
-    }
-
     static auto runtime_unsafe_map_status(
             RuntimeState& runtime_state, std::wstring_view context_text,
             bool allow_excluded_map_game_over = false) -> RuntimeGrantSafetyStatus
@@ -368,6 +345,48 @@ namespace kh3ap
         return runtime_unsafe_map_status(runtime_state,
                 snapshot->world + STR(" ") + snapshot->outer + STR(" ") + snapshot->object,
                 allow_excluded_map_game_over);
+    }
+
+    auto game_over_reward_pawn(RuntimeState& runtime_state, bool preparation_camp) -> RC::Unreal::UObject*
+    {
+        using garden_return_detail::object_field;
+        using garden_return_detail::field;
+        auto* pawn = runtime_current_player_pawn();
+        if (!pawn || pawn != runtime_state.grant_state().pawn_state().object() ||
+            !RuntimeObjectResolver::is_sora_ability_pawn_candidate(pawn) ||
+            !runtime_unsafe_map_status(runtime_state, pawn->GetFullName()).ready)
+        {
+            return nullptr;
+        }
+        auto* state = object_field(object_field(pawn, L"MyStateComp"), L"m_pCurrentState");
+        if (!state || object_field(state, L"MyCharPawn") != pawn ||
+            !is_uobject_valid_fast(state->GetClassPrivate()) ||
+            state->GetClassPrivate()->GetName() != runtime_sora_state_class_name(RuntimeSoraStateKind::GameOver))
+        {
+            return nullptr;
+        }
+        auto* instance = object_field(garden_return_detail::viewport(), L"GameInstance");
+        auto* manager = object_field(instance, L"m_UIManager");
+        auto* pause = object_field(manager, L"m_Pause");
+        auto* menu = object_field(pause, L"m_GameOver");
+        static const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        static controller_input::DeathUiProfile profile;
+        static const bool supported = controller_input::supported(base, profile);
+        if (!supported || !menu || object_field(menu, L"m_Owner") != pause ||
+            field<uintptr_t>(menu, 0) != base + profile.game_over_vtable ||
+            field<uintptr_t>(pause, 0) != base + profile.pause_vtable ||
+            !garden_return_detail::loading_closed())
+        {
+            return nullptr;
+        }
+        const bool death_menu_open = field<uint8_t>(menu, 0xe8) == 1;
+        if (preparation_camp ? (death_menu_open || !RuntimeGardenReturnService::camp_menu_open())
+                             : (!death_menu_open || !field<uint8_t>(pause, native_ui::panel_open_offset) ||
+                                !field<uint8_t>(pause, native_ui::panel_ready_offset)))
+        {
+            return nullptr;
+        }
+        return pawn;
     }
 
     auto current_runtime_sora_state_cache_status(
@@ -538,7 +557,6 @@ namespace kh3ap
         // Use its map and state even when the last hook came from a camera level.
         const std::array gates{
             current_runtime_blocking_ui_status(runtime_state.ui_diagnostic_state().blocking_ui_state()),
-            current_runtime_special_battle_mode_status(runtime_state.grant_state(), now),
             runtime_unsafe_map_status(runtime_state, pawn->GetFullName()),
             current_runtime_bistro_return_gate_status(runtime_state.grant_state(), now),
             current_runtime_classic_kingdom_transition_gate_status(runtime_state.grant_state(), now),
@@ -1054,7 +1072,6 @@ namespace kh3ap
             RuntimeState& runtime_state,
             std::chrono::steady_clock::time_point now,
             std::chrono::steady_clock::duration ready_context_debounce,
-            bool allow_special_battle_mode,
             bool allow_excluded_map_game_over) -> RuntimeGrantSafetyStatus
     {
         const auto blocking_ui_status = current_runtime_blocking_ui_status(
@@ -1062,16 +1079,6 @@ namespace kh3ap
         if (!blocking_ui_status.ready)
         {
             return blocking_ui_status;
-        }
-
-        if (!allow_special_battle_mode)
-        {
-            const auto special_battle_mode_status =
-                    current_runtime_special_battle_mode_status(runtime_state.grant_state(), now);
-            if (!special_battle_mode_status.ready)
-            {
-                return special_battle_mode_status;
-            }
         }
 
         const auto snapshot = runtime_state.context_subsystem_state().context_state().current_snapshot();

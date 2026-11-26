@@ -92,7 +92,7 @@ namespace kh3ap
             return false;
         }
 
-        if (!cache_validated_sora_pawn_candidate(pawn, pawn_name, source, true))
+        if (!cache_validated_sora_pawn_candidate(pawn, pawn_name, source))
         {
             return false;
         }

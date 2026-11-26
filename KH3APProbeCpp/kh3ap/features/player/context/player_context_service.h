@@ -83,8 +83,7 @@ namespace kh3ap
         auto cache_validated_sora_pawn_candidate(
                 RC::Unreal::UObject* pawn,
                 std::wstring_view pawn_name,
-                std::wstring_view source,
-                bool allow_during_special_battle = false) -> bool;
+                std::wstring_view source) -> bool;
         auto cache_constructed_sora_pawn(
                 RC::Unreal::UObject* pawn,
                 std::wstring_view source) -> bool;

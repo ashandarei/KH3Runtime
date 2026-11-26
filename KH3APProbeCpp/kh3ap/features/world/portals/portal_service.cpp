@@ -923,9 +923,14 @@ namespace kh3ap
                        ? *p->ContainerPtrToValuePtr<int>(o)
                        : -1;
         }
-        bool party_portrait(int portal) const
+        bool uses_party_unlock(int portal) const
         {
-            return access.party_portals && portals::by_id(portal);
+            return access.party_portals.contains(portal);
+        }
+        bool overrides_stock_unlock(int portal) const
+        {
+            return uses_party_unlock(portal) || gates.opened(portal) ||
+                   (portal == portals::dark_world_portal_id && access.kh02_enabled);
         }
         bool owned(int portal) const
         {
@@ -935,12 +940,7 @@ namespace kh3ap
             }
             const auto* def = portals::by_id(portal);
             return access.access_ready && def &&
-                   (gates.opened(portal) ||
-                    portals::allowed(*def,
-                                     [this](auto item)
-                                     {
-                                         return access.items.contains(std::wstring{item});
-                                     }));
+                   (gates.opened(portal) || access.allowed.contains(std::wstring{def->code}));
         }
         bool gate_locked(int portal)
         {
@@ -973,18 +973,7 @@ namespace kh3ap
                         query.data.data());
                 }
             }
-            if (access.party_portals)
-            {
-                return !owned(portal);
-            }
-            for (const auto& world : gate_opener::worlds)
-            {
-                if (world.portal == portal)
-                {
-                    return !access.items.contains(std::wstring{world.keyblade});
-                }
-            }
-            return false;
+            return !owned(portal);
         }
         static void mode_thunk(UObject* object, FFrame& stack, void* result)
         {
@@ -995,11 +984,7 @@ namespace kh3ap
             }
             if (result)
             {
-                *static_cast<uint8_t*>(result) =
-                    instance &&
-                    (instance->access.party_portals || instance->gates.opened(id(object)) ||
-                     (id(object) == portals::dark_world_portal_id &&
-                      instance->access.kh02_enabled));
+                *static_cast<uint8_t*>(result) = instance && instance->overrides_stock_unlock(id(object));
             }
         }
         static void enabled_thunk(UObject* o, FFrame& stack, void* result)
@@ -1021,7 +1006,7 @@ namespace kh3ap
             {
                 ++frame->Code;
             }
-            const bool show = instance && instance->party_portrait(id(o)) &&
+            const bool show = instance && instance->uses_party_unlock(id(o)) &&
                               instance->access.access_ready && !instance->owned(id(o));
             if (result)
             {
@@ -1058,9 +1043,9 @@ namespace kh3ap
             }
             const bool allowed = instance && id(object) == portals::dark_world_portal_id &&
                                  instance->access.access_ready &&
-                                 (!instance->access.party_portals ||
+                                 (!instance->uses_party_unlock(portals::dark_world_portal_id) ||
                                   instance->gates.opened(portals::dark_world_portal_id) ||
-                                  instance->access.items.contains(L"Party Member: Aqua"));
+                                  instance->access.allowed.contains(L"dw"));
             if (result)
             {
                 *static_cast<uint8_t*>(result) = allowed;
@@ -1231,7 +1216,7 @@ namespace kh3ap
         }
         void prepare(UObject* context, const Entry& e)
         {
-            if (!party_portrait(e.id) || !access.access_ready || owned(e.id))
+            if (!uses_party_unlock(e.id) || !access.access_ready || owned(e.id))
             {
                 return;
             }
@@ -1254,7 +1239,7 @@ namespace kh3ap
         }
         bool prepared(const Entry& e) const
         {
-            if (!party_portrait(e.id) || !access.access_ready || owned(e.id))
+            if (!uses_party_unlock(e.id) || !access.access_ready || owned(e.id))
             {
                 return true;
             }
@@ -1324,9 +1309,7 @@ namespace kh3ap
         }
         void apply_access(Entry& e)
         {
-            if ((!access.party_portals && !gates.opened(e.id) &&
-                 !(e.id == portals::dark_world_portal_id && access.kh02_enabled)) ||
-                !access.access_ready)
+            if (!access.access_ready || !overrides_stock_unlock(e.id))
             {
                 return;
             }
@@ -1392,7 +1375,7 @@ namespace kh3ap
             {
                 return;
             }
-            const bool show = party_portrait(e.id) && access.access_ready && !owned(e.id);
+            const bool show = uses_party_unlock(e.id) && access.access_ready && !owned(e.id);
             if (!show)
             {
                 if (e.shown)
@@ -1772,7 +1755,8 @@ namespace kh3ap
             final_pending = true;
             const auto before_allowed = access.allowed;
             const auto before_seed = access.seed;
-            const bool before_ready = access.access_ready, before_party = access.party_portals;
+            const bool before_ready = access.access_ready;
+            const auto before_party = access.party_portals;
             const bool before_kh02 = access.kh02_enabled;
             access.refresh(
                 [](auto&, auto&, auto, bool)
@@ -1870,7 +1854,7 @@ namespace kh3ap
                 RC::Output::send<RC::LogLevel::Normal>(
                     STR("[KH3APProbeCpp] Party portals bound actors={} party={} "
                         "travel_guards=lifecycle_events\n"),
-                    entries.size(), access.party_portals);
+                    entries.size(), access.party_portals.size());
             }
         }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
@@ -1934,12 +1918,12 @@ namespace kh3ap
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         void record_first_present(std::chrono::steady_clock::time_point now)
         {
-            if (!first_present_delay_ms && access.party_portals && access.access_ready &&
+            if (!first_present_delay_ms && !access.party_portals.empty() && access.access_ready &&
                 !entries.empty() &&
                 std::all_of(entries.begin(), entries.end(),
                             [this](const auto& e)
                             {
-                                return owned(e.id) || e.shown;
+                                return !uses_party_unlock(e.id) || owned(e.id) || e.shown;
                             }))
             {
                 first_present_delay_ms =
@@ -1955,7 +1939,7 @@ namespace kh3ap
         std::ostringstream portal_status_prefix()
         {
             std::ostringstream status;
-            status << "{\"party_portals\":" << (access.party_portals ? "true" : "false")
+            status << "{\"party_portals\":" << (!access.party_portals.empty() ? "true" : "false")
                    << ",\"ready\":" << (access.access_ready ? "true" : "false")
                    << ",\"presentation\":\"stock_portal_mark\",\"render_targets\":"
                    << canvases.size() << ",\"portals\":[";
@@ -1968,6 +1952,7 @@ namespace kh3ap
                 }
                 first = false;
                 status << "{\"id\":" << e.id << ",\"owned\":" << (owned(e.id) ? "true" : "false")
+                       << ",\"party_portal\":" << (uses_party_unlock(e.id) ? "true" : "false")
                        << ",\"portrait_shown\":" << (e.shown ? "true" : "false")
                        << ",\"unlock_timer_stopped\":" << (e.timer_stopped ? "true" : "false")
                        << '}';
@@ -2100,7 +2085,7 @@ namespace kh3ap
                         apply_access(e);
                         render(context, e);
                         complete = complete && prepared(e) &&
-                                   (owned(e.id) || !party_portrait(e.id) || e.shown);
+                                   (owned(e.id) || !uses_party_unlock(e.id) || e.shown);
                     }
                     presentation_pending = !complete;
                 }

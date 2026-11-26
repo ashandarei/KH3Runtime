@@ -62,7 +62,7 @@ namespace kh3ap::item_delivery
                      uint64_t elapsed_ms, std::wstring_view status, std::wstring_view details) const -> void;
         auto deathlink(std::wstring_view event, const RuntimeItemGrantRequest* grant,
                        uint64_t waited_ms, std::wstring_view status, std::wstring_view reason,
-                       std::wstring_view details, bool allow_special_battle_game_over) const -> void;
+                       std::wstring_view details) const -> void;
     };
 
     auto append_runtime_grant_cpp_profile_event(
@@ -94,8 +94,7 @@ namespace kh3ap::item_delivery
             uint64_t waited_ms,
             std::wstring_view status,
             std::wstring_view reason,
-            std::wstring_view details,
-            bool allow_special_battle_game_over) -> void;
+            std::wstring_view details) -> void;
 
     auto log_runtime_item_grant_wait_if_changed(
             const RuntimeItemGrantPollDeps& deps,

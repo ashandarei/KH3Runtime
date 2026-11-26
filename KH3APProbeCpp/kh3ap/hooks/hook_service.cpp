@@ -321,8 +321,6 @@ namespace kh3ap
                 STR("hook_branch:runtime_event_flow")};
             const auto* const frame_node = get_frame_node(callback_context.TheStack);
             const std::wstring frame_name = safe_full_name(frame_node);
-            const bool olympus_coliseum_frame =
-                frame_name.find(STR("/Game/Mods/Coliseum/")) != std::wstring::npos;
             config.tutorial_skips.try_apply_final_world_for_context(frame_name,
                                                                     hook_info.function_name);
             const std::wstring bool_candidates =
@@ -351,16 +349,11 @@ namespace kh3ap
                 if (changed)
                 {
                     Output::send<LogLevel::Verbose>(
-                        STR("[KH3APProbeCpp] Runtime special battle grant gate {} frame={} "
+                        STR("[KH3APProbeCpp] Runtime special battle flag {} frame={} "
                             "map_root={} bool_candidates={}\n"),
                         *special_battle_mode ? STR("active") : STR("cleared"), frame_name,
                         map_root.empty() ? std::wstring{STR("<unknown>")} : map_root,
                         bool_candidates);
-                    if (!*special_battle_mode && !olympus_coliseum_frame)
-                    {
-                        config.player_context.process_pending_grant_from_runtime_ready_event(
-                            STR("special_battle_mode"));
-                    }
                 }
             }
 
