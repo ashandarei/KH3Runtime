@@ -47,26 +47,40 @@ namespace kh3ap
             return &captions[index];
         }
 
-        // EGS photo open: resolve Definition.CommentTextID, followed by a native
-        // FString copy. The character-name lookup and the ordinary spinner are separate.
-        constexpr uintptr_t caption_lookup_rva = 0x1ade493;
-        constexpr std::array<uint8_t, 9> lookup{0x49, 0x8d, 0x4e, 0x40, 0xe8, 0x24, 0x97, 0xdf, 0xff};
+        // Both photo renderers resolve Definition.CommentTextID and then copy the
+        // returned FString. Steam also clears the resolver's second argument.
+        constexpr std::array<uint8_t, 9> egs_lookup{0x49, 0x8d, 0x4e, 0x40, 0xe8, 0x24, 0x97, 0xdf, 0xff};
+        constexpr std::array<uint8_t, 11> steam_lookup{0x49, 0x8d, 0x4e, 0x40, 0x33, 0xd2, 0xe8, 0xe5, 0x89, 0xe2, 0xff};
+        struct CaptionProfile
+        {
+            uintptr_t lookup_rva;
+            uintptr_t comment_field_rva;
+            std::span<const uint8_t> lookup;
+        };
+        constexpr CaptionProfile egs{0x1ade493, 0x1ade4e6, egs_lookup};
+        constexpr CaptionProfile steam{0x1757d90, 0x1757de0, steam_lookup};
         constexpr std::array<uint8_t, 7> comment_field{0x48, 0x8b, 0x8f, 0x48, 0x02, 0x00, 0x00};
-        std::array<uint8_t, 9> redirect{0xff, 0x15, 0, 0, 0, 0, 0x90, 0x90, 0x90};
-        uint8_t* installed_site{};
+        std::array<uint8_t, steam_lookup.size()> redirect{0xff, 0x15, 0, 0, 0, 0, 0x90, 0x90, 0x90, 0x90, 0x90};
+        const CaptionProfile* installed_profile{};
         uintptr_t callback_slot{};
     }
 
     void install_photo_loading_captions()
     {
-        if (installed_site) return;
+        if (installed_profile) return;
         auto* image = reinterpret_cast<uint8_t*>(GetModuleHandleW(nullptr));
         const auto* dos = reinterpret_cast<const IMAGE_DOS_HEADER*>(image);
         const auto* pe = reinterpret_cast<const IMAGE_NT_HEADERS64*>(image + dos->e_lfanew);
-        if (!native_build::egs.matches(pe->FileHeader.TimeDateStamp, pe->OptionalHeader.SizeOfImage)) return;
-        auto* site = image + caption_lookup_rva;
-        if (std::memcmp(site, lookup.data(), lookup.size()) ||
-            std::memcmp(image + 0x1ade4e6, comment_field.data(), comment_field.size())) return;
+        const CaptionProfile* profile{};
+        switch (native_build::identify(pe->FileHeader.TimeDateStamp, pe->OptionalHeader.SizeOfImage))
+        {
+        case native_build::Build::Egs: profile = &egs; break;
+        case native_build::Build::Steam: profile = &steam; break;
+        default: return;
+        }
+        auto* site = image + profile->lookup_rva;
+        if (std::memcmp(site, profile->lookup.data(), profile->lookup.size()) ||
+            std::memcmp(image + profile->comment_field_rva, comment_field.data(), comment_field.size())) return;
 
         // RIP-relative indirect CALL. The nearby page contains a pointer, never executable code.
         auto address = reinterpret_cast<uintptr_t>(site);
@@ -79,20 +93,23 @@ namespace kh3ap
         std::memcpy(reinterpret_cast<void*>(callback_slot), &callback, sizeof(callback));
         const auto displacement = static_cast<int32_t>(callback_slot - (address + 6));
         std::memcpy(redirect.data() + 2, &displacement, sizeof(displacement));
-        if (!replace_checked_code_bytes(site, lookup, redirect))
+        if (!replace_checked_code_bytes(site, profile->lookup, std::span{redirect}.first(profile->lookup.size())))
         {
             PLH::boundAllocFree(callback_slot, sizeof(void*));
             callback_slot = 0;
             return;
         }
-        installed_site = site;
+        installed_profile = profile;
         RC::Output::send<RC::LogLevel::Verbose>(STR("[KH3APProbeCpp] Photo loading captions installed count={}\n"), captions.size());
     }
 
     void uninstall_photo_loading_captions()
     {
-        if (!installed_site || !replace_checked_code_bytes(installed_site, redirect, lookup)) return;
-        installed_site = nullptr;
+        if (!installed_profile) return;
+        auto* site = reinterpret_cast<uint8_t*>(GetModuleHandleW(nullptr)) + installed_profile->lookup_rva;
+        const auto lookup = installed_profile->lookup;
+        if (!replace_checked_code_bytes(site, std::span{redirect}.first(lookup.size()), lookup)) return;
+        installed_profile = nullptr;
         PLH::boundAllocFree(callback_slot, sizeof(void*));
         callback_slot = 0;
     }
