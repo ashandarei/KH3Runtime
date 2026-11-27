@@ -9,7 +9,7 @@
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/combat/character_underwater_combat.h"
 #include "kh3ap/features/player/combat/character_union_cross.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/features/player/characters/character_idle.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -191,7 +191,10 @@ namespace kh3ap::character_swap_assets
                     // not Kairi's first possessed frame. Pawn preparation
                     // retains its existing native fallback if setup fails.
                     character_idle::initialize();
-                    kairi_ground_slam::initialize();
+                }
+                if (is_alternate_keyblade_wielder(selected_id))
+                {
+                    character_ground_slam::initialize(selected_id);
                 }
                 loading = false;
                 last_result = "ready";

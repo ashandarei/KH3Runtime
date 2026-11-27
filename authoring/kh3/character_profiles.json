@@ -230,8 +230,44 @@
       }
     },
     {
+      "id": "aqua_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x1649600",
+        "bytes": "40555356574154488d6c24c94881ec90"
+      },
+      "steam": {
+        "rva": "0x133b110",
+        "bytes": "405556574154488d6c24c14881ec9800"
+      }
+    },
+    {
+      "id": "riku_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x164c480",
+        "bytes": "488bc455564154488d68a14881eca000"
+      },
+      "steam": {
+        "rva": "0x133c5b0",
+        "bytes": "488bc45557415441564157488d68a148"
+      }
+    },
+    {
+      "id": "roxas_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x170bc40",
+        "bytes": "405556574156488d6c24c14881ecc800"
+      },
+      "steam": {
+        "rva": "0x1401510",
+        "bytes": "40555741564157488d6c24c14881ecc8"
+      }
+    },
+    {
       "id": "kairi_setup",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x164a630",
         "bytes": "488bc448895818488970205557415441"
@@ -243,7 +279,7 @@
     },
     {
       "id": "sora_setup",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x1640c60",
         "bytes": "488bc4554154415541564157488d6c24"
@@ -291,7 +327,7 @@
     },
     {
       "id": "attack_begin",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x6ea610",
         "bytes": "488bc448895810488978184c89702055"
@@ -303,7 +339,7 @@
     },
     {
       "id": "attack_end",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x6ea7c0",
         "bytes": "48895c241048896c2418564883ec20498be8488bda488bf14885d2743f"

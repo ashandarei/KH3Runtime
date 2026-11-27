@@ -60,7 +60,7 @@ struct Properties
     }
     Property* resolve_object(UObject*, const wchar_t*) { static Property p; return &p; }
 } properties;
-namespace kairi_ground_slam { bool ready(UObject* p) { return p && p == slam_ready; } }
+namespace character_ground_slam { bool ready(UObject* p) { return p && p == slam_ready; } }
 namespace character_swap
 {
     bool owns_swap_pawn(UObject* p) { return p && p == alternate; }

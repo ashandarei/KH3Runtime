@@ -305,7 +305,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/movement/alternate_wall_run.cpp
     kh3ap/features/player/player_animation_support.cpp
     kh3ap/features/player/characters/character_idle.cpp
-    kh3ap/features/player/combat/kairi_ground_slam.cpp
+    kh3ap/features/player/combat/character_ground_slam.cpp
     kh3ap/features/player/combat/combat_target_handoff.cpp
     kh3ap/features/player/combat/combat_blackboard_handoff.cpp
     kh3ap/features/world/garden_return/garden_return_service.cpp

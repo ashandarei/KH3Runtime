@@ -34,7 +34,7 @@
 #include "kh3ap/features/player/characters/character_swap_timing.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/player/characters/character_idle.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/features/player/combat/kairi_shining_hud.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
 #include "kh3ap/features/player/characters/character_crowd.h"
@@ -1031,7 +1031,7 @@ namespace kh3ap::character_swap
             const bool tornado_freefall = is_uobject_valid_fast(matinee) &&
                 is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
                 is_tornado_freefall_cinematic(world->GetPathName(), matinee->GetPathName());
-            const bool tornado_return = tornado_freefall && !kairi_ground_slam::ready(player());
+            const bool tornado_return = tornado_freefall && !character_ground_slam::ready(player());
             if (tornado_freefall)
             {
                 character_floating::prepare_freefall(world);
@@ -1760,11 +1760,6 @@ namespace kh3ap::character_swap
                 return nullptr;
             }
             if (!session.cinematic_return_pending &&
-                !prepare(L"ground_slam", kairi_ground_slam::prepare))
-            {
-                return nullptr;
-            }
-            if (!session.cinematic_return_pending &&
                 !prepare(L"wall_run", alternate_wall_run::prepare))
             {
                 return nullptr;
@@ -1789,7 +1784,8 @@ namespace kh3ap::character_swap
                  !prepare(L"camera", character_camera::prepare) ||
                  !prepare(L"shotlock", character_shotlock::prepare) ||
                  !prepare(L"magic", character_magic::refresh_spells) ||
-                 !prepare(L"attack_completion", character_attack_completion::prepare)))
+                 !prepare(L"attack_completion", character_attack_completion::prepare) ||
+                 !prepare(L"ground_slam", character_ground_slam::prepare)))
             {
                 return nullptr;
             }

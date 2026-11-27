@@ -35,7 +35,9 @@ namespace kh3ap::character_underwater_combat
         const uintptr_t create_collision_rva = character_native::rva(character_native::Site::underwater_collision_create);
         constexpr size_t collision_shape_bytes = 0x100;
         constexpr int maximum_weapon_shapes = 64;
-        constexpr std::array collision_groups{L"KB_StickM", L"KB_SphereS", L"ScrewL"};
+        // Borrowed weapon attacks use their authored notify groups. SphereM
+        // provides the dive finisher's 550-unit landing hitbox.
+        constexpr std::array collision_groups{L"KB_StickM", L"KB_SphereS", L"ScrewL", L"SphereM"};
         FWeakObjectPtr sora_collision_template;
         struct CollisionShape
         {
@@ -276,24 +278,27 @@ namespace kh3ap::character_underwater_combat
             {
                 continue;
             }
-            auto* type = weapon->GetClassPrivate();
-            auto* component = object(type->GetClassDefaultObject(), L"MyAtkColl");
-            if (!component)
+            // A formchange can replace the weapon's shape list. Its Keyblade
+            // base template still supplies the standard attack groups.
+            for (auto* type = weapon->GetClassPrivate(); is_uobject_valid_fast(type);
+                 type = type->GetSuperClass())
             {
-                continue;
-            }
-            bool complete = true;
-            for (const auto* group : collision_groups)
-            {
-                complete = complete && has_shape(component, FName(group, FNAME_Add));
-            }
-            if (complete)
-            {
-                // Reuse the swap's return-class lease, released on return to
-                // Sora/cancellation. Never retain a retired weapon actor.
-                character_swap_assets::retain_return_dependency(type);
-                sora_collision_template = make_uobject_weak(component);
-                return;
+                auto* component = object(type->GetClassDefaultObject(), L"MyAtkColl");
+                if (!component)
+                {
+                    continue;
+                }
+                bool complete = true;
+                for (const auto* group : collision_groups)
+                {
+                    complete = complete && has_shape(component, FName(group, FNAME_Add));
+                }
+                if (complete)
+                {
+                    character_swap_assets::retain_return_dependency(type);
+                    sora_collision_template = make_uobject_weak(component);
+                    return;
+                }
             }
         }
     }

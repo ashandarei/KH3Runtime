@@ -3,7 +3,7 @@
 #include "player_animation_support.h"
 #include "kh3ap/features/player/characters/character_chest_voice.h"
 #include "kh3ap/features/player/movement/alternate_wall_run.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <Unreal/UClass.hpp>
@@ -69,7 +69,7 @@ namespace kh3ap::player_animation_support
                 reinterpret_cast<VoiceNotify>(original_voice_notify)(replacement, mesh, animation);
                 return;
             }
-            if (!kairi_ground_slam::suppress_voice(notify, mesh, animation))
+            if (!character_ground_slam::suppress_voice(notify, mesh, animation))
             {
                 reinterpret_cast<VoiceNotify>(original_voice_notify)(notify, mesh, animation);
             }

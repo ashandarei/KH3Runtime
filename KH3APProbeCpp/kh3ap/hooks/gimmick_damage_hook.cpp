@@ -3,7 +3,7 @@
 #include "kh3ap/features/story/world_fixes/big_hero_rescue_damage_policy.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/story/world_fixes/toy_box_ufo_damage.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObject.hpp>
@@ -72,7 +72,7 @@ namespace kh3ap
                 return;
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            kairi_ground_slam::observe_gimmick_damage(component, controller, info, causer);
+            character_ground_slam::observe_gimmick_damage(component, controller, info, causer);
 #endif
             toy_box_ufo::DamageInfoCopy copy;
             if (info && is_uobject_valid_fast(owner_class))
