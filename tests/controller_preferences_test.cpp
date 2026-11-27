@@ -21,6 +21,16 @@ struct Store {
     }
 };
 int main() {
+    Store linux_store{true};
+    auto linux_config = linux_store.config();
+    linux_config.background_input_supported = false;
+    RuntimeControllerPreferencesService linux_preferences{linux_config};
+    linux_preferences.install_once(false);
+    assert(!linux_preferences.background_input_supported());
+    assert(!linux_preferences.set_background_input_allowed(true));
+    assert(!linux_preferences.background_input_allowed());
+    assert(linux_store.reads == 0 && linux_store.writes == 0);
+
     Store fresh;
     RuntimeControllerPreferencesService defaults{fresh.config()};
     defaults.install_once();

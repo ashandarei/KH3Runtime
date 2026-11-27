@@ -231,26 +231,29 @@ namespace kh3ap
             {
                 return std::wstring{STR("Equip received movement and essential defensive abilities, including Scan, when enough AP is free")};
             });
-        page.toggle(
-            STR("background_controller_input"), STR("Background Controller Input"),
-            [&settings]()
-            {
-                return settings.background_input_allowed();
-            },
-            [&settings](bool enabled)
-            {
-                (void)settings.set_background_input_allowed(enabled);
-            },
-            {},
-            []()
-            {
-                return std::wstring{STR("ON allows controller input while the game is unfocused. "
-                                        "OFF blocks background controller input.")};
-            },
-            []()
-            {
-                return std::wstring{STR("Global setting.")};
-            });
+        if (settings.background_input_supported())
+        {
+            page.toggle(
+                STR("background_controller_input"), STR("Background Controller Input"),
+                [&settings]()
+                {
+                    return settings.background_input_allowed();
+                },
+                [&settings](bool enabled)
+                {
+                    (void)settings.set_background_input_allowed(enabled);
+                },
+                {},
+                []()
+                {
+                    return std::wstring{STR("ON allows controller input while the game is unfocused. "
+                                            "OFF blocks background controller input.")};
+                },
+                []()
+                {
+                    return std::wstring{STR("Global setting.")};
+                });
+        }
 
         page.submenu(
             STR("map_options"), STR("Map options"),
