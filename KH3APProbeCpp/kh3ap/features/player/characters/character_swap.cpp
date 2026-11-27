@@ -2436,6 +2436,16 @@ namespace kh3ap::character_swap
         return !session.pending && ready(current_hero(), true);
     }
 
+    UObject* map_overlay_handoff_world()
+    {
+        if (!session.pending || session.cinematic_return_pending)
+        {
+            return nullptr;
+        }
+        auto* world = session.swap_world.Get();
+        return world == kh02_current_world() ? world : nullptr;
+    }
+
     UObject* game_over_context()
     {
         auto* pawn = current_hero();

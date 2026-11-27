@@ -24,6 +24,7 @@ struct RuntimeMapOverlayConfig {
     std::function<bool(bool visible)> set_battle_level_visible;
     std::function<std::optional<bool>(RC::Unreal::UObject*,std::wstring_view)> owns_keyblade;
     std::function<bool()> keybinds_enabled;
+    std::function<RC::Unreal::UObject*()> minimap_handoff_world;
 };
 class RuntimeMapOverlayService {
 public:

@@ -30,7 +30,7 @@ namespace kh3ap
         MapOverlayZoom zoom;
         MapTriggerInput triggers;
         uint32_t last_icon_options{map_icon_defaults};
-        FWeakObjectPtr pawn;
+        FWeakObjectPtr pawn, pawn_world;
         FWeakObjectPtr hold_pawn;
         bool eligible{}, pending_toggle{}, opened{}, presented{}, logged{};
         bool battle_level_presented{};
@@ -176,7 +176,8 @@ namespace kh3ap
 
         auto suspend() -> void;
 
-        auto hide(UObject*) -> void;
+        auto hide_area_map() -> void;
+        auto hide() -> void;
 
         auto collect_markers(UObject* p, const std::optional<std::array<float, 3>>& sora,
                              const std::optional<MapOverlayArea>& area, double image_width,
@@ -195,7 +196,8 @@ namespace kh3ap
 
         auto hide_minimap() -> void;
 
-        auto tick_minimap(UObject* p, std::chrono::steady_clock::time_point now) -> void;
+        auto tick_minimap(UObject* p, std::chrono::steady_clock::time_point now,
+                          UObject* handoff_world = nullptr) -> void;
 
         auto tick() -> void;
     };

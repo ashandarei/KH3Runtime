@@ -349,7 +349,7 @@ namespace kh3ap
         opened = false;
         presented = false;
     }
-    auto RuntimeMapOverlayService::Impl::hide(UObject*) -> void
+    auto RuntimeMapOverlayService::Impl::hide_area_map() -> void
     {
         triggers.cancel_pending();
         restore_native_minimap();
@@ -366,13 +366,8 @@ namespace kh3ap
         }
         movie_bool(chest_player.get(), L"/Script/ScaleformUI.GFxMoviePlayer:Close", L"Unload",
                    true);
-        movie_bool(minimap_player.get(), L"/Script/ScaleformUI.GFxMoviePlayer:Close", L"Unload",
-                   true);
         area_player.reset();
         chest_player.reset();
-        minimap_player.reset();
-        minimap_movie_path.clear();
-        minimap_chests = minimap_emblems = minimap_ingredients = 0;
         chest_movie_path.clear();
         keybind_hint_lines = -1;
         displayed_icons = 0;
@@ -400,14 +395,23 @@ namespace kh3ap
         rendered_chests.clear();
         chest_schedule = {};
         chest_layout_dirty = true;
-        minimap_presented = false;
+    }
+
+    auto RuntimeMapOverlayService::Impl::hide() -> void
+    {
+        hide_area_map();
+        hide_minimap();
+        movie_bool(minimap_player.get(), L"/Script/ScaleformUI.GFxMoviePlayer:Close", L"Unload",
+                   true);
+        minimap_player.reset();
+        minimap_movie_path.clear();
+        minimap_chests = minimap_emblems = minimap_ingredients = 0;
         minimap_texture_path.clear();
         minimap_texture = {};
         minimap_area.reset();
         minimap_marker_owner = {};
         minimap_marker_layer = {};
         minimap_icon_bindings = {};
-        minimap_layout_cache.clear();
         next_minimap_markers = {};
         minimap_markers.clear();
         rendered_minimap.clear();

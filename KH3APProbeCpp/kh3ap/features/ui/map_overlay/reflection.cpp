@@ -251,6 +251,11 @@ namespace kh3ap
             }
             auto* level = pawn->GetOuterPrivate();
             auto* world = is_uobject_valid_fast(level) ? level->GetOuterPrivate() : nullptr;
+            return live_parts_for_world(world);
+        }
+
+        auto live_parts_for_world(UObject* world) -> std::pair<UObject*, UObject*>
+        {
             auto* manager = object(object(world, L"OwningGameInstance"), L"m_UIManager");
             if (!manager)
             {
