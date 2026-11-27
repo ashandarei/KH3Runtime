@@ -62,6 +62,13 @@ namespace kh3ap::combat_blackboard_handoff
         {
             return properties.read_object(owner, field);
         }
+        bool is_controller_gameplay_camera(UObject* camera)
+        {
+            auto* manager = object(camera, L"m_SpawnCameraManager");
+            return manager && (camera == object(manager, L"m_CameraNormal1st") ||
+                               camera == object(manager, L"m_CameraNormal2nd") ||
+                               camera == object(manager, L"m_LockonCamera"));
+        }
         UObject* value(UObject* board, const std::wstring& name)
         {
             ReflectedFunctionCall query(board, L"GetValueAsObject", "swap blackboard", 256);
@@ -109,9 +116,13 @@ namespace kh3ap::combat_blackboard_handoff
         }
         std::vector<AActor*> actors;
         UGameplayStatics::GetAllActorsOfClass(outgoing, camera_class, actors);
+        auto* world = actor_owning_world(outgoing);
         for (auto* camera : actors)
         {
-            if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != actor_owning_world(outgoing) ||
+            // The factory binds each controller's gameplay cameras to its pawn.
+            // The spawn manager also identifies cameras of already parked controllers.
+            if (!is_uobject_valid_fast(camera) || actor_owning_world(camera) != world ||
+                is_controller_gameplay_camera(camera) ||
                 *camera_target(camera) != outgoing)
             {
                 continue;
