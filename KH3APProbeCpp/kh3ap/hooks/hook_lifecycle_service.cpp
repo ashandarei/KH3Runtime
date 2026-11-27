@@ -15,7 +15,7 @@
 #include "kh3ap/hooks/patches/ez_codes_tutorial_bypass.h"
 #include "kh3ap/hooks/patches/menu_notice_bypass.h"
 #include "kh3ap/hooks/patches/cuisine_availability.h"
-#include "kh3ap/features/story/world_fixes/big_hero_rescue_damage.h"
+#include "kh3ap/hooks/gimmick_damage_hook.h"
 #include "kh3ap/app/game_thread_driver_service.h"
 #include "kh3ap/hooks/hook_service.h"
 #include "kh3ap/features/ui/map_overlay/minimap_context_service.h"
@@ -128,7 +128,7 @@ namespace kh3ap
             ez_codes_tutorial_bypass_.install();
             menu_notice_bypass_.install();
             cuisine_availability_.install();
-            big_hero_rescue_damage_.install();
+            gimmick_damage_hook_.install();
             // Add the narrow UI-focus and engine-pause observers during Unreal
             // initialization. Their pre/post callbacks reject unrelated
             // dispatches with two exact FName comparisons apiece.
@@ -245,7 +245,7 @@ namespace kh3ap
             code_menu_first_bypass_.uninstall();
             ez_codes_tutorial_bypass_.uninstall();
             menu_notice_bypass_.uninstall();
-            big_hero_rescue_damage_.uninstall();
+            gimmick_damage_hook_.uninstall();
             cuisine_availability_.uninstall();
             config_.blocking_ui_hooks.uninstall(reason);
             config_.sora_state_hooks.uninstall_hooks();
@@ -259,7 +259,7 @@ namespace kh3ap
         RuntimeEzCodesTutorialBypass ez_codes_tutorial_bypass_;
         RuntimeMenuNoticeBypass menu_notice_bypass_;
         RuntimeCuisineAvailability cuisine_availability_;
-        BigHeroRescueDamage big_hero_rescue_damage_;
+        GimmickDamageHook gimmick_damage_hook_;
         bool shutdown_{false};
     };
 

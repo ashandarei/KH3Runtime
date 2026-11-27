@@ -2,6 +2,7 @@
 #include <memory>
 #include "kh3ap/app/config.h"
 #include "kh3ap/features/player/context/current_player.h"
+#include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/features/music/events/music_update_events.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_reactions.h"
@@ -362,6 +363,22 @@ namespace kh3ap
                 return;
             }
             special_battle_level_sync_pending = false;
+            if (frame_name.find(L"/ew_04/umap/ew_04_gameflow.") != std::wstring::npos ||
+                frame_name.find(L"/ew_01/umap/ew_01_gameflow.") != std::wstring::npos)
+            {
+                // The opening gameflow disables shortcuts during its setup.
+                // Enable the normal menu when the Heartless or Darkside fight starts.
+                auto* pawn = runtime_current_player_pawn();
+                auto* owner = try_read_reflected_object_property_value(pawn, L"Controller");
+                if (is_uobject_valid_fast(owner) &&
+                    try_read_reflected_object_property_value(owner, L"Pawn") == pawn)
+                {
+                    ReflectedFunctionCall shortcuts(owner, L"BP_SetAbilityShortCutMenu",
+                                                    "opening_battle_shortcuts", 16);
+                    shortcuts.boolean(L"InEnable", true);
+                    shortcuts.run();
+                }
+            }
             auto& pawn_state = config.runtime_state.grant_state().pawn_state();
             UObject* const controller = pawn_state.controller_object();
             if (controller && !pawn_state.controller_name().empty())
@@ -501,9 +518,9 @@ namespace kh3ap
             RuntimeConditionalProfileScope<s_enable_runtime_hot_path_profiling> profile{
                 STR("hook:HandleStartingNewPlayer")};
             RuntimeSpaceService::notify_context_changed();
-            character_swap::notify_player_started();
             UObject* const new_player = config.player_context.read_object_function_param(
                 prepared->target_function, prepared->params, STR("NewPlayer"));
+            character_swap::notify_player_started(new_player);
             std::wstring new_player_name{};
             bool cached = false;
             if (new_player && kh3ap::is_uobject_valid_fast(new_player))

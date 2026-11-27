@@ -33,11 +33,11 @@ int main()
     assert(supports_alternate_bad_status(L"ETresBadStatusType::TRES_BADSTAT_SNEEZE", L"direct_player_bad_status"));
     assert(!supports_alternate_bad_status(king_mickey_trap_token, king_mickey_trap_method));
     assert(!supports_alternate_bad_status(L"ETresBadStatusType::TRES_BADSTAT_BURN", L"bp_tres_get_item"));
-    for (const int player : {10, 16, 17})
+    for (const int player : {8, 10, 16, 17})
     {
         assert(alternate_bad_status_player_allowed(player));
     }
-    for (const int player : {-1, 0, 8, 18})
+    for (const int player : {-1, 0, 18})
     {
         assert(!alternate_bad_status_player_allowed(player));
     }

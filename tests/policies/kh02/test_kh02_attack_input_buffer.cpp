@@ -1,10 +1,10 @@
-#include "kh3ap/features/kh02/combat/kh02_attack_input_buffer.h"
+#include "kh3ap/features/player/combat/swap/attack_input_buffer.h"
 #include "kh3ap/core/input/options_input_ownership.h"
 #include <cassert>
 
 int main()
 {
-    using Buffer = kh3ap::Kh02AttackInputBuffer;
+    using Buffer = kh3ap::AttackInputBuffer;
     Buffer buffer;
     const auto now = Buffer::Clock::now();
     const auto deadline = now + std::chrono::seconds(2);

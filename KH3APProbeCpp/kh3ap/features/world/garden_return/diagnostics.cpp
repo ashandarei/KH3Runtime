@@ -54,7 +54,7 @@
 #include "kh3ap/bridge/transport/request_file_watcher.h"
 #endif
 #include "kh3ap/features/kh02/story/kh02_story.h"
-#include "kh3ap/features/kh02/combat/kh02_combat_swap.h"
+#include "kh3ap/features/player/combat/character_combat_swap.h"
 #include "kh3ap/features/kh02/combat/kh02_combo_master.h"
 #include "kh3ap/features/kh02/combat/kh02_companion_handoff.h"
 #include "kh3ap/features/kh02/combat/kh02_mickey_link.h"

@@ -15,13 +15,13 @@ namespace RC::Unreal
 
 namespace kh3ap
 {
-    class Kh02CombatSwap
+    class CharacterCombatSwap
     {
       public:
         using Player = std::function<RC::Unreal::UObject*()>;
         using Change = std::function<bool(RC::Unreal::UObject*, int)>;
-        Kh02CombatSwap(Player player, Change change);
-        ~Kh02CombatSwap();
+        CharacterCombatSwap(Player player, Change change);
+        ~CharacterCombatSwap();
         bool request(RC::Unreal::UObject* pawn, bool trap_owned = false);
         bool available(RC::Unreal::UObject* pawn) const;
         bool busy() const;

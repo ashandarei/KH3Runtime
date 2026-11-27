@@ -14,6 +14,7 @@
 #include "kh3ap/hooks/memory/kh3_memory_hooks.h"
 #include "kh3ap/features/grants/bad_status_helpers.h"
 #include "kh3ap/features/player/characters/character_exploration.h"
+#include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/movement/character_rails.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/grants/battle_level/battle_level_sync_service.h"
@@ -396,6 +397,7 @@ namespace kh3ap
                 if (is_uobject_valid_fast(component))
                 {
                     runtime_observe_current_player(component->GetOuterPrivate());
+                    character_camera::observe_state_write(component);
                 }
                 if (config.observe_party_state)
                 {

@@ -3,6 +3,7 @@
 #include <optional>
 #include <utility>
 #include "kh3ap/features/ui/map_overlay/service_impl.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/ui/map_overlay/map_chest_movie.h"
 #include "kh3ap/core/objects/actor_discovery.h"
 #include "kh3ap/core/objects/asset_load_helpers.h"
@@ -252,6 +253,7 @@ namespace kh3ap
         {
             return owns_keyblade(p, token);
         };
+        const int player_id = active_palette && palette->roxas_chestsanity ? character_swap::owned_player_id(p) : -1;
         for (const auto& entry : chests)
         {
             if (!icon_enabled(MapIconOption::Chests))
@@ -264,7 +266,7 @@ namespace kh3ap
             }
             const double alpha =
                 map_chest_alpha(active_palette ? palette.get() : nullptr, entry.treasure,
-                                icon_enabled(MapIconOption::LockedChests), owns);
+                                icon_enabled(MapIconOption::LockedChests), owns, player_id);
             if (alpha <= 0)
             {
                 continue;

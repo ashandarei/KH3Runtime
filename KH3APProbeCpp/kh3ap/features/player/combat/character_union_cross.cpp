@@ -5,6 +5,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_reactions.h"
 #include "kh3ap/features/player/combat/character_magic.h"
+#include "kh3ap/features/player/combat/magic_command_ids.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObject.hpp>
@@ -91,6 +92,13 @@ namespace kh3ap::character_union_cross
         template<size_t Index>
         bool action_command(UObject* controller)
         {
+            // These four native action dispatchers belong exclusively to the
+            // alternate controllers. Reject a stale Link before routing any input.
+            if (is_uobject_valid_fast(controller) &&
+                magic_command::is_link_command(field<int>(controller, controller_selected_command_offset)))
+            {
+                return false;
+            }
             if (is_uobject_valid_fast(controller) && character_reactions::owns_command(
                     controller, field<int>(controller, controller_selected_command_offset)))
             {
@@ -103,13 +111,16 @@ namespace kh3ap::character_union_cross
 #endif
                 return accepted;
             }
-            if (is_uobject_valid_fast(controller) && character_magic::owns_command(
-                    controller, field<int>(controller, controller_selected_command_offset)))
+            if (is_uobject_valid_fast(controller))
             {
-                // Alternate switches omit some ordinary spell families (Aqua
-                // omits Water). Reuse Sora's normal selection/MP/targeting path
-                // only for the prepared ally's mirrored unlocked commands.
-                return sora_action_command(controller);
+                const auto allowed = character_magic::normal_spell_allowed(
+                    controller, field<int>(controller, controller_selected_command_offset));
+                if (allowed.has_value())
+                {
+                    // A stale shortcut must not fall through to the companion's
+                    // native spell list. Owned spells use normal MP/target checks.
+                    return *allowed && sora_action_command(controller);
+                }
             }
             if constexpr (Index == 3)
             {

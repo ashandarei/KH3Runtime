@@ -1,6 +1,7 @@
 #include <optional>
 #include "kh3ap/features/player/combat/magic_command_ids.h"
 #include "kh3ap/features/player/combat/character_magic.h"
+#include "kh3ap/features/player/combat/character_shortcuts.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_swap_stats.h"
@@ -220,8 +221,7 @@ namespace kh3ap::character_magic
             auto* instance = properties.read_object(kh02_current_viewport(), L"GameInstance");
             if (instance != game_instance.Get())
             {
-                meters = {};
-                sora_commands.reset();
+                reset_session();
                 game_instance = make_uobject_weak(instance);
             }
         }
@@ -255,7 +255,7 @@ namespace kh3ap::character_magic
         std::array<SpellState, spell_meter_count> spell_states;
         struct HudState
         {
-            FWeakObjectPtr hud, data;
+            FWeakObjectPtr hud, data, authored;
             magic_command::Commands commands{};
         };
         std::array<HudState, spell_meter_count> hud_states;
@@ -375,6 +375,16 @@ namespace kh3ap::character_magic
             {
                 return true;
             }
+            if (state.hud.Get() == hud && state.data.Get() == source)
+            {
+                // A filtered-out shortcut no longer identifies its spell family.
+                // Rebuild from the character's authored slots on an ownership change.
+                source = state.authored.Get();
+                if (!source)
+                {
+                    return false;
+                }
+            }
             FStaticConstructObjectParameters parameters(source->GetClassPrivate(), hud);
             parameters.SetFlags = RF_Transient;
             auto* copy = UObjectGlobals::StaticConstructObject(parameters);
@@ -387,22 +397,17 @@ namespace kh3ap::character_magic
             {
                 magic[index] = index < commands.size() ? commands[index] : 0;
             }
-            (void)copy_hud_commands(source, copy, link_hud_layout);
+            auto links = copy_hud_commands(source, copy, link_hud_layout);
+            std::fill(links.begin(), links.end(), uint8_t{0});
             auto shortcuts = copy_hud_commands(source, copy, shortcut_hud_layout);
-            for (auto& command : shortcuts)
-            {
-                if (const auto family = magic_command::normal_family(command))
-                {
-                    command = commands[*family];
-                }
-            }
+            character_shortcuts::bind(pawn, commands, shortcuts);
             auto* field = properties.resolve_object(hud, L"m_HudCommandDataAsset");
             if (!field)
             {
                 throw std::runtime_error("character_magic_hud_asset_property");
             }
             *field->ContainerPtrToValuePtr<UObject*>(hud) = copy;
-            state = {make_uobject_weak(hud), make_uobject_weak(copy), commands};
+            state = {make_uobject_weak(hud), make_uobject_weak(copy), make_uobject_weak(source), commands};
             refresh_menu(hud);
             refresh_shortcuts(hud);
             return true;
@@ -491,6 +496,10 @@ namespace kh3ap::character_magic
             return false;
         }
         const auto base = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
+        if (!character_shortcuts::initialize())
+        {
+            RC::Output::send<RC::LogLevel::Warning>(STR("[KH3APProbeCpp] Customize shortcut bindings unavailable\n"));
+        }
         install_elemental_hit_hook();
         set_charge = reinterpret_cast<SetCharge>(base + character_native::rva(Site::mp_charge_set));
         refresh_menu = reinterpret_cast<void (*)(UObject*)>(
@@ -498,6 +507,16 @@ namespace kh3ap::character_magic
         refresh_shortcuts = reinterpret_cast<void (*)(UObject*)>(
             base + character_native::rva(Site::magic_shortcut_refresh));
         return true;
+    }
+
+    void reset_session()
+    {
+        meters = {};
+        sora_commands.reset();
+        spell_states = {};
+        hud_states = {};
+        character_shortcuts::reset();
+        game_instance = {};
     }
 
     std::optional<Meter> read_meter(UObject* pawn)
@@ -614,7 +633,11 @@ namespace kh3ap::character_magic
         auto* equipment = properties.read_object(pawn, L"MyEquipment");
         auto* current = properties.read_object(equipment, L"m_MagicSet");
         auto& state = spell_states[index - first_spell_meter];
-        if (state.equipment.Get() == equipment && state.magic_set.Get() == current &&
+        if (!equipment)
+        {
+            return false;
+        }
+        if (current && state.equipment.Get() == equipment && state.magic_set.Get() == current &&
             state.commands == commands)
         {
             return prepare_hud(pawn, index, commands);
@@ -624,28 +647,30 @@ namespace kh3ap::character_magic
         {
             return false;
         }
-        std::optional<MagicUnit> dual_shot;
-        if (index == roxas_meter)
+        std::optional<MagicUnit> signature_spell;
+        if (index == roxas_meter || index == riku_meter)
         {
-            // FireMagic resolves the projectile from this command row even when
-            // the equipment's separate CrossShoot projectile entry is present.
-            auto* authored = find_loaded_runtime_asset(
-                L"/Game/Blueprints/Player/p_ex007/p_ex007_MagicSet.p_ex007_MagicSet");
+            // FireMagic resolves these projectiles from the character's own set.
+            const bool riku = index == riku_meter;
+            const auto command = riku ? PlayerActionCommand::S_DARKFIRAGA : PlayerActionCommand::S_CROSSSHOOT;
+            auto* authored = find_loaded_runtime_asset(riku
+                ? L"/Game/Blueprints/Player/p_ex003/p_ex003_MagicSet.p_ex003_MagicSet"
+                : L"/Game/Blueprints/Player/p_ex007/p_ex007_MagicSet.p_ex007_MagicSet");
             if (!authored)
             {
                 return false;
             }
             for (const auto& unit : *units(authored))
             {
-                if (unit.command == player_action_command_value(PlayerActionCommand::S_CROSSSHOOT))
+                if (unit.command == player_action_command_value(command))
                 {
-                    dual_shot = unit;
+                    signature_spell = unit;
                     break;
                 }
             }
-            if (!dual_shot || !is_uobject_valid_fast(dual_shot->asset0))
+            if (!signature_spell || !is_uobject_valid_fast(signature_spell->asset0))
             {
-                throw std::runtime_error("roxas_dual_shot_magic_unit_missing");
+                throw std::runtime_error("character_signature_magic_unit_missing");
             }
         }
         prepare_damage(pawn);
@@ -665,9 +690,9 @@ namespace kh3ap::character_magic
                 destination->Add(unit);
             }
         }
-        if (dual_shot)
+        if (signature_spell)
         {
-            destination->Add(*dual_shot);
+            destination->Add(*signature_spell);
         }
         auto* field = properties.resolve_object(equipment, L"m_MagicSet");
         if (!field)
@@ -679,18 +704,53 @@ namespace kh3ap::character_magic
         return prepare_hud(pawn, index, commands);
     }
 
-    bool owns_command(UObject* controller, int command)
+    bool refresh_owned_spells(UObject* pawn)
     {
-        if (!sora_commands || !magic_command::is_selected_command(command, *sora_commands))
+        const auto index = slot(pawn);
+        if (index < first_spell_meter || index > last_spell_meter || !character_swap::owns_swap_pawn(pawn))
+        {
+            return true;
+        }
+        magic_command::Commands commands{};
+        if (!try_read_runtime_sora_magic_commands(pawn, commands))
         {
             return false;
         }
+        sora_commands = commands;
+        return refresh_spells(pawn);
+    }
+
+    void refresh_shortcut_bindings(UObject* pawn)
+    {
+        const int index = slot(pawn);
+        if (index < first_spell_meter || index > last_spell_meter || !sora_commands) { return; }
+        auto& state = hud_states[index - first_spell_meter];
+        auto* hud = state.hud.Get();
+        auto* copy = state.data.Get();
+        if (!copy || properties.read_object(hud, L"m_HudCommandDataAsset") != copy) { return; }
+        auto* slots = reinterpret_cast<uint8_t*>(copy) + hud_shortcuts_offset + hud_command_bytes_offset;
+        character_shortcuts::bind(pawn, *sora_commands,
+            {slots, hud_shortcut_group_count * hud_shortcuts_per_group});
+        refresh_shortcuts(hud);
+    }
+
+    std::optional<bool> normal_spell_allowed(UObject* controller, int command)
+    {
+        if (!magic_command::normal_family(command))
+        {
+            return std::nullopt;
+        }
         auto* pawn = properties.read_object(controller, L"Pawn");
         const auto index = slot(pawn);
-        return index >= first_spell_meter && index <= last_spell_meter &&
-               character_swap::owns_swap_pawn(pawn) &&
-               properties.read_object(pawn, L"Controller") == controller &&
-               spell_states[index - first_spell_meter].equipment.Get() ==
-                   properties.read_object(pawn, L"MyEquipment");
+        if (index < first_spell_meter || index > last_spell_meter ||
+            !character_swap::owns_swap_pawn(pawn) ||
+            properties.read_object(pawn, L"Controller") != controller)
+        {
+            return std::nullopt;
+        }
+        const auto& state = spell_states[index - first_spell_meter];
+        auto* equipment = properties.read_object(pawn, L"MyEquipment");
+        return sora_commands && magic_command::owns_normal_command(command, *sora_commands) &&
+               equipment && state.equipment.Get() == equipment && state.commands == *sora_commands;
     }
 } // namespace kh3ap::character_magic

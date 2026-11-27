@@ -26,10 +26,11 @@ namespace kh3ap
         // Party ownership only, including the synchronous incoming factory pawn.
         RC::Unreal::UObject* party_owner();
         RC::Unreal::UObject* reward_context();
+        bool map_overlay_ready();
         RC::Unreal::UObject* bad_status_context();
         RC::Unreal::UObject* game_over_context();
         void observe_game_over_state_write(uintptr_t component, uintptr_t state);
-        void notify_player_started();
+        void notify_player_started(RC::Unreal::UObject* controller);
         void notify_map_jump(RC::Unreal::UObject* source, std::wstring_view caller);
         bool prepare_native_story_travel();
         RC::Unreal::UObject* return_to_sora_for_encounter(RC::Unreal::UObject* pawn);
@@ -42,6 +43,7 @@ namespace kh3ap
         bool manual_swaps_blocked();
         bool handoff_pending();
         bool enabled();
+        int owned_player_id(RC::Unreal::UObject* pawn);
         bool owns_swap_pawn(RC::Unreal::UObject* pawn);
         bool swap_available(RC::Unreal::UObject* pawn);
         int swap_target(RC::Unreal::UObject* pawn);

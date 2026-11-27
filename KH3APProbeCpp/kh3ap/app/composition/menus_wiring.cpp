@@ -86,7 +86,7 @@ namespace kh3ap
                 }
                 if (character_swap::current_hero())
                 {
-                    return character_swap::reward_context() != nullptr;
+                    return character_swap::map_overlay_ready();
                 }
                 return !m_player_reacquire.ignored_map_active() &&
                        !runtime_sora_state_matches_kind(

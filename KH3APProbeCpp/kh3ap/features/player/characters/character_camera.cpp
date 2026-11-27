@@ -1,9 +1,11 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/characters/character_camera.h"
 #include "kh3ap/features/player/characters/character_swap.h"
+#include "kh3ap/features/player/characters/character_swap_stats.h"
 #include "kh3ap/features/player/movement/character_traversal.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/core/input/options_input_ownership.h"
+#include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/core/objects/uobject_weak.h"
@@ -31,6 +33,9 @@ namespace kh3ap::character_camera
         RuntimeOptionsInputOwnership camera_input;
         RC::Unreal::FWeakObjectPtr sora_camera_class;
         RC::Unreal::FWeakObjectPtr height_world;
+        RC::Unreal::FWeakObjectPtr phone_controller;
+        RC::Unreal::FWeakObjectPtr phone_state_component;
+        RC::Unreal::FWeakObjectPtr cancel_controller;
         float sora_target_height{};
         ReflectedPropertyCache<64> properties;
 
@@ -247,6 +252,52 @@ namespace kh3ap::character_camera
         }
     }
 
+    void observe_state_write(RC::Unreal::UObject* component)
+    {
+        if (!is_uobject_valid_fast(component))
+        {
+            return;
+        }
+        auto* pawn = component->GetOuterPrivate();
+        const bool owned = pawn && pawn == character_swap::current_hero() &&
+                           object(pawn, L"MyStateComp") == component;
+        if (!owned && component != phone_state_component.Get())
+        {
+            return;
+        }
+        auto* controller = owned ? object(pawn, L"Controller") : nullptr;
+        auto* state = object(component, L"m_pCurrentState");
+        static const RC::Unreal::FName camera_state(L"TresPlayerState_HoldCamera", RC::Unreal::FNAME_Add);
+        const bool using_phone = controller && object(controller, L"Pawn") == pawn &&
+                                 is_uobject_valid_fast(state) &&
+                                 state->GetClassPrivate()->GetNamePrivate().Equals(camera_state);
+        if (auto* previous = phone_controller.Get())
+        {
+            if (using_phone && previous == controller)
+            {
+                return;
+            }
+            Call restore(previous, L"BP_SetDisableManualLockon");
+            restore.boolean(L"InDisable", false);
+            restore.run();
+            phone_controller = {};
+            phone_state_component = {};
+        }
+        if (using_phone)
+        {
+            Call disabled(controller, L"BP_IsDisableManualLockon");
+            disabled.run();
+            if (!disabled.boolean_result())
+            {
+                Call disable(controller, L"BP_SetDisableManualLockon");
+                disable.boolean(L"InDisable", true);
+                disable.run();
+                phone_controller = make_uobject_weak(controller);
+                phone_state_component = make_uobject_weak(component);
+            }
+        }
+    }
+
     bool request(RC::Unreal::UObject* pawn)
     {
         if (!character_swap::owns_swap_pawn(pawn) || !character_traversal::ready(pawn) ||
@@ -278,9 +329,25 @@ namespace kh3ap::character_camera
         return camera_input.route(controller, std::wstring(key), event, [&] {
             if (event != 0)
             {
+                if (auto* target = cancel_controller.Get())
+                {
+                    cancel_controller = {};
+                    runtime_controller_action_input(target, L"command_cancel", false);
+                }
                 return true;
             }
             auto *pawn = character_swap::current_hero();
+            if (player_id(pawn) == player_id_value(PlayerId::Riku) &&
+                character_swap::character_integer_value(pawn, L"GetStateID") == character_traversal::hold_camera_state)
+            {
+                auto* target = object(pawn, L"Controller");
+                if (target && object(target, L"Pawn") == pawn)
+                {
+                    runtime_controller_action_input(target, L"command_cancel", true);
+                    cancel_controller = make_uobject_weak(target);
+                    return true;
+                }
+            }
             // Roxas handles the mapped press in his gameplay input update.
             return player_id(pawn) != player_id_value(PlayerId::Roxas) && request(pawn);
         });

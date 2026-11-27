@@ -45,7 +45,8 @@ namespace kh3ap
 
     constexpr bool alternate_bad_status_player_allowed(int player)
     {
-        return player == player_id_value(PlayerId::Aqua) ||
+        return player == player_id_value(PlayerId::Riku) ||
+               player == player_id_value(PlayerId::Aqua) ||
                player == player_id_value(PlayerId::Kairi) ||
                player == player_id_value(PlayerId::Roxas);
     }

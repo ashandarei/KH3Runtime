@@ -67,9 +67,11 @@
 #include <Unreal/AActor.hpp>
 #include <Unreal/GameplayStatics.hpp>
 #include <Unreal/UClass.hpp>
+#include <Unreal/UScriptStruct.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FStructProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/Hooks.hpp>
 #include <Unreal/UObjectGlobals.hpp>
@@ -149,6 +151,23 @@ namespace kh3ap::character_swap
             }
         };
         SwapSession session;
+        bool in_final_world()
+        {
+            static FWeakObjectPtr last_world;
+            static bool requires_native_player{};
+            auto* world = kh02_current_world();
+            if (!is_uobject_valid_fast(world))
+            {
+                return false;
+            }
+            if (world != last_world.Get())
+            {
+                last_world = make_uobject_weak(world);
+                requires_native_player = final_world_requires_native_player(world->GetPathName());
+            }
+            return requires_native_player;
+        }
+
         CharacterAscensionState ascension;
         FWeakObjectPtr ascension_boss, ascension_world;
         bool ascension_entering{}, ascension_handoff_pending{}, ascension_recheck_pending{};
@@ -294,6 +313,115 @@ namespace kh3ap::character_swap
             return possession_properties.read_object(owner, field);
         }
 
+        // In the Caribbean the outgoing pawn's overlap exit can hide the island
+        // while its replacement is still standing on it. Keep the supporting
+        // level visible until the incoming pawn has registered its overlaps.
+        UObject* visible_island_floor(UObject* pawn)
+        {
+            auto* world = actor_owning_world(pawn);
+            if (!world || world->GetName() != L"ca_02")
+            {
+                return nullptr;
+            }
+            auto* based = possession_properties.resolve(pawn, L"BasedMovement");
+            if (!based || !based->IsA<FStructProperty>())
+            {
+                return nullptr;
+            }
+            auto* schema = static_cast<FStructProperty*>(based)->GetStruct();
+            auto* field = schema ? schema->GetPropertyByNameInChain(L"MovementBase") : nullptr;
+            if (!field || field->GetClass().GetName() != L"ObjectProperty")
+            {
+                return nullptr;
+            }
+            auto* component = *field->ContainerPtrToValuePtr<UObject*>(
+                based->ContainerPtrToValuePtr<uint8_t>(pawn));
+            auto* actor = is_uobject_valid_fast(component) ? component->GetOuterPrivate() : nullptr;
+            auto* level = is_uobject_valid_fast(actor) ? actor->GetOuterPrivate() : nullptr;
+            if (!level || level == object(world, L"PersistentLevel"))
+            {
+                return nullptr;
+            }
+            auto* levels = possession_properties.resolve(world, L"StreamingLevels");
+            if (!levels || !levels->IsA<FArrayProperty>())
+            {
+                return nullptr;
+            }
+            auto* entry = static_cast<FArrayProperty*>(levels)->GetInner();
+            if (!entry || entry->GetClass().GetName() != L"ObjectProperty" ||
+                entry->GetElementSize() != sizeof(UObject*))
+            {
+                return nullptr;
+            }
+            for (auto* stream : *levels->ContainerPtrToValuePtr<TArray<UObject*>>(world))
+            {
+                if (object(stream, L"LoadedLevel") != level) { continue; }
+                auto* visible = possession_properties.resolve(stream, L"bShouldBeVisible");
+                if (visible && visible->IsA<FBoolProperty>() &&
+                    static_cast<FBoolProperty*>(visible)->GetPropertyValueInContainer(stream))
+                {
+                    return stream;
+                }
+            }
+            return nullptr;
+        }
+
+        std::optional<bool> twilight_volume_detection_disabled(UObject* pawn)
+        {
+            auto* world = actor_owning_world(pawn);
+            if (!world || world->GetPathName() != L"/Game/Levels/tt/tt_01/tt_01.tt_01")
+            {
+                return {};
+            }
+            // The opening fight temporarily ignores Tram Common's town volume.
+            // Validate the native pawn setter before reading its packed bit.
+            constexpr uint8_t setter[]{0x44,0x8b,0x81,0x10,0x11,0,0,0x41,0x8b,0xc0,
+                0x83,0xe0,1,0x44,0x0f,0xb6,0xca,0x44,0x3b,0xc8,0x74,0x0e,0x41,
+                0x83,0xe0,0xfe,0x45,0x0b,0xc1,0x44,0x89,0x81,0x10,0x11,0,0,0xc3};
+            auto* method = (*reinterpret_cast<const uint8_t* const* const*>(pawn))[0x2000 / sizeof(void*)];
+            if (!method || std::memcmp(method, setter, sizeof(setter)) != 0) { return {}; }
+            return (reinterpret_cast<const uint8_t*>(pawn)[0x1110] & 1) != 0;
+        }
+
+        struct IslandFloorHandoff
+        {
+            FWeakObjectPtr stream, level, pawn;
+            std::array<float, 3> origin{};
+            Clock::time_point deadline{};
+        };
+        std::optional<IslandFloorHandoff> island_floor;
+        UObject* player();
+
+        void keep_island_floor(Clock::time_point now)
+        {
+            if (!island_floor) { return; }
+            auto* stream = island_floor->stream.Get();
+            auto* pawn = island_floor->pawn.Get();
+            if (now >= island_floor->deadline || !stream || !pawn || actor_owning_world(pawn) != kh02_current_world() ||
+                stream->GetOuterPrivate() != kh02_current_world() ||
+                object(stream, L"LoadedLevel") != island_floor->level.Get())
+            {
+                island_floor.reset();
+                return;
+            }
+            if (pawn != player()) { return; }
+            auto* visible = static_cast<FBoolProperty*>(possession_properties.resolve(stream, L"bShouldBeVisible"));
+            if (!visible || visible->GetPropertyValueInContainer(stream)) { return; }
+            Call location(pawn, L"K2_GetActorLocation");
+            location.run();
+            const auto position = location.result_vector();
+            const auto& origin = island_floor->origin;
+            if (std::abs(position[0] - origin[0]) > 250 || std::abs(position[1] - origin[1]) > 250)
+            {
+                island_floor.reset();
+                return;
+            }
+            visible->SetPropertyValueInContainer(stream, true);
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Kept swap floor visible level={}\n"), stream->GetName());
+#endif
+        }
+
         int id(UObject* pawn)
         {
             auto* property = possession_properties.resolve(pawn, L"m_PlayerUniqueID");
@@ -391,12 +519,16 @@ namespace kh3ap::character_swap
             return object(pawn, L"m_pDeathSentenceCountEffect") != nullptr;
         }
 
-        bool ready(UObject* pawn)
+        bool ready(UObject* pawn, bool allow_chest_animation = false)
         {
             if (!pawn || pawn != player() || kh02_current_story_world() ||
-                RuntimeSpaceService::is_space_active() || !runtime_sora_control_ready(pawn) ||
-                has_doom(pawn) ||
-                character_integer_value(pawn, L"GetStateID") == player_state_ids::open_treasure_box)
+                RuntimeSpaceService::is_space_active() || has_doom(pawn))
+            {
+                return false;
+            }
+            const bool opening_chest = character_integer_value(pawn, L"GetStateID") ==
+                                       player_state_ids::open_treasure_box;
+            if (opening_chest ? !allow_chest_animation : !runtime_sora_control_ready(pawn))
             {
                 return false;
             }
@@ -512,6 +644,10 @@ namespace kh3ap::character_swap
 
         bool begin(UObject* pawn, int target, bool cinematic = false)
         {
+            if (in_final_world() && (pawn != session.owned_hero.Get() || target != session.sora_id))
+            {
+                return false;
+            }
             if (ascension_locked() && !ascension.allows_target(target, session.sora_id))
             {
                 return false;
@@ -576,6 +712,8 @@ namespace kh3ap::character_swap
             session.diagnostic_outgoing = make_uobject_weak(pawn);
             RuntimeEnemyClearService::prepare_protection_handoff(pawn);
 #endif
+            auto floor = cinematic_handoff ? FWeakObjectPtr{} : make_uobject_weak(visible_island_floor(pawn));
+            const auto ignore_town_volume = cinematic_handoff ? std::nullopt : twilight_volume_detection_disabled(pawn);
             session.pending = true;
             session.outgoing_rail_pawn = make_uobject_weak(pawn);
             session.cinematic_return_pending = cinematic_handoff;
@@ -617,10 +755,33 @@ namespace kh3ap::character_swap
                     character_pawn_pool::Transaction pooled(pawn, target);
                     session.party_handoff->run_factory(change);
                     pooled.finish();
+                    if (auto* stream = floor.Get(); stream && stream->GetOuterPrivate() == kh02_current_world())
+                    {
+                        auto* incoming = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
+                        if (is_uobject_valid_fast(incoming))
+                        {
+                            Call location(incoming, L"K2_GetActorLocation");
+                            location.run();
+                            island_floor = IslandFloorHandoff{floor, make_uobject_weak(object(stream, L"LoadedLevel")),
+                                make_uobject_weak(incoming), location.result_vector(), Clock::now() + std::chrono::seconds(2)};
+                            keep_island_floor(Clock::now());
+                        }
+                    }
                 }
             }
             auto* incoming = player();
             auto* possessed = object(object(local_player.Get(), L"PlayerController"), L"Pawn");
+            if (ignore_town_volume && is_uobject_valid_fast(possessed) && id(possessed) == target &&
+                actor_owning_world(possessed) == actor_owning_world(pawn))
+            {
+                const auto incoming_mode = twilight_volume_detection_disabled(possessed);
+                if (incoming_mode && *incoming_mode != *ignore_town_volume)
+                {
+                    Call restore(object(possessed, L"Controller"), L"BP_SetDisableRestrictVolumeDetect");
+                    restore.boolean(L"InDisable", *ignore_town_volume);
+                    restore.run();
+                }
+            }
             if (owns_swap_pawn(possessed))
             {
                 if (!cinematic_handoff)
@@ -893,7 +1054,11 @@ namespace kh3ap::character_swap
             const bool kg_area_b_movie = is_uobject_valid_fast(matinee) &&
                 is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
                 is_kg_area_b_movie(world->GetPathName(), matinee->GetPathName());
-            const bool native_sora = tornado_return || scream_strike_exit || kg_area_b_movie;
+            const bool native_story_handoff = is_uobject_valid_fast(matinee) &&
+                is_uobject_valid_fast(world) && actor_owning_world(matinee) == world &&
+                requires_native_story_handoff(world->GetPathName(), matinee->GetPathName());
+            const bool native_sora = in_final_world() || tornado_return || scream_strike_exit ||
+                                     kg_area_b_movie || native_story_handoff;
             // Area B cameras and movies use Sora's authored performance.
             // The normal post-Luxord camera can also fault with an alternate.
             const bool native_level_matinee = is_uobject_valid_fast(matinee) &&
@@ -1004,6 +1169,28 @@ namespace kh3ap::character_swap
                 return;
             }
             installed = true;
+            UObjectGlobals::RegisterHook(
+                L"/Script/TresGame.TresPlayerControllerBase:BP_SetAbilityShortCutMenu",
+                [](UnrealScriptFunctionCallableContext&, void*) {},
+                [](UnrealScriptFunctionCallableContext& context, void*)
+                {
+                    // Only the opening tutorial scripts hard-code this restriction.
+                    // Other activities still own their controller's shortcut setting.
+                    auto* caller = get_frame_node(context.TheStack);
+                    if (!is_uobject_valid_fast(caller))
+                    {
+                        return;
+                    }
+                    auto* type = caller->GetOuterPrivate();
+                    if (!type || (type->GetName() != L"ew_04_gameflow_C" &&
+                                  type->GetName() != L"ew_01_gameflow_C"))
+                    {
+                        return;
+                    }
+                    Call enable(context.Context, L"BP_SetAbilityShortCutMenu");
+                    enable.boolean(L"InEnable", true);
+                    enable.run();
+                }, nullptr);
             // These are the shipping boss's gameplay entry/exit events. Return
             // before entry runs, while its player references can still resolve
             // the newly possessed Sora; never wait for the movie to finish.
@@ -1093,7 +1280,8 @@ namespace kh3ap::character_swap
                 try
                 {
                     if (!session.pending && session.travel_character_id >= 0 &&
-                        sora_variant(pawn) && !ascension_locked() &&
+                        sora_variant(pawn) && session.native_cinematic_world.Get() != kh02_current_world() &&
+                        !ascension_locked() &&
                         character_unlocks::available(session.travel_character_id))
                     {
                         const auto local_player = make_uobject_weak(
@@ -1160,6 +1348,29 @@ namespace kh3ap::character_swap
             }
             auto* pawn = player();
             auto* world = kh02_current_world();
+            if (in_final_world())
+            {
+                // The fragment mission binds the level's own Sora during startup.
+                // Retain the travel choice so it can resume on the next ordinary map.
+                if (!pawn)
+                {
+                    return false;
+                }
+                if (id(pawn) == session.travel_character_id && session.travel_character_id >= 0)
+                {
+                    if (adopt_travel_pawn() && begin(pawn, session.sora_id, true))
+                    {
+                        session.rebind_pending = false;
+                    }
+                    return false;
+                }
+                session.rebind_pending = false;
+                session.return_requested = false;
+                session.owned_hero = {};
+                session.active_character_id = -1;
+                character_swap_assets::release_return_class();
+                return false;
+            }
             bool covered_arrival = false;
             if (!ready(pawn))
             {
@@ -1645,8 +1856,12 @@ namespace kh3ap::character_swap
             focus_gauge.run();
             if (!session.cinematic_return_pending)
             {
-                Call show_commands(library, L"TresUI_ShowHudCommand");
-                show_commands.run();
+                const int state = character_integer_value(pawn, L"GetStateID");
+                if (state != player_state_ids::special_ship && state != player_state_ids::gigas)
+                {
+                    Call show_commands(library, L"TresUI_ShowHudCommand");
+                    show_commands.run();
+                }
             }
             combat_target_handoff::finish(pawn);
             if (!session.cinematic_return_pending)
@@ -1724,6 +1939,7 @@ namespace kh3ap::character_swap
 
     UObject* tick(Clock::time_point now)
     {
+        keep_island_floor(now);
         if (ascension.active)
         {
             if (ascension_world.Get() != kh02_current_world())
@@ -1813,14 +2029,35 @@ namespace kh3ap::character_swap
                    : nullptr;
     }
 
+    int owned_player_id(UObject* pawn)
+    {
+        return owns_swap_pawn(pawn) ? id(pawn) : -1;
+    }
+
     UObject* party_owner()
     {
         auto* pawn = player();
         return owns_swap_pawn(pawn) ? pawn : nullptr;
     }
 
-    void notify_player_started()
+    void notify_player_started(UObject* controller)
     {
+        auto* world = is_uobject_valid_fast(controller) ? actor_owning_world(controller) : nullptr;
+        if (is_uobject_valid_fast(world) && world->GetPathName() == L"/Game/Maps/TresGameTitle.TresGameTitle")
+        {
+            session = {};
+            ascension.clear();
+            ascension_entering = ascension_handoff_pending = ascension_recheck_pending = false;
+            trap.clear();
+            trap_world = {};
+            trap_cockpit = {};
+            trap_receipt_index = -1;
+            combat_target_handoff::cancel();
+            character_swap_assets::release_return_class();
+            character_magic::reset_session();
+            restored_selection_preload_pending = selected != 0;
+            return;
+        }
         character_cinematic_binding::prune(player());
         betrayal_trap::notify_player_started();
         install_ascension_hooks();
@@ -2036,7 +2273,7 @@ namespace kh3ap::character_swap
 
     bool start_king_mickey_trap(UObject* pawn, int64_t receipt_index)
     {
-        if (manual_swaps_blocked() || session.pending || !sora_variant(pawn) || !ready(pawn) ||
+        if (manual_swaps_blocked() || session.pending || !sora_variant(pawn) || !ready(pawn) || in_final_world() ||
             !runtime_trap_application_state_status(pawn).ready)
         {
             return false;
@@ -2091,6 +2328,7 @@ namespace kh3ap::character_swap
     bool swap_available(UObject* pawn)
     {
         return !ascension_locked() && enabled() && character_floating::allows_swap(pawn) &&
+               (!in_final_world() || pawn == current_hero()) &&
                ready(pawn) &&
                (sora_variant(pawn) || pawn == current_hero() ||
                 (session.pending && id(pawn) == session.target_id &&
@@ -2194,6 +2432,12 @@ namespace kh3ap::character_swap
         auto* pawn = current_hero();
         return !trap.locked() && alternate_bad_status_player_allowed(id(pawn)) ? reward_context()
                                                                                : nullptr;
+    }
+
+    bool map_overlay_ready()
+    {
+        // Opening a chest briefly takes movement input away from the local pawn.
+        return !session.pending && ready(current_hero(), true);
     }
 
     UObject* game_over_context()

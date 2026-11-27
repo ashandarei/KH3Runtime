@@ -2,6 +2,7 @@
 #include "kh3ap/features/player/characters/character_profile.h"
 #include <polyhook2/Detour/x64Detour.hpp>
 #include "kh3ap/features/player/characters/character_idle.h"
+#include "kh3ap/features/player/characters/character_cinematic_proportions.h"
 #include "kh3ap/features/player/characters/character_pose_handoff.h"
 #include "kh3ap/features/player/player_animation_support.h"
 #include "kh3ap/features/player/movement/kairi_jump_arms.h"
@@ -34,6 +35,7 @@
 #include <array>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 
 namespace kh3ap::character_idle
@@ -74,6 +76,15 @@ namespace kh3ap::character_idle
         std::unique_ptr<PLH::x64Detour> resolve_hook, battle_hook, play_hook, dismiss_hook,
             weapon_hook, idle_update_hook;
         FWeakObjectPtr kairi_owner, kairi_instance, kairi_requested_owner;
+        struct SneezeFinisher
+        {
+            FWeakObjectPtr animation, queue, state;
+            FName motion;
+            std::chrono::steady_clock::time_point expires;
+        };
+        std::optional<SneezeFinisher> sneeze_finisher;
+        FWeakObjectPtr sneeze_mesh;
+        character_cinematic_proportions::Lease sneeze_proportions;
         FWeakObjectPtr kairi_queue, kairi_pose_notify, kairi_idle_asset;
         struct RunPoseCompletion
         {
@@ -853,8 +864,68 @@ namespace kh3ap::character_idle
         return 1.0f;
     }
 
+    void clear_sneeze_finisher()
+    {
+        sneeze_finisher.reset();
+        character_cinematic_proportions::publish_reaction({});
+    }
+
+    void prepare_sneeze_finisher(UObject* pawn, UObject* attack_state, bool airborne)
+    {
+        auto* anim = object(object(pawn, L"MyMesh"), L"AnimScriptInstance");
+        auto* queue = object(pawn, L"MyStateComp");
+        if (anim && queue)
+        {
+            if (sneeze_mesh.Get() != anim)
+            {
+                sneeze_mesh = make_uobject_weak(anim);
+                sneeze_proportions.reset();
+                try
+                {
+                    std::vector<UObject*> clips;
+                    for (const auto* path : {
+                        L"/Game/Character/pc/p_ex001/anm/rt/body/0239.0239",
+                        L"/Game/Character/pc/p_ex001/anm/rt/body/0240.0240"})
+                    {
+                        if (auto* clip = find_loaded_runtime_asset(path)) { clips.push_back(clip); }
+                    }
+                    sneeze_proportions = character_cinematic_proportions::prepare(pawn, clips);
+                }
+                catch (const std::exception& failure)
+                {
+                    RC::Output::send<RC::LogLevel::Warning>(
+                        STR("[KH3APProbeCpp] Sneeze proportion correction unavailable: {}\n"),
+                        std::wstring(failure.what(), failure.what() + std::strlen(failure.what())));
+                }
+            }
+            character_cinematic_proportions::publish_reaction(sneeze_proportions);
+            sneeze_finisher = SneezeFinisher{make_uobject_weak(anim), make_uobject_weak(queue),
+                make_uobject_weak(attack_state), FName(airborne ? L"BadStatAirSneeze" : L"BadStatSneeze", FNAME_Add),
+                std::chrono::steady_clock::now() + std::chrono::milliseconds(300)};
+        }
+    }
+
     FName effective_animation_name(UObject* anim, FName name)
     {
+        if (sneeze_finisher)
+        {
+            if (std::chrono::steady_clock::now() >= sneeze_finisher->expires)
+            {
+                sneeze_finisher.reset();
+            }
+            else if (sneeze_finisher->animation.Get() == anim &&
+                     object(sneeze_finisher->queue.Get(), L"m_pCurrentState") == sneeze_finisher->state.Get())
+            {
+                // The alternate heroes request their numbered combo motions here.
+                // Substitute the actual animation so its notifies and duration drive the finisher.
+                const auto motion = name.ToString();
+                if (motion.size() == 4 && motion.starts_with(L"13") &&
+                    motion[2] >= L'0' && motion[2] <= L'9' && motion[3] >= L'0' && motion[3] <= L'9')
+                {
+                    return sneeze_finisher->motion;
+                }
+            }
+        }
         if (anim == kairi_instance.Get())
         {
             auto* pawn = kairi_owner.Get();

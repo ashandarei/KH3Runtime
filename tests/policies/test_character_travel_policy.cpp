@@ -6,6 +6,13 @@
 
 int main()
 {
+    using kh3ap::character_swap::final_world_requires_native_player;
+    static_assert(final_world_requires_native_player(L"/Game/Levels/ew/ew_01/ew_01.ew_01"));
+    static_assert(final_world_requires_native_player(L"/Game/Levels/ew/ew_02/ew_02.ew_02"));
+    static_assert(final_world_requires_native_player(L"/Game/Levels/ew/ew_28/ew_28.ew_28"));
+    static_assert(final_world_requires_native_player(L"/Game/Levels/ew_DLC/ew_04/ew_04.ew_04"));
+    static_assert(!final_world_requires_native_player(L"/Game/Levels/kg/kg_01/kg_01.kg_01"));
+    static_assert(!final_world_requires_native_player(L"/Game/Cutscene/Localization/ja/ew/cutscene_ew02_ew752"));
     using kh3ap::character_swap::is_tornado_freefall_cinematic;
     constexpr auto tornado = L"/Game/Levels/he/he_06/he_06.HE_06";
     constexpr auto dive_movie = L"/Game/Levels/he/he_06/umap/he_06_camera_ms130."
@@ -27,6 +34,20 @@ int main()
     assert(!can_prepare_arrival_under_cover(outside, true, false));
     constexpr auto caribbean = L"/Game/Levels/ca/ca_01/ca_01.ca_01";
     assert(can_prepare_arrival_under_cover(caribbean, true, true));
+    assert(!can_prepare_arrival_under_cover(L"/Game/Levels/bt_DLC/bt_51/bt_51.BT_51", true, true));
+    constexpr auto tutorial = L"/Game/Levels/ew_DLC/ew_04/ew_04.ew_04";
+    assert(!can_prepare_arrival_under_cover(tutorial, true, true));
+    using kh3ap::character_swap::requires_native_story_handoff;
+    constexpr auto mirror_scene = L"/Game/Levels/ew_DLC/ew_04/umap/ew_04_camera_ms060."
+                                  L"ew_04_camera_ms060:PersistentLevel.ms060r";
+    assert(requires_native_story_handoff(tutorial, mirror_scene));
+    assert(!requires_native_story_handoff(outside, mirror_scene));
+    assert(!requires_native_story_handoff(tutorial, L"ms060r"));
+    constexpr auto ship_movie = L"/Game/Cutscene/Localization/ja/ca/cutscene_ca01_ca414."
+                                L"cutscene_ca01_ca414:PersistentLevel.ca414";
+    assert(requires_native_story_handoff(caribbean, ship_movie));
+    assert(!requires_native_story_handoff(outside, ship_movie));
+    assert(!requires_native_story_handoff(caribbean, L"ca414"));
     assert(can_prepare_arrival_under_cover(L"/Game/Levels/ca/ca_02/ca_02.ca_02", true, true));
     assert(can_prepare_arrival_under_cover(L"/Game/Levels/ca/ca_03/ca_03.ca_03", true, true));
     assert(!can_prepare_arrival_under_cover(caribbean, false, true));

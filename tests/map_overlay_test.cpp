@@ -85,6 +85,13 @@ int main() {
     assert(map_chest_alpha(&palette,L"chest2",true,owns)==0.70);
     assert(map_chest_alpha(&palette,L"chest2",false,owns)==0.0);
     assert(map_chest_legend_rows(&palette,names)==eligible_rows);
+    palette.map_keyblades[L"paired"] = {L"Oblivion", L"WEP_OBLIVION"};
+    constexpr int roxas = player_id_value(PlayerId::Roxas);
+    assert(map_chest_alpha(&palette, L"paired", false, owns, roxas) == 0.0);
+    palette.roxas_chestsanity = true;
+    assert(map_chest_alpha(&palette, L"paired", false, owns, roxas) == 1.0);
+    assert(map_chest_alpha(&palette, L"chest1", false, owns, roxas) == 0.0);
+    assert(map_chest_alpha(&palette, L"paired", false, owns) == 0.0);
     palette.eligible_keyblades.clear();palette.map_keyblades.clear();
     assert(map_chest_legend_rows(&palette,names).empty());
     assert(map_chest_legend_rows(nullptr,names).empty());

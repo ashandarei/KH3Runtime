@@ -4,6 +4,11 @@
 
 namespace kh3ap::character_swap
 {
+    constexpr bool final_world_requires_native_player(std::wstring_view world)
+    {
+        return world.starts_with(L"/Game/Levels/ew/") || world.starts_with(L"/Game/Levels/ew_DLC/");
+    }
+
     constexpr bool can_prepare_arrival_under_cover(std::wstring_view world,
             bool changed_world, bool loading_cover_open)
     {
@@ -15,7 +20,9 @@ namespace kh3ap::character_swap
         const bool ground_map = world.starts_with(L"/Game/Levels/") &&
             !world.starts_with(L"/Game/Levels/wm/") &&
             !world.starts_with(L"/Game/Levels/gm/") &&
-            !world.starts_with(L"/Game/Levels/kg_DLC/");
+            !world.starts_with(L"/Game/Levels/kg_DLC/") &&
+            !world.starts_with(L"/Game/Levels/bt_DLC/bt_51/") &&
+            !world.starts_with(L"/Game/Levels/ew_DLC/ew_04/");
         const bool garden = world == L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01";
         return changed_world && loading_cover_open && (ground_map || garden);
     }
@@ -90,6 +97,18 @@ namespace kh3ap::character_swap
         return scene.size() == 5 && scene.starts_with(L"kg86") && scene.back() >= L'1' &&
                scene.back() <= L'6' && actor != std::wstring_view::npos &&
                matinee.substr(actor + level.size()) == scene;
+    }
+
+    constexpr bool requires_native_story_handoff(std::wstring_view world, std::wstring_view matinee)
+    {
+        if (world.starts_with(L"/Game/Levels/ew_DLC/ew_04/ew_04."))
+        {
+            return matinee.ends_with(L":PersistentLevel.ms060r");
+        }
+        // ca414 hands control from the Port Royal movie back to the level gameflow.
+        return world.starts_with(L"/Game/Levels/ca/ca_01/ca_01.") &&
+               matinee.starts_with(L"/Game/Cutscene/Localization/") &&
+               matinee.ends_with(L"/ca/cutscene_ca01_ca414.cutscene_ca01_ca414:PersistentLevel.ca414");
     }
 
     constexpr bool is_scream_strike_exit_cinematic(std::wstring_view world, std::wstring_view matinee)

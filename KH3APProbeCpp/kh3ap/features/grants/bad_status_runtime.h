@@ -17,6 +17,7 @@ namespace RC::Unreal
 namespace kh3ap::bad_status_detail
 {
     using RC::Unreal::UObject;
+    inline constexpr size_t native_bad_status_kind_offset = 0x85d;
     inline constexpr uint8_t sneeze_bad_status_kind = 13;
 
     inline constexpr bool s_enable_direct_player_bad_status_diagnostics = false;

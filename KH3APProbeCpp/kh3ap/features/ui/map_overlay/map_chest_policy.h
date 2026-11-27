@@ -1,5 +1,6 @@
 #pragma once
 #include "kh3ap/bridge/checks/chest_snapshot.h"
+#include "kh3ap/features/treasure/chest_character_policy.h"
 #include <vector>
 #include <string_view>
 
@@ -21,21 +22,23 @@ namespace kh3ap
     // Melody and ordinary chests have no assignment and retain their usual icons.
     template <class Owns>
     bool map_chest_is_locked(const chest_manifest::Snapshot* palette, const std::wstring& treasure,
-                             Owns owns)
+                             Owns owns, int player_id = -1)
     {
         if (!palette)
         {
             return false;
         }
         const auto assigned = palette->map_keyblades.find(treasure);
-        return assigned != palette->map_keyblades.end() && !owns(assigned->second.token);
+        return assigned != palette->map_keyblades.end() &&
+               !roxas_chest_key_allowed(palette->roxas_chestsanity, player_id, assigned->second.name) &&
+               !owns(assigned->second.token);
     }
 
     template <class Owns>
     double map_chest_alpha(const chest_manifest::Snapshot* palette, const std::wstring& treasure,
-                           bool show_locked_chests, Owns owns)
+                           bool show_locked_chests, Owns owns, int player_id = -1)
     {
-        if (!map_chest_is_locked(palette, treasure, owns))
+        if (!map_chest_is_locked(palette, treasure, owns, player_id))
         {
             return map_chest_unlocked_alpha;
         }
