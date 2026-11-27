@@ -230,8 +230,44 @@
       }
     },
     {
+      "id": "aqua_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x1649600",
+        "bytes": "40555356574154488d6c24c94881ec90"
+      },
+      "steam": {
+        "rva": "0x133b110",
+        "bytes": "405556574154488d6c24c14881ec9800"
+      }
+    },
+    {
+      "id": "riku_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x164c480",
+        "bytes": "488bc455564154488d68a14881eca000"
+      },
+      "steam": {
+        "rva": "0x133c5b0",
+        "bytes": "488bc45557415441564157488d68a148"
+      }
+    },
+    {
+      "id": "roxas_setup",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
+      "egs": {
+        "rva": "0x170bc40",
+        "bytes": "405556574156488d6c24c14881ecc800"
+      },
+      "steam": {
+        "rva": "0x1401510",
+        "bytes": "40555741564157488d6c24c14881ecc8"
+      }
+    },
+    {
       "id": "kairi_setup",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x164a630",
         "bytes": "488bc448895818488970205557415441"
@@ -243,7 +279,7 @@
     },
     {
       "id": "sora_setup",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x1640c60",
         "bytes": "488bc4554154415541564157488d6c24"
@@ -255,7 +291,7 @@
     },
     {
       "id": "gimmick_damage",
-      "source": "KH3APProbeCpp/kh3ap/features/story/world_fixes/big_hero_rescue_damage.cpp",
+      "source": "KH3APProbeCpp/kh3ap/hooks/gimmick_damage_hook.cpp",
       "egs": {
         "rva": "0x1215ce0",
         "bytes": "488bc45556574154415541564157488d"
@@ -291,7 +327,7 @@
     },
     {
       "id": "attack_begin",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x6ea610",
         "bytes": "488bc448895810488978184c89702055"
@@ -303,7 +339,7 @@
     },
     {
       "id": "attack_end",
-      "source": "KH3APProbeCpp/kh3ap/features/player/combat/kairi_ground_slam.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_ground_slam.cpp",
       "egs": {
         "rva": "0x6ea7c0",
         "bytes": "48895c241048896c2418564883ec20498be8488bda488bf14885d2743f"
@@ -366,7 +402,7 @@
     },
     {
       "id": "sora_selection",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x1645a00",
         "bytes": "40565741574883ec70488b01488bf1ff"
@@ -378,7 +414,7 @@
     },
     {
       "id": "aqua_selection",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x1649050",
         "bytes": "48895c240848896c2410488974241857"
@@ -390,7 +426,7 @@
     },
     {
       "id": "attack_enter",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x163ec60",
         "bytes": "48895c2410574883ec20488b7968488b"
@@ -402,7 +438,7 @@
     },
     {
       "id": "attack_prepare",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x1645380",
         "bytes": "48895c240848897c241055488bec4883"
@@ -414,7 +450,7 @@
     },
     {
       "id": "queue_clear",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/state.cpp",
       "egs": {
         "rva": "0x1870de0",
         "bytes": "40534883ec2083b98002000000488bd97e64"
@@ -426,7 +462,7 @@
     },
     {
       "id": "queue_push",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/state.cpp",
       "egs": {
         "rva": "0x1871180",
         "bytes": "48895c2410488974241848897c242041"
@@ -438,7 +474,7 @@
     },
     {
       "id": "queue_update",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/state.cpp",
       "egs": {
         "rva": "0x1870910",
         "bytes": "40564883ec504883b90002000000488b"
@@ -450,7 +486,7 @@
     },
     {
       "id": "run_enter",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x16c5610",
         "bytes": "4055564156488bec4881ec800000004c"
@@ -462,7 +498,7 @@
     },
     {
       "id": "camera_update",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x7a5f60",
         "bytes": "40555356488d6c24804881ec80010000"
@@ -474,7 +510,7 @@
     },
     {
       "id": "riku_selection",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x164c1a0",
         "bytes": "48895c240848896c2410488974241848"
@@ -486,7 +522,7 @@
     },
     {
       "id": "kairi_selection",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x164a3d0",
         "bytes": "48895c240848896c2410488974241848"
@@ -498,7 +534,7 @@
     },
     {
       "id": "roxas_selection",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/runtime.cpp",
       "egs": {
         "rva": "0x170b9b0",
         "bytes": "40535741564883ec20488b01488bd9ff"
@@ -510,7 +546,7 @@
     },
     {
       "id": "camera_target_init",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/camera.cpp",
       "egs": {
         "rva": "0x7a4010",
         "bytes": "48895c2410564883ec50f681f0080000"
@@ -1275,7 +1311,7 @@
     },
     {
       "id": "air_jump_available",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/movement.cpp",
       "egs": {
         "rva": "0x13c25d0",
         "bytes": "0fb681480e00002401c3"
@@ -1287,7 +1323,7 @@
     },
     {
       "id": "set_air_jump_available",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/movement.cpp",
       "egs": {
         "rva": "0x13c25b0",
         "bytes": "83a1480e0000fe0fb6c20981480e0000c3"
@@ -1382,8 +1418,32 @@
       }
     },
     {
+      "id": "customize_event",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shortcuts.cpp",
+      "egs": {
+        "rva": "0x193aa00",
+        "bytes": "405556574154415541564157488d6c24d94881ecc0000000"
+      },
+      "steam": {
+        "rva": "0x15e1fa0",
+        "bytes": "405556574154415541564157488d6c24d94881ecb0000000"
+      }
+    },
+    {
+      "id": "customize_choices",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/character_shortcuts.cpp",
+      "egs": {
+        "rva": "0x193f8c0",
+        "bytes": "48894c24085341554881ecd80000004c8da908040000488b"
+      },
+      "steam": {
+        "rva": "0x15ea9c0",
+        "bytes": "48894c24085341544881ec880000004c8da108040000488b"
+      }
+    },
+    {
       "id": "skeletal_tick_animation",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/movement.cpp",
       "egs": {
         "rva": "0x45c1a20",
         "bytes": "4c8bdc45884318554883ec704883b98009000000410fb6d0"
@@ -1395,7 +1455,7 @@
     },
     {
       "id": "skeletal_refresh_bones",
-      "source": "KH3APProbeCpp/kh3ap/features/kh02/combat/kh02_combat_swap.cpp",
+      "source": "KH3APProbeCpp/kh3ap/features/player/combat/swap/movement.cpp",
       "egs": {
         "rva": "0x45c4060",
         "bytes": "488bc4554154415541564157488d6c24a04881ec60010000"

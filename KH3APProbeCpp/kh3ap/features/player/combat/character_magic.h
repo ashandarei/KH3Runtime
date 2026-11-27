@@ -16,8 +16,11 @@ namespace kh3ap::character_magic
     };
 
     bool initialize();
+    void reset_session();
     bool refresh_spells(RC::Unreal::UObject* pawn);
-    bool owns_command(RC::Unreal::UObject* controller, int command);
+    bool refresh_owned_spells(RC::Unreal::UObject* pawn);
+    void refresh_shortcut_bindings(RC::Unreal::UObject* pawn);
+    std::optional<bool> normal_spell_allowed(RC::Unreal::UObject* controller, int command);
     // These are called only at the existing swap/rebind lifecycle events.
     void capture(RC::Unreal::UObject* pawn);
     void restore(RC::Unreal::UObject* pawn);

@@ -139,6 +139,9 @@ namespace kh3ap::character_cinematic_proportions
     namespace
     {
         std::atomic<std::shared_ptr<const std::vector<Lease>>> current;
+        // Game-thread publishers share one immutable snapshot with animation workers.
+        std::vector<Lease> cinematic_plans;
+        Lease reaction_plan;
 
         void evaluate(UObject* animation, animation_pose::Pose* pose, animation_pose::Curve*,
                       const animation_pose::Extraction*, bool force_raw)
@@ -284,8 +287,10 @@ namespace kh3ap::character_cinematic_proportions
         return result;
     }
 
-    void publish(std::vector<Lease> plans)
+    static void publish_current()
     {
+        auto plans = cinematic_plans;
+        if (reaction_plan) { plans.push_back(reaction_plan); }
         auto next =
             plans.empty() ? nullptr : std::make_shared<const std::vector<Lease>>(std::move(plans));
         const auto previous = current.exchange(std::move(next), std::memory_order_acq_rel);
@@ -305,5 +310,20 @@ namespace kh3ap::character_cinematic_proportions
             }
         }
 #endif
+    }
+
+    void publish(std::vector<Lease> plans)
+    {
+        cinematic_plans = std::move(plans);
+        publish_current();
+    }
+
+    void publish_reaction(Lease plan)
+    {
+        if (reaction_plan != plan)
+        {
+            reaction_plan = std::move(plan);
+            publish_current();
+        }
     }
 } // namespace kh3ap::character_cinematic_proportions

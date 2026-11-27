@@ -5,9 +5,9 @@
 
 namespace kh3ap
 {
-    class Kh02AttackInputBuffer
+    class AttackInputBuffer
     {
-      public:
+    public:
         using Clock = std::chrono::steady_clock;
 
         struct Intent
@@ -83,7 +83,7 @@ namespace kh3ap
             intents.clear();
         }
 
-      private:
+    private:
         std::deque<Intent> intents;
         uint64_t serial{};
     };

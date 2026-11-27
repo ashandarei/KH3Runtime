@@ -25,6 +25,8 @@ namespace kh3ap {
     }
 
 auto make_controller_preferences_config() -> RuntimeControllerPreferencesConfig {
+    if (GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "wine_get_version"))
+        return {.background_input_supported = false};
     wchar_t local_app_data[windows_path_buffer_characters]{};
     const DWORD size = GetEnvironmentVariableW(L"LOCALAPPDATA", local_app_data, windows_path_buffer_characters);
     if (size == 0 || size >= windows_path_buffer_characters) return {};

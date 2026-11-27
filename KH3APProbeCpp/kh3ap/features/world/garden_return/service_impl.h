@@ -15,7 +15,7 @@
 #include "character_restoration.h"
 #include "layout.h"
 #include "kh3ap/core/input/options_input_ownership.h"
-#include "kh3ap/features/kh02/combat/kh02_combat_swap.h"
+#include "kh3ap/features/player/combat/character_combat_swap.h"
 #include "kh3ap/features/kh02/combat/kh02_combo_master.h"
 #include "kh3ap/features/kh02/combat/kh02_companion_handoff.h"
 #include "kh3ap/features/kh02/combat/kh02_mickey_link.h"
@@ -75,7 +75,7 @@ namespace kh3ap
         Kh02ComboMaster combo_master;
         Kh02CompanionHandoff companion_handoff;
         Kh02MickeyLink mickey_link;
-        Kh02CombatSwap combat_swap{[this]
+        CharacterCombatSwap combat_swap{[this]
                                    {
                                        return player();
                                    },

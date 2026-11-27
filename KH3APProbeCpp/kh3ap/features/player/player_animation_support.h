@@ -36,7 +36,7 @@ namespace kh3ap::player_animation_support
 
     // Verify EGS CL1065258 and both native skeleton-remapping entry points.
     bool supported_skeleton_layout();
-    // Shared voice hook for borrowed movement/chests and Kairi's ground slam.
+    // Shared voice hook for borrowed movement/chests and alternate ground slams.
     bool initialize_voice_notify();
     void allow_animation_skeleton(RC::Unreal::UObject* animation_instance,
                                   RC::Unreal::UObject* animation);

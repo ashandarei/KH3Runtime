@@ -1,8 +1,9 @@
 #include <polyhook2/Detour/x64Detour.hpp>
-#include "kh3ap/features/story/world_fixes/big_hero_rescue_damage.h"
+#include "kh3ap/hooks/gimmick_damage_hook.h"
 #include "kh3ap/features/story/world_fixes/big_hero_rescue_damage_policy.h"
 #include "kh3ap/features/player/characters/character_profile.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/story/world_fixes/toy_box_ufo_damage.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/core/objects/uobject_validity.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/UObject.hpp>
@@ -18,7 +19,7 @@ namespace kh3ap
 {
     using namespace RC::Unreal;
 
-    struct BigHeroRescueDamage::Impl
+    struct GimmickDamageHook::Impl
     {
         static constexpr size_t maximum_owner_class_depth = 32;
         using Damage = void (*)(UObject*, float, UObject*, const void*, const void*, const void*, UObject*);
@@ -28,18 +29,18 @@ namespace kh3ap
         FName hit_counter;
         std::array<FName, big_hero_rescue_damage_classes.size()> class_names;
 
-        bool blocked(UObject* component) const
+        UClass* hit_counter_owner_class(UObject* component) const
         {
             if (!is_uobject_valid_fast(component) || component->GetNamePrivate() != hit_counter)
             {
-                return false;
+                return nullptr;
             }
             auto* owner = component->GetOuterPrivate();
-            if (!is_uobject_valid_fast(owner))
-            {
-                return false;
-            }
-            auto* type = owner->GetClassPrivate();
+            return is_uobject_valid_fast(owner) ? owner->GetClassPrivate() : nullptr;
+        }
+
+        bool blocks_rescue_damage(UClass* type) const
+        {
             for (size_t depth = 0; depth < maximum_owner_class_depth && is_uobject_valid_fast(type);
                  ++depth)
             {
@@ -60,7 +61,8 @@ namespace kh3ap
                            const void* hit, const void* info, const void* direction, UObject* causer)
         {
             auto& self = *active;
-            if (self.blocked(component))
+            auto* owner_class = self.hit_counter_owner_class(component);
+            if (self.blocks_rescue_damage(owner_class))
             {
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
                 RC::Output::send<RC::LogLevel::Normal>(
@@ -70,8 +72,13 @@ namespace kh3ap
                 return;
             }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            kairi_ground_slam::observe_gimmick_damage(component, controller, info, causer);
+            character_ground_slam::observe_gimmick_damage(component, controller, info, causer);
 #endif
+            toy_box_ufo::DamageInfoCopy copy;
+            if (info && is_uobject_valid_fast(owner_class))
+            {
+                info = toy_box_ufo::damage_info_for_hit(owner_class, controller, causer, info, copy);
+            }
             reinterpret_cast<Damage>(self.original)(component, amount, controller, hit, info, direction, causer);
         }
 
@@ -83,7 +90,7 @@ namespace kh3ap
             }
             if (!character_native::verify_sites({character_native::Site::gimmick_damage}))
             {
-                RC::Output::send<RC::LogLevel::Error>(STR("[KH3APProbeCpp] BigHeroRescue damage filter rejected: native signature\n"));
+                RC::Output::send<RC::LogLevel::Error>(STR("[KH3APProbeCpp] Gimmick damage hook rejected: native signature\n"));
                 return;
             }
             hit_counter = FName(L"TresGimmickHitCount", FNAME_Add);
@@ -101,7 +108,7 @@ namespace kh3ap
             {
                 uninstall();
             }
-            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] BigHeroRescue damage filter installed={}\n"), installed);
+            RC::Output::send<RC::LogLevel::Normal>(STR("[KH3APProbeCpp] Gimmick damage hook installed={}\n"), installed);
         }
 
         void uninstall()
@@ -118,8 +125,8 @@ namespace kh3ap
         }
     };
 
-    BigHeroRescueDamage::BigHeroRescueDamage() : impl_(std::make_unique<Impl>()) {}
-    BigHeroRescueDamage::~BigHeroRescueDamage() { impl_->uninstall(); }
-    void BigHeroRescueDamage::install() { impl_->install(); }
-    void BigHeroRescueDamage::uninstall() { impl_->uninstall(); }
+    GimmickDamageHook::GimmickDamageHook() : impl_(std::make_unique<Impl>()) {}
+    GimmickDamageHook::~GimmickDamageHook() { impl_->uninstall(); }
+    void GimmickDamageHook::install() { impl_->install(); }
+    void GimmickDamageHook::uninstall() { impl_->uninstall(); }
 }

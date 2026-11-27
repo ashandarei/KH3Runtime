@@ -280,6 +280,22 @@ namespace kh3ap::character_shotlock
                     held = false;
                 }
             }
+            if (held && controller != release_required_controller.Get())
+            {
+                auto* pawn = object(controller, L"Pawn");
+                if (character_traversal::ready(pawn) && object(pawn, L"Controller") == controller)
+                {
+                    auto* state = object(object(pawn, L"MyStateComp"), L"m_pCurrentState");
+                    static const FName camera_state(L"TresPlayerState_HoldCamera", FNAME_Add);
+                    if (is_uobject_valid_fast(state) && state->GetClassPrivate()->GetNamePrivate().Equals(camera_state))
+                    {
+                        // The phone uses the same shoulder button for its shutter.
+                        // Keep this press out of aim until the button is released.
+                        release_required_controller = make_uobject_weak(controller);
+                        release_required_world = make_uobject_weak(kh02_current_world());
+                    }
+                }
+            }
             if (controller == release_required_controller.Get())
             {
                 if (!logical_request || release_required_world.Get() != kh02_current_world())

@@ -323,13 +323,15 @@ namespace kh3ap::character_style
             player == player_id_value(PlayerId::Aqua) && command == spellweaver_command;
         const bool dual_shot = player == player_id_value(PlayerId::Roxas) &&
                                command == player_action_command_value(PlayerActionCommand::S_CROSSSHOOT);
+        const bool dark_firaga = player == player_id_value(PlayerId::Riku) &&
+                                 command == player_action_command_value(PlayerActionCommand::S_DARKFIRAGA);
         const bool second_form =
             player == player_id_value(PlayerId::Sora) &&
             ((live->form.weapon == second_form_l1_weapon_type &&
               command == second_form_l1_command) ||
              (live->form.weapon == second_form_l3_weapon_type &&
               command == second_form_l3_command));
-        if (!rage && !spellweaver && !second_form && !dual_shot)
+        if (!rage && !spellweaver && !second_form && !dual_shot && !dark_firaga)
         {
             return false;
         }

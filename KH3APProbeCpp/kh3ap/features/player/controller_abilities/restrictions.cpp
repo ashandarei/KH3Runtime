@@ -234,11 +234,16 @@ namespace kh3ap
         {
             return false;
         }
+        if (!(restrictions_before & restriction_bits::links) &&
+            !call_setter(controller, setter_index::links_restriction, true, failure))
+        {
+            return false;
+        }
         const auto after = kh02rewards::read_shared_unlock_flags(aqua);
         uint32_t restrictions_after{};
         if (!after || !kh02rewards::shared_unlocks_match(*after, plan) ||
             !try_read_command_restrictions(aqua, restrictions_after) ||
-            restrictions_before != restrictions_after)
+            (restrictions_before | restriction_bits::links) != restrictions_after)
         {
             if (failure)
             {
@@ -248,7 +253,7 @@ namespace kh3ap
         }
         character_exploration::refresh_unlocks(aqua, (*after & kh02rewards::mp_enabled_mask) != 0);
         alternate_wall_run::refresh_unlocks(aqua, owned.wall_run);
-        if (!character_magic::refresh_spells(aqua)) { return false; }
+        if (!character_magic::refresh_owned_spells(aqua)) { return false; }
         // Other native command restrictions are preserved; spell tiers come
         // from Sora's bank without changing its ownership.
         if (*before != *after)

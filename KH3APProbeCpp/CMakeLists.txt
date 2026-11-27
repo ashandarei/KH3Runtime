@@ -240,7 +240,8 @@ add_library(${TARGET} SHARED
     kh3ap/features/story/progression/battlegate_activation_service.cpp
     kh3ap/features/story/world_fixes/graveyard_backtracking.cpp
     kh3ap/features/story/world_fixes/festival_dance_story_patch.cpp
-    kh3ap/features/story/world_fixes/big_hero_rescue_damage.cpp
+    kh3ap/hooks/gimmick_damage_hook.cpp
+    kh3ap/features/story/world_fixes/toy_box_ufo_damage.cpp
     kh3ap/features/story/world_fixes/big_hero_rescue_resume.cpp
     kh3ap/features/story/world_fixes/rapunzel_water_bypass.cpp
     kh3ap/features/story/world_fixes/rapunzel_swing_frame_rate.cpp
@@ -267,6 +268,11 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/characters/character_swap.cpp
     kh3ap/features/player/characters/character_loadouts.cpp
     kh3ap/features/player/characters/character_swap_stats.cpp
+    kh3ap/features/player/combat/swap/runtime.cpp
+    kh3ap/features/player/combat/swap/attacks.cpp
+    kh3ap/features/player/combat/swap/movement.cpp
+    kh3ap/features/player/combat/swap/camera.cpp
+    kh3ap/features/player/combat/swap/state.cpp
     kh3ap/features/player/combat/character_attack_completion.cpp
     kh3ap/features/player/combat/character_union_cross.cpp
     kh3ap/features/player/animation_pose.cpp
@@ -289,6 +295,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/movement/kairi_jump_arms.cpp
     kh3ap/features/player/movement/character_rails.cpp
     kh3ap/features/player/combat/character_magic.cpp
+    kh3ap/features/player/combat/character_shortcuts.cpp
     kh3ap/features/player/combat/character_style.cpp
     kh3ap/features/player/movement/character_barrel_spin.cpp
     kh3ap/features/player/characters/character_camera.cpp
@@ -298,7 +305,7 @@ add_library(${TARGET} SHARED
     kh3ap/features/player/movement/alternate_wall_run.cpp
     kh3ap/features/player/player_animation_support.cpp
     kh3ap/features/player/characters/character_idle.cpp
-    kh3ap/features/player/combat/kairi_ground_slam.cpp
+    kh3ap/features/player/combat/character_ground_slam.cpp
     kh3ap/features/player/combat/combat_target_handoff.cpp
     kh3ap/features/player/combat/combat_blackboard_handoff.cpp
     kh3ap/features/world/garden_return/garden_return_service.cpp
@@ -503,6 +510,7 @@ kh3ap_attach_movie_resources(${TARGET} "${CMAKE_CURRENT_SOURCE_DIR}")
 # and service construction. Normal AP services remain in the unconditional list.
 if(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS)
     target_sources(${TARGET} PRIVATE
+        kh3ap/features/player/combat/swap/diagnostics.cpp
         kh3ap/diagnostics/grants/manual_keyblade_enhancement_probe_helpers.cpp
         kh3ap/diagnostics/profiling/event_read_benchmark.cpp
         kh3ap/diagnostics/randomizer_test_service.cpp

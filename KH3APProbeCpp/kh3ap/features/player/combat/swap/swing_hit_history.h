@@ -4,9 +4,9 @@
 
 namespace kh3ap
 {
-    class Kh02SwingHitHistory
+    class SwingHitHistory
     {
-      public:
+    public:
         void begin()
         {
             hit.clear();
@@ -28,7 +28,7 @@ namespace kh3ap
             hit.insert(victim);
         }
 
-      private:
+    private:
         std::set<uint64_t> hit;
         std::set<uint64_t> before_swap;
     };

@@ -42,15 +42,9 @@ namespace kh3ap
         // This is chest access only. Do not cache Roxas's exception as inventory
         // ownership or let it survive a return to Sora/another character.
         if (last_snapshot && last_snapshot->roxas_chestsanity &&
-            character_swap::owns_swap_pawn(pawn))
+            roxas_chest_key_allowed(true, character_swap::owned_player_id(pawn), a.keyblade_name))
         {
-            auto* id = pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID");
-            if (id && id->GetElementSize() == sizeof(uint8_t) &&
-                roxas_chest_key_allowed(true, *id->ContainerPtrToValuePtr<uint8_t>(pawn),
-                                       a.keyblade_name))
-            {
-                return true;
-            }
+            return true;
         }
         const auto epoch = reconciliation::epoch();
         if (inventory_pawn.Get() != pawn || inventory_epoch != epoch)

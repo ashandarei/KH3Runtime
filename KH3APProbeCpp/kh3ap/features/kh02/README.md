@@ -144,7 +144,7 @@ Arrival, preview, asset and rule responsibilities have these additional boundari
 | `Kh02EnemyStatAssets` | Requested assets, acquired roots and loaded/prepared/base/Tide table references |
 | `Kh02BattleLevelObserver` | Guarded native battle-level events; scaling, row mutation and restoration stay in EnemyStats |
 | `Kh02AbilityCapacity` | Aqua's 200 base AP, prepared before pawn creation and restored before entry assets are released |
-| `Kh02CombatSwap` | Lazy R2 gameplay swaps with camera/locomotion continuity and one-shot native combo-index handoffs; camp retains character preference/input ownership |
+| `CharacterCombatSwap` | Shared KH3 combat swap service. In KH0.2 it handles R2 between Sora and Aqua, including camera, locomotion and combo continuity. |
 | Challenge progress/combat rules | Named goals, shared mutation commit rules, species/hit matching and defeat attribution |
 | Challenge encounter-site policy | Audited source operations, caller sites and no-damage attempt boundaries |
 

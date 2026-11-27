@@ -24,12 +24,23 @@ int main()
         int remaining = configuration;
         Commands commands{};
         std::set<int> implementations;
+        std::set<int> owned;
         for (size_t family = 0; family < normal.size(); ++family)
         {
             const int tier = remaining % choices_per_family;
             remaining /= choices_per_family;
             commands[family] = tier ? static_cast<uint8_t>(normal[family][tier - 1]) : 0;
             implementations.insert(commands[family]);
+            for (int i = 0; i < tier; ++i)
+            {
+                owned.insert(normal[family][i]);
+                implementations.insert(normal[family][i]);
+            }
+            for (int i = 0; i < 3; ++i)
+            {
+                const auto expected = tier == 0 ? 0 : normal[family][i < tier ? i : tier - 1];
+                assert(shortcut_command(static_cast<uint8_t>(normal[family][i]), commands) == expected);
+            }
             if (tier)
             {
                 for (int command : special[family])
@@ -45,15 +56,10 @@ int main()
         {
             assert(retains_implementation(static_cast<uint8_t>(command), commands) ==
                    implementations.contains(command));
-            bool selected = false;
-            for (auto value : commands)
-            {
-                selected |= value != 0 && value == command;
-            }
-            assert(is_selected_command(command, commands) == selected);
+            assert(owns_normal_command(command, commands) == owned.contains(command));
         }
-        assert(!is_selected_command(-1, commands));
-        assert(!is_selected_command(256, commands));
+        assert(!owns_normal_command(-1, commands));
+        assert(!owns_normal_command(256, commands));
     }
     for (int command = -1; command <= 256; ++command)
     {
@@ -69,5 +75,10 @@ int main()
             }
         }
         assert(normal_family(command) == expected);
+        assert(is_link_command(command) == (command >= 69 && command <= 74));
+        if (is_link_command(command))
+        {
+            assert(shortcut_command(static_cast<uint8_t>(command), {}) == 0);
+        }
     }
 }

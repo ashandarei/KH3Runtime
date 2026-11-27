@@ -1,4 +1,5 @@
 #include "kh3ap/features/ui/map_overlay/service_impl.h"
+#include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/core/gfx/gfx_reflection_helpers.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <algorithm>
@@ -77,6 +78,7 @@ namespace kh3ap
                                           state->slot))
             {
                 sync_keyblade_ownership(*state);
+                const int player_id = palette->roxas_chestsanity ? character_swap::owned_player_id(p) : -1;
                 for (const auto& chest : chests)
                 {
                     if (!chest.unopened || !chest.located || !chest.actor.Get())
@@ -90,7 +92,7 @@ namespace kh3ap
                                             [&](const std::wstring& token)
                                             {
                                                 return owns_keyblade(p, token);
-                                            }))
+                                            }, player_id))
                     {
                         locked = true;
                         break;

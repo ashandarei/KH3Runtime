@@ -5,7 +5,7 @@
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_camera.h"
-#include "kh3ap/features/player/combat/kairi_ground_slam.h"
+#include "kh3ap/features/player/combat/character_ground_slam.h"
 #include "kh3ap/core/objects/uobject_weak.h"
 #include "kh3ap/core/reflection/reflected_property_cache.h"
 #include "kh3ap/features/kh02/runtime/kh02_world_context.h"
@@ -109,7 +109,7 @@ namespace kh3ap::character_floating
             auto* pawn = local_pawn();
             try
             {
-                if (character_swap::owns_swap_pawn(pawn) && !kairi_ground_slam::ready(pawn))
+                if (character_swap::owns_swap_pawn(pawn) && !character_ground_slam::ready(pawn))
                 {
                     pawn = character_swap::return_to_sora_for_encounter(pawn);
                 }

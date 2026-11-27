@@ -20,6 +20,7 @@
 #include "kh3ap/features/player/player_animation_support.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <Unreal/Property/FArrayProperty.hpp>
+#include <Unreal/Property/FBoolProperty.hpp>
 #include <Unreal/TArray.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
@@ -59,7 +60,9 @@ namespace kh3ap::character_traversal
                                          L"MyAthleticAttackSlowRate", L"MyAthleticAttackSlowTime",
                                          L"MyFloatingSpeed", L"MyFloatingGravityScale", L"MyFloatingGravityScale2",
                                          L"MyGlideGravityScale", L"MyGlideSpeed", L"MyGlideTurnRate",
-                                         L"MySprintSpeed",
+                                         L"MySprintSpeed", L"MyDiveFallStartHeight",
+                                         L"MyDiveFallRotateScale", L"MyDiveFallGravityScale",
+                                         L"MyDiveFallMoveSpeed", L"MyDiveFallLockonRangeXY", L"MyDiveFallLockonLimitZ",
                                          L"MyCoverFindLimit", L"MyCoverMoveSpeed", L"MyCoverSlideTime",
                                          L"MyCoverSlideSpeed", L"m_CoverSlideMinSpeed", L"MyCoverSlideBreak",
                                          L"MyCoverSlideMutekiTime", L"MyCoverCommandRreadyTime",
@@ -95,6 +98,8 @@ namespace kh3ap::character_traversal
             L"MagicFireMF", L"MagicFireML", L"MagicFireMR", L"MagicShoot",
             L"MagicAirCast", L"MagicAirCastM", L"MagicAirChant", L"MagicAirFire",
             L"MagicAirFireMF", L"MagicAirFireML", L"MagicAirFireMR", L"MagicAirShoot",
+            L"DiveFallStart", L"DiveFallLoop",
+            L"BadStatStunStart", L"BadStatStunLoop", L"BadStatStunEnd",
             L"BadStatBurnStart", L"BadStatBurnLoop", L"BadStatBurnEnd",
             L"BadStatSneeze", L"BadStatAirSneeze",
             L"GlideLoop", L"GlideLoopF", L"GlideLoopS", L"GlideLoopR", L"GlideLoopL", L"GlideIdle",
@@ -146,6 +151,13 @@ namespace kh3ap::character_traversal
         std::array<float, movement_fields.size()> sora_movement{};
         std::array<float, pawn_fields.size()> sora_pawn{};
         bool tuning_captured{};
+        bool sora_dive_enabled{};
+
+        FBoolProperty* dive_enabled_field(UObject* pawn)
+        {
+            auto* field = pawn->GetPropertyByNameInChain(L"m_bEnableDiveFall");
+            return field && field->IsA<FBoolProperty>() ? static_cast<FBoolProperty*>(field) : nullptr;
+        }
         FWeakObjectPtr prepared_pawn;
         FWeakObjectPtr prepared_animation;
         FWeakObjectPtr sora_hop_effect;
@@ -344,6 +356,8 @@ namespace kh3ap::character_traversal
         character_reactions::capture_sora(pawn);
         capture(object(pawn, L"MyMovement"), movement_fields, sora_movement);
         capture(pawn, pawn_fields, sora_pawn);
+        auto* dive = dive_enabled_field(pawn);
+        sora_dive_enabled = dive && dive->GetPropertyValueInContainer(pawn);
         auto *default_speed = pawn->GetFunctionByNameInChain(L"GetDefaultMaxWalkSpeed");
         if (!is_uobject_valid_fast(default_speed) || default_speed->GetParmsSize() != sizeof(float))
         {
@@ -388,6 +402,10 @@ namespace kh3ap::character_traversal
         // by the combat handoff. Apply before its first input and run-state update.
         apply(object(pawn, L"MyMovement"), movement_fields, sora_movement);
         apply(pawn, pawn_fields, sora_pawn);
+        if (auto* dive = dive_enabled_field(pawn))
+        {
+            dive->SetPropertyValueInContainer(pawn, sora_dive_enabled);
+        }
     }
 
     bool ready(UObject *pawn)

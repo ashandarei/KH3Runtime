@@ -6,6 +6,7 @@
 #include "kh3ap/features/player/characters/character_swap.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/player_ids.h"
+#include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/grants/grant_internal_call_depth.h"
 #include "kh3ap/features/grants/grant_state.h"
 #include "kh3ap/features/player/objects/object_resolver.h"
@@ -39,7 +40,6 @@ namespace kh3ap
         std::chrono::steady_clock::time_point native_burn_deadline;
         bool native_burn_failure_logged{};
         constexpr uint8_t burn_kind = 17;
-        constexpr size_t native_bad_status_kind_offset = 0x85d;
 
         void apply_native_bad_status(UObject* pawn, uint8_t kind, float seconds,
                                      void* damage, void* attack)
@@ -53,19 +53,20 @@ namespace kh3ap
                 return;
             }
             auto* id = pawn->GetPropertyByNameInChain(L"m_PlayerUniqueID");
-            if (!id || id->GetElementSize() != sizeof(uint8_t) ||
-                *id->ContainerPtrToValuePtr<uint8_t>(pawn) != static_cast<uint8_t>(PlayerId::Kairi) ||
+            if (!id || id->GetElementSize() != sizeof(uint8_t)) { return; }
+            const auto player = static_cast<PlayerId>(*id->ContainerPtrToValuePtr<uint8_t>(pawn));
+            if ((player != PlayerId::Kairi && player != PlayerId::Riku) ||
                 *(reinterpret_cast<const uint8_t*>(pawn) + native_bad_status_kind_offset) != burn_kind)
             {
                 return;
             }
-            // The shipping hit accepted Burn, but Kairi does not enter Sora's
+            // The shipping hit accepted Burn, but the alternate can omit Sora's
             // Burn reaction. Defer queue construction until the damage stack exits.
             native_burn_pawn = make_uobject_weak(pawn);
             native_burn_deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(500);
             native_burn_failure_logged = false;
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn accepted pawn={}\n"), pawn->GetName());
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native alternate Burn accepted pawn={}\n"), pawn->GetName());
 #endif
         }
 
@@ -378,13 +379,20 @@ namespace kh3ap
     {
         auto* pawn = native_burn_pawn.Get();
         if (!pawn) { return; }
-        if (std::chrono::steady_clock::now() >= native_burn_deadline ||
+        const auto now = std::chrono::steady_clock::now();
+        if (now >= native_burn_deadline ||
             character_swap::current_hero() != pawn || !character_swap::owns_swap_pawn(pawn))
         {
             native_burn_pawn = {};
             return;
         }
-        if (s_pending_direct_player_bad_status.sora_pawn.Get() == pawn)
+        // A pawn with the shared Burn state can now enter its own reaction.
+        // Only queue the fallback if that transition did not occur.
+        if (now < native_burn_deadline - std::chrono::milliseconds(200)) { return; }
+        auto* component = try_read_object_pointer_in_chain(pawn, L"MyStateComp");
+        auto* current = try_read_object_pointer_in_chain(component, L"m_pCurrentState");
+        if (s_pending_direct_player_bad_status.sora_pawn.Get() == pawn ||
+            read_bad_status_state_id(current) == player_state_ids::bad_stat_burn)
         {
             native_burn_pawn = {};
             return;
@@ -394,14 +402,14 @@ namespace kh3ap
         {
             native_burn_pawn = {};
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
-            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn reaction queued pawn={}\n"), pawn->GetName());
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native alternate Burn reaction queued pawn={}\n"), pawn->GetName());
 #endif
         }
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
         else if (!native_burn_failure_logged)
         {
             native_burn_failure_logged = true;
-            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native Kairi Burn waiting reason={}\n"), failure);
+            Output::send<LogLevel::Normal>(STR("[KH3APProbeCpp] Native alternate Burn waiting reason={}\n"), failure);
         }
 #endif
     }

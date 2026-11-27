@@ -69,7 +69,7 @@ namespace kh3ap
                             auto* aqua = persistent_player_reward_context();
                             auto* aqua_controller =
                                 try_read_reflected_object_property_value(aqua, L"Controller");
-                            if (aqua && index < ownership_setter_hook_count &&
+                            if (aqua && (index < ownership_setter_hook_count || index == links_restriction_hook_index) &&
                                 context.Context == aqua_controller)
                             {
                                 request_refresh(RuntimeControllerAbilityEvent::GameAbilityChanged);

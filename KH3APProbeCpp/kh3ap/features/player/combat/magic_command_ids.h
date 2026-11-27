@@ -46,20 +46,25 @@ namespace kh3ap::magic_command
         return static_cast<size_t>((command - first_normal) / normal_family_stride);
     }
 
-    [[nodiscard]] constexpr bool is_selected_command(int command, const Commands& commands) noexcept
+    [[nodiscard]] constexpr bool is_link_command(int command) noexcept
     {
-        if (command <= 0 || command > std::numeric_limits<uint8_t>::max())
-        {
-            return false;
-        }
-        for (auto selected : commands)
-        {
-            if (selected == command)
-            {
-                return true;
-            }
-        }
-        return false;
+        return command >= player_action_command_value(PlayerActionCommand::DM) &&
+               command <= player_action_command_value(PlayerActionCommand::DM_ARIEL);
+    }
+
+    // Customize offers every learned tier. The ordinary Magic menu uses the
+    // highest owned tier in each family, while an assigned lower tier stays put.
+    [[nodiscard]] constexpr bool owns_normal_command(int command, const Commands& commands) noexcept
+    {
+        const auto family = normal_family(command);
+        return family && command <= commands[*family];
+    }
+
+    [[nodiscard]] constexpr uint8_t shortcut_command(uint8_t command, const Commands& commands) noexcept
+    {
+        if (is_link_command(command)) { return 0; }
+        const auto family = normal_family(command);
+        return family && commands[*family] < command ? commands[*family] : command;
     }
 
     // Special casts need their implementation assets even though the ordinary
@@ -67,6 +72,7 @@ namespace kh3ap::magic_command
     [[nodiscard]] constexpr bool retains_implementation(uint8_t command,
                                                         const Commands& commands) noexcept
     {
+        if (owns_normal_command(command, commands)) { return true; }
         for (auto selected : commands)
         {
             if (selected == command)

@@ -1,9 +1,9 @@
-#include "kh3ap/features/kh02/combat/kh02_swing_hit_history.h"
+#include "kh3ap/features/player/combat/swap/swing_hit_history.h"
 #include <cassert>
 
 int main()
 {
-    kh3ap::Kh02SwingHitHistory hits;
+    kh3ap::SwingHitHistory hits;
     hits.begin();
     hits.record(1);
     assert(!hits.blocked(1)); // Native multi-hit behavior within one hero is unchanged.

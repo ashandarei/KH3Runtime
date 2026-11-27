@@ -12,6 +12,7 @@ struct RuntimeControllerPreferencesConfig {
     std::function<bool(bool)> write_background_input;
     // Destroying the subscription stops callbacks before the service is destroyed.
     std::function<std::shared_ptr<void>(std::function<void(bool)>)> observe_melody_of_memory;
+    bool background_input_supported{true};
 };
 
 // Disk access is confined to startup and explicit changes. The input hooks
@@ -24,6 +25,7 @@ public:
     auto install_once(std::optional<bool> legacy_focus_enabled = {}) -> void {
         if (installed_) return;
         installed_ = true;
+        if (!background_input_supported()) return;
         const auto saved = config_.read_background_input ? config_.read_background_input() : std::nullopt;
         background_input_allowed_.store(saved.value_or(legacy_focus_enabled ? !*legacy_focus_enabled : false));
         if (!saved && config_.write_background_input)
@@ -33,11 +35,16 @@ public:
                     [this](bool active) { mom_active_.store(active); });
     }
 
+    [[nodiscard]] auto background_input_supported() const -> bool {
+        return config_.background_input_supported;
+    }
+
     [[nodiscard]] auto background_input_allowed() const -> bool {
         return background_input_allowed_.load() && !mom_active_.load();
     }
 
     auto set_background_input_allowed(bool allowed) -> bool {
+        if (!background_input_supported()) return false;
         background_input_allowed_.store(allowed);
         return config_.write_background_input && config_.write_background_input(allowed);
     }
@@ -51,6 +58,5 @@ private:
     std::shared_ptr<void> mom_subscription_;
 };
 
-// Windows and Proton/Wine resolve this through their own LOCALAPPDATA.
 auto make_controller_preferences_config() -> RuntimeControllerPreferencesConfig;
 } // namespace kh3ap

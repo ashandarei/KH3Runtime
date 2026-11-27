@@ -16,6 +16,8 @@ namespace kh3ap::character_idle
     // Reuses the shared animation/battle hooks after traversal supplies IdleN.
     // Roxas selects his idle from battle/state context, not weapon dismissal.
     bool prepare_roxas(RC::Unreal::UObject* pawn);
+    void prepare_sneeze_finisher(RC::Unreal::UObject* pawn, RC::Unreal::UObject* attack_state, bool airborne);
+    void clear_sneeze_finisher();
     RC::Unreal::FName effective_animation_name(RC::Unreal::UObject* animation_instance, RC::Unreal::FName name);
     // Playback applies this receiver-specific stride correction once. Handoffs
     // remove it from the observed source rate before playing another hero.

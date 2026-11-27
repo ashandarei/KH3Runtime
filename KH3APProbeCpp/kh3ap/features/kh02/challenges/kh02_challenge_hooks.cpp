@@ -1,6 +1,6 @@
 #include "kh02_challenge_hooks.h"
 #include "kh3ap/features/kh02/core/kh02_profile.h"
-#include "kh3ap/features/kh02/combat/kh02_combat_swap.h"
+#include "kh3ap/features/player/combat/character_combat_swap.h"
 #include "kh3ap/features/journal/adversary_service.h"
 #include "kh3ap/core/events/character_state_events.h"
 #include "kh3ap/core/objects/uobject_validity.h"
@@ -100,7 +100,7 @@ namespace kh3ap
         static float damage_dispatch(UObject* victim, float amount, const void* event, UObject* by, UObject* causer)
         {
             const auto original = reinterpret_cast<DamageFunction>(damage_trampoline);
-            if (Kh02CombatSwap::blocks_swing_damage(victim, by, causer, event))
+            if (CharacterCombatSwap::blocks_swing_damage(victim, by, causer, event))
             {
                 return 0.0f;
             }
@@ -117,7 +117,7 @@ namespace kh3ap
             }
             if (result > 0.0f)
             {
-                Kh02CombatSwap::record_swing_damage(victim, by, causer, event);
+                CharacterCombatSwap::record_swing_damage(victim, by, causer, event);
             }
             return result;
         }
