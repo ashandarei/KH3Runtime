@@ -27,6 +27,7 @@ namespace kh3ap
         RC::Unreal::UObject* party_owner();
         RC::Unreal::UObject* reward_context();
         bool map_overlay_ready();
+        RC::Unreal::UObject* map_overlay_handoff_world();
         RC::Unreal::UObject* bad_status_context();
         RC::Unreal::UObject* game_over_context();
         void observe_game_over_state_write(uintptr_t component, uintptr_t state);

@@ -1,6 +1,7 @@
 #include "kh3ap/features/ui/map_overlay/service_impl.h"
 #include "kh3ap/features/ui/map_overlay/timing.h"
 #include "kh3ap/features/ui/map_overlay/map_chest_movie.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include <DynamicOutput/DynamicOutput.hpp>
 #include <algorithm>
 #include <cmath>
@@ -73,19 +74,42 @@ namespace kh3ap
         auto* p = config.pawn ? config.pawn() : nullptr;
         const bool ready =
             is_uobject_valid_fast(p) && config.gameplay_ready && config.gameplay_ready();
-        if (!ready ||
-            ((!movie_path.empty() || !chest_movie_path.empty() || !minimap_movie_path.empty()) &&
-             pawn.Get() != p))
+        if (!ready)
         {
-            hide(nullptr);
+            if (mini_enabled && minimap_presented && !opened && !pending_toggle &&
+                config.minimap_handoff_world)
+            {
+                if (auto* world = config.minimap_handoff_world(); world && pawn_world.Get() == world)
+                {
+                    tick_minimap(nullptr, now, world);
+                    return;
+                }
+            }
+            hide();
             eligible = false;
             pending_toggle = false;
-            if (!ready)
-            {
-                return;
-            }
+            return;
         }
-        pawn = p;
+        if (pawn.Get() != p)
+        {
+            auto* world = actor_owning_world(p);
+            if (!movie_path.empty() || !chest_movie_path.empty() || !minimap_movie_path.empty())
+            {
+                if (world && pawn_world.Get() == world)
+                {
+                    hide_area_map();
+                    next_minimap_markers = {};
+                }
+                else
+                {
+                    hide();
+                }
+                eligible = false;
+                pending_toggle = false;
+            }
+            pawn_world = make_uobject_weak(world);
+            pawn = make_uobject_weak(p);
+        }
         // The normal minimap and its separate AP icons are hidden only while
         // the large map is presented. Closing restores the original opacity.
         if (presented)
@@ -130,7 +154,7 @@ namespace kh3ap
 #endif
         if (!eligible)
         {
-            hide(h);
+            hide();
             pending_toggle = false;
             return;
         }
@@ -139,7 +163,7 @@ namespace kh3ap
         if (!opened && !movie_path.empty() &&
             (texture_path != texture->GetPathName() || !object(movie(), L"Root") || !chest_root()))
         {
-            hide(h);
+            hide();
         }
         if (pending_toggle)
         {
@@ -215,7 +239,7 @@ namespace kh3ap
         auto* pc = object(n, L"m_MarkerPc");
         if (!canvas || !pc)
         {
-            hide(h);
+            hide();
             return;
         }
         auto number = [&](UObject* o, const wchar_t* name)
@@ -257,14 +281,14 @@ namespace kh3ap
 #endif
         if (!point)
         {
-            hide(h);
+            hide();
             return;
         }
         auto* player = movie();
         auto* overlay = object(player, L"Root");
         if (!player || now - last_layout > layout_readiness_timeout)
         {
-            hide(h);
+            hide();
             return;
         }
         if (!overlay)

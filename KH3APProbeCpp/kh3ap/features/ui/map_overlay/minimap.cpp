@@ -30,7 +30,8 @@ namespace kh3ap
         minimap_presented = false;
     }
     auto RuntimeMapOverlayService::Impl::tick_minimap(UObject* p,
-                                                      std::chrono::steady_clock::time_point now)
+                                                      std::chrono::steady_clock::time_point now,
+                                                      UObject* handoff_world)
         -> void
     {
         const RuntimeHotPathProfileScope profile{L"map_overlay:minimap_tick"};
@@ -49,7 +50,7 @@ namespace kh3ap
             hide_minimap();
             return;
         }
-        auto [hud, nav] = live_parts(p);
+        auto [hud, nav] = handoff_world ? live_parts_for_world(handoff_world) : live_parts(p);
         auto* native = root(nav);
         auto* texture = object(nav, L"m_LoadedAsyncTexture");
         auto* canvas = object(nav, L"m_MapCanvas");
@@ -143,6 +144,16 @@ namespace kh3ap
                 }))
         {
             hide_minimap();
+            return;
+        }
+        if (handoff_world)
+        {
+            // Reuse the last projection only while the native map is still visible
+            // and showing the same texture. No pawn is safe to project during possession.
+            if (minimap_texture.Get() != texture || !chest_root(true))
+            {
+                hide_minimap();
+            }
             return;
         }
         if (minimap_texture.Get() != texture)

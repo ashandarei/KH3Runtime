@@ -60,6 +60,7 @@ namespace kh3ap::map_overlay_detail
     auto root(UObject* ui) -> UObject*;
 
     auto live_parts(UObject* pawn) -> std::pair<UObject*, UObject*>;
+    auto live_parts_for_world(UObject* world) -> std::pair<UObject*, UObject*>;
 
     auto movie_bool(UObject* movie, const wchar_t* path, const wchar_t* parameter, bool value)
         -> void;

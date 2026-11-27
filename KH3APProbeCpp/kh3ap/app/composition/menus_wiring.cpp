@@ -66,6 +66,11 @@ namespace kh3ap
 
     auto RuntimeComposition::Impl::make_map_overlay() -> RuntimeMapOverlayService
     {
+        const auto ui_blocked = [this]()
+        {
+            return m_native_hook_service.title_or_ui_controller_active() ||
+                   s_runtime_state.ui_diagnostic_state().blocking_ui_state().snapshot().active;
+        };
         return RuntimeMapOverlayService{RuntimeMapOverlayConfig{
             {s_gfx_object_get_member_value_path, s_gfx_object_invoke_path,
              s_gfx_object_set_member_value_path},
@@ -73,10 +78,9 @@ namespace kh3ap
             {
                 return runtime_current_player_pawn();
             },
-            [this]()
+            [this, ui_blocked]()
             {
-                if (m_native_hook_service.title_or_ui_controller_active() ||
-                    s_runtime_state.ui_diagnostic_state().blocking_ui_state().snapshot().active)
+                if (ui_blocked())
                 {
                     return false;
                 }
@@ -130,6 +134,12 @@ namespace kh3ap
             []()
             {
                 return map_overlay_keybinds_option_from_seed();
+            },
+            [this, ui_blocked]() -> UObject*
+            {
+                auto* world = character_swap::map_overlay_handoff_world();
+                return world && !ui_blocked() && !m_player_reacquire.ignored_map_active()
+                           ? world : nullptr;
             },
         }};
     }
