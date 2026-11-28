@@ -32,6 +32,23 @@ namespace kh3ap
     namespace
     {
         constexpr auto max_spawn_point_results = 128;
+
+        auto door_vector(RC::Unreal::UObject* object, const wchar_t* function)
+            -> std::array<float, 3>
+        {
+            enemy_clear_detail::Call query(object, function);
+            auto* result = query.field(L"ReturnValue");
+            std::array<float, 3> value{};
+            if (result->GetClass().GetName() != L"StructProperty" ||
+                result->GetElementSize() != sizeof(value))
+            {
+                throw std::runtime_error("door_vector_layout");
+            }
+            query.invoke();
+            std::memcpy(value.data(), result->ContainerPtrToValuePtr<void>(query.params.data()),
+                        sizeof(value));
+            return value;
+        }
     }
 
     using namespace RC::Unreal;
@@ -82,6 +99,7 @@ namespace kh3ap
         for (const auto& [class_name, kind] :
              std::array{std::pair{L"/Script/TresGame.TresTreasureBox", L"chest"},
                         std::pair{L"/Script/TresGame.TresVehiclePawnSpecialShip", L"ship"},
+                        std::pair{L"/Script/TresGame.TresVehiclePawnGigas", L"gigas"},
                         std::pair{L"/Script/TresGame.TresGimmickActor", L"ingredient_gimmick"},
                         std::pair{L"/Script/TresGame.TresMapJumpTriggerBox", L"map_trigger"},
                         std::pair{L"/Script/TresGame.TresMapJumpDirectionalTriggerBox",
@@ -116,7 +134,8 @@ namespace kh3ap
                 }
             }
         }
-        // Inspect current-world prize actors without collecting or moving them.
+        // Classify the loaded actors in the pawn's world without altering them.
+        const bool in_garden = world_name == L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.GoA_01";
         auto* actor_class =
             UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/Engine.Actor");
         for (auto* actor : actors_of_class(pawn, actor_class))
@@ -127,13 +146,14 @@ namespace kh3ap
             }
             const auto name = actor->GetClassPrivate()->GetName();
             const auto path = actor->GetPathName();
+            const bool garden_portal = in_garden && name == L"Portal_Base_C";
             const bool titan_obstacle =
                 std::any_of(std::begin(titan_arena_obstacles), std::end(titan_arena_obstacles),
                             [&](auto expected)
                             {
                                 return path == expected;
                             });
-            if (!titan_obstacle && (name.find(L"Prize") == std::wstring::npos ||
+            if (!garden_portal && !titan_obstacle && (name.find(L"Prize") == std::wstring::npos ||
                                     name.find(L"Gimmick") != std::wstring::npos))
             {
                 continue;
@@ -152,8 +172,8 @@ namespace kh3ap
             {
                 distance += std::pow(pos[i] - position_before[i], 2.0);
             }
-            entries.push_back(
-                {actor, titan_obstacle ? L"titan_obstacle" : L"prize", pos, std::sqrt(distance)});
+            const auto kind = garden_portal ? L"garden_portal" : titan_obstacle ? L"titan_obstacle" : L"prize";
+            entries.push_back({actor, kind, pos, std::sqrt(distance)});
             if (entries.size() > max_inspected_scene_objects)
             {
                 throw std::runtime_error("scene_object_limit_exceeded");
@@ -184,6 +204,43 @@ namespace kh3ap
                 << ",\"collision_enabled\":" << boolean(e.actor, L"GetActorEnableCollision")
                 << ",\"distance\":" << e.distance << ",\"position\":";
             json_position(out, e.pos);
+            if (e.kind == L"garden_portal")
+            {
+                auto* reactor = try_read_reflected_object_property_value(e.actor, L"TresReactor");
+                out << ",\"story_flag\":\"" << json_escape(property_name(e.actor, L"FinishedFlagName"))
+                    << "\",\"locked_key\":\"" << json_escape(property_name(e.actor, L"LockedKeyItem"))
+                    << '"';
+                if (is_uobject_valid_fast(reactor))
+                {
+                    out << ",\"reactor_position\":";
+                    json_position(out, door_vector(reactor, L"K2_GetComponentLocation"));
+                    out << ",\"reactor_active\":" << property_bool(reactor, L"m_bIsGimmickActive", false);
+                }
+            }
+            if (e.kind == L"gigas")
+            {
+                out << ",\"ridden\":" << boolean(e.actor, L"IsRidden")
+                    << ",\"boarding\":" << boolean(e.actor, L"IsRideEvent")
+                    << ",\"leaving\":" << boolean(e.actor, L"IsLeaveEvent")
+                    << ",\"hp\":" << integer(e.actor, L"GetHitPoint")
+                    << ",\"max_hp\":" << integer(e.actor, L"GetMaxHitPoint");
+            }
+            if (e.kind == L"directional_map_trigger")
+            {
+                auto* collision = try_read_reflected_object_property_value(e.actor, L"CollisionComponent");
+                if (is_uobject_valid_fast(collision) &&
+                    property_bool(collision, L"bGenerateOverlapEvents", false))
+                {
+                    out << ",\"door_center\":";
+                    json_position(out, door_vector(collision, L"K2_GetComponentLocation"));
+                    out << ",\"door_forward\":";
+                    json_position(out, door_vector(e.actor, L"GetActorForwardVector"));
+                    out << ",\"door_box_forward\":";
+                    json_position(out, door_vector(collision, L"GetForwardVector"));
+                    out << ",\"door_extent\":";
+                    json_position(out, door_vector(collision, L"GetScaledBoxExtent"));
+                }
+            }
             if (e.kind == L"ingredient_gimmick")
             {
                 Call bounds(e.actor, L"GetActorBounds");
@@ -340,6 +397,15 @@ namespace kh3ap
             t.hp_before = t.hp_after = integer(actor, L"GetHitPoint");
             t.max_hp = integer(actor, L"GetMaxHitPoint");
             t.state_before = t.state_after = state;
+            if (t.max_hp >= 500)
+            {
+                auto* queue = try_read_reflected_object_property_value(actor, L"MyStateComp");
+                auto* action = try_read_reflected_object_property_value(queue, L"m_pCurrentState");
+                if (is_uobject_valid_fast(action) && is_uobject_valid_fast(action->GetClassPrivate()))
+                {
+                    t.action = action->GetClassPrivate()->GetName();
+                }
+            }
             t.team = enemy_team;
             t.location = position(actor);
             t.invincible = boolean(actor, L"IsConditionInvincible");

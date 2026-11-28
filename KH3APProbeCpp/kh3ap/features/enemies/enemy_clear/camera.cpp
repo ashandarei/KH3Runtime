@@ -508,6 +508,77 @@ namespace kh3ap
         camera_snapshot = out.str();
     }
 
+    void RuntimeEnemyClearService::Impl::release_steer_input()
+    {
+        auto* controller = steer_controller.Get();
+        steer_until = {};
+        steer_controller = nullptr;
+        steer_pawn = nullptr;
+        steer_world = nullptr;
+        if (is_uobject_valid_fast(controller))
+        {
+            runtime_controller_stick_input(controller, 0, 0);
+        }
+    }
+
+    void RuntimeEnemyClearService::Impl::update_steer_input(Clock::time_point now)
+    {
+        if (steer_until == Clock::time_point{})
+        {
+            return;
+        }
+        auto* pawn = steer_pawn.Get();
+        auto* controller = steer_controller.Get();
+        if (now >= steer_until || !is_uobject_valid_fast(pawn) || !is_uobject_valid_fast(controller) ||
+            controlled_combat_pawn() != pawn || actor_world(pawn) != steer_world.Get() ||
+            try_read_reflected_object_property_value(pawn, L"Controller") != controller ||
+            !gameplay(pawn) || held_camera(pawn) ||
+            (!steer_in_combat && (!config.special_battle_mode_active || config.special_battle_mode_active())))
+        {
+            release_steer_input();
+            return;
+        }
+        runtime_controller_stick_input(controller, steer_x, steer_y);
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_steer_gameplay(UObject* pawn, const std::string& text)
+    {
+        const auto x = JsonFieldReader::number_field(text, "x");
+        const auto y = JsonFieldReader::number_field(text, "y");
+        if (!pipe_ticket || !x || !y || !std::isfinite(*x) || !std::isfinite(*y) ||
+            std::abs(*x) > 1 || std::abs(*y) > 1 || held_camera(pawn) ||
+            JsonFieldReader::string_field(text, "expected_pawn") != pawn_name)
+        {
+            throw std::runtime_error("steering_requires_pipe_and_current_pawn_identity");
+        }
+        if (*x == 0 && *y == 0)
+        {
+            release_steer_input();
+            finish(L"completed", L"steering_released");
+            return;
+        }
+        const bool in_combat = JsonFieldReader::bool_field(text, "combat").value_or(false);
+        if (!in_combat && (!config.special_battle_mode_active || config.special_battle_mode_active()))
+        {
+            throw std::runtime_error("steering_requires_free_roam");
+        }
+        auto* controller = try_read_reflected_object_property_value(pawn, L"Controller");
+        if (!is_uobject_valid_fast(controller))
+        {
+            throw std::runtime_error("steering_controller_unavailable");
+        }
+        inspect_camera(pawn);
+        steer_pawn = pawn;
+        steer_world = world;
+        steer_controller = controller;
+        steer_x = static_cast<float>(*x);
+        steer_y = static_cast<float>(*y);
+        steer_in_combat = in_combat;
+        steer_until = Clock::now() + std::chrono::milliseconds(275);
+        runtime_controller_stick_input(controller, steer_x, steer_y);
+        finish(L"completed", L"steering_renewed");
+    }
+
     bool RuntimeEnemyClearService::Impl::update_camera_input(Clock::time_point now)
     {
         if (!(camera_look))
@@ -526,7 +597,7 @@ namespace kh3ap
                                        : (!gameplay(pawn) || held_camera(pawn) != nullptr));
         if (done)
         {
-            move_interact_pending = false;
+            pending_move_action = {};
             if (input_dispatched && !input_released && is_uobject_valid_fast(controller))
             {
                 runtime_controller_action_input(controller, input_action, false);
@@ -558,12 +629,20 @@ namespace kh3ap
         if (command == L"move_gameplay")
         {
             runtime_controller_stick_input(controller, look_x, look_y);
-            if (move_interact_pending && now >= move_interact_at)
+            if (!pending_move_action.empty() && now >= move_action_at)
             {
-                move_interact_pending = false;
+                const auto action = pending_move_action;
+                pending_move_action = {};
                 position_immediate = position(pawn);
-                press_action(controller, L"interact");
-                report(L"accepted", L"moving_interaction_pressed");
+                press_action(controller, action);
+                report(L"accepted", action == L"jump" ? L"moving_jump_pressed" :
+                                                         L"moving_interaction_pressed");
+            }
+            if (input_dispatched && input_action == L"jump" && !moving_jump_left_ground)
+            {
+                auto* movement = try_read_reflected_object_property_value(pawn, L"MyMovement");
+                moving_jump_left_ground = is_uobject_valid_fast(movement) &&
+                                          boolean(movement, L"IsFalling");
             }
             if (input_dispatched && !input_released && now >= release_at)
             {
@@ -740,13 +819,18 @@ namespace kh3ap
         look_x = static_cast<float>(*x);
         look_y = static_cast<float>(*y);
         const auto interact_after = JsonFieldReader::int64_field(text, "interact_after_ms");
-        if (interact_after && (command != L"move_gameplay" || *interact_after < 100 ||
-                               *interact_after + 200 > *ms || (*x == 0 && *y == 0)))
+        const auto jump_after = JsonFieldReader::int64_field(text, "jump_after_ms");
+        const auto action_after = jump_after ? jump_after : interact_after;
+        const auto minimum_delay = jump_after ? 50 : 100;
+        if (action_after && ((jump_after && interact_after) || command != L"move_gameplay" ||
+                             *action_after < minimum_delay || *action_after > *ms - 200 ||
+                             (*x == 0 && *y == 0)))
         {
-            throw std::runtime_error("moving_interaction_delay_invalid");
+            throw std::runtime_error(jump_after ? "moving_jump_delay_invalid" :
+                                                 "moving_interaction_delay_invalid");
         }
-        move_interact_pending = interact_after.has_value();
-        move_interact_at = Clock::now() + std::chrono::milliseconds(interact_after.value_or(0));
+        pending_move_action = jump_after ? L"jump" : interact_after ? L"interact" : L"";
+        move_action_at = Clock::now() + std::chrono::milliseconds(action_after.value_or(0));
         look_controller = try_read_reflected_object_property_value(pawn, L"Controller");
         look_until = Clock::now() + std::chrono::milliseconds(static_cast<int>(*ms));
         camera_look = true;

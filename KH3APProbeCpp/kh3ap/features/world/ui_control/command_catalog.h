@@ -65,6 +65,8 @@ namespace kh3ap::ui_control_detail
         {L"garden_graveyard_story_open", CommandKind::dark_world_travel, false, true, false},
         {L"garden_graveyard_story_inspect", CommandKind::garden_dialog, false, true, false},
         {L"garden_graveyard_story_enter", CommandKind::garden_dialog, false, true, false},
+        {L"garden_world_inspect", CommandKind::garden_dialog, false, true, false},
+        {L"garden_world_enter", CommandKind::garden_dialog, false, true, true},
         {L"garden_dark_world_inspect", CommandKind::garden_dialog, true, true, false},
         {L"garden_dark_world_enter", CommandKind::garden_dialog, true, true, false},
         {L"garden_dark_world_travel", CommandKind::dark_world_travel, true, true, false},

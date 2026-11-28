@@ -191,6 +191,10 @@ namespace kh3ap
 
     bool RuntimeEnemyClearService::Impl::update_action_input(Clock::time_point now)
     {
+        if (blaster_active)
+        {
+            return update_gigas_blaster(now);
+        }
         if (!(input_controller.Get()))
         {
             return false;
@@ -243,6 +247,59 @@ namespace kh3ap
         finish(L"completed", command == L"open_chest" ? L"chest_interaction_dispatched"
                                                       : L"native_input_released");
         return true;
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_gigas_blaster(UObject* pawn, const std::string& text)
+    {
+        auto* vehicle = current_gigas(pawn);
+        const auto duration = JsonFieldReader::int64_field(text, "duration_ms").value_or(680);
+        if (!is_uobject_valid_fast(vehicle) || integer(vehicle, L"GetHitPoint") <= 0 ||
+            duration < 120 || duration > 1600)
+        {
+            throw std::runtime_error("gigas_blaster_requires_live_mount_and_bounded_hold");
+        }
+        blaster_vehicle = vehicle;
+        press_action(try_read_reflected_object_property_value(pawn, L"Controller"), L"right_trigger");
+        release_at = Clock::now() + std::chrono::milliseconds(duration);
+        blaster_active = true;
+        waiting = true;
+    }
+
+    bool RuntimeEnemyClearService::Impl::update_gigas_blaster(Clock::time_point now)
+    {
+        auto* pawn = sora.Get();
+        auto* controller = input_controller.Get();
+        auto* vehicle = blaster_vehicle.Get();
+        const bool valid = is_uobject_valid_fast(pawn) && is_uobject_valid_fast(controller) &&
+                           is_uobject_valid_fast(vehicle) && actor_world(pawn) == world.Get() &&
+                           try_read_reflected_object_property_value(pawn, L"Controller") == controller &&
+                           current_gigas(pawn) == vehicle && gameplay(pawn);
+        if (!valid || unix_ms() >= expires)
+        {
+            finish(L"completed", L"gigas_blaster_boundary");
+            return true;
+        }
+        if (now >= release_at)
+        {
+            finish(L"completed", L"gigas_blaster_released");
+            return true;
+        }
+        runtime_controller_gigas_trigger_input(controller, 1.0f);
+        return true;
+    }
+
+    void RuntimeEnemyClearService::Impl::release_gigas_blaster()
+    {
+        blaster_active = false;
+        blaster_vehicle = nullptr;
+        auto* controller = input_controller.Get();
+        input_controller = nullptr;
+        if (is_uobject_valid_fast(controller))
+        {
+            runtime_controller_gigas_trigger_input(controller, 0.0f);
+            runtime_controller_action_input(controller, L"right_trigger", false);
+            input_released = true;
+        }
     }
 
     void RuntimeEnemyClearService::Impl::accept_pooh_input(const std::string& text)
@@ -311,6 +368,16 @@ namespace kh3ap
     void RuntimeEnemyClearService::Impl::accept_press_action(UObject* pawn, const std::string& text)
     {
         const auto action = JsonFieldReader::string_field(text, "action").value_or(L"");
+        if (auto prompt = JsonFieldReader::string_field(text, "cover_prompt"))
+        {
+            const auto enemy = JsonFieldReader::string_field(text, "cover_enemy").value_or(L"");
+            if (action != L"interact" || (*prompt != L"take_cover" && *prompt != L"cover_shot") ||
+                (*prompt == L"cover_shot" && enemy.empty()) || !inspect_cover_state(pawn, *prompt, enemy))
+            {
+                finish(L"error", L"cover_prompt_changed_before_input");
+                return;
+            }
+        }
         if (action == L"tornado_dive_window")
         {
             using character_native::Site;

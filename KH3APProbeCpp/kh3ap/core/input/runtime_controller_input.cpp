@@ -219,6 +219,13 @@ namespace kh3ap
         send_axis(controller, base, L"Gamepad_RightY", y);
     }
 
+#if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+    void runtime_controller_gigas_trigger_input(UObject* controller, float pressure)
+    {
+        send_axis(controller, require_axis_controller(controller), L"Gamepad_RightTriggerAxis", pressure);
+    }
+#endif
+
     struct ControllerKeyMap
     {
         uintptr_t data{}, hash{};

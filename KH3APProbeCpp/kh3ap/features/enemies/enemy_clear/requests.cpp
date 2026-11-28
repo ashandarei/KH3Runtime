@@ -3,6 +3,7 @@
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/core/objects/actor_owning_world.h"
+#include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/bridge/transport/bridge_paths.h"
 #include "kh3ap/bridge/transport/bridge_io_helpers.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
@@ -46,12 +47,15 @@ namespace kh3ap
             {L"look_camera", &Impl::accept_camera_look, true, true},
             {L"look_gameplay", &Impl::accept_camera_look, true, true},
             {L"move_gameplay", &Impl::accept_camera_look, true, true},
+            {L"steer_gameplay", &Impl::accept_steer_gameplay, true, true},
             {L"inspect_emblems", &Impl::accept_inspect_emblems, false, true},
             {L"inspect_boss_setting", &Impl::accept_boss_setting, false, true},
             {L"set_boss_setting", &Impl::accept_boss_setting, true, true},
             {L"inspect", nullptr, false, false},
             {L"inspect_scene", &Impl::accept_inspect_scene, false, false},
+            {L"inspect_cover", &Impl::accept_inspect_cover, true, true},
             {L"inspect_transform", &Impl::accept_inspect_transform, false, true},
+            {L"inspect_navigation", &Impl::accept_inspect_navigation, true, true},
             {L"open_chest", &Impl::accept_open_chest, true, false},
             {L"cactuar_spawn", &Impl::accept_cactuar_spawn, true, false},
             {L"olympus_statue_scene", &Impl::accept_olympus_statue_scene, true, false},
@@ -65,6 +69,7 @@ namespace kh3ap
             {L"tram_xion_fall", &Impl::accept_tram_xion_fall, true, false},
             {L"set_position", nullptr, true, false},
             {L"press_action", &Impl::accept_press_action, true, false},
+            {L"gigas_blaster", &Impl::accept_gigas_blaster, true, false},
             {L"pooh_sign", &Impl::accept_pooh_sign, true, false},
             {L"attack_combo", &Impl::accept_attack_combo, true, false},
             {L"break_container", &Impl::accept_break_container, true, false},
@@ -216,23 +221,42 @@ namespace kh3ap
         finish(L"completed", L"scream_strike_scene_dispatched_observe_completion");
     }
 
-    void RuntimeEnemyClearService::Impl::accept()
+    void RuntimeEnemyClearService::Impl::accept(
+        std::optional<DiagnosticGameplayPipe::Request> fast_request)
     {
-        dir = config.bridge_dir();
-        if (!dir || !path_points_to_regular_file(*dir / request_name))
+        pipe_ticket.reset();
+        if (fast_request)
         {
-            return;
+            pipe_ticket = fast_request->ticket;
         }
-        const auto text = read_text_file(*dir / request_name);
+        dir = config.bridge_dir();
+        std::optional<std::string> text;
+        if (fast_request)
+        {
+            text = std::move(fast_request->text);
+        }
+        else if (dir && path_points_to_regular_file(*dir / request_name))
+        {
+            text = read_text_file(*dir / request_name);
+            if (text)
+            {
+                try_remove_file(*dir / request_name);
+            }
+        }
         if (!text)
         {
             return;
         }
-        try_remove_file(*dir / request_name);
         request_id = JsonFieldReader::string_field(*text, "request_id").value_or(L"");
+        command = JsonFieldReader::string_field(*text, "command").value_or(L"");
+        expires = JsonFieldReader::int64_field(*text, "expires_unix_ms").value_or(0);
         if (request_id.empty() ||
             std::find(consumed.begin(), consumed.end(), request_id) != consumed.end())
         {
+            if (pipe_ticket)
+            {
+                finish(L"error", L"missing_or_replayed_request_id");
+            }
             return;
         }
         consumed.push_back(request_id);
@@ -250,22 +274,44 @@ namespace kh3ap
         position_dispatched = false;
         actor_rotation = {};
         transform_captured = false;
+        moving_jump_left_ground = false;
+        moving_on_ground.reset();
+        movement_falling.reset();
+        navigation_snapshot = "null";
+        gigas_snapshot = "null";
         position_before = position_after = position_immediate = requested_position = {};
         sora_hp_before = sora_hp_after = 0;
         world_name.clear();
         pawn_name.clear();
         started = Clock::now();
-        command = JsonFieldReader::string_field(*text, "command").value_or(L"");
-        expires = JsonFieldReader::int64_field(*text, "expires_unix_ms").value_or(0);
         expected_world = JsonFieldReader::string_field(*text, "expected_world").value_or(L"");
-        if (JsonFieldReader::string_field(*text, "schema") != L"kh3ap.enemy_clear.v1" ||
+        const auto lifetime = pipe_ticket ? DiagnosticGameplayPipe::max_request_lifetime_ms :
+                                            max_enemy_clear_request_lifetime_ms;
+        const auto now_ms = unix_ms();
+        if (!dir || JsonFieldReader::string_field(*text, "schema") != L"kh3ap.enemy_clear.v1" ||
             JsonFieldReader::int64_field(*text, "process_id") != GetCurrentProcessId() ||
-            expires <= unix_ms() || expires > unix_ms() + max_enemy_clear_request_lifetime_ms)
+            expires <= now_ms || expires > now_ms + lifetime)
         {
             finish(L"error", L"invalid_or_expired_identity");
             return;
         }
+        if (pipe_ticket && command != L"inspect" && command != L"inspect_transform" && command != L"inspect_navigation" &&
+            command != L"inspect_scene" && command != L"move_gameplay" && command != L"steer_gameplay" &&
+            command != L"look_gameplay" && command != L"press_action" && command != L"attack_combo" &&
+            command != L"gigas_blaster" && command != L"inspect_cover")
+        {
+            finish(L"error", L"unsupported_diagnostics_pipe_command");
+            return;
+        }
+        if (steer_until != Clock::time_point{} && command != L"steer_gameplay" &&
+            command != L"inspect" && command != L"inspect_transform" && command != L"inspect_navigation" &&
+            command != L"inspect_cover")
+        {
+            release_steer_input();
+        }
         scene_objects = "[]";
+        cover_snapshot = "null";
+        in_native_cover = false;
         interaction_actor.clear();
         interaction_treasure.clear();
         interaction_dispatched = false;
@@ -321,6 +367,12 @@ namespace kh3ap
         }
         world_name = world.Get()->GetPathName();
         pawn_name = pawn->GetPathName();
+        const auto expected_pawn = JsonFieldReader::string_field(*text, "expected_pawn");
+        if (expected_pawn && *expected_pawn != pawn_name)
+        {
+            finish(L"error", L"pawn_identity_mismatch");
+            return;
+        }
         if (definition->requires_world && (expected_world.empty() || expected_world != world_name))
         {
             finish(L"error", L"world_identity_mismatch");
@@ -337,6 +389,8 @@ namespace kh3ap
 
         if (command == L"inspect" || command == L"inspect_scene")
         {
+            in_native_cover = integer(pawn, L"GetStateID") == player_state_ids::cover;
+            inspect_gigas(pawn);
             // Read the owning runtime inventory, independently of AP delivery ledgers.
             std::ostringstream inventory;
             inventory << std::boolalpha << '{';

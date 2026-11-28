@@ -49,6 +49,7 @@ namespace kh3ap::ui_control_detail
     inline constexpr auto game_instance_pause_type_offset = 0x8d0;
     inline constexpr auto pause_menu_type_offset = 0x6d0;
     inline constexpr auto pause_selected_index_offset = 0x6d4;
+    inline constexpr int special_battle_pause_menu_type = 6;
     inline constexpr auto message_dialog_vtable_rva = 0x7c5b4f0;
     inline constexpr auto graveyard_gate_command_index = 2;
     inline constexpr auto arendelle_gate_command_index = 8;

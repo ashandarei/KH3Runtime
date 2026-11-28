@@ -49,6 +49,7 @@ namespace kh3ap
     void runtime_controller_action_input(RC::Unreal::UObject* controller, std::wstring_view action,
                                          bool pressed);
 #if KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS
+    void runtime_controller_gigas_trigger_input(RC::Unreal::UObject* controller, float pressure);
     // A bounded native stick test owns movement axes while physical controllers
     // can continue reporting centered-stick noise. Other input stays native.
     void runtime_controller_test_stick_lease(RC::Unreal::UObject* controller, bool owned);

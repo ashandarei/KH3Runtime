@@ -1,5 +1,6 @@
 #pragma once
 #include "kh3ap/bridge/transport/request_file_watcher.h"
+#include "kh3ap/diagnostics/gameplay_pipe.h"
 
 #include "kh3ap/features/enemies/enemy_clear_service.h"
 #include "kh3ap/features/enemies/mom_barrier_service.h"
@@ -35,7 +36,7 @@ namespace kh3ap
         struct Target
         {
             FWeakObjectPtr actor{}, entity{};
-            std::wstring name, class_name, entity_name;
+            std::wstring name, class_name, entity_name, action;
             int64_t hp_before{}, hp_after{}, max_hp{}, state_before{}, state_after{}, team{};
             int32_t kills_before{-1}, kills_after{-1};
             std::array<float, 3> location{};
@@ -47,6 +48,8 @@ namespace kh3ap
         RuntimeEnemyClearConfig config;
         inline static constexpr auto request_name = L"runtime_enemy_clear_request.json";
         RequestFileWatcher requests{request_name};
+        DiagnosticGameplayPipe diagnostic_pipe;
+        std::optional<uint64_t> pipe_ticket;
         bool mutation_context_ready{}, mutation_control_ready{};
         std::optional<std::filesystem::path> dir;
         std::wstring request_id, command, expected_world, world_name, pawn_name;
@@ -61,8 +64,18 @@ namespace kh3ap
         float look_x{}, look_y{};
         FWeakObjectPtr look_controller{};
         Clock::time_point look_until{};
-        Clock::time_point move_interact_at{};
-        bool move_interact_pending{};
+        FWeakObjectPtr steer_pawn{}, steer_world{}, steer_controller{};
+        Clock::time_point steer_until{};
+        float steer_x{}, steer_y{};
+        bool steer_in_combat{};
+        Clock::time_point move_action_at{};
+        std::wstring_view pending_move_action{};
+        bool moving_jump_left_ground{};
+        std::optional<bool> moving_on_ground, movement_falling;
+        std::string navigation_snapshot{"null"};
+        std::string gigas_snapshot{"null"};
+        FWeakObjectPtr blaster_vehicle{};
+        bool blaster_active{};
         FWeakObjectPtr photo_movement{}, photo_pawn{}, photo_attachment{};
         FWeakObjectPtr photo_fov_component{};
         float photo_original_fov{};
@@ -192,6 +205,15 @@ namespace kh3ap
         void attach_photo_marker(UObject* pawn, std::wstring_view path);
         void restore_photo_movement();
         void inspect_camera(UObject* pawn);
+        UObject* accompanying_gigas(UObject* pawn);
+        UObject* current_gigas(UObject* pawn);
+        void inspect_gigas(UObject* pawn);
+        void accept_gigas_blaster(UObject* pawn, const std::string& text);
+        bool update_gigas_blaster(Clock::time_point now);
+        void release_gigas_blaster();
+        void accept_steer_gameplay(UObject* pawn, const std::string& text);
+        void update_steer_input(Clock::time_point now);
+        void release_steer_input();
         void inspect_scene(UObject* pawn);
         UObject* resolve_chest(UObject* pawn, const std::wstring& requested_actor,
                                const std::wstring& requested_treasure);
@@ -213,6 +235,7 @@ namespace kh3ap
         void accept_inspect_emblems(UObject* pawn, const std::string& text);
         void accept_boss_setting(UObject* pawn, const std::string& text);
         void accept_inspect_transform(UObject* pawn, const std::string& text);
+        void accept_inspect_navigation(UObject* pawn, const std::string& text);
         void accept_boss_hp_setup(UObject* pawn, const std::string& text);
         void accept_boss_center(UObject* pawn, const std::string& text);
         void accept_protection(UObject* pawn, const std::string& text);
@@ -222,6 +245,11 @@ namespace kh3ap
         void accept_repair_chest_record(UObject* pawn, const std::string& text);
         void accept_chest_gate(UObject* pawn, const std::string& text);
         void accept_inspect_scene(UObject* pawn, const std::string& text);
+        void accept_inspect_cover(UObject* pawn, const std::string& text);
+        bool inspect_cover_state(UObject* pawn, std::wstring_view expected_prompt = {},
+                                 std::wstring_view expected_enemy = {});
+        std::string cover_snapshot{"null"};
+        bool in_native_cover{};
         void accept_attack_combo(UObject* pawn, const std::string& text);
         void accept_press_action(UObject* pawn, const std::string& text);
         void accept_pooh_sign(UObject* pawn, const std::string& text);
@@ -239,7 +267,7 @@ namespace kh3ap
         void accept_cactuar_spawn(UObject* pawn, const std::string& text);
         void accept_olympus_statue_scene(UObject* pawn, const std::string& text);
         void accept_monstropolis_scream_scene(UObject* pawn, const std::string& text);
-        void accept();
+        void accept(std::optional<DiagnosticGameplayPipe::Request> fast_request = std::nullopt);
         bool update_camera_input(Clock::time_point now);
         bool update_combo_input(Clock::time_point now);
         bool update_action_input(Clock::time_point now);

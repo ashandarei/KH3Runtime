@@ -8,13 +8,16 @@
 #include "kh3ap/core/reflection/reflected_function_call.h"
 #include "kh3ap/core/reflection/reflection_core.h"
 #include "kh3ap/bridge/serialization/json_fields.h"
+#include "kh3ap/bridge/utilities.h"
 
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
 #include <Unreal/UFunction.hpp>
 #include <Unreal/FProperty.hpp>
 #include <Unreal/Property/FBoolProperty.hpp>
+#include <Unreal/Property/FArrayProperty.hpp>
 #include <Unreal/Property/FStructProperty.hpp>
+#include <Unreal/TArray.hpp>
 #include <Unreal/UObjectGlobals.hpp>
 #include <Unreal/UScriptStruct.hpp>
 
@@ -25,6 +28,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <sstream>
 #include <cmath>
 #include <cstring>
 
@@ -126,7 +130,7 @@ namespace kh3ap
         }
     }
 
-    void RuntimeEnemyClearService::Impl::set_gigas_position(UObject* pawn)
+    auto RuntimeEnemyClearService::Impl::accompanying_gigas(UObject* pawn) -> UObject*
     {
         Call accompany(pawn, L"GetSpecificActionAccompanyPawn");
         auto* id = accompany.field(L"ID");
@@ -145,7 +149,52 @@ namespace kh3ap
         auto* gigas = *returned->ContainerPtrToValuePtr<UObject*>(accompany.params.data());
         auto* klass = UObjectGlobals::StaticFindObject<UClass*>(
             nullptr, nullptr, L"/Script/TresGame.TresVehiclePawnGigas");
-        if (!is_uobject_valid_fast(gigas) || !is_uobject_valid_fast(klass) || !gigas->IsA(klass))
+        return is_uobject_valid_fast(gigas) && is_uobject_valid_fast(klass) && gigas->IsA(klass)
+            ? gigas : nullptr;
+    }
+
+    auto RuntimeEnemyClearService::Impl::current_gigas(UObject* pawn) -> UObject*
+    {
+        auto* queue = try_read_reflected_object_property_value(pawn, L"MyStateComp");
+        auto* state = try_read_reflected_object_property_value(queue, L"m_pCurrentState");
+        if (!is_uobject_valid_fast(state) || state->GetClassPrivate()->GetName() != L"TresPlayerState_Gigas")
+        {
+            return nullptr;
+        }
+        auto* gigas = accompanying_gigas(pawn);
+        if (!is_uobject_valid_fast(gigas))
+        {
+            Call attached(pawn, L"GetAttachParentActor");
+            attached.invoke();
+            gigas = try_read_function_object_param(attached.function, attached.params.data(), L"ReturnValue");
+        }
+        auto* klass = UObjectGlobals::StaticFindObject<UClass*>(
+            nullptr, nullptr, L"/Script/TresGame.TresVehiclePawnGigas");
+        if (!is_uobject_valid_fast(gigas) || !is_uobject_valid_fast(klass) || !gigas->IsA(klass) ||
+            actor_owning_world(gigas) != actor_owning_world(pawn))
+        {
+            return nullptr;
+        }
+        return gigas;
+    }
+
+    void RuntimeEnemyClearService::Impl::inspect_gigas(UObject* pawn)
+    {
+        auto* gigas = current_gigas(pawn);
+        if (!is_uobject_valid_fast(gigas))
+        {
+            return;
+        }
+        std::ostringstream status;
+        status << "{\"actor\":\"" << json_escape(gigas->GetPathName()) << "\",\"hp\":"
+               << integer(gigas, L"GetHitPoint") << ",\"max_hp\":" << integer(gigas, L"GetMaxHitPoint") << '}';
+        gigas_snapshot = status.str();
+    }
+
+    void RuntimeEnemyClearService::Impl::set_gigas_position(UObject* pawn)
+    {
+        auto* gigas = accompanying_gigas(pawn);
+        if (!is_uobject_valid_fast(gigas))
         {
             throw std::runtime_error("sora_is_not_riding_gigas");
         }
@@ -240,9 +289,112 @@ namespace kh3ap
                 throw std::runtime_error("nonfinite_actor_position");
             }
         }
+        auto* movement = try_read_reflected_object_property_value(pawn, L"MyMovement");
+        if (is_uobject_valid_fast(movement) &&
+            is_uobject_valid_fast(movement->GetFunctionByNameInChain(L"IsMovingOnGround")) &&
+            is_uobject_valid_fast(movement->GetFunctionByNameInChain(L"IsFalling")))
+        {
+            moving_on_ground = boolean(movement, L"IsMovingOnGround");
+            movement_falling = boolean(movement, L"IsFalling");
+        }
         transform_captured = true;
         finish(L"completed", L"transform_snapshot");
         return;
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_inspect_navigation(UObject* pawn,
+                                                                   const std::string& text)
+    {
+        using Point = std::array<float, 3>;
+        constexpr auto system = L"/Script/Engine.Default__NavigationSystem";
+        Point goal{};
+        size_t coordinate = 0;
+        for (const char* name : {"x", "y", "z"})
+        {
+            const auto value = JsonFieldReader::number_field(text, name);
+            if (!value || !std::isfinite(*value) || std::abs(*value) > max_enemy_command_world_coordinate)
+            {
+                throw std::runtime_error("navigation_goal_invalid");
+            }
+            goal[coordinate++] = static_cast<float>(*value);
+        }
+        if (std::hypot(goal[0] - position_before[0], goal[1] - position_before[1],
+                       goal[2] - position_before[2]) > 20000.f)
+        {
+            throw std::runtime_error("navigation_goal_out_of_local_range");
+        }
+        const auto project = [pawn](const Point& point) -> std::optional<Point> {
+            ReflectedFunctionCall call(system, L"K2_ProjectPointToNavigation", "exploration_navigation", 128);
+            call.object(L"WorldContextObject", pawn);
+            call.vector(L"Point", point[0], point[1], point[2]);
+            call.vector(L"QueryExtent", 90.f, 90.f, 220.f);
+            call.run();
+            if (!call.boolean_result())
+            {
+                return std::nullopt;
+            }
+            auto* field = call.param(L"ProjectedLocation");
+            if (!field->IsA<FStructProperty>() || field->GetElementSize() != sizeof(Point))
+            {
+                throw std::runtime_error("navigation_projection_layout");
+            }
+            const auto value = *field->ContainerPtrToValuePtr<Point>(call.parameters.data());
+            if (!std::all_of(value.begin(), value.end(), [](float x) { return std::isfinite(x); }))
+            {
+                throw std::runtime_error("navigation_projection_nonfinite");
+            }
+            return value;
+        };
+
+        const auto start = project(position_before);
+        const auto end = project(goal);
+        std::ostringstream evidence;
+        evidence << "{\"start\":";
+        if (start) { json_position(evidence, *start); } else { evidence << "null"; }
+        evidence << ",\"goal\":";
+        if (end) { json_position(evidence, *end); } else { evidence << "null"; }
+        evidence << ",\"points\":[";
+        bool complete = false;
+        if (start && end)
+        {
+            ReflectedFunctionCall find(system, L"FindPathToLocationSynchronously", "exploration_navigation", 128);
+            find.object(L"WorldContextObject", pawn);
+            find.object(L"PathfindingContext", pawn);
+            find.vector(L"PathStart", (*start)[0], (*start)[1], (*start)[2]);
+            find.vector(L"PathEnd", (*end)[0], (*end)[1], (*end)[2]);
+            find.run();
+            auto* path = find.result();
+            if (is_uobject_valid_fast(path) && boolean(path, L"IsValid"))
+            {
+                auto* field = path->GetPropertyByNameInChain(L"PathPoints");
+                auto* inner = field && field->IsA<FArrayProperty>()
+                    ? static_cast<FArrayProperty*>(field)->GetInner() : nullptr;
+                if (!inner || !inner->IsA<FStructProperty>() || inner->GetElementSize() != sizeof(Point) ||
+                    field->GetElementSize() != sizeof(TArray<Point>))
+                {
+                    throw std::runtime_error("navigation_points_layout");
+                }
+                const auto* points = field->ContainerPtrToValuePtr<TArray<Point>>(path);
+                if (points->Num() < 1 || points->Num() > 128)
+                {
+                    throw std::runtime_error("navigation_path_point_count");
+                }
+                for (int index = 0; index < points->Num(); ++index)
+                {
+                    const auto& point = (*points)[index];
+                    if (!std::all_of(point.begin(), point.end(), [](float x) { return std::isfinite(x); }))
+                    {
+                        throw std::runtime_error("navigation_point_nonfinite");
+                    }
+                    if (index) { evidence << ','; }
+                    json_position(evidence, point);
+                }
+                complete = !boolean(path, L"IsPartial");
+            }
+        }
+        evidence << "],\"complete\":" << std::boolalpha << complete << '}';
+        navigation_snapshot = evidence.str();
+        finish(L"completed", L"navigation_path_observed");
     }
 
     void RuntimeEnemyClearService::Impl::accept_tram_xion_fall(UObject* pawn, const std::string& text)

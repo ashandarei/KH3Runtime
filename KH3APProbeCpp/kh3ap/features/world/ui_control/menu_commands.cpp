@@ -465,8 +465,10 @@ namespace kh3ap
         auto* pause = pause_ref.Get();
         const bool gameplay_resume = command == L"resume_gameplay";
         const bool resume = gameplay_resume || command == L"resume_cutscene";
+        const bool gameplay_menu = menu_type == 0 ||
+                                   (!death_ui.steam && menu_type == special_battle_pause_menu_type);
         if (gameplay_resume && (pawn_name != expected_pawn || config.game_over_active() ||
-                                pause_type != 0 || (pause_open && menu_type != 0)))
+                                pause_type != 0 || (pause_open && !gameplay_menu)))
         {
             finish(L"error", L"expected_gameplay_pause_unavailable");
             return;
@@ -536,7 +538,7 @@ namespace kh3ap
             }
             return;
         }
-        if (menu_type != (gameplay_resume ? 0 : 1))
+        if (gameplay_resume ? !gameplay_menu : menu_type != 1)
         {
             finish(L"error", L"unexpected_pause_menu");
             return;

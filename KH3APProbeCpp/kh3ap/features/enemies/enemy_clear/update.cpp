@@ -35,6 +35,7 @@ namespace kh3ap
             tick_test_center();
             tick_xemnas_anchor();
             mom_barrier.tick();
+            update_steer_input(now);
             if (update_camera_input(now))
             {
                 return;
@@ -71,6 +72,11 @@ namespace kh3ap
             }
             if (!waiting)
             {
+                if (auto request = diagnostic_pipe.take_request())
+                {
+                    accept(std::move(request));
+                    return;
+                }
                 if (now < next_poll)
                 {
                     return;
@@ -207,6 +213,10 @@ namespace kh3ap
         }
         catch (const std::exception& error)
         {
+            if (steer_until != Clock::time_point{})
+            {
+                try { release_steer_input(); } catch (...) {}
+            }
             const std::string reason = error.what();
             finish(L"error", std::wstring(reason.begin(), reason.end()));
         }

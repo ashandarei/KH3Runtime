@@ -86,9 +86,9 @@ namespace kh3ap
     {
         // Exploration diagnostics may follow only an alternate owned by the
         // normal swap service. This does not widen AP item-grant contexts.
-        if (command == L"inspect_scene" || command == L"inspect_transform" ||
+        if (command == L"inspect_scene" || command == L"inspect_transform" || command == L"inspect_navigation" ||
             command == L"open_chest" || command == L"set_position" ||
-            command == L"look_gameplay" || command == L"move_gameplay" ||
+            command == L"look_gameplay" || command == L"move_gameplay" || command == L"steer_gameplay" ||
             command == L"inspect_emblems" || command == L"look_camera")
         {
             auto* pawn = controlled_combat_pawn();
@@ -99,6 +99,7 @@ namespace kh3ap
         // existing Sora-only context rules.
         if (command == L"inspect" || command == L"damage_pulse" || command == L"sora_protection" ||
             command == L"press_action" || command == L"attack_combo" || command == L"union_cross_input" ||
+            command == L"gigas_blaster" || command == L"inspect_cover" ||
             command == L"defeat_all" || command == L"olympus_statue_scene" ||
             command == L"monstropolis_scream_scene" || command == L"tram_xion_fall")
         {

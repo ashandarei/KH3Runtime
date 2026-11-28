@@ -26,7 +26,7 @@ namespace kh3ap
 
     void RuntimeEnemyClearService::Impl::report(std::wstring_view status, std::wstring_view reason)
     {
-        if (!dir) return;
+        if (pipe_ticket ? status == L"accepted" : !dir) return;
         std::ostringstream out;
         out << std::boolalpha << "{\"schema\":\"kh3ap.enemy_clear.v1\",\"request_id\":\"" << json_escape(request_id)
             << "\",\"command\":\"" << json_escape(command) << "\",\"process_id\":" << GetCurrentProcessId()
@@ -56,6 +56,14 @@ namespace kh3ap
             << ",\"skipped_friendly\":" << skipped_friendly << ",\"position_before\":";
         json_position(out, position_before);
         out << ",\"transform_captured\":" << transform_captured;
+        out << ",\"moving_jump_left_ground\":" << moving_jump_left_ground
+            << ",\"moving_on_ground\":"
+            << (moving_on_ground ? (*moving_on_ground ? "true" : "false") : "null")
+            << ",\"movement_falling\":"
+            << (movement_falling ? (*movement_falling ? "true" : "false") : "null");
+        out << ",\"navigation\":" << navigation_snapshot;
+        out << ",\"gigas\":" << gigas_snapshot;
+        out << ",\"cover\":" << cover_snapshot << ",\"in_native_cover\":" << in_native_cover;
         out << ",\"rotation_pitch_yaw_roll_degrees\":"; json_position(out, actor_rotation);
         out << ",\"position_after\":"; json_position(out, position_after);
         out << ",\"position_immediate\":"; json_position(out, position_immediate);
@@ -68,7 +76,8 @@ namespace kh3ap
             if (i) out << ',';
             if (!t.proof.empty()) ++proven;
             out << "{\"actor\":\"" << json_escape(t.name) << "\",\"class\":\"" << json_escape(t.class_name)
-                << "\",\"entity\":\"" << json_escape(t.entity_name) << "\",\"hp_before\":" << t.hp_before
+                << "\",\"entity\":\"" << json_escape(t.entity_name) << "\",\"action\":\"" << json_escape(t.action)
+                << "\",\"hp_before\":" << t.hp_before
                 << ",\"hp_after\":" << t.hp_after << ",\"max_hp\":" << t.max_hp << ",\"state_before\":" << t.state_before
                 << ",\"state_after\":" << t.state_after << ",\"team\":" << t.team
                 << ",\"kills_before\":" << t.kills_before << ",\"kills_after\":" << t.kills_after
@@ -101,12 +110,22 @@ namespace kh3ap
             << "\",\"interaction_treasure\":\"" << json_escape(interaction_treasure)
             << "\",\"target_count\":" << targets.size() << ",\"defeated_count\":" << proven
             << ",\"all_defeated\":" << (proven == targets.size()) << "}\n";
+        if (pipe_ticket)
+        {
+            diagnostic_pipe.complete(*pipe_ticket, std::move(out).str());
+            pipe_ticket.reset();
+            return;
+        }
         write_text_file_atomic_verified(*dir / result_name, out.str());
         append_text_file(*dir / events_name, out.str());
     }
 
     void RuntimeEnemyClearService::Impl::finish(std::wstring_view status, std::wstring_view reason)
     {
+        if (blaster_active)
+        {
+            release_gigas_blaster();
+        }
         if (camera_look)
         {
             if (auto* controller = look_controller.Get(); is_uobject_valid_fast(controller))
@@ -127,7 +146,7 @@ namespace kh3ap
                 }
             }
             camera_look = false;
-            move_interact_pending = false;
+            pending_move_action = {};
             look_controller = nullptr;
         }
         if(combo_held) {

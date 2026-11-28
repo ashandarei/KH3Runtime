@@ -514,6 +514,7 @@ if(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS)
         kh3ap/diagnostics/grants/manual_keyblade_enhancement_probe_helpers.cpp
         kh3ap/diagnostics/profiling/event_read_benchmark.cpp
         kh3ap/diagnostics/randomizer_test_service.cpp
+        kh3ap/diagnostics/gameplay_pipe.cpp
         kh3ap/features/world/startup/autoload_service.cpp
         kh3ap/features/world/startup/new_game_service.cpp
         kh3ap/features/world/garden_return/diagnostics.cpp
@@ -531,6 +532,7 @@ if(KH3AP_ENABLE_PERFORMANCE_DIAGNOSTICS)
         kh3ap/features/enemies/enemy_clear/damage.cpp
         kh3ap/features/enemies/enemy_clear/protection.cpp
         kh3ap/features/enemies/enemy_clear/camera.cpp
+        kh3ap/features/enemies/enemy_clear/cover.cpp
         kh3ap/features/enemies/enemy_clear/input.cpp
         kh3ap/features/enemies/enemy_clear/interactions.cpp
         kh3ap/features/enemies/enemy_clear/chest_gates.cpp

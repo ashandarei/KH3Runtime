@@ -325,7 +325,8 @@ namespace kh3ap
             command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter";
         const bool graveyard = command.starts_with(L"garden_graveyard_story_");
         const bool scala = command.starts_with(L"scala_return_");
-        const auto expected_map = dark_world || graveyard ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
+        const bool garden_world = command.starts_with(L"garden_world_");
+        const auto expected_map = dark_world || graveyard || garden_world ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
                                 : scala ? L"/Game/Levels/bt/bt_01/bt_01." : L"/Game/Levels/kg/kg_02/kg_02.";
         if (pawn_name != expected_pawn || pawn_name.find(expected_map) == std::wstring::npos)
         {
@@ -406,6 +407,9 @@ namespace kh3ap
         const bool correct_text =
             scala ? (text == L"Return to the Garden of Assemblage?" &&
                      rows == std::vector<std::wstring>{L"No", L"Yes"}) :
+            garden_world ? (!texture_action.empty() && texture_action.size() <= 80 &&
+                            text == L"Are you sure you want to visit " + texture_action + L"?" &&
+                            rows == original) :
             graveyard ? (text == L"Are you sure you want to visit Keyblade Graveyard?" && rows == original) :
             dark_world ? (chapter_menu || (text == L"Are you sure you want to visit Dark World?" &&
                                            rows == original))
@@ -414,7 +418,7 @@ namespace kh3ap
                              rows == std::vector<std::wstring>{L"No", L"Yes"};
         if (!correct_text)
         {
-            throw std::runtime_error("battlegate_zero_choice_mismatch");
+            throw std::runtime_error(garden_world ? "garden_world_choice_mismatch" : "battlegate_zero_choice_mismatch");
         }
         int selection = 1;
         if (dark_world && texture_action == L"castle" && !chapter_menu)
@@ -435,8 +439,15 @@ namespace kh3ap
         }
         const auto dialog_id = field<int32_t>(choice, 0xa8);
         std::ostringstream evidence;
-        evidence << (scala ? "{\"world\":\"Scala ad Caelum\"," : graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,")
-                 << "\"dialog_id\":" << dialog_id << ",\"text\":\"" << json_escape(text)
+        if (garden_world)
+        {
+            evidence << "{\"world\":\"" << json_escape(texture_action) << "\",";
+        }
+        else
+        {
+            evidence << (scala ? "{\"world\":\"Scala ad Caelum\"," : graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,");
+        }
+        evidence << "\"dialog_id\":" << dialog_id << ",\"text\":\"" << json_escape(text)
                  << "\",\"choices\":[";
         for (size_t i = 0; i < rows.size(); ++i)
         {
@@ -450,7 +461,8 @@ namespace kh3ap
         command_json = evidence.str();
         if (command.ends_with(L"_inspect"))
         {
-            finish(L"completed", scala ? L"scala_return_choice_observed" : L"battlegate_zero_choice_observed");
+            finish(L"completed", garden_world ? L"garden_world_choice_observed" :
+                   scala ? L"scala_return_choice_observed" : L"battlegate_zero_choice_observed");
             return;
         }
         const auto decide = base + kh02_native::rva(kh02_native::Site::garden_dialog_decide);
@@ -474,7 +486,8 @@ namespace kh3ap
         {
             throw std::runtime_error("battlegate_zero_selection_not_observed");
         }
-        finish(L"completed", scala ? L"scala_return_yes_selected_verify_arrival" : L"battlegate_zero_yes_selected_verify_arrival");
+        finish(L"completed", garden_world ? L"garden_world_yes_selected_verify_arrival" :
+               scala ? L"scala_return_yes_selected_verify_arrival" : L"battlegate_zero_yes_selected_verify_arrival");
         return;
     }
 

@@ -48,7 +48,8 @@ int main()
         assert(command.supports_steam == steam);
         assert(command.requires_pawn == !without_pawn);
         assert(command.requires_message ==
-               (command.name == L"dismiss_message" || command.name == L"acknowledge_notice"));
+               (command.name == L"dismiss_message" || command.name == L"acknowledge_notice" ||
+                command.name == L"garden_world_enter"));
     }
     assert(find_command(L"retry")->kind == find_command(L"continue")->kind);
     assert(find_command(L"retry")->kind == find_command(L"prepare_retry")->kind);
