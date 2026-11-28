@@ -41,6 +41,13 @@ namespace kh3ap::ui_control_detail
                                  bool apply);
     UObject* frozen_garden_portal(const wchar_t* story_flag = L"gameflow_FZ");
     UObject* frozen_menu_widget();
+    struct GardenAreaRow
+    {
+        std::wstring map, player_start;
+        const void* data;
+    };
+    std::vector<GardenAreaRow> displayed_garden_areas(UObject* widget);
+    void select_displayed_garden_area(UObject* widget, const void* row);
     std::vector<FName> frozen_menu_rows(UObject* widget);
     void select_frozen_menu_row(UObject* widget, const wchar_t* row_name = L"FZ_SAVE08",
                                 const wchar_t* player_start = L"fz_02_Lv_AP_Save_01");

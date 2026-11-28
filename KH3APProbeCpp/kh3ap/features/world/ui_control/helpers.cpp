@@ -476,7 +476,7 @@ namespace kh3ap::ui_control_detail
         }
         return found;
     }
-    std::vector<FName> frozen_menu_rows(UObject* widget)
+    std::vector<GardenAreaRow> displayed_garden_areas(UObject* widget)
     {
         // FilteredList is the world's candidate catalog, including rows the
         // evaluator rejects. Only Save Items contains displayed buttons.
@@ -496,7 +496,7 @@ namespace kh3ap::ui_control_detail
         {
             throw std::runtime_error("garden_filtered_list_bounds");
         }
-        std::vector<FName> result;
+        std::vector<GardenAreaRow> result;
         for (int i = 0; i < values.num; ++i)
         {
             auto* entry = values.data[i];
@@ -507,10 +507,46 @@ namespace kh3ap::ui_control_detail
             {
                 throw std::runtime_error("garden_displayed_row_layout");
             }
-            const auto tag = field<FName>(row->ContainerPtrToValuePtr<void>(entry), 0x10);
-            result.push_back(tag.ToString() == L"fz_02_Lv_AP_Save_01" ? FName{L"FZ_SAVE08"} : tag);
+            auto* type = static_cast<FStructProperty*>(row)->GetStruct();
+            auto* map = find_struct_field_by_name(type, L"MapName");
+            auto* tag = find_struct_field_by_name(type, L"SavePointName");
+            if (!map || !tag || map->GetClass().GetName() != L"NameProperty" ||
+                tag->GetClass().GetName() != L"NameProperty" || map->GetElementSize() != sizeof(FName) ||
+                tag->GetElementSize() != sizeof(FName))
+            {
+                throw std::runtime_error("garden_area_identity_layout");
+            }
+            auto* data = row->ContainerPtrToValuePtr<void>(entry);
+            result.push_back({map->ContainerPtrToValuePtr<FName>(data)->ToString(),
+                              tag->ContainerPtrToValuePtr<FName>(data)->ToString(), data});
         }
         return result;
+    }
+
+    std::vector<FName> frozen_menu_rows(UObject* widget)
+    {
+        std::vector<FName> result;
+        for (const auto& row : displayed_garden_areas(widget))
+        {
+            result.emplace_back(row.player_start == L"fz_02_Lv_AP_Save_01" ? L"FZ_SAVE08" :
+                                row.player_start.c_str());
+        }
+        return result;
+    }
+
+    void select_displayed_garden_area(UObject* widget, const void* row)
+    {
+        UiProbeCall select(widget, L"Entry Button Selected");
+        auto* parameter = find_function_param_by_name(select.function, L"AreaRow");
+        if (!parameter || !parameter->IsA<FStructProperty>() ||
+            parameter->GetElementSize() != garden_selection_row_bytes ||
+            parameter->GetOffset_Internal() + parameter->GetElementSize() > select.params.size())
+        {
+            throw std::runtime_error("garden_selection_row_layout");
+        }
+        std::memcpy(parameter->ContainerPtrToValuePtr<void>(select.params.data()), row,
+                    garden_selection_row_bytes);
+        select.run();
     }
     void select_frozen_menu_row(UObject* widget, const wchar_t* row_name,
                                 const wchar_t* player_start)
@@ -547,18 +583,7 @@ namespace kh3ap::ui_control_detail
         {
             throw std::runtime_error("garden_frozen_player_start_changed");
         }
-        UiProbeCall select(widget, L"Entry Button Selected");
-        auto* parameter = find_function_param_by_name(select.function, L"AreaRow");
-        if (!parameter || !parameter->IsA<FStructProperty>() ||
-            parameter->GetElementSize() != garden_selection_row_bytes ||
-            parameter->GetOffset_Internal() + parameter->GetElementSize() > select.params.size())
-        {
-            throw std::runtime_error("garden_selection_row_layout");
-        }
-        // Borrow the immutable table row only during the real widget event.
-        std::memcpy(parameter->ContainerPtrToValuePtr<void>(select.params.data()), row,
-                    garden_selection_row_bytes);
-        select.run();
+        select_displayed_garden_area(widget, row);
     }
     int sora_selection_index(std::wstring_view pawn_name)
     {

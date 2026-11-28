@@ -8,6 +8,7 @@
 #include "kh3ap/core/input/runtime_controller_input.h"
 #include "kh3ap/features/story/minigames/minigame_reward_service.h"
 #include "kh3ap/core/objects/uobject_weak.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/player/characters/character_profile.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/features/player/player_ids.h"
@@ -236,6 +237,55 @@ namespace kh3ap
             release_at = now + enemy_clear_button_hold_duration;
             return true;
         }
+        if (observing_talk && interaction_actor.empty())
+        {
+            if (auto* actor = active_talk_actor(sora.Get()))
+            {
+                interaction_actor = actor->GetPathName();
+            }
+        }
+        if (observing_airstep)
+        {
+            auto* pawn = sora.Get();
+            auto* controller = input_controller.Get();
+            const bool same_context = is_uobject_valid_fast(pawn) && controlled_combat_pawn() == pawn &&
+                                      actor_world(pawn) == world.Get() &&
+                                      try_read_reflected_object_property_value(pawn, L"Controller") == controller;
+            if (!same_context)
+            {
+                release_at = now;
+            }
+            else if (!interaction_dispatched && now < release_at &&
+                     integer(pawn, L"GetStateID") == player_state_ids::shooter_mode)
+            {
+                auto* spot = try_read_reflected_object_property_value(
+                    controller, L"m_pAthleticFlowStartPointDispComponent");
+                if (is_uobject_valid_fast(spot))
+                {
+                    Call owner_call(spot, L"GetOwner");
+                    owner_call.invoke();
+                    auto* owner = try_read_function_object_param(owner_call.function, owner_call.params.data(),
+                                                                 L"ReturnValue");
+                    if (is_uobject_valid_fast(owner) && actor_owning_world(owner) == world.Get())
+                    {
+                        interaction_actor = owner->GetPathName();
+                        if (interaction_actor == expected_airstep_actor)
+                        {
+                            position_immediate = position(pawn);
+                            runtime_controller_action_input(controller, L"guard", true);
+                            interaction_dispatched = airstep_guard_held = true;
+                            airstep_guard_until = now + std::chrono::milliseconds(75);
+                            release_at = airstep_guard_until;
+                        }
+                    }
+                }
+            }
+            if (airstep_guard_held && (!same_context || now >= airstep_guard_until))
+            {
+                runtime_controller_action_input(controller, L"guard", false);
+                airstep_guard_held = false;
+            }
+        }
         if (now < release_at)
         {
             return true;
@@ -407,6 +457,18 @@ namespace kh3ap
         if (duration < minimum_stick_hold_ms || duration > maximum_duration)
         {
             throw std::runtime_error("action_hold_duration_out_of_range");
+        }
+        observing_talk = action == L"interact" &&
+                         JsonFieldReader::bool_field(text, "observe_talk").value_or(false);
+        observing_airstep = action == L"right_shoulder" &&
+                            JsonFieldReader::bool_field(text, "observe_airstep").value_or(false);
+        if (observing_airstep)
+        {
+            if (JsonFieldReader::string_field(text, "expected_pawn") != pawn_name || duration > 2500)
+            {
+                throw std::runtime_error("airstep_requires_current_pawn_and_bounded_aim");
+            }
+            expected_airstep_actor = JsonFieldReader::string_field(text, "airstep_actor").value_or(L"");
         }
         report(L"accepted", L"input_checkpoint");
         press_action(try_read_reflected_object_property_value(pawn, L"Controller"), action);

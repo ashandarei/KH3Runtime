@@ -282,6 +282,12 @@ namespace kh3ap
                                                                   const std::string& text)
     {
         actor_rotation = rotation(pawn);
+        movement_state = integer(pawn, L"GetStateID");
+        if (auto* field = pawn->GetPropertyByNameInChain(L"m_bEnableWallRun");
+            field && field->IsA<FBoolProperty>())
+        {
+            wall_run_enabled = static_cast<FBoolProperty*>(field)->GetPropertyValueInContainer(pawn);
+        }
         for (const auto component : position_before)
         {
             if (!std::isfinite(component))

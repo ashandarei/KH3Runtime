@@ -64,7 +64,10 @@ namespace kh3ap
             advance_garden_travel();
             return;
         case ui_control_detail::CommandKind::garden_dialog:
-            advance_garden_dialog(dialog);
+            advance_choice_dialog();
+            return;
+        case ui_control_detail::CommandKind::garden_revisit:
+            advance_garden_revisit();
             return;
         case ui_control_detail::CommandKind::dark_world_travel:
             advance_dark_world_travel();
@@ -181,6 +184,9 @@ namespace kh3ap
                          : 0;
         remote_executable = JsonFieldReader::string_field(*text, "source_executable").value_or(L"");
         texture_action = JsonFieldReader::string_field(*text, "action").value_or(L"inspect");
+        expected_dialog_text = JsonFieldReader::string_field(*text, "expected_dialog_text").value_or(L"");
+        expected_area_map = JsonFieldReader::string_field(*text, "expected_area_map").value_or(L"");
+        expected_player_start = JsonFieldReader::string_field(*text, "expected_player_start").value_or(L"");
         viewport_request = {
             checked_native_integer(JsonFieldReader::int64_field(*text, "width").value_or(0))
                 .value_or(0),

@@ -4,9 +4,11 @@
 #include "kh3ap/features/enemies/enemy_clear/support.h"
 #include "kh3ap/features/treasure/chest_persistence_service.h"
 #include "kh3ap/core/reflection/reflection_core.h"
+#include "kh3ap/core/objects/actor_owning_world.h"
 #include "kh3ap/features/enemies/titan_arena.h"
 #include "kh3ap/features/player/player_state_ids.h"
 #include "kh3ap/bridge/utilities.h"
+#include "kh3ap/bridge/serialization/json_fields.h"
 
 #include <Unreal/UObject.hpp>
 #include <Unreal/UClass.hpp>
@@ -22,6 +24,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <cstring>
+#include <cwctype>
 #include <sstream>
 #include <unordered_map>
 #include <utility>
@@ -32,6 +35,7 @@ namespace kh3ap
     namespace
     {
         constexpr auto max_spawn_point_results = 128;
+        constexpr uint8_t talk_reactor_command = 2; // ETresReactorCommandID::TRES_RCID_TALK
 
         auto door_vector(RC::Unreal::UObject* object, const wchar_t* function)
             -> std::array<float, 3>
@@ -543,6 +547,204 @@ namespace kh3ap
         inspect_scene(pawn);
         finish(L"completed", L"scene_snapshot");
         return;
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_inspect_talk(UObject* pawn, const std::string&)
+    {
+        auto* current_world = actor_owning_world(pawn);
+        if (!is_uobject_valid_fast(current_world))
+        {
+            throw std::runtime_error("talk_world_unavailable");
+        }
+        std::vector<UObject*> components;
+        UObjectGlobals::FindAllOf(L"TresReactorComponent", components);
+        const auto origin = position(pawn);
+        std::ostringstream out;
+        out << '[';
+        bool first = true;
+        for (auto* component : components)
+        {
+            if (!is_uobject_valid_fast(component) || reactor_command(component) != talk_reactor_command ||
+                !property_bool(component, L"m_bIsGimmickActive", false))
+            {
+                continue;
+            }
+            Call owner_call(component, L"GetOwner");
+            owner_call.invoke();
+            auto* owner = try_read_function_object_param(owner_call.function, owner_call.params.data(),
+                                                         L"ReturnValue");
+            if (!is_uobject_valid_fast(owner) || actor_owning_world(owner) != current_world ||
+                property_bool(owner, L"bHidden", false))
+            {
+                continue;
+            }
+            const auto actor_position = position(owner);
+            const auto center = door_vector(component, L"K2_GetComponentLocation");
+            const auto distance = std::hypot(center[0] - origin[0], center[1] - origin[1],
+                                             center[2] - origin[2]);
+            if (!std::isfinite(distance) || distance > 10000)
+            {
+                continue;
+            }
+            if (!first)
+            {
+                out << ',';
+            }
+            first = false;
+            out << "{\"kind\":\"talk\",\"actor\":\"" << json_escape(owner->GetPathName())
+                << "\",\"class\":\"" << json_escape(owner->GetClassPrivate()->GetPathName())
+                << "\",\"component\":\"" << json_escape(component->GetPathName())
+                << "\",\"distance\":" << distance << ",\"position\":";
+            json_position(out, actor_position);
+            out << ",\"center\":";
+            json_position(out, center);
+            out << '}';
+        }
+        out << ']';
+        scene_objects = out.str();
+        finish(L"completed", L"talk_snapshot");
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_inspect_landmarks(UObject* pawn, const std::string& text)
+    {
+        const auto lower = [](std::wstring value)
+        {
+            std::transform(value.begin(), value.end(), value.begin(),
+                           [](wchar_t character) { return static_cast<wchar_t>(std::towlower(character)); });
+            return value;
+        };
+        const auto query = lower(JsonFieldReader::string_field(text, "query").value_or(L""));
+        if (query.size() < 3 || query.size() > 96)
+        {
+            throw std::runtime_error("landmark_query_requires_a_name_fragment");
+        }
+        using Point = std::array<float, 3>;
+        struct Landmark
+        {
+            UObject* actor;
+            std::wstring path, type;
+            Point location;
+            double distance;
+        };
+        std::vector<Landmark> matches;
+        auto* actor_class = UObjectGlobals::StaticFindObject<UClass*>(nullptr, nullptr, L"/Script/Engine.Actor");
+        for (auto* actor : actors_of_class(pawn, actor_class))
+        {
+            if (!is_uobject_valid_fast(actor) || !is_uobject_valid_fast(actor->GetClassPrivate()))
+            {
+                continue;
+            }
+            auto path = actor->GetPathName();
+            auto type = actor->GetClassPrivate()->GetName();
+            if (lower(path).find(query) == std::wstring::npos && lower(type).find(query) == std::wstring::npos)
+            {
+                continue;
+            }
+            const auto location = position(actor);
+            const auto distance = std::hypot(location[0] - position_before[0], location[1] - position_before[1],
+                                             location[2] - position_before[2]);
+            if (std::isfinite(distance))
+            {
+                matches.push_back({actor, std::move(path), std::move(type), location, distance});
+            }
+        }
+        std::sort(matches.begin(), matches.end(), [](const auto& first, const auto& second)
+        {
+            return first.distance < second.distance;
+        });
+        std::ostringstream out;
+        out << std::boolalpha << '[';
+        for (size_t index = 0; index < std::min(matches.size(), size_t{256}); ++index)
+        {
+            const auto& match = matches[index];
+            if (index)
+            {
+                out << ',';
+            }
+            out << "{\"actor\":\"" << json_escape(match.path) << "\",\"class\":\"" << json_escape(match.type)
+                << "\",\"hidden\":" << property_bool(match.actor, L"bHidden", false)
+                << ",\"collision_enabled\":" << boolean(match.actor, L"GetActorEnableCollision")
+                << ",\"distance\":" << match.distance << ",\"position\":";
+            json_position(out, match.location);
+            out << ",\"rotation\":";
+            json_position(out, rotation(match.actor));
+            out << '}';
+        }
+        out << ']';
+        scene_objects = out.str();
+        finish(L"completed", L"landmark_snapshot");
+    }
+
+    void RuntimeEnemyClearService::Impl::accept_inspect_airstep(UObject* pawn, const std::string&)
+    {
+        auto* current_world = actor_owning_world(pawn);
+        if (!is_uobject_valid_fast(current_world))
+        {
+            throw std::runtime_error("airstep_world_unavailable");
+        }
+        std::vector<UObject*> components;
+        UObjectGlobals::FindAllOf(L"TresLockonTargetComponent", components);
+        std::ostringstream out;
+        out << std::boolalpha << '[';
+        bool first = true;
+        for (auto* component : components)
+        {
+            if (!is_uobject_valid_fast(component) ||
+                !property_bool(component, L"m_bPermissionMoveFlow", false) ||
+                !property_bool(component, L"m_bIsGimmickActive", false))
+            {
+                continue;
+            }
+            Call owner_call(component, L"GetOwner");
+            owner_call.invoke();
+            auto* owner = try_read_function_object_param(owner_call.function, owner_call.params.data(),
+                                                         L"ReturnValue");
+            if (!is_uobject_valid_fast(owner) || actor_owning_world(owner) != current_world)
+            {
+                continue;
+            }
+            const auto point = door_vector(component, L"K2_GetComponentLocation");
+            const auto distance = std::hypot(point[0] - position_before[0], point[1] - position_before[1],
+                                             point[2] - position_before[2]);
+            if (!std::isfinite(distance) || distance > 6500)
+            {
+                continue;
+            }
+            if (!first)
+            {
+                out << ',';
+            }
+            first = false;
+            out << "{\"actor\":\"" << json_escape(owner->GetPathName())
+                << "\",\"component\":\"" << json_escape(component->GetPathName())
+                << "\",\"distance\":" << distance << ",\"position\":";
+            json_position(out, point);
+            out << '}';
+        }
+        out << ']';
+        scene_objects = out.str();
+        finish(L"completed", L"airstep_anchors_observed");
+    }
+
+    UObject* RuntimeEnemyClearService::Impl::active_talk_actor(UObject* pawn)
+    {
+        auto* queue = try_read_reflected_object_property_value(pawn, L"MyStateComp");
+        auto* state = try_read_reflected_object_property_value(queue, L"m_pCurrentState");
+        auto* talk_class = UObjectGlobals::StaticFindObject<UClass*>(
+            nullptr, nullptr, L"/Script/TresGame.TresPlayerState_Talk");
+        if (!is_uobject_valid_fast(state) || !is_uobject_valid_fast(talk_class) ||
+            !state->IsA(talk_class))
+        {
+            return nullptr;
+        }
+        auto* actor = try_read_reflected_object_property_value(state, L"m_pTargetActor");
+        auto* reactor = try_read_reflected_object_property_value(state, L"m_pComponent");
+        auto* reactor_class = UObjectGlobals::StaticFindObject<UClass*>(
+            nullptr, nullptr, L"/Script/TresGame.TresReactorComponent");
+        return is_uobject_valid_fast(actor) && is_uobject_valid_fast(reactor) &&
+                       is_uobject_valid_fast(reactor_class) && reactor->IsA(reactor_class) &&
+                       actor_owning_world(actor) == world.Get() &&
+                       reactor_command(reactor) == talk_reactor_command ? actor : nullptr;
     }
 
 } // namespace kh3ap

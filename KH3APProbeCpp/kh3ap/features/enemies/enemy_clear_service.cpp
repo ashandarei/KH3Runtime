@@ -99,7 +99,8 @@ namespace kh3ap
         // existing Sora-only context rules.
         if (command == L"inspect" || command == L"damage_pulse" || command == L"sora_protection" ||
             command == L"press_action" || command == L"attack_combo" || command == L"union_cross_input" ||
-            command == L"gigas_blaster" || command == L"inspect_cover" ||
+            command == L"gigas_blaster" || command == L"inspect_cover" || command == L"inspect_talk" ||
+            command == L"inspect_landmarks" || command == L"inspect_airstep" ||
             command == L"defeat_all" || command == L"olympus_statue_scene" ||
             command == L"monstropolis_scream_scene" || command == L"tram_xion_fall")
         {

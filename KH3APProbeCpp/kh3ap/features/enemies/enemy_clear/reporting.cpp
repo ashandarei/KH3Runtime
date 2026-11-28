@@ -56,6 +56,9 @@ namespace kh3ap
             << ",\"skipped_friendly\":" << skipped_friendly << ",\"position_before\":";
         json_position(out, position_before);
         out << ",\"transform_captured\":" << transform_captured;
+        out << ",\"movement_state\":" << movement_state;
+        out << ",\"wall_run_enabled\":"
+            << (wall_run_enabled ? (*wall_run_enabled ? "true" : "false") : "null");
         out << ",\"moving_jump_left_ground\":" << moving_jump_left_ground
             << ",\"moving_on_ground\":"
             << (moving_on_ground ? (*moving_on_ground ? "true" : "false") : "null")
@@ -122,6 +125,23 @@ namespace kh3ap
 
     void RuntimeEnemyClearService::Impl::finish(std::wstring_view status, std::wstring_view reason)
     {
+        if (observing_airstep)
+        {
+            if (auto* controller = input_controller.Get(); is_uobject_valid_fast(controller))
+            {
+                if (airstep_guard_held)
+                {
+                    runtime_controller_action_input(controller, L"guard", false);
+                }
+                if (input_dispatched && !input_released)
+                {
+                    runtime_controller_action_input(controller, L"right_shoulder", false);
+                    input_released = true;
+                }
+            }
+            observing_airstep = airstep_guard_held = false;
+            input_controller = nullptr;
+        }
         if (blaster_active)
         {
             release_gigas_blaster();

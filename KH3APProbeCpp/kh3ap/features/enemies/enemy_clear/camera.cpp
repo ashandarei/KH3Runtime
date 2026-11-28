@@ -512,12 +512,12 @@ namespace kh3ap
     {
         auto* controller = steer_controller.Get();
         steer_until = {};
-        steer_controller = nullptr;
-        steer_pawn = nullptr;
-        steer_world = nullptr;
         if (is_uobject_valid_fast(controller))
         {
             runtime_controller_stick_input(controller, 0, 0);
+            // A zero queued alongside a nonzero sample can be averaged in the same
+            // input pass, leaving movement latched when the game is in the background.
+            steer_neutral_until = Clock::now() + std::chrono::milliseconds(120);
         }
     }
 
@@ -525,6 +525,24 @@ namespace kh3ap
     {
         if (steer_until == Clock::time_point{})
         {
+            if (steer_neutral_until == Clock::time_point{})
+            {
+                return;
+            }
+            auto* controller = steer_controller.Get();
+            auto* pawn = steer_pawn.Get();
+            if (now >= steer_neutral_until || !is_uobject_valid_fast(controller) ||
+                !is_uobject_valid_fast(pawn) || actor_world(pawn) != steer_world.Get() ||
+                try_read_reflected_object_property_value(pawn, L"Controller") != controller ||
+                (camera_look && command == L"move_gameplay"))
+            {
+                steer_neutral_until = {};
+                steer_controller = nullptr;
+                steer_pawn = nullptr;
+                steer_world = nullptr;
+                return;
+            }
+            runtime_controller_stick_input(controller, 0, 0);
             return;
         }
         auto* pawn = steer_pawn.Get();
@@ -553,6 +571,14 @@ namespace kh3ap
         }
         if (*x == 0 && *y == 0)
         {
+            auto* controller = try_read_reflected_object_property_value(pawn, L"Controller");
+            if (!is_uobject_valid_fast(controller))
+            {
+                throw std::runtime_error("steering_controller_unavailable");
+            }
+            steer_pawn = pawn;
+            steer_world = world;
+            steer_controller = controller;
             release_steer_input();
             finish(L"completed", L"steering_released");
             return;
@@ -574,6 +600,7 @@ namespace kh3ap
         steer_x = static_cast<float>(*x);
         steer_y = static_cast<float>(*y);
         steer_in_combat = in_combat;
+        steer_neutral_until = {};
         steer_until = Clock::now() + std::chrono::milliseconds(275);
         runtime_controller_stick_input(controller, steer_x, steer_y);
         finish(L"completed", L"steering_renewed");

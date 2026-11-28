@@ -23,6 +23,7 @@
 #include <chrono>
 #include <cstring>
 #include <limits>
+#include <iterator>
 #include <optional>
 #include <sstream>
 #include <stdexcept>
@@ -319,8 +320,78 @@ namespace kh3ap
         return;
     }
 
-    void RuntimeUiControlService::Impl::advance_garden_dialog(UObject* dialog)
+    void RuntimeUiControlService::Impl::advance_garden_revisit()
     {
+        constexpr std::wstring_view garden = L"/Game/Maps/GardenOfAssemblage/umap/GoA_01.";
+        if (pawn_name != expected_pawn || pawn_name.find(garden) == std::wstring::npos ||
+            pause_open || pause_type != 0 || texture_action.size() != 2 ||
+            !std::all_of(texture_action.begin(), texture_action.end(),
+                         [](wchar_t character) { return character >= L'a' && character <= L'z'; }))
+        {
+            throw std::runtime_error("garden_revisit_requires_expected_portal_context");
+        }
+        auto* widget = frozen_menu_widget();
+        if (!widget)
+        {
+            if (command == L"garden_revisit_select")
+            {
+                throw std::runtime_error("garden_revisit_not_open");
+            }
+            finish(L"completed", L"garden_revisit_absent");
+            return;
+        }
+        const auto prefix = try_read_object_name_property(widget, L"WorldPrefix");
+        if (!prefix || _wcsnicmp(prefix->c_str(), texture_action.c_str(), 2))
+        {
+            throw std::runtime_error("garden_revisit_world_changed");
+        }
+        const auto level_prefix = L"/Game/Levels/" + texture_action + L"/";
+        const auto rows = displayed_garden_areas(widget);
+        std::ostringstream out;
+        out << "{\"world_code\":\"" << json_escape(texture_action) << "\",\"areas\":[";
+        bool first = true;
+        const void* selected_row = nullptr;
+        for (const auto& row : rows)
+        {
+            if (_wcsnicmp(row.map.c_str(), level_prefix.c_str(), level_prefix.size()))
+            {
+                continue;
+            }
+            if (!first)
+            {
+                out << ',';
+            }
+            first = false;
+            out << "{\"map\":\"" << json_escape(row.map) << "\",\"player_start\":\""
+                << json_escape(row.player_start) << "\"}";
+            if (row.map == expected_area_map && row.player_start == expected_player_start)
+            {
+                if (selected_row)
+                {
+                    throw std::runtime_error("garden_revisit_area_ambiguous");
+                }
+                selected_row = row.data;
+            }
+        }
+        out << "]}";
+        command_json = out.str();
+        if (command == L"garden_revisit_select")
+        {
+            if (!selected_row)
+            {
+                throw std::runtime_error("garden_revisit_area_changed");
+            }
+            select_displayed_garden_area(widget, selected_row);
+            dispatched = true;
+            finish(L"completed", L"garden_revisit_area_selected");
+            return;
+        }
+        finish(L"completed", L"garden_revisit_areas_observed");
+    }
+
+    void RuntimeUiControlService::Impl::advance_choice_dialog()
+    {
+        const bool generic = command.starts_with(L"choice_");
         const bool dark_world =
             command == L"garden_dark_world_inspect" || command == L"garden_dark_world_enter";
         const bool graveyard = command.starts_with(L"garden_graveyard_story_");
@@ -328,7 +399,7 @@ namespace kh3ap
         const bool garden_world = command.starts_with(L"garden_world_");
         const auto expected_map = dark_world || graveyard || garden_world ? L"/Game/Maps/GardenOfAssemblage/umap/GoA_01."
                                 : scala ? L"/Game/Levels/bt/bt_01/bt_01." : L"/Game/Levels/kg/kg_02/kg_02.";
-        if (pawn_name != expected_pawn || pawn_name.find(expected_map) == std::wstring::npos)
+        if (pawn_name != expected_pawn || (!generic && pawn_name.find(expected_map) == std::wstring::npos))
         {
             throw std::runtime_error("portal_dialog_requires_expected_world_and_pawn");
         }
@@ -342,7 +413,7 @@ namespace kh3ap
             if (!is_uobject_valid_fast(dialog) ||
                 dialog->GetPathName().find(L"Default__") != std::wstring::npos ||
                 !field<uint8_t>(dialog, native_ui::panel_open_offset) ||
-                !field<uint8_t>(dialog, native_ui::panel_ready_offset) ||
+                (!generic && !field<uint8_t>(dialog, native_ui::panel_ready_offset)) ||
                 try_read_reflected_object_property_value(dialog, L"m_pUIManager") !=
                     manager_ref.Get())
             {
@@ -353,6 +424,15 @@ namespace kh3ap
                 throw std::runtime_error("ambiguous_active_garden_dialog");
             }
             choice = dialog;
+        }
+        if (generic && command == L"choice_inspect" && !choice)
+        {
+            finish(L"completed", L"choice_dialog_absent");
+            return;
+        }
+        if (generic && choice && !field<uint8_t>(choice, native_ui::panel_ready_offset))
+        {
+            return;
         }
         if (!is_uobject_valid_fast(choice) ||
             !field<uint8_t>(choice, native_ui::panel_open_offset) ||
@@ -416,12 +496,22 @@ namespace kh3ap
                        : text.find(L"<b(on)>Battlegate 0 - Difficulty ") == 0 &&
                              text.find(L"Enter and meet them in battle?") != std::wstring::npos &&
                              rows == std::vector<std::wstring>{L"No", L"Yes"};
-        if (!correct_text)
+        if (!generic && !correct_text)
         {
             throw std::runtime_error(garden_world ? "garden_world_choice_mismatch" : "battlegate_zero_choice_mismatch");
         }
         int selection = 1;
-        if (dark_world && texture_action == L"castle" && !chapter_menu)
+        if (generic && command == L"choice_select")
+        {
+            const auto row = std::find(rows.begin(), rows.end(), texture_action);
+            if (expected_dialog_text.empty() || text != expected_dialog_text || row == rows.end() ||
+                std::find(std::next(row), rows.end(), texture_action) != rows.end())
+            {
+                throw std::runtime_error("choice_dialog_text_or_option_changed");
+            }
+            selection = static_cast<int>(std::distance(rows.begin(), row));
+        }
+        else if (dark_world && texture_action == L"castle" && !chapter_menu)
         {
             throw std::runtime_error("kh02_checks_not_enabled_for_portal");
         }
@@ -443,9 +533,13 @@ namespace kh3ap
         {
             evidence << "{\"world\":\"" << json_escape(texture_action) << "\",";
         }
-        else
+        else if (!generic)
         {
             evidence << (scala ? "{\"world\":\"Scala ad Caelum\"," : graveyard ? "{\"world\":\"Keyblade Graveyard\"," : dark_world ? "{\"world\":\"Dark World\"," : "{\"battlegate\":0,");
+        }
+        else
+        {
+            evidence << '{';
         }
         evidence << "\"dialog_id\":" << dialog_id << ",\"text\":\"" << json_escape(text)
                  << "\",\"choices\":[";
@@ -461,7 +555,8 @@ namespace kh3ap
         command_json = evidence.str();
         if (command.ends_with(L"_inspect"))
         {
-            finish(L"completed", garden_world ? L"garden_world_choice_observed" :
+            finish(L"completed", generic ? L"choice_dialog_observed" :
+                   garden_world ? L"garden_world_choice_observed" :
                    scala ? L"scala_return_choice_observed" : L"battlegate_zero_choice_observed");
             return;
         }
@@ -486,7 +581,8 @@ namespace kh3ap
         {
             throw std::runtime_error("battlegate_zero_selection_not_observed");
         }
-        finish(L"completed", garden_world ? L"garden_world_yes_selected_verify_arrival" :
+        finish(L"completed", generic ? L"choice_dialog_selection_observed" :
+               garden_world ? L"garden_world_yes_selected_verify_arrival" :
                scala ? L"scala_return_yes_selected_verify_arrival" : L"battlegate_zero_yes_selected_verify_arrival");
         return;
     }

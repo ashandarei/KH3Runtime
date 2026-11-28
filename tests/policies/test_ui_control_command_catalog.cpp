@@ -49,13 +49,14 @@ int main()
         assert(command.requires_pawn == !without_pawn);
         assert(command.requires_message ==
                (command.name == L"dismiss_message" || command.name == L"acknowledge_notice" ||
-                command.name == L"garden_world_enter"));
+                command.name == L"garden_world_enter" || command.name == L"choice_select"));
     }
     assert(find_command(L"retry")->kind == find_command(L"continue")->kind);
     assert(find_command(L"retry")->kind == find_command(L"prepare_retry")->kind);
     assert(find_command(L"retry")->kind == find_command(L"space_retry")->kind);
     assert(find_command(L"skip_cutscene")->kind == find_command(L"resume_cutscene")->kind);
     assert(find_command(L"inspect")->kind != find_command(L"select_sora")->kind);
+    assert(find_command(L"choice_inspect")->kind == find_command(L"choice_select")->kind);
     assert(find_command(L"kh02_remote")->requires_pawn);
     assert(!find_command(L"space_retry")->supports_steam);
     for (auto name : steam_commands)

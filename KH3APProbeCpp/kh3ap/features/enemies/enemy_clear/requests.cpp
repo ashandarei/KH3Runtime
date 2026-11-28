@@ -53,6 +53,9 @@ namespace kh3ap
             {L"set_boss_setting", &Impl::accept_boss_setting, true, true},
             {L"inspect", nullptr, false, false},
             {L"inspect_scene", &Impl::accept_inspect_scene, false, false},
+            {L"inspect_talk", &Impl::accept_inspect_talk, true, true},
+            {L"inspect_landmarks", &Impl::accept_inspect_landmarks, true, true},
+            {L"inspect_airstep", &Impl::accept_inspect_airstep, true, true},
             {L"inspect_cover", &Impl::accept_inspect_cover, true, true},
             {L"inspect_transform", &Impl::accept_inspect_transform, false, true},
             {L"inspect_navigation", &Impl::accept_inspect_navigation, true, true},
@@ -274,6 +277,8 @@ namespace kh3ap
         position_dispatched = false;
         actor_rotation = {};
         transform_captured = false;
+        movement_state = -1;
+        wall_run_enabled.reset();
         moving_jump_left_ground = false;
         moving_on_ground.reset();
         movement_falling.reset();
@@ -298,7 +303,8 @@ namespace kh3ap
         if (pipe_ticket && command != L"inspect" && command != L"inspect_transform" && command != L"inspect_navigation" &&
             command != L"inspect_scene" && command != L"move_gameplay" && command != L"steer_gameplay" &&
             command != L"look_gameplay" && command != L"press_action" && command != L"attack_combo" &&
-            command != L"gigas_blaster" && command != L"inspect_cover")
+            command != L"gigas_blaster" && command != L"inspect_cover" && command != L"inspect_talk" &&
+            command != L"inspect_landmarks" && command != L"inspect_airstep")
         {
             finish(L"error", L"unsupported_diagnostics_pipe_command");
             return;
@@ -325,6 +331,9 @@ namespace kh3ap
         experience_dispatched = false;
         input_action.clear();
         input_dispatched = input_released = false;
+        observing_talk = false;
+        observing_airstep = airstep_guard_held = false;
+        expected_airstep_actor.clear();
         input_controller = nullptr;
         waiting_dive_window = false;
         union_input_ride = nullptr;

@@ -66,6 +66,9 @@ namespace kh3ap
         Clock::time_point look_until{};
         FWeakObjectPtr steer_pawn{}, steer_world{}, steer_controller{};
         Clock::time_point steer_until{};
+        Clock::time_point steer_neutral_until{};
+        int64_t movement_state{-1};
+        std::optional<bool> wall_run_enabled;
         float steer_x{}, steer_y{};
         bool steer_in_combat{};
         Clock::time_point move_action_at{};
@@ -94,6 +97,10 @@ namespace kh3ap
         FWeakObjectPtr union_input_ride{};
         std::wstring input_action;
         bool input_dispatched{}, input_released{};
+        bool observing_talk{};
+        bool observing_airstep{}, airstep_guard_held{};
+        std::wstring expected_airstep_actor;
+        Clock::time_point airstep_guard_until{};
         bool waiting_dive_window{};
         bool combo_active{}, combo_held{};
         int combo_requested{}, combo_pressed{}, combo_released{}, combo_interval_ms{};
@@ -245,6 +252,10 @@ namespace kh3ap
         void accept_repair_chest_record(UObject* pawn, const std::string& text);
         void accept_chest_gate(UObject* pawn, const std::string& text);
         void accept_inspect_scene(UObject* pawn, const std::string& text);
+        void accept_inspect_talk(UObject* pawn, const std::string& text);
+        void accept_inspect_landmarks(UObject* pawn, const std::string& text);
+        void accept_inspect_airstep(UObject* pawn, const std::string& text);
+        UObject* active_talk_actor(UObject* pawn);
         void accept_inspect_cover(UObject* pawn, const std::string& text);
         bool inspect_cover_state(UObject* pawn, std::wstring_view expected_prompt = {},
                                  std::wstring_view expected_enemy = {});

@@ -49,6 +49,8 @@ namespace kh3ap
         std::string bootstrap_json{"null"};
 
         std::wstring texture_action;
+        std::wstring expected_dialog_text;
+        std::wstring expected_area_map, expected_player_start;
         uint32_t remote_pid{};
         std::wstring remote_executable;
         std::string remote_json{"null"};
@@ -83,7 +85,8 @@ namespace kh3ap
         void advance_viewport();
         void advance_frozen_ground();
         void advance_garden_travel();
-        void advance_garden_dialog(UObject* dialog);
+        void advance_choice_dialog();
+        void advance_garden_revisit();
         void advance_dark_world_travel();
         void advance_computer_space();
         void advance_space_dialogue();
